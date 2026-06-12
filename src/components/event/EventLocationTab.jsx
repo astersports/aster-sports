@@ -3,7 +3,6 @@ import { supabase } from '../../lib/supabase';
 import { Calendar, Navigation } from 'lucide-react';
 import { getDirectionUrls } from '../../lib/mapsUrls';
 import { useAuth } from '../../context/AuthContext';
-import Button from '../shared/Button';
 
 export default function EventLocationTab({ event }) {
   const [locationData, setLocationData] = useState(null);
@@ -121,27 +120,23 @@ export default function EventLocationTab({ event }) {
           {locationData.entry_instructions}
         </div>
       )}
-      {/* SD-14 3-way: Apple / Google / Waze (§15 — formats un-deferred).
-          Apple/Waze need coords or an address; google_maps_url-only
-          venues render Google alone. */}
-      {urls && (
-        <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-          {urls.apple && (
-            <Button variant="secondary" fullWidth onClick={() => window.open(urls.apple, '_blank')} aria-label="Directions in Apple Maps">
-              Apple
-            </Button>
-          )}
-          <Button variant="secondary" fullWidth onClick={() => window.open(urls.google, '_blank')} aria-label="Directions in Google Maps">
-            <Navigation size={15} strokeWidth={1.75} />
-            Google
-          </Button>
-          {urls.waze && (
-            <Button variant="secondary" fullWidth onClick={() => window.open(urls.waze, '_blank')} aria-label="Directions in Waze">
-              Waze
-            </Button>
-          )}
-        </div>
-      )}
+      {/* SD-14 3-way (D6: real ANCHORS — window.open from the standalone
+          PWA left a blank pseudo-page on return; operator-caught). */}
+      {urls && (() => {
+        const A = ({ href, label, children }) => (
+          <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className="as-press"
+            style={{ flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 10, border: '1px solid var(--as-accent)', color: 'var(--as-accent)', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+            {children}
+          </a>
+        );
+        return (
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+            {urls.apple && <A href={urls.apple} label="Directions in Apple Maps">Apple</A>}
+            <A href={urls.google} label="Directions in Google Maps"><Navigation size={15} strokeWidth={1.75} />Google</A>
+            {urls.waze && <A href={urls.waze} label="Directions in Waze">Waze</A>}
+          </div>
+        );
+      })()}
     </div>
   );
 }

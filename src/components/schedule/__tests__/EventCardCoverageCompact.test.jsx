@@ -30,7 +30,7 @@ const upcoming = () => ({
 describe('EventCard — SD-15 coverage badges at every density', () => {
   // R3 (PR-V4): the densities differ on INFORMATION, not spacing —
   // compact glances, detailed reads the operational detail.
-  it('compact: terse glance line', () => {
+  it('compact: D3 icon glance line (trio + amber need pairs)', () => {
     const { container } = render(
       <MemoryRouter>
         <EventCard event={upcoming()} density="minimal"
@@ -39,7 +39,7 @@ describe('EventCard — SD-15 coverage badges at every density', () => {
           dutyCount={{ total: 3, claimed: 1 }} />
       </MemoryRouter>
     );
-    expect(container.textContent).toContain('8/10 going · 2 rides needed · 2 volunteers needed');
+    expect(container.textContent.replace(/\s+/g, '')).toContain('8of1022');
   });
 
   it('detailed: seat math + named open slots when available', () => {

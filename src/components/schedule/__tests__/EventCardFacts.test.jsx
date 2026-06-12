@@ -19,11 +19,12 @@ describe('EventCardFacts — R2-2 one-line contract', () => {
     expect(container.textContent).toContain('9 of 11 going · rides covered');
   });
 
-  it('needs state: ONE amber line aggregating count + rides + volunteers', () => {
+  it('detailed needs: breakdown row + amber needs row (D3 word grammar)', () => {
     const { container } = render(
       <EventCardFacts count={{ going: 0, denominator: 10 }} rideCount={{ requests: 2, offers: 0 }} dutyCount={{ total: 3, claimed: 1 }} />
     );
-    expect(container.textContent).toContain('0 of 10 going · 2 ride seats needed · 2 volunteers needed');
+    expect(container.textContent).toContain('0 of 10 going');
+    expect(container.textContent).toContain('2 ride seats needed · 2 volunteers needed');
   });
 
   it('Hidden roster suppresses the count for parents; staff never suppressed', () => {
@@ -48,7 +49,8 @@ describe('EventCardFacts — R2-2 one-line contract', () => {
     expect(a.container.textContent).toContain("You're bringing snacks");
     cleanup();
     const b = render(<EventCardFacts count={count} commitment="snacks: you" compact />);
-    expect(b.container.textContent).toContain('9/11 going · snacks: you');
+    expect(b.container.textContent).toContain('of 11');
+    expect(b.container.textContent).toContain('· snacks: you');
   });
 
   it('renders nothing when there is nothing to say', () => {
@@ -75,13 +77,22 @@ describe('EventCardFacts — R2-2 one-line contract', () => {
     expect(some.container.querySelector('svg')).not.toBeNull();
   });
 
-  it('V2.1: compact academy note folds INTO the one facts line (no second line)', () => {
+  it('compact academy note folds INTO the one icon line (no second line)', () => {
     const { container } = render(
       <EventCardFacts count={{ going: 0, denominator: 10 }} academyNames={['Milo']} compact />
     );
     const lines = container.querySelectorAll(':scope > div');
     expect(lines).toHaveLength(1);
-    expect(lines[0].textContent).toContain('0/10 going');
+    expect(lines[0].textContent).toContain('of 10');
     expect(lines[0].textContent).toContain('Milo not activated');
+  });
+
+  it('D3 compact icon grammar: trio + amber need pairs as icon+count', () => {
+    const { container } = render(
+      <EventCardFacts compact count={{ going: 9, denominator: 11, maybe: 1, not_going: 1 }}
+        rideCount={{ requests: 2, offers: 0 }} dutyCount={{ total: 2, claimed: 1 }} />
+    );
+    expect(container.textContent.replace(/\s+/g, '')).toContain('911of112');
+    expect(container.querySelectorAll('svg').length).toBeGreaterThanOrEqual(5); // check/help/x/car/hand
   });
 });

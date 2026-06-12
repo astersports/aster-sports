@@ -104,7 +104,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
 
         {!compact && event.location_name && (
           mapsUrl && !completed && !isCancelled
-            ? <button type="button" onClick={(e) => { e.stopPropagation(); window.open(mapsUrl, '_blank', 'noopener,noreferrer'); }} style={{ fontSize: 13, color: 'var(--as-accent)', background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer', textAlign: 'left', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.location_name}</button>
+            ? <a href={mapsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ display: 'block', fontSize: 13, color: 'var(--as-accent)', textDecoration: 'none', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.location_name}</a>
             : <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.location_name}</div>
         )}
         {/* R3 (PR-V4): Detailed EARNS its space — operational lines compact

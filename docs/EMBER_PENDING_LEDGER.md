@@ -740,7 +740,19 @@ arc bodies.
   (34 duty slots Snacks/Scoreboard, 5 open requests, 6 offers; needs/covered/mixed deterministic
   flavors) — rides/volunteers are NOT rolling out to parents; the PR-FS toggles are the
   kill-switch. **PR-V4 SHIPPED** with the R3 contract + per-density tests.
-  NEXT: Frank re-grades Detailed vs Compact (same card, two different questions answered).
+  ROUND-4 GRADE 6/10 + operator: "Take a step back and
+  act as an architect for a complete design or we will go in circles." → **COMPLETE DESIGN
+  SYSTEM WRITTEN**: `docs/SCHEDULE_CARD_DESIGN_SYSTEM_2026-06-12.txt` (D0-D9 — anatomy, status
+  slot, D3 density split COMPACT=icon grammar / DETAILED=word grammar, D4 tri-state RSVP w/
+  fixed colors going=green maybe=amber can't=RED, academy, D6 interaction contracts, D7 Games
+  scoping, D8 full state×density×role matrix; future card changes amend the DOC first).
+  **PR-V5 SHIPPED to it** + the round-4 bug set: Maybe restored (3-way segmented + 3 buttons,
+  correct colors); compact facts = icon pairs (✓9 ?1 ✗1 of 11 · car2 · hand1, lucide); counts
+  reflect maybe/can't (both densities); maps links converted to real ANCHORS (window.open from
+  the standalone PWA left the blank pseudo-page the operator hit — card venue + detail 3-way);
+  GAMES SEASON BUG fixed (standings mixed Winter+Spring team rows — useActiveSeasonTeams +
+  scoped totals). Render lags the doc one round; THE DOC IS AUTHORITATIVE. NEXT: Frank grades
+  against D8.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player

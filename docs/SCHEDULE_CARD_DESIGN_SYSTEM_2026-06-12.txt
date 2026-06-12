@@ -1,0 +1,127 @@
+==============================================================================
+SCHEDULE CARD DESIGN SYSTEM — COMPLETE SPECIFICATION — 2026-06-12 (v1)
+Acting architect: CC. Ratifier: Frank. THE definitive card contract — every
+state × density × role enumerated. Supersedes the iterative V/R rulings'
+EXPRESSION (their data contracts stand). Companion render:
+docs/renders/schedule-card-anatomy-mobile.html (v3). Future card changes
+amend THIS doc first, then code — no more reactive deltas.
+==============================================================================
+
+D0 PRINCIPLE. One card, two reading modes:
+  COMPACT  = the GLANCE. Icons + numbers. A parent scanning at a stoplight.
+  DETAILED = the BRIEFING. Words + operational detail. A parent planning
+             the weekend. Every Detailed line must carry information
+             Compact cannot show — never the same content with more air.
+
+------------------------------------------------------------------------------
+D1 ANATOMY (both densities): RAIL + CONTENT
+------------------------------------------------------------------------------
+RAIL (left, hairline divider): time hour:minute in TEAM COLOR (Detailed
+24px/700, Compact 17px/700; completed = tertiary gray), meridian 11px under,
+weather under that (Detailed "☀️ 74°", Compact "74°"). Width 68px/54px.
+CONTENT rows by density:
+  COMPACT (3 rows + control):           DETAILED (up to 7 rows + control):
+   1 title + status slot                 1 title + status slot
+   2 meta: dot team · kid · venue        2 meta: dot team · kid · TYPE tag
+   3 facts (ICONS, D3)                   3 venue (accent when mapped, D6)
+   [RSVP segmented 3-way, 44px]          4 arrival call ("Arrive 15 min early")
+                                         5 facts (WORDS, D3)
+                                         6 academy sentence (violet, D5)
+                                         7 notes (2-line clamp)
+                                         [RSVP 3 buttons, 44px]
+                                         + commitment note (accent chip)
+
+------------------------------------------------------------------------------
+D2 STATUS SLOT (title row right) — exactly ONE element, priority order:
+------------------------------------------------------------------------------
+  CANCELLED tag (red soft, 6px radius) > W–L score chip (completed games:
+  green/red soft) > LIVE pill ("Happening now" / Compact "Live", green,
+  pulse dot) > countdown pill (accent; the NOW slot's tab absorbs it) >
+  TODAY pill (info). NOW slot: accent ring + "NEXT UP · IN 2H" tab.
+
+------------------------------------------------------------------------------
+D3 FACTS LINE — the density split (operator note, round 4)
+------------------------------------------------------------------------------
+COMPACT — ICON GRAMMAR, one line, lucide 12px icon + count pairs:
+  [Check green]9  [HelpCircle amber]1  [X red]1  "of 11"(tertiary)
+  · [Car]2 (amber, only when seats needed)
+  · [Hand]1 (amber, only when slots open)
+  Academy fold: "· Milo not activated" (violet) appended.
+  Whole line gray-quiet when nothing needs anyone; any need renders ONLY
+  its own icon-pair amber (not the whole line).
+DETAILED — WORD GRAMMAR (spells out the categories):
+  RSVP row:  "9 of 11 going · 1 maybe · 1 can't"  (amber 600 when a need
+             exists anywhere, else tertiary; check icon only when going>0)
+  Needs row: "2 ride seats needed · 3 offered" / "Snacks open · Carpool
+             lead open" (named slots; generic count fallback)
+  Covered:   "rides covered" folds into the RSVP row when quiet.
+ZERO-DATA: no facts line at all (never placeholders).
+HIDDEN ROSTER (tryout/eval): lock icon + "Counts hidden for evaluations"
+replaces counts for parents; staff always see counts.
+FEATURE GATES: rides/volunteers contribute NOTHING (icons included) when
+the org toggle (Settings → Events) is off.
+
+------------------------------------------------------------------------------
+D4 RSVP CONTROL — TRI-STATE, fixed color semantics (operator ruling)
+------------------------------------------------------------------------------
+Options everywhere: GOING / MAYBE / CAN'T MAKE IT.
+Selected colors: going = success GREEN · maybe = warning AMBER · can't =
+danger RED. Unselected: quiet outline. Re-tap clears (existing semantics).
+  COMPACT: 44px 3-way segmented control [✓ Going | ? Maybe | ✗ Can't].
+  DETAILED: three 44px buttons; the SELECTED one fills its color (white
+  text); unselected Going keeps a green-tinted outline (the invited
+  action), Maybe/Can't neutral outlines.
+Render rules: upcoming only; live shows the lock line "RSVP closed";
+completed/cancelled show nothing. Saving an RSVP refreshes the counts —
+the facts line reflects the parent's own answer immediately (D3 trio).
+Unactivated academy kids: NO control; the facts line carries their state.
+Multi-kid: name label above each control.
+
+------------------------------------------------------------------------------
+D5 ACADEMY: compact = facts-line fold (violet, terse); detailed = the
+sentence "Milo isn't activated for this game" (violet). Activated kids are
+indistinguishable from rostered (control + counted). Never a fake control.
+
+------------------------------------------------------------------------------
+D6 INTERACTIONS
+------------------------------------------------------------------------------
+Card tap = event detail (role=link, Enter/Space). Inner controls stop
+propagation. EXTERNAL LINKS (maps, any future): real <a target="_blank"
+rel="noopener noreferrer"> ANCHORS — never window.open. (window.open from
+the standalone PWA leaves an about:blank pseudo-page on return; the
+operator's "blank page until I hit X" bug, round 4.) Applies to the card
+venue link AND the detail-tab Apple/Google/Waze buttons.
+
+------------------------------------------------------------------------------
+D7 GAMES TAB
+------------------------------------------------------------------------------
+Same card vocabulary (EventCard rows; adopted PR-V3). STANDINGS + the week
+list are ACTIVE-SEASON-SCOPED — teams are per-season rows; the org-wide
+team fetch was mixing Winter 2025-26 and Spring 2026 (operator-caught,
+round 4). Standings totals sum only the scoped teams.
+
+------------------------------------------------------------------------------
+D8 STATE MATRIX (the completeness check — every cell deliberate)
+------------------------------------------------------------------------------
+            COMPACT                       DETAILED
+upcoming    rows 1-3 + RSVP               rows 1-7 + RSVP + commitment
+NOW slot    + ring + NEXT-UP·countdown    same
+live        status=Live; lock line        status=Happening now; lock line
+completed   rows 1-2 + W/L chip, 0.55     same (+ nothing else)
+cancelled   rows 1-2 + tag, strike, 0.55  same
+draft       staff-only DRAFT tag (meta)   same
+hidden-roster  lock note (parents)        same
+feature-off    icon/word omitted          same
+ROLES: parent = counts + own RSVP + commitment + academy; staff = counts
+with denominators + no RSVP control; suppression never applies to staff.
+
+------------------------------------------------------------------------------
+D9 OUT OF CARD SCOPE (parked, unchanged): home-card vocabulary adoption
+(PR-V6 candidate), detail-hero chip adoption (V7.3), briefings pile-up
+diagnosis, R12 sweep, per-venue weather (DB-10), Games-tab cancelled
+policy nuances (SD-5 ruled).
+==============================================================================
+RATIFICATION: this doc + render v3 are the contract. Build = PR-V5
+(conformance + the round-4 bug set). Grade against D8 — a miss is either
+a conformance bug (CC fixes) or a doc amendment (rule first, then build).
+==============================================================================
