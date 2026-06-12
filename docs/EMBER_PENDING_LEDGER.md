@@ -5,7 +5,7 @@
 > re-discovery. Updated per session and per PR.
 >
 > Created: 2026-05-18 (Italy CEST) from L99 cross-role audit consolidation
-> Last updated: 2026-06-09 (§4 reconciliation — settings-page arc SHIPPED per architect D6 ruling, PRs #897–#905; see the §4.0 reconciliation note). Prior: 2026-05-27 (§4.AJ — 5-day gap close against PRs #486-#513; cutover-gate REVERT #509, Option C arc #503-#508, current-surface #512/#513).
+> Last updated: 2026-06-12 (§1 session entry + §4.0 top-of-stack refresh — dynamic-workflows substrate + brand kit + LH-site verification). Prior: 2026-06-09 (§4 reconciliation — settings-page arc SHIPPED per architect D6 ruling, PRs #897–#905; see the §4.0 reconciliation note).
 
 This doc complements (not replaces):
 - `docs/archive/SKYFIRE_BUILD_QUEUE_v2.md` — shipped-log roadmap, forward-only
@@ -29,6 +29,23 @@ the next round of silent divergence.
 ---
 
 ## 1. SHIPPED RECENTLY (last 7 days)
+
+### Session 2026-06-12 — dynamic-workflows substrate + brand kit + LH-site verification (one multi-commit PR, branch claude/dazzling-bardeen-oz4lri)
+
+Operator directive "Dynamic workflows for the next phases" (all three lanes ratified
+in-session): (1) SessionStart hook `.claude/hooks/session-start.sh` + `.claude/settings.json`
+— web sessions auto-run npm install + the §9.1 pre-flight (AP #35 divergence, AP #52
+leakage, AP #45 ledger reminder); `.gitignore` narrowed (worktrees stay ignored, hooks +
+settings tracked). (2) Brand rollout: PWA icon set (192/512, any + maskable, navy bg from
+canonical `aster-mark.svg`) wired into manifest, `og-image.png` + og/twitter meta in
+`index.html` (app previously shipped zero social meta), `public/brand/` flat-color variants
+(gold = locked `--as-accent` #C9952E, knockout white, solid black); `brandAssetsAudit.test.js`
+locks the asset↔reference invariant. (3) Process plan
+`docs/DYNAMIC_WORKFLOWS_NEXT_PHASES_2026-06-12.txt` (operating model, phases A/B/C, verified
+constraint register, automation backlog). LH static site v1 (operator zip) VERIFIED
+self-contained + deploy-ready (16/16 assets local, zero Squarespace CDN refs); CC-side repo
+creation blocked (org 403, repo-scoped token) → Frank runs README-DEPLOY steps 1–3, domains/
+DNS untouched per Squarespace cutover sequence. Handoff: `docs/CC_SESSION_HANDOFF_2026-06-12.txt`.
 
 ### Session 2026-06-11 — money-seam unify + roster visibility + funnel select + pilot cutover (PRs #958, #967–#983) — RECONCILED 2026-06-11
 
@@ -478,11 +495,17 @@ This index is the **trustworthy top-level "what's next"** — verified by
 grep + MCP query on 2026-05-27. Read this before trusting the detailed
 arc bodies.
 
-**OPEN at 2026-06-11 close (top-of-stack — read first):**
+**OPEN at 2026-06-12 close (top-of-stack — read first):**
 - Two PHASE CLOSES (money-seam; privacy/roster/funnel): build-complete + audit-clean; gate =
   Frank's device-smoke of the deploy → architect ratification (§11.8 r4).
 - Product decisions D-a..D-f routed via `docs/ARCHITECT_DECISION_REQUEST_PRODUCT_DECISIONS_2026-06-11.txt`
   (evidence + CC leans; Frank/architect rule, then CC ships ruled items as small PRs by surface).
+- LH public-site v1: zip VERIFIED deploy-ready (2026-06-12); OPERATOR steps = README-DEPLOY 1–3
+  (create `legacyhoopers-site` repo → upload → Vercel import) → grade 8 pages on phone. Domain
+  attach only after approval; DNS flip stays in the Squarespace cutover sequence.
+- Dynamic-workflows operating model + phase sequence locked in
+  `docs/DYNAMIC_WORKFLOWS_NEXT_PHASES_2026-06-12.txt` (Phase A = D-a..D-f PRs on rulings;
+  Phase B = Schedule L99, §16.15 audit doc gates code; Phase C = LH-site cutover support).
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player

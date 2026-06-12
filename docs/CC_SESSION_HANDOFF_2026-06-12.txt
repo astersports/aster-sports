@@ -1,0 +1,46 @@
+==============================================================================
+CC SESSION HANDOFF — 2026-06-12
+Per CLAUDE.md §11.8 rule 5. Frank can relay this doc as-is.
+==============================================================================
+
+SHIPPED (one multi-commit PR from branch claude/dazzling-bardeen-oz4lri):
+- chore: SessionStart hook — web sessions auto-run npm install + the §9.1
+  pre-flight (AP #35 divergence, AP #52 leakage, AP #45 ledger reminder);
+  .gitignore narrowed (worktrees stay ignored, hooks/settings tracked).
+- feat: brand rollout — PWA 192/512 any+maskable icons on navy, og-image +
+  og/twitter meta (app previously had zero social meta), public/brand/
+  flat-color mark variants (gold/white/black), brandAssetsAudit.test.js
+  locks asset references to real files.
+- docs: DYNAMIC_WORKFLOWS_NEXT_PHASES_2026-06-12.txt (operating model +
+  phases A/B/C + verified constraint register) + this handoff + ledger
+  reconcile (§1 session entry, §4.0 top-of-stack refresh).
+
+VERIFIED, NOT SHIPPABLE FROM CC (credential bounds, AP #60-grounded):
+- legacyhooperssitev1.zip: site is self-contained + deploy-ready (16/16
+  assets local + referenced, zero Squarespace CDN refs — matches survive
+  only as benign CSS comments; sane vercel.json/robots.txt/sitemap.xml).
+- CC cannot create the org repo (403 verified, repo-scoped token) nor
+  deploy to Vercel directly (no token; the MCP deploy tool is advisory-only
+  — verified, it returns CLI instructions).
+
+FRANK'S QUEUE:
+1. Device-smoke the production deploy (gates the two open phase closes:
+   money-seam; privacy/roster/funnel).
+2. Relay the D-a..D-f decision request to the architect (committed
+   2026-06-11; one ruling per item suffices).
+3. LH site: README-DEPLOY steps 1-3 (create legacyhoopers-site repo under
+   astersports org -> upload zip contents -> Vercel import, team
+   astersports, preset Other) -> grade the 8 pages on phone. NO domain
+   attach / DNS change yet (that's the Squarespace cutover sequence).
+4. Optional: re-upload the lost docs/CC_SESSION_HANDOFF_2026-06-11_pm.txt
+   for the record (the start-here handoff supersedes it operationally).
+
+IN FLIGHT / AWAITING:
+- This session's PR: auto-merge armed; CC subscribed to its events.
+- Architect: D-a..D-f rulings -> Phase A PRs (small, by surface). Then
+  Phase B = Schedule L99 audit doc per §16.15 BEFORE any redesign code.
+
+NEXT ACTION WHEN RULINGS LAND: ship ruled items as small PRs by surface
+(financials / funnel / privacy / schema-doc) per the decision-request doc.
+==============================================================================
+END.

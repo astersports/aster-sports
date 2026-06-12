@@ -1,0 +1,102 @@
+==============================================================================
+DYNAMIC WORKFLOWS FOR THE NEXT PHASES
+Date 2026-06-12. CC -> Frank + architect, per CLAUDE.md §11.8 rule 1.
+Trigger: operator directive 2026-06-12 ("Dynamic workflows for the next
+phases"); all three lanes ratified in-session via operator answer
+(automation + brand rollout + process plan).
+==============================================================================
+
+1. WHAT SHIPPED (the substrate, this session's PR)
+
+- SessionStart hook (.claude/hooks/session-start.sh + .claude/settings.json):
+  every web session now starts with an idempotent npm install (lint/test/
+  build work from turn 1 — this container started with 0 packages installed)
+  plus the §9.1 pre-flight printed into session context (AP #35 divergence
+  counts, AP #52 leakage WARNs, AP #45 ledger reminder). Non-blocking by
+  design: failures degrade to report lines, the session always starts.
+  .gitignore narrowed so .claude/hooks/ + .claude/settings.json are tracked
+  while .claude/worktrees/ stays ignored.
+- Brand kit: PWA icons 192/512 (any + maskable purposes) rendered on navy
+  #151525 from the canonical public/aster-mark.svg; og-image.png 1200x630;
+  og/twitter meta in index.html (the app shipped ZERO social meta before
+  this); public/brand/ flat-color variants (gold = locked --as-accent
+  #C9952E, knockout white, solid black); brandAssetsAudit.test.js locks
+  every manifest/index.html asset reference to a real file in public/.
+
+2. THE OPERATING MODEL (what "dynamic" means, per session)
+
+a. Session open: the hook runs the pre-flight automatically; CC reads WARNs
+   and reconciles before new work (no manual checklist execution).
+b. Build: small PRs by surface; every PR created -> ready -> auto-merge armed
+   in the same burst (§15) -> subscribe_pr_activity immediately. CI failures
+   and review comments arrive as events; CC fixes event-driven, no polling.
+c. Ambiguity: a reviewer comment readable two ways, or any scope-changing
+   event -> AskUserQuestion to Frank rather than guessing (the same pattern
+   that routed D-a..D-f as decisions instead of unilateral calls).
+d. Self check-ins: when the send_later tool is present in the environment,
+   CC arms ~1h re-checks until PRs are MERGED/CLOSED (webhooks do not cover
+   CI-success / merge-conflict transitions). NOTE: send_later was absent in
+   this session's environment — subscriptions still cover comment/CI-failure/
+   review events; the gap is logged here per AP #62 (interim, expires when
+   the tool ships in this environment).
+e. Session close: §11.8 r5 handoff .txt committed + pasted; ledger §1/§4
+   reconciled in the same PR (AP #45; the ledger-reconcile-guard CI check
+   enforces the doc-glob half mechanically).
+
+3. CONSTRAINT REGISTER (verified this session — AP #60 grounding)
+
+- GitHub credential is repo-scoped to astersports/aster-sports: org repo
+  creation returns 403 (verified live). New-repo work (legacyhoopers-site)
+  is operator-side; once the repo exists it can be added to a session's
+  scope and becomes normal CC territory.
+- Vercel MCP deploy tool is advisory-only (verified: it returns CLI
+  instructions, deploys nothing); no VERCEL_TOKEN in env -> CC cannot deploy
+  arbitrary directories. Git-connected Vercel projects remain the deployment
+  path (as production already is for aster-sports).
+- npm registry IS reachable from sessions (verified by the hook run + a
+  dev-dep install) -> per-session tooling installs are viable.
+
+4. NEXT PHASES (sequenced, with the workflow each uses)
+
+PHASE A — D-a..D-f ruled items (trigger: architect reply doc arrives).
+  Small PRs by surface: financials D-a; funnel D-b/c/d; privacy D-e (+ AP #43
+  cross-role invariant test); schema-doc D-f (COMMENT ON FUNCTION migration
+  + AP #21 mirror). Each PR auto-merge + subscription; one session closes
+  the set.
+
+PHASE B — Schedule L99 redesign (lead candidate per the 2026-06-11 handoff).
+  Gate FIRST per §16.15: the audit doc with all five elements (initial pass,
+  2-pass deep-read addendum, AP catalog cross-reference, per-role wireframes,
+  explicit out-of-scope list) committed + pasted BEFORE any PR-A code. Then
+  build sessions consume the locked decisions as small PRs.
+
+PHASE C — Legacy Hoopers public-site cutover (operator-led, CC-supported).
+  Frank: README-DEPLOY steps 1-3 (create private repo legacyhoopers-site
+  under the astersports org -> upload the zip contents -> Vercel import,
+  team astersports, preset Other, no build command). Grade the 8 pages on
+  phone. Domain attach ONLY after approval; the DNS flip stays inside the
+  Squarespace cutover sequence (NOT now). CC verified the zip this session:
+  self-contained, all 16 assets local + referenced, zero external src deps,
+  clean vercel.json/robots.txt/sitemap.xml. After the repo exists: content
+  updates (records.html / calendar.html) become normal CC sessions once the
+  repo is added to session scope — same edit -> commit -> auto-deploy
+  workflow as the app.
+
+STANDING — phase closes per the AP #61 gate + §11.8 r4 fork ratification;
+the two open phase closes (money-seam; privacy/roster/funnel) still gate on
+Frank's device-smoke -> architect ratification.
+
+5. AUTOMATION BACKLOG (proposed; architect/Frank may strike any)
+
+- send_later in the environment -> arm the ~1h self check-in loop as the
+  default PR-babysitting mode (closes the webhook coverage gap in 2d).
+- Pre-grant legacyhoopers-site in the environment's repo scope once it
+  exists (makes Phase C content sessions one-step).
+- OPTIONAL: a PR-template checklist line "ledger §4 reconciled? (AP #45)" —
+  cheap nudge; the CI guard already enforces the doc-glob half.
+
+6. DECISIONS NEEDED: none blocking. Backlog items above are optional and
+   reversible; silence = defer.
+
+==============================================================================
+END.
