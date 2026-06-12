@@ -21,6 +21,7 @@ vi.mock('../../context/AuthContext', () => ({
   useAuth: () => ({ orgId: 'org-1', role: 'admin', myChildren: [] }),
 }));
 vi.mock('../../hooks/useDensity', () => ({ useDensity: () => ({ density: 'minimal' }) }));
+vi.mock('../../hooks/usePreferences', () => ({ usePreferences: () => ({ preferences: null, updatePreference: () => Promise.resolve() }) }));
 vi.mock('../../hooks/useWeather', () => ({ useWeather: () => null, getWeatherForTime: () => null }));
 vi.mock('../../hooks/useRefetchOnVisible', () => ({ useRefetchOnVisible: () => {} }));
 vi.mock('../../components/schedule/WeekStrip', () => ({ default: () => <div data-testid="week-strip" /> }));

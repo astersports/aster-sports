@@ -642,9 +642,25 @@ arc bodies.
   holds). §8 gate: `EventCardCoverageCompact.test.jsx` — rides+duties+denominator render at BOTH
   densities, zero-coverage stays quiet. Deliberately small; flagged candidate (NOT ruled, NOT
   built): coach/admin HOME next-event cards don't carry coverage chips — surface for a future
-  rulings round if wanted. NEXT: PR-F' (WeekStrip roles per the R2 deferral + SD-16 family-hub
-  phase 1 guardian-scoped authed ICS feed + F-S1 parent-overflow hide) → F-S2 standalone →
-  capability arcs.
+  rulings round if wanted.
+  **PR-F' SHIPPED (2026-06-12, rolling GO):** SD-16 PHASE 1 LIVE — the family calendar feed:
+  `guardians.feed_token` (+issued_at) via migration `20260612114742` (AP #21 mirror); authed-only
+  `get_or_create_family_feed_token()` SECDEF RPC (anon EXECUTE denied — probe-verified 42501;
+  mints lazily for the CALLING guardian, never team-derivable, stable URL per ratification §5);
+  NEW `family-feed` edge function v1 (token-bearer ICS of every event for every team the
+  guardian's kids are on; `${last_name} Family` calendar name; `<event_id>@ember` UIDs shared
+  with team feeds so dual subscribers dedup; deployed with EXPLICIT verify_jwt:false per the D7
+  corollary + config.toml entry; `family-feed/_helpers.ts` registered as a second icsCore mirror
+  pair, baseline 10). F-S1 + F-S3 CLOSED: parent TeamDetail overflow no longer duplicates the
+  bottom nav — its ONE item is "Subscribe to calendar" (mints + opens the generalized
+  SubscribeSheet: feedFn/feedToken/title props, public-page callers untouched). SD-8/R2 finish:
+  WeekStrip tab roles → plain buttons + aria-pressed, 44px floor, live-today re-anchor on NY day
+  rollover, dots from the FILTERED set (a dot for a hidden event was a lie). SD-7 (a-minimal):
+  `user_preferences.schedule_view` column persists viewMode; team filter reflects to the URL
+  (replaceState); transient filters stay session-local. Gates: WeekStripA11y test, mirror +
+  verify_jwt audits green over the new function, anon-denial probe. NEXT: F-S2 standalone
+  (preview banner + auto-expiry) → capability arcs (C1 weather → C2 directions → C9 family-hub
+  ph2 wireframes → C10 AI → C11 push). Schedule L99 sequence A'–F': COMPLETE.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player

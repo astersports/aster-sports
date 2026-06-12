@@ -11,6 +11,7 @@ import GamesView from '../components/schedule/GamesView';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import ScheduleListSections from '../components/schedule/ScheduleListSections';
 import { useDensity } from '../hooks/useDensity';
+import { usePreferences } from '../hooks/usePreferences';
 import { useWeather } from '../hooks/useWeather';
 import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
 import { isStaff } from '../lib/permissions';
@@ -26,7 +27,18 @@ export default function SchedulePage() {
   const [activeKidFilter, setActiveKidFilter] = useState(null);
   const [showWizard, setShowWizard] = useState(() => new URLSearchParams(window.location.search).get('wizard') === '1');
   const [showCancelled, setShowCancelled] = useState(false);
-  const [viewMode, setViewMode] = useState('all');
+  // SD-7 (a-minimal, PR-F'): viewMode persists per user; team reflects
+  // to the URL. Transient filters (kid/type/cancelled) stay session-local.
+  const { preferences, updatePreference } = usePreferences();
+  const [viewModeLocal, setViewModeLocal] = useState(null);
+  const viewMode = viewModeLocal ?? preferences?.schedule_view ?? 'all';
+  const setViewMode = (v) => { setViewModeLocal(v); updatePreference('schedule_view', v).catch(() => {}); };
+  const selectTeam = (t) => {
+    setSelectedTeam(t);
+    const u = new URL(window.location);
+    if (t) u.searchParams.set('team', t); else u.searchParams.delete('team');
+    window.history.replaceState({}, '', u);
+  };
   const [selectedDate, setSelectedDate] = useState(null);
   // SD-1: the dead 'schedule-list' density key is purged — the home-level
   // card_density default (§16.2) is the ONE density control.
@@ -36,9 +48,9 @@ export default function SchedulePage() {
 
   useRefetchOnVisible(refetch);
 
-  const eventDates = useMemo(() => {
-    return activities.map((a) => a.start_at ? new Date(a.start_at).toLocaleDateString('en-CA', { timeZone: 'America/New_York' }) : null).filter(Boolean);
-  }, [activities]);
+  // (SD-8 PR-F'): dots reflect the FILTERED set — a dot for an event the
+  // active kid/team/type filter hides was a lie. Memo moved below
+  // `filtered` accordingly.
 
   const handleDaySelect = (dateStr) => {
     setSelectedDate(dateStr);
@@ -65,6 +77,10 @@ export default function SchedulePage() {
     return list.sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
   }, [activities, selectedTeam, selectedType, showCancelled, activeKidFilter, myChildren]);
 
+  const eventDates = useMemo(() => {
+    return filtered.map((a) => a.start_at ? new Date(a.start_at).toLocaleDateString('en-CA', { timeZone: 'America/New_York' }) : null).filter(Boolean);
+  }, [filtered]);
+
   if (loading) return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={2} /></div>;
 
   return (
@@ -88,7 +104,7 @@ export default function SchedulePage() {
                 wasn't rendered). */}
             <WeekStrip eventDates={eventDates} selectedDate={selectedDate} onSelect={handleDaySelect} />
             <ChildFilterChips kids={myChildren} activeFilter={activeKidFilter} onChange={setActiveKidFilter} />
-            <FilterBar teams={activities} selectedTeam={selectedTeam} onSelectTeam={setSelectedTeam} selectedType={selectedType} onSelectType={setSelectedType} showCancelled={showCancelled} onToggleCancelled={() => setShowCancelled((v) => !v)} hideTeamRow={myChildren?.length >= 2} />
+            <FilterBar teams={activities} selectedTeam={selectedTeam} onSelectTeam={selectTeam} selectedType={selectedType} onSelectType={setSelectedType} showCancelled={showCancelled} onToggleCancelled={() => setShowCancelled((v) => !v)} hideTeamRow={myChildren?.length >= 2} />
             <ScheduleListSections filtered={filtered} data={data} density={density} role={role} />
           </>
         )}

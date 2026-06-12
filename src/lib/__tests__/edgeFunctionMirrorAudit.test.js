@@ -38,6 +38,9 @@ const PAIRS = [
   { ts: 'supabase/functions/send-tournament-message/_dispatch.ts', js: 'src/lib/briefings/sendDispatch.js', baseline: 4 },
   { ts: 'supabase/functions/briefing-auto-draft-tick/_dispatch.ts', js: 'src/lib/briefings/sendDispatch.js', baseline: 4 },
   { ts: 'supabase/functions/team-feed/_helpers.ts', js: 'src/lib/icsCore.js', baseline: 10 },
+  // SD-16 ph1 (PR-F'): family-feed carries a byte-identical copy of the
+  // team-feed mirror — same icsCore source of truth, same baseline.
+  { ts: 'supabase/functions/family-feed/_helpers.ts', js: 'src/lib/icsCore.js', baseline: 10 },
 ];
 
 function stripComments(src) {
