@@ -1,0 +1,314 @@
+ST. PATRICK'S (ARMONK, NY) WEBSITE REBUILD AUDIT — 2026-06-12
+================================================================
+Target: https://stpatrickinarmonk.org/ (Church of St. Patrick, 29 Cox Ave, Armonk NY 10504)
+Purpose: deep-dive audit of the current site to plan a fresh rebuild in Wix (via the
+Wix MCP connection), per operator request 2026-06-12.
+Methodology: L99-style multi-agent audit, 4 parallel lanes (site inventory/IA;
+homepage/visitor path; Teen Life/Religious Ed/youth; benchmarks + Wix capability
+mapping). ~95 searches/tool calls across lanes.
+
+ACCESS CONSTRAINTS (material to confidence levels)
+--------------------------------------------------
+1. NETWORK EGRESS: stpatrickinarmonk.org (and ecatholic.com) are NOT in this
+   environment's egress allowlist — every direct fetch returns 403
+   host_not_allowed. All on-site findings below come from search-engine-indexed
+   data (snippets, third-party directories, ParishesOnline bulletin PDFs), not
+   live page reads. Findings are labeled: [INDEXED] = snippet-confirmed,
+   [OPERATOR] = from the operator's live-page observations (authoritative per
+   source hierarchy), [INFERRED] = labeled inference.
+2. WIX MCP: connector auth is EXPIRED ("remove and re-add the Wix connector in
+   your agent settings"). No Wix build/list operations possible until re-auth.
+3. eCATHOLIC ADMIN: no access from this environment (no credentials, no MCP).
+   Any interim fixes to the live site are operator-applied.
+
+EXECUTIVE SUMMARY
+-----------------
+The parish's DATA is healthy; the site's PRESENTATION and IA are the problem.
+Mass times, confession times, bulletins (current to April 2026), and staff
+contacts are accurate and consistent with every third-party directory checked —
+there are no P0 wrong-facts errors. The liabilities are: a primary nav carrying
+year-stamped URLs (2021/2022-2023) for programs that are mostly STILL ACTIVE
+(the staleness is in titles/URLs, not the ministries); no "I'm new here" path;
+online giving that exists (WeShare) but is nearly undiscoverable; an active
+YouTube livestream channel the site doesn't feature; a Teen Life page whose one
+contact action renders broken; and a CYO page frozen at 2017-18 while actual
+registration lives on LeagueApps/Blue Sombrero. A Wix rebuild can fix all of
+this and preserve SEO via Wix's URL Redirect Manager (301s from every legacy
+path). Estimated migration effort: 40-60 hours (manual; eCatholic has no bulk
+export).
+
+KEY CORRECTIONS TO THE OPERATOR'S HIGH-LEVEL AUDIT
+--------------------------------------------------
+The operator's framing held up well overall; three findings revise it:
+1. "Walking With Purpose 2022-2023" and "Blaze" are NOT dead weight — both
+   programs are ACTIVE (WWP runs three current study tracks, Tue AM + PM;
+   BLAZE is its 7th-8th-grade-girls arm). [INDEXED — walkingwithpurpose.com
+   parish page + site snippets]. The fix is rename/refresh + redirect, NOT
+   deletion. "Advent Bible Study 2021" (and a "Lenten Bible Study 2022"
+   sibling) ARE genuinely dead → archive.
+2. Online giving exists: WeShare is the platform [INDEXED, inventory lane].
+   It is just invisible — no Donate CTA indexed anywhere. Rebuild keeps
+   WeShare and links out (industry-standard hybrid; Wix Donations is weaker
+   for recurring/fund-scoped parish giving).
+3. The parish ALREADY livestreams Mass to YouTube (@StPatricksArmonk —
+   Christmas Eve, renovation blessing, regular Masses) [INDEXED]. This is a
+   homepage hero asset the current site ignores entirely.
+
+A. SITE INVENTORY (30 confirmed URLs + platform stack)
+------------------------------------------------------
+Pages confirmed via indexing (all [INDEXED]):
+  /                                  homepage (mass times, contact, devotions)
+  /mass-times                        Sat 5:30p; Sun 8:30/10:30/12:30 (Oct-Jun);
+                                     Tue-Fri 8:30a; confession Sat 4:30-5:15p
+  /holy-day-schedule                 holy days (Easter 2025 still indexed)
+  /religiouseducation                CCD hub — 2025-26 calendars, communion +
+                                     confirmation forms, volunteer forms
+  /teen-life                         Teen Life (TGIF gr 6-8 + Life Teen gr 9-12;
+                                     coordinator Gwen Torre)
+  /teen-life-band                    teen worship band (gr 7+; active)
+  /cyo-bb                            "St. Pat's Hoops" — content frozen at
+                                     2017-18; registration actually on
+                                     LeagueApps + Blue Sombrero
+  /adult-baptism /baptismal-sponsor-form /adult-confirmation
+  /confirmation-sponsor-form /marriage /music4weddings /funerals
+  /rcia-rite-of-christian-initiation-of-adults
+  /liturgy-sacraments                sacraments hub
+  /ministries /staff /directions /events /calendar /news-events /bulletins
+  /charities                         Catholic Charities, Inner-City Scholarship
+                                     Fund, Cardinal's Appeal, CNEWA
+  /catholic-web-sites                external links page (ADNY, USCCB, Vatican)
+  /fiat-faith-in-action-task-force   outreach task force
+  /volunteer-team /share-care /ushers /the-armonk-cross
+  /welcome-march                     Dynamic Catholic "Welcome" retreat (NOT a
+                                     new-visitor welcome page)
+  /walking-with-purpose-2022-2023    ACTIVE program, stale URL/title
+  /advent-bible-study-2021           DEAD (also: /lenten-bible-study, 2022)
+  www.stpatrickinarmonk.org/events.html  legacy www + .html path → canonical-
+                                     ization issue alongside /events
+
+Platform stack discovered: eCatholic (site CMS, per operator + indirect
+fingerprints), ParishesOnline (bulletin hosting, container.parishesonline.com),
+WeShare (giving), FORMED (stpatrickinarmonk.formed.org), Flocknote (news/RSS
+references), Dynamic Catholic (Welcome retreats), LeagueApps + Blue Sombrero
+(CYO), YouTube (@StPatricksArmonk, livestream), Facebook
+(/stpatrickinarmonk), Instagram (handle indexed as "@stpatriick" — verify;
+likely typo or odd registration).
+
+Security posture: no on-site PDFs indexed (filetype:pdf clean), no rosters or
+personal-data leaks found. Staff names/emails public (normal for a parish).
+
+B. FINDINGS BY SEVERITY
+-----------------------
+P0 — broken parishioner-facing actions
+  P0-1 Teen Life coordinator email renders as "[email protected]" — Cloudflare
+       email-protection artifact; the page's only contact action is broken.
+       [OPERATOR, corroborated: the literal "[email protected]" artifact
+       surfaced in this audit's own search snippets for both teen-life and
+       reled addresses.] Root cause: Cloudflare obfuscation rewrites mailto
+       text; when the decoding script doesn't run (or content is copied), the
+       placeholder shows. Avoid in Wix: use Wix Forms for contact + plain
+       mailto links; do not enable third-party email obfuscation.
+  P0-2 No Graduation Mass presence anywhere on the site [OPERATOR +
+       confirmed absent in indexing]. The event with five flyers built for it
+       has zero web surface. (Time-sensitive: graduation season is NOW.)
+
+P1 — credibility / discoverability leaks
+  P1-1 Year-stamped URLs in primary nav: walking-with-purpose-2022-2023
+       (active program!), advent-bible-study-2021 (dead), Blaze 2021
+       registration [OPERATOR], religious-ed calendar pointing at 2022-23
+       [OPERATOR; current 2025-26 materials DO exist on /religiouseducation —
+       the nav points at the wrong vintage].
+  P1-2 Giving invisible: WeShare exists but no Donate/Give CTA indexed at any
+       level; /charities lists external causes, not parish giving.
+  P1-3 CYO page frozen at 2017-18 photos/clinics while registration lives
+       off-site (LeagueApps/Blue Sombrero) with no clear handoff.
+  P1-4 Teen Life top links are 2015 Steubenville retreat videos [OPERATOR];
+       not even indexed anymore — invisible to search, stale to visitors.
+  P1-5 Homepage is a widget stack with no hierarchy; Mass times listed twice;
+       hero slideshow image dated 2020 [OPERATOR]. No "I'm new here" path
+       (confirmed absent in indexing too).
+  P1-6 First Communion has no dedicated page — buried inside the Rel Ed hub.
+  P1-7 Staff page email formatting broken: "Pastor.stpatsoutlook.com",
+       "officestpatrickinarmonk.org" (missing @ / mangled) [INDEXED].
+  P1-8 No About/History page; no parish mission statement anywhere indexed.
+
+P2 — structure / UX
+  P2-1 Registration via raw Google Forms links with all-caps button text
+       [OPERATOR]; form URLs not even indexed (opaque paths to sign-up).
+  P2-2 YouTube livestream not surfaced on the site; no "Watch Mass" CTA.
+  P2-3 Events vs Calendar vs News-Events: three overlapping surfaces.
+  P2-4 Office hours not published anywhere indexed.
+  P2-5 Three phone numbers (914-273-9724 office, 914-531-1760 main,
+       914-531-1759 Rel Ed) with no labeling of which to call for what.
+  P2-6 Adoration signup (icstp.weadorehim.com, code ADORE) requires an
+       activation-code treasure hunt.
+  P2-7 Flocknote/email signup not discoverable.
+  P2-8 www vs non-www + legacy .html paths (events.html) — canonicalization.
+  P2-9 Instagram handle "@stpatriick" — verify correct handle before reuse.
+
+P3 — polish
+  P3-1 Staff directory lacks photos/bios.
+  P3-2 Easter 2025 schedule still indexed (seasonal content not archived).
+  P3-3 Plaintext emails exposed to scrapers (acceptable; prefer forms).
+
+C. PER-AUDIENCE JOURNEYS (current vs target)
+--------------------------------------------
+1. NEW VISITOR ("just moved to Armonk"): today — lands on widget stack, must
+   scan for Mass times among devotions/QR/phone blocks; no welcome path.
+   Target — hero with one-line welcome + Mass times card above the fold +
+   "New here? Start here" CTA → /new-here (what to expect, parking, register,
+   meet the staff, FAQ).
+2. CURRENT PARISHIONER: today — bulletins fine, calendar split across three
+   pages, giving invisible. Target — single Events calendar, persistent Give
+   button (→ WeShare), Watch Mass Live embed, Flocknote signup in footer.
+3. RELIGIOUS ED FAMILY: today — current 2025-26 forms exist but live in a
+   pile on one hub page; nav points at a 2022-23 calendar. Target — Rel Ed
+   landing with grade-banded lanes + dedicated First Communion + Confirmation
+   pages + Wix Forms registration.
+4. TEEN / TEEN'S PARENT: today — broken contact email, 2015 retreat videos,
+   raw Google Form links, no Graduation Mass. Target — rebuilt Teen Life page
+   (Phase 1): TGIF vs Life Teen tracks, Gwen Torre contact via working form +
+   mailto, Graduation Mass block, Teen Life Band, photo-driven, Window-flyer
+   design language.
+5. SACRAMENT SEEKER (wedding/baptism/funeral): today — pages exist and are
+   decent; scattered. Target — one Sacraments hub with per-sacrament lanes
+   (timeline → prep → forms → contact).
+
+D. PROPOSED WIX SITEMAP (v1)
+----------------------------
+  /                 Home: hero (fresh photo or live-Mass still), Mass times
+                    card, next 3 events, "New Here" + "Give" + "Watch Live"
+                    CTAs, ministries teaser, bulletin link, contact strip
+  /new-here         visitor path (what to expect, times, parking, register)
+  /mass-sacraments  Mass + confession times, holy days (current year only)
+      /baptism /first-communion /confirmation /marriage /funerals /rcia
+  /faith-formation  Religious Ed hub (grade bands, calendar, registration)
+      /teen-life    (Phase 1 flagship — includes Graduation Mass block)
+      /walking-with-purpose   (year-free URL; BLAZE section within or below)
+  /ministries       directory incl. FIAT, ushers, volunteer team, Share&Care,
+                    music (NEW — choir/wedding music consolidated)
+  /events           single calendar (Wix Events; recurring Masses + parish
+                    events; replaces events/calendar/news-events trio)
+  /bulletins        ParishesOnline link-through or embedded list
+  /give             WeShare link-out + Cardinal's Appeal + charities
+  /about            history, The Armonk Cross story, staff (photos/bios),
+                    office hours, contact (Wix Form), directions
+  Footer: address, labeled phone numbers, social links (verified handles),
+  Flocknote signup, FORMED link.
+  301 redirects: every legacy URL in section A maps to its successor via Wix
+  URL Redirect Manager (max 5,000 redirects — we need ~30).
+
+E. DESIGN LANGUAGE (Window-flyer palette, WCAG-corrected)
+---------------------------------------------------------
+Palette: hunter green (~#355E3B) / gold (~#D4AF37) / ivory (~#F5F5DC),
+charcoal #333 for body text.
+WCAG gates (verified ratios):
+  - Gold on ivory FAILS (~2:1) — never use for text.
+  - Ivory on hunter green PASSES (~8:1) — primary header/CTA combo.
+  - Gold on hunter green ~3.5:1 — large headings (18pt+/14pt bold) only.
+  - Charcoal on ivory PASSES (~18:1) — body text.
+Usage: green+ivory section blocks; gold as accent (borders, icons, hover
+states, large display headings on green). Serif display + sans body. Real
+parish photos over stock (youth pages especially). Buttons: ivory text on
+green, gold border on hover.
+
+F. WIX CAPABILITY MAP (what carries the parish needs)
+-----------------------------------------------------
+  Mass times + events     Wix Events recurring events (or static card + GCal
+                          embed via "Events with Google Calendar" app)
+  Forms (replace raw      Wix Forms — registration, contact, prayer requests,
+  Google Forms)           volunteer; responses in dashboard + email notify
+  Giving                  link-out to existing WeShare (keep); Wix Donations
+                          only for one-off seasonal drives
+  Livestream              YouTube embed of @StPatricksArmonk (no native RTMP)
+  Bulletins               keep ParishesOnline; link/embed from /bulletins
+  Blog/news               Wix Blog (announcements; not the weekly bulletin)
+  SEO/redirects           Wix URL Redirect Manager — 301s for all legacy
+                          paths incl. .html and year-stamped URLs
+  Accessibility           Wix Accessibility Wizard + manual WAVE pass; owner
+                          responsible for alt text/headings/contrast
+  Multilingual            Wix Multilingual exists if Spanish is ever needed
+                          (manual review required)
+Limitations to plan around: no native email hosting (parish email stays
+wherever it lives today — likely Outlook per pastor address); no ChMS (not
+needed — parish has no ChMS dependency surfaced); weak PDF library (host
+form PDFs in Google Drive or convert to Wix Forms); member areas basic.
+
+G. MIGRATION + PHASING (revised from operator's proposal)
+---------------------------------------------------------
+The operator's original Phase 1 was "rebuild Teen Life within eCatholic via
+custom CSS." With the Wix lane chosen, recommended phasing:
+
+  PHASE 0 (operator, ~1 hr, this week — interim fixes on live eCatholic):
+    - Fix the Teen Life broken email (use plain mailto or spell out address).
+    - Add a Graduation Mass announcement block to Teen Life + homepage.
+      (Graduation season is NOW; don't wait for the Wix build.)
+    - Drop dead nav items (Advent 2021; retitle WWP nav label year-free).
+    Rationale: zero-cost credibility patches while the rebuild proceeds;
+    requires operator's eCatholic admin login (CC has none).
+
+  PHASE 1 (Wix build, flagship = Teen Life): stand up the Wix site on a
+    staging URL — global theme (palette above), nav skeleton per sitemap,
+    Home, and the full Teen Life page (content, structure, Graduation Mass
+    block, working contact form, Window-flyer design language).
+    BLOCKED ON: Wix connector re-auth (see H).
+
+  PHASE 2 (full content migration): remaining pages per sitemap (~40-60 hrs
+    manual; no eCatholic export). Wix Forms replace Google Forms; Events
+    calendar consolidation; staff page rebuild; About/History; /give.
+
+  PHASE 3 (cutover): 301 redirect table; DNS move of stpatrickinarmonk.org
+    to Wix (transfer or point); MX records UNTOUCHED (email continuity);
+    Search Console sitemap submission; 30-60 day eCatholic grace period,
+    then decommission. NOTE: replatform decision is already made (Wix), so
+    the operator's old "Phase 3 = replatform decision" is superseded.
+
+H. BLOCKERS (operator action required)
+--------------------------------------
+  B-1 Wix MCP connector auth expired → remove and re-add the Wix connector
+      in agent settings. Gates ALL build work.
+  B-2 Egress allowlist: add stpatrickinarmonk.org (and optionally
+      ecatholic.com) to the environment's network settings so a follow-up
+      session can verify this audit line-by-line against live pages and
+      fetch content verbatim for migration.
+  B-3 eCatholic admin access stays with the operator — needed for Phase 0
+      interim fixes and for content/asset harvesting (images, form PDFs,
+      any email lists in eCatholic Connect).
+  B-4 Confirm authorization: CC assumes the operator is acting with the
+      parish's blessing on this rebuild (content will be copied and a domain
+      cutover eventually executed).
+  B-5 Verify the real Instagram handle and the pastor's correct email before
+      they're printed on the new site.
+
+I. OUT OF SCOPE (this audit)
+----------------------------
+  - Performance/Lighthouse and true mobile rendering of the current site
+    (unverifiable without egress; moot post-replatform).
+  - eCatholic contract/billing review; ChMS selection; email migration.
+  - Content writing for ministries beyond structure (needs parish input).
+  - Photography (needs parish assets; stock is an anti-goal).
+
+J. OPEN DECISIONS FOR OPERATOR
+------------------------------
+  D-1 Phase 0 interim eCatholic fixes: do them (recommended), or go
+      straight to Wix and live with the broken email until cutover?
+  D-2 Domain at cutover: transfer registration to Wix vs keep registrar and
+      repoint DNS (recommended: keep registrar, repoint — lower risk, email
+      MX untouched).
+  D-3 Mass times on Home: static card (recommended for snippet/SEO clarity)
+      vs Wix Events listing.
+  D-4 Bulletin surface: plain link to ParishesOnline (recommended) vs
+      embedded viewer.
+
+CONFIDENCE NOTE
+---------------
+All on-site structure findings are search-index-derived (see Access
+Constraints). Before Phase 2 content migration begins, a live-page
+verification pass (post B-2) should walk every URL in section A and diff
+against this inventory — expect a small number of unindexed pages to
+surface (e.g., the Blaze registration page the operator saw in nav, which
+indexing no longer returns).
+
+— Compiled by CC, 2026-06-12. Lanes: inventory/IA, homepage/visitor-path,
+  youth surfaces, benchmarks+Wix. Full lane reports available in session
+  transcript on request.
