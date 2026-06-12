@@ -608,9 +608,26 @@ arc bodies.
   the VF-11 batch-hook PRESENCE gate (`batchHookPresence.test.js` — PR-B' CI fails if the PR-A'
   hook or its card wiring is absent). §16.8 parent surfacing note: audit SELECT is staff-only
   this phase; the parent-visible override marker rides with the parent-surface wave (flagged).
-  NEXT: PR-C' (wizard/import end_at fix + SD-9 now-row weather TZ fix + SD-8 WeekStrip
-  fix-in-place + hide-in-Games-mode) → PR-D'..F' per the ratified sequence → capability arcs
-  (C1 weather → C2 directions → C9 family-hub ph2 → C10 AI → C11 push).
+  **PR-C' SHIPPED (2026-06-12, operator GO):** DB-8 closed forward — the import path's literal
+  `end_at: null` (useImportSchedule:100) now writes start + EVENT_DEFAULT_DURATION_MS via the
+  exported `buildImportEventRow` (unit-locked); DL-13 weather fixed — Open-Meteo
+  `&timeformat=unixtime`, epoch-ms matching in `getWeatherForTime`, v2-versioned cache/fallback
+  keys orphaning the string-shaped v1 entries (the TZ-naive NY-local strings parsed browser-local
+  were shifting every hour match by the viewer's TZ delta); SD-8 WeekStrip fixed in place — cells
+  now derive dateStr/dayNum/dayAbbr from ONE NY-anchored date-only value stepped with UTC calendar
+  arithmetic (was: NY dateStr + browser-local getDate/getDay labels = mismatched cells off-NY;
+  DST-proof, no instant-stepping); SD-5/VF-12b — WeekStrip hidden in Games mode (was mounted but
+  dead); EventCard "Today" badge re-pinned NY (was toDateString browser-local). NEW CI CLASS
+  (R12): `calendarMathAudit.test.js` — toDateString + getTimezoneOffset banned outright, getDay
+  banned outside a rationale'd allowlist (comment-line-aware scan). **R12 SWEEP BATCH flagged
+  (pre-existing, allowlisted, NOT fixed tonight):** `hooks/useInboxHistory.js` (inbox week-start),
+  `lib/engine/digestPeriod.js` (digest default period), `lib/tournamentWeekend.js` (Sat/Sun
+  detection on date-only parses), `lib/alerts/briefingOverdueEvaluators.js` (overdue week
+  anchor) — each is a behavior change to briefing/inbox week boundaries; needs its own pass
+  (briefingCronHelpers is CLEAN — Intl-parts derivation; mirror-file discipline applies when the
+  sweep lands). NEXT: PR-D' (SD-14 directions 3-way Apple/Google/Waze from lib/mapsUrls.js,
+  venue via location_id JOIN not ilike) → PR-E' (SD-15 coverage badges) → PR-F' (WeekStrip roles
+  + SD-16 family-hub ph1 + F-S1) → capability arcs.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player

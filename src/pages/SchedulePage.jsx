@@ -79,12 +79,14 @@ export default function SchedulePage() {
         </div>
         <div style={{ width: 32, height: 3, backgroundColor: 'var(--as-accent)', borderRadius: 2, marginBottom: 8 }} />
 
-        <WeekStrip eventDates={eventDates} selectedDate={selectedDate} onSelect={handleDaySelect} />
-
         {viewMode === 'games' ? (
           <GamesView activities={activities} orgId={orgId} />
         ) : (
           <>
+            {/* SD-5/SD-8 (VF-12b): strip hidden in Games mode — it was
+                mounted but dead there (day-taps scrolled a list that
+                wasn't rendered). */}
+            <WeekStrip eventDates={eventDates} selectedDate={selectedDate} onSelect={handleDaySelect} />
             <ChildFilterChips kids={myChildren} activeFilter={activeKidFilter} onChange={setActiveKidFilter} />
             <FilterBar teams={activities} selectedTeam={selectedTeam} onSelectTeam={setSelectedTeam} selectedType={selectedType} onSelectType={setSelectedType} showCancelled={showCancelled} onToggleCancelled={() => setShowCancelled((v) => !v)} hideTeamRow={myChildren?.length >= 2} />
             <ScheduleListSections filtered={filtered} data={data} density={density} role={role} />

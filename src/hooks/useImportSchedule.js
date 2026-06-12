@@ -10,6 +10,23 @@ import { useAuth } from '../context/AuthContext';
 import { summarize, validateParsedRow } from '../lib/import/scheduleValidation';
 import { classifyRowAgainstExisting, dedupSummary } from '../lib/import/scheduleDeduplication';
 import { buildAssignmentRows } from '../lib/import/coverageConflicts';
+import { EVENT_DEFAULT_DURATION_MS } from '../lib/eventWindows';
+
+// DB-8 forward fix (SCHEDULE_L99_BUILD_SPEC §1.5, PR-C'): the import
+// path wrote end_at NULL — the source of the never-graying-out event
+// class. Every imported row now lands with start + the ONE default
+// duration. Exported for the §8 acceptance test.
+export function buildImportEventRow(r, tournamentId, tournamentName) {
+  return {
+    team_id: r.resolved.team_id, event_type: 'tournament', title: `${r.team} vs ${r.opponent}`,
+    start_at: r.resolved.start_at,
+    end_at: new Date(new Date(r.resolved.start_at).getTime() + EVENT_DEFAULT_DURATION_MS).toISOString(),
+    tournament_id: tournamentId, tournament_name: tournamentName,
+    location_id: r.resolved.location_id, sub_location: r.court || null,
+    opponent: r.opponent || null, home_away: r.home_away || 'neutral',
+    is_bonus_game: !!r.is_bonus, status: 'scheduled', publish_status: 'published',
+  };
+}
 
 export function useImportSchedule(tournamentId) {
   const { orgId, user } = useAuth();
@@ -95,14 +112,7 @@ export function useImportSchedule(tournamentId) {
     setState('committing'); setError(null);
     try {
       const newRows = rows.filter((r) => r.status !== 'error' && r.dedup === 'new');
-      const toInsert = newRows.map((r) => ({
-        team_id: r.resolved.team_id, event_type: 'tournament', title: `${r.team} vs ${r.opponent}`,
-        start_at: r.resolved.start_at, end_at: null,
-        tournament_id: tournamentId, tournament_name: tournament?.name,
-        location_id: r.resolved.location_id, sub_location: r.court || null,
-        opponent: r.opponent || null, home_away: r.home_away || 'neutral',
-        is_bonus_game: !!r.is_bonus, status: 'scheduled', publish_status: 'published',
-      }));
+      const toInsert = newRows.map((r) => buildImportEventRow(r, tournamentId, tournament?.name));
       const toUpdate = rows.filter((r) => r.status !== 'error' && r.dedup === 'updated' && r.matched_event_id);
       let insertedIds = [];
       if (toInsert.length) {
