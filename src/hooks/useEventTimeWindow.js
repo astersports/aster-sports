@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import {
-  DEFAULT_EVENT_DURATION_MS as DEFAULT_DURATION_MS,
+  eventEnd,
   GAME_DAY_WINDOW_AFTER_MS as GAME_DAY_POST_MS,
   GAME_DAY_WINDOW_BEFORE_MS as GAME_DAY_PRE_MS,
 } from '../lib/eventWindows';
@@ -19,7 +19,7 @@ export function computeFlags(event, now) {
     return { isPast: false, isLive: false, isGameDay: false, isUpcoming: false, timeToStart: null };
   }
   const start = new Date(event.start_at).getTime();
-  const end = event.end_at ? new Date(event.end_at).getTime() : start + DEFAULT_DURATION_MS;
+  const end = new Date(eventEnd(event)).getTime();
   const winStart = start - GAME_DAY_PRE_MS;
   const winEnd = end + GAME_DAY_POST_MS;
   return {

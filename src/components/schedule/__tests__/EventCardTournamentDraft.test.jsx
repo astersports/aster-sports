@@ -9,8 +9,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
+const auth = vi.hoisted(() => ({ role: 'admin' }));
 vi.mock('../../../context/AuthContext', () => ({
-  useAuth: () => ({ role: 'admin', myChildren: [] }),
+  useAuth: () => ({ role: auth.role, myChildren: [] }),
 }));
 vi.mock('../../../hooks/useNow', () => ({ useNow: () => Date.now() }));
 vi.mock('../../../hooks/useMapsUrl', () => ({ useMapsUrl: () => null }));
@@ -63,5 +64,17 @@ describe('EventCard — tournament DRAFT pill invariant', () => {
     };
     const { container } = renderInRouter(<EventCard event={event} />);
     expect(container.textContent).not.toMatch(/Draft/);
+  });
+
+  it('UX-11: parents never see the DRAFT pill (staff-only chip)', () => {
+    auth.role = 'parent';
+    const event = {
+      id: 'e5', team_id: 't-1', event_type: 'tournament',
+      start_at: inWeeks(2), opponent: null,
+      status: 'scheduled', teams: TEAM, location_name: 'TBD',
+    };
+    const { container } = renderInRouter(<EventCard event={event} />);
+    expect(container.textContent).not.toMatch(/Draft/);
+    auth.role = 'admin';
   });
 });

@@ -57,15 +57,21 @@ describe('EventCard — cancelled state invariant', () => {
     expect(container.textContent).toMatch(/in \d+h|in \d+m/);
   });
 
-  it('cancelled event disables ChildRsvp picker for parent', () => {
+  it('cancelled event renders NO RSVP picker (SD-2 strengthened: zero actionable RSVP UI on cancelled)', () => {
+    // Pre-spine this invariant asserted the picker rendered disabled;
+    // the spine card hides it entirely — same invariant class (no
+    // live-looking RSVP on a cancelled card), stronger form.
     const event = {
       id: 'e-cancelled', team_id: 't-1', event_type: 'practice',
       start_at: inOneHour(), end_at: inTwoHours(),
       status: 'cancelled', teams: TEAM, location_name: 'Test Gym',
     };
-    const { getAllByTestId } = renderInRouter(<EventCard event={event} />);
-    const pickers = getAllByTestId('child-rsvp');
-    expect(pickers.length).toBeGreaterThan(0);
-    pickers.forEach((p) => expect(p.dataset.disabled).toBe('true'));
+    const { queryAllByTestId } = renderInRouter(<EventCard event={event} />);
+    expect(queryAllByTestId('child-rsvp')).toHaveLength(0);
+
+    // Control: same event un-cancelled DOES render the picker.
+    const scheduled = { ...event, id: 'e-ok', status: 'scheduled' };
+    const { queryAllByTestId: q2 } = renderInRouter(<EventCard event={scheduled} />);
+    expect(q2('child-rsvp').length).toBeGreaterThan(0);
   });
 });

@@ -1,0 +1,369 @@
+==============================================================================
+SCHEDULE L99 BUILD SPEC  —  AsterSports / skyfire-app
+Date 2026-06-12. Architect (Claude.ai) -> CC, via Frank relay (§11.8 r1/r6).
+Source of truth: RULINGS_SCHEDULE_L99_2026-06-12, RULINGS_SCHEDULE_MULTIAGENT_2026-06-12,
+ARCHITECT_RATIFICATION_P0_LANE_2026-06-12, P0_LANE_EXECUTION_REPORT_2026-06-12.
+This is the consolidated build bible for PR-A' through PR-F'. Every render named
+below is delivered alongside this spec.
+LANE: architect specs + renders only. The Supabase write tools sat in context for
+this turn, unused. CC implements via targeted str_replace (<=150 lines/file), runs
+every migration via MCP + AP#21 mirror same-turn, drives the full PR cycle. Frank
+gives the word to start PR-A' and any money/RLS/security GO.
+==============================================================================
+
+§0 AUDIT VERDICT + SCOPE
+------------------------------------------------------------------------------
+The P0 execution report closed the production-down lane (public funnel + ICS +
+QR alive, anon surface locked, game_results gate composed). What remains is the
+Schedule REDESIGN proper: the highest-frequency surface after Home, currently
+heroless, with a dead density key and four incoherent "is it done?" definitions.
+The redesign is already fully ruled (SD-1..SD-18). This spec converts those
+rulings into build shapes, file targets, helper contracts, and acceptance gates.
+
+IN SCOPE: SchedulePage redesign across all three roles; the time-state spine;
+always-on RSVP (post batch-hook); directions; coverage badges; weather (now-row
++ deferred per-venue); WeekStrip fix; F-S1/F-S2 smoke fixes; family-hub phase 0-1
+hooks. OUT OF SCOPE this arc: per-player game stats (§16.12 locked 2026); AI
+conflict detection (SD-17, sequenced AFTER family-hub); push (SD-18 backlog);
+ML; the R-1/R-2 anon column re-audit (named triggers, separate pass).
+
+RENDERS DELIVERED WITH THIS SPEC:
+  - schedule-parent-mobile.html      (parent role, the relay-gap render)
+  - schedule-coach-mobile.html       (coach role)
+  - schedule-admin-mobile.html       (admin role)
+  - schedule-timestate-spine-mobile.html  (the PR-A' primitive, all 3 states)
+  - schedule-smoke-fixes-mobile.html (F-S1 overflow + F-S2 preview banner)
+
+==============================================================================
+§1 THE TIME-STATE SPINE  (PR-A' foundation — build this FIRST)
+==============================================================================
+The redesign rests on ONE shared time-state primitive. Today there are 4
+divergent "is it done?" definitions and 3 duration constants; in-progress games
+fall into "Past" mid-game; 5 production events with NULL end_at never gray out.
+The spine collapses all of that.
+
+1.1 HELPER  —  src/lib/eventWindows.js  (NEW)
+  export const EVENT_DEFAULT_DURATION_MS = 2 * 60 * 60 * 1000; // 2h, the ONE constant
+  export function eventEnd(event) {
+    // end_at when present; else start_at + default duration. Never returns null
+    // for an event with a start_at.
+    return event.end_at ?? (new Date(new Date(event.start_at).getTime()
+           + EVENT_DEFAULT_DURATION_MS)).toISOString();
+  }
+  export function eventTimeState(event, now = Date.now()) {
+    const start = new Date(event.start_at).getTime();
+    const end   = new Date(eventEnd(event)).getTime();
+    if (now < start) return 'upcoming';
+    if (now <= end)  return 'happening_now';
+    return 'completed';
+  }
+  CONTRACT: three states only — 'upcoming' | 'happening_now' | 'completed'.
+  Every consumer reads this. The 4 legacy is-past predicates and the 3 scattered
+  duration constants are DELETED and re-pointed here (grep gate in §8).
+
+1.2 STATE TREATMENTS (the visual contract the renders encode)
+  upcoming      -> full-color card; team-color left stripe at full opacity;
+                   the NEXT upcoming event in the active filter is the NOW SLOT
+                   (pinned to top of Upcoming, accent hairline, countdown chip).
+  happening_now -> "live" treatment: green status dot + "Happening now" label
+                   where the countdown would be; card full color; sits above
+                   Upcoming in its own implicit band (no separate header needed
+                   when only the NOW slot is live; if multiple, a "Happening now"
+                   subhead).
+  completed     -> retired into the COMPLETED section (collapsed by default,
+                   header carries summary "Past 7 days · N events"); card at
+                   0.55 opacity; W/L/T chip when a published game_result exists
+                   (SD-5: League/Practice never carry a result; Games may).
+
+1.3 COUNTDOWN (CP-5 fix)
+  Countdown is the UPCOMING treatment at EVERY density, not a detailed-only chip.
+  The minimal-density branch that suppressed it is deleted. Show countdown on the
+  NOW SLOT always; on other upcoming events show it when < 24h (existing
+  threshold, retained). Format: ">2d" / "Tomorrow 4:30p" / "in 3h" / "in 25m".
+  At start (countdown hits 0) the card flips to happening_now via eventTimeState,
+  not via a separate timer.
+
+1.4 COMPLETED SECTION
+  Window: last 7 days (existing). Collapsed by default. Header summary text.
+  Inside, newest-first. W/L chip pulls from the published game_result composed
+  through the events gate (P0 §D3 shape). No result -> no chip, just the dimmed
+  card. NO per-player stats (§16.12).
+
+1.5 DB-8 (import writes end_at NULL)
+  Forward fix lands in the wizard/import path (PR-C'). The spine TOLERATES NULL
+  end_at via eventEnd() so the 5 legacy NULL-end events gray out correctly NOW;
+  the import fix stops the NULL class from growing. Both required; neither alone.
+
+==============================================================================
+§2 PR SEQUENCE  (hard locks are non-negotiable)
+==============================================================================
+PR-A'  TIME-STATE SPINE + BATCH HOOK.
+  - lib/eventWindows.js (§1.1); re-point the 4 is-past defs + 3 duration consts.
+  - NOW slot, countdown-at-every-density (CP-5), completed section w/ W/L chip.
+  - DB-8 tolerance via eventEnd (the import-side fix is PR-C').
+  - SCH-2/DL-7 BATCH RSVP + ACTIVATION HOOK: one batched fetch of RSVP +
+    activation state for the whole visible list.
+  *** VF-11 HARD LOCK: the batch hook ships IN PR-A', BEFORE PR-B' ungates
+      always-on RSVP. If always-on RSVP ungates over per-row fetches, every
+      parent detonates a 47-92-request N+1. PR-B' MUST NOT MERGE before PR-A'. ***
+  Renders: schedule-timestate-spine-mobile.html (primitive), all 3 role renders
+  (the spine is visible in each).
+
+PR-B'  ALWAYS-ON RSVP + isRsvpOpen + ChildRsvp relocation.
+  - SD-11: one isRsvpOpen(start_at) helper in lib/eventWindows.js; RSVP controls
+    disable AT start_at everywhere (card + detail). Staff override on the detail
+    surface only, audit-logged (override_audit, §16 stream).
+  - SD-12: relocate ChildRsvp to src/components/shared/ (consumed by Schedule +
+    Event Detail + family hub).
+  - Ungates the always-on RSVP control on the card. DEPENDS ON PR-A' batch hook.
+  Render: the RSVP control states are in the role renders (open / disabled-at-
+  start / staff-override).
+
+PR-C'  WIZARD / IMPORT + WEATHER.
+  - DB-8 import end_at fix (stop NULL-end class).
+  - SD-9 weather: now-row weather ships NOW via Open-Meteo &timeformat=unixtime
+    (DL-13 TZ fix). Per-venue weather DEFERRED, gated on DB-10 dead-column drop
+    (locations.latitude/longitude pair already dropped from anon grant; the
+    column drop + coord backfill is the trigger).
+  - SD-8 WeekStrip fix-in-place; hide the strip in Games mode (SD-5).
+
+PR-D'  DIRECTIONS (SD-14).
+  - Detail-tab 3-way: Apple / Google / Waze, URLs from a NEW lib/mapsUrls.js.
+  - Card stays single Google link (unchanged).
+  - Resolve venue via JOIN (location_id), NOT ilike on a name string.
+
+PR-E'  COVERAGE BADGES (SD-15).
+  - Unmet rides + unfilled duties badges, ALWAYS visible when non-zero, at EVERY
+    density. Coach + admin surfaces primarily; parent sees their own commitments.
+
+PR-F'  WEEKSTRIP ROLE FIX + FAMILY-HUB PHASE 0-1.
+  - WeekStrip role behavior (the R2 deferral from the L99 round lands here).
+  - SD-16 family hub phase 0 (P0 repair already done) + phase 1 (guardian-scoped
+    per-family ICS feed). Phase 1 mints the guardian token through an AUTHED RPC
+    scoped to the calling guardian — NEVER anon, NEVER a team-id-derivable path,
+    NEVER signed-short-URL (calendar clients re-pull a stable URL). See
+    ratification §5. Phase 2 wireframed later.
+
+SMOKE FIXES (fold into the nearest PR or ship as a tiny standalone):
+  F-S1 parent overflow hide -> PR-F' (TeamDetail surface) or standalone.
+  F-S2 preview banner + auto-expiry -> standalone tiny PR (cross-surface, app
+       shell). Recommend standalone, it's app-wide not Schedule-local.
+
+==============================================================================
+§3 PER-SD BUILD SHAPES  (cross-referenced to PR + render)
+==============================================================================
+SD-1  density -> collapse to ONE default; purge the dead 'schedule-list' /
+      legacy 'medium' density key; the only density control is the home-level
+      user_preferences.card_density (§16.2). Tighten the CHECK. [PR-A']
+SD-2  time-state spine = §1. [PR-A']  (eventTimeState, NOW slot, completed W/L,
+      countdown-at-every-density, DB-8 tolerance + import fix in PR-C')
+SD-3  results browsing = recent + link to Records, NOT a second pager. VERIFY
+      Records supports a per-team deep link; if yes, link to it; if no, fall
+      back to the recent-list-only treatment (do NOT build a 2nd results
+      browser parallel to Records). [PR-A' completed section links out]
+SD-4  share = staff-only, shown when a team is in context / single-team view.
+      [admin render; coach when single-team]
+SD-5  Games mode is cancelled-free BY DESIGN, documented + tested (not the
+      silent divergence that was the bug). WeekStrip hidden in Games mode.
+      [PR-C']
+SD-6  attendance denominator = rostered + activated-academy. "8 going / 10
+      rostered" reads against the real committed denominator, not raw roster.
+      [coach render]
+SD-7  viewMode (List / Week) + team in the URL (?team=, ?view=). [admin render]
+SD-8  WeekStrip fix-in-place (not a rebuild). [PR-C' mechanics; PR-F' roles]
+SD-9  weather: now-row now (unixtime TZ fix); per-venue deferred on DB-10.
+      [PR-C']
+SD-11 isRsvpOpen(start_at) helper; disable at start everywhere; staff override
+      audit-logged on detail. [PR-B']
+SD-12 ChildRsvp -> src/components/shared/. [PR-B']
+SD-13 game_results gate — DONE in the P0 lane (composed through events
+      visibility, ratified D3). No further work.
+SD-14 directions 3-way from lib/mapsUrls.js; card stays Google; JOIN not ilike.
+      [PR-D']
+SD-15 coverage badges always-visible-non-zero every density. [PR-E']
+SD-16 family hub phase 0 (done) + phase 1 guardian-scoped authed feed. [PR-F']
+SD-17 AI conflict-detection — the right <=1 pick, SEQUENCED AFTER the family-hub
+      arc. Not this spread. [parked]
+SD-18 push — backlog; ML stays §16.12-locked. [parked]
+
+==============================================================================
+§4 HELPER CONTRACTS  (the shared primitives)
+==============================================================================
+lib/eventWindows.js (NEW):
+  EVENT_DEFAULT_DURATION_MS, eventEnd(event), eventTimeState(event, now),
+  isRsvpOpen(startAt, now) -> boolean (now < start_at), formatCountdown(target,
+  now) -> string. ALL time math via Date / toLocale* — NO manual TZ offset
+  arithmetic (new CI grep class, §8).
+lib/mapsUrls.js (NEW, PR-D'):
+  appleMapsUrl(loc), googleMapsUrl(loc), wazeUrl(loc) — built from lat/lon when
+  present, else address. loc resolved via location_id JOIN.
+useScheduleData hook (PR-A'):
+  ONE batched fetch: events (visible window) + RSVP state + activation state +
+  game_result summary for completed. org_id-scoped (.eq('org_id') first, AP#37).
+  Returns per-event {event, timeState, rsvp, denominator, coverage, result}.
+  This is the VF-11 batch hook — the anti-N+1 spine.
+
+==============================================================================
+§5 PER-ROLE SURFACE SPECS  (-> the three role renders)
+==============================================================================
+SHARED CHROME: status-bar safe-area inset; header with org eyebrow (uppercase,
+--as-text-meta) + "Schedule"; bottom nav (Home / Schedule / Records / More);
+44px taps; cool-gray page; cards bg-card / 10px / shadow-sm / team-color stripe.
+
+PARENT  (schedule-parent-mobile.html):
+  - Child filter chips: All / <each own child> (own children ONLY; §16.7).
+    Multi-kid families (Milo 8U, Charlie 11U) see per-kid color coding.
+  - Sections in order: HAPPENING NOW (only if live) -> UPCOMING (NOW slot pinned,
+    countdown) -> COMPLETED (collapsed, W/L chips).
+  - RSVP control on each upcoming card (always-on post-PR-B'); disabled at start
+    with "RSVP closed" (isRsvpOpen). Per-kid RSVP when "All" is selected.
+  - Coverage: parent sees THEIR commitments (e.g. "You're driving" / "You signed
+    up: snacks") not the org rollup.
+  - NO teammate stats, NO other-family data.
+
+COACH  (schedule-coach-mobile.html):
+  - Team filter (coach's teams only).
+  - Attendance denominator per event: "8 going / 10 rostered" (SD-6 rostered +
+    activated-academy). Tap -> roster RSVP breakdown.
+  - Coverage badges ALWAYS visible when non-zero: "2 rides unfilled", "Snacks
+    open" (SD-15).
+  - Completed section shows W/L chip + a "Add result" affordance for Games
+    missing a result (staff).
+  - Share appears when a single team is in context (SD-4).
+
+ADMIN  (schedule-admin-mobile.html):
+  - viewMode toggle List / Week (SD-7); team + view in URL.
+  - Wizard FAB (create event) — bottom-right, 56px, accent.
+  - Share (SD-4) staff-only, in the header when team-in-context.
+  - Coverage rollup across teams.
+  - WeekStrip visible in List/Week, HIDDEN in Games mode (SD-5/SD-8).
+  - DRAFT events visible to admin with a DRAFT chip (publish gate); the UX-11
+    bug — DRAFT badge leaking to a parent — is fixed by role-gating the chip.
+
+==============================================================================
+§6 SMOKE-WALK FIXES  (-> schedule-smoke-fixes-mobile.html)
+==============================================================================
+F-S1 PARENT OVERFLOW (TeamDetail 3-dot):
+  - Parent role: HIDE the 3-dot overflow now (its only items duplicate the
+    bottom nav: "View records" / "View full schedule"). Dead weight.
+  - Re-populate at SD-16 phase 1 with Subscribe (+ Share if placed then). Tracked
+    note in code: "parent TeamDetail overflow re-populates with Subscribe @SD-16".
+  - Staff overflow unchanged (+Edit team, +Tournaments are overflow-worthy).
+F-S2 PARENT-PREVIEW STICKINESS:
+  - Auto-expire view-as-parent on app reopen / new session (within-session tool;
+    no 24h cross-session persistence).
+  - While active: a persistent dismissible banner with an always-visible Exit
+    control — "Previewing as parent. Tap to exit." — REPLACING the eyebrow-only
+    signal. Banner sits below the status bar, above content, accent-tinted.
+
+==============================================================================
+§7 CAPABILITY ARCS  (where they hang — not built this spread)
+==============================================================================
+C1 weather (now-row in PR-C'; per-venue deferred on DB-10) -> C2 directions
+(PR-D') -> ... -> C9 family-hub phase 2 (after PR-F' phase 1) -> C10 AI
+conflict-detection (SD-17, after family hub) -> C11 push (SD-18 backlog).
+Family-hub phase 1 (PR-F') is the load-bearing unlock for the "outside the app"
+(Skylight) ambition; it sits ON TOP of the P0 ICS repair, which is why it can
+only land now that the rail is alive and the feed token is no longer anon-read.
+
+==============================================================================
+§8 ACCEPTANCE CRITERIA + CI LOCKS  (per PR, "build clean" gates)
+==============================================================================
+PR-A':
+  - grep gate: ZERO remaining is-past predicate definitions outside
+    eventWindows.js; ZERO duration constants outside EVENT_DEFAULT_DURATION_MS.
+  - test: an event with NULL end_at + start_at > 2h ago resolves 'completed'
+    (DB-8 tolerance); an in-progress event resolves 'happening_now' (the
+    mid-game-into-Past bug).
+  - test: countdown renders at BOTH densities for the NOW slot (CP-5).
+  - test: the batch hook issues ONE request for an N-event list (VF-11) — assert
+    request count does not scale with N.
+PR-B':
+  - test: RSVP control disabled exactly at start_at (isRsvpOpen boundary).
+  - test: staff override writes an override_audit row.
+  - HARD GATE: PR-B' check suite asserts the batch hook exists (import-presence
+    test) — cannot merge if PR-A' is not in.
+PR-C':
+  - test: import path writes a non-null end_at (DB-8 closed forward).
+  - new CI grep class: non-toLocale TZ math (manual offset arithmetic) is a
+    build-clean blocker.
+  - test: WeekStrip absent in Games mode.
+PR-D':
+  - test: mapsUrls builds all three providers from lat/lon and from address
+    fallback; venue resolved via JOIN (no ilike in the path).
+PR-E':
+  - test: coverage badge renders when non-zero at compact density (the SD-15
+    always-visible property).
+PR-F':
+  - test: guardian feed RPC is AUTHED-only (anon call -> denied); token scoped to
+    the calling guardian's children.
+  - get_advisors security re-run after the RPC migration: 0 ERROR; new WARNs only
+    the expected definer-function class.
+F-S2:
+  - test: view-as-parent does not persist across a simulated cold start.
+CARRIED CI classes (from prior rounds): select-column-vs-schema manifest;
+sub-44 tap-target; same-burst ready+auto-merge.
+
+==============================================================================
+§9 RESIDUAL TRIGGERS CARRIED (not this spread)
+==============================================================================
+R-1 tournaments/tournament_teams anon column narrowing (named trigger).
+R-2 events 42-col anon set re-audit vs public-render need (named trigger; pair
+    with R-1 as one pass).
+guardian_id payload fix forward-only NOW; SET NOT NULL deferred over 1,691 nulls
+(§D). DB-10 dead-column drop + coord backfill gates SD-9 per-venue weather.
+FU-1 gender, FU-2 family_cap_policy, RV-6 per-player roster opt-out, D-d
+multi-division funnel, D-e dob column-hardening — all parked triggers, unchanged.
+
+==============================================================================
+§10 CARD CONTENT MODEL AMENDMENT  (operator directive, 2026-06-12)
+==============================================================================
+SUPERSEDES the §5 PARENT line "parent sees THEIR commitments, not the org
+rollup." Operator call: parents are high-engagement and want the basics
+GLANCEABLE without opening detail. Most parents never open the detail page.
+The card therefore carries the basics at EVERY density, COMPACT INCLUDED.
+
+10.1 THE ON-CARD GLANCEABLE ROW (all roles, all densities)
+  A chip row sits below the location line, carrying in priority order:
+  (1) WEATHER chip (icon + temp, e.g. "Sun 63 deg"). Shown when the event is
+      within the forecast window AND the venue has coords. Per-venue weather is
+      gated on the DB-10 coord backfill (SD-9): the NOW slot gets weather
+      immediately; full per-card weather rolls out as venues are backfilled. No
+      coords / outside window -> OMIT (no placeholder, no "weather unavailable").
+  (2) ATTENDANCE COUNT "N going" — the going RSVP count.
+      PRIVACY: a count is aggregate (no names) and is allowed where names are
+      not. BUT suppress the count when the team's RESOLVED roster_visibility is
+      Hidden (tryout/camp), where even a count is sensitive — show only the RSVP
+      control there. Everywhere else the count shows.
+  (3) RIDES-NEEDED chip "N rides needed" (amber) — unfilled ride count, shown
+      only when > 0 (SD-15 non-zero always-visible at every density). When 0,
+      a quiet "Rides covered" check or omit.
+  (4) VOLUNTEER/DUTY chip "N needed" / "Snacks open" (amber) — unfilled duty
+      count, shown only when > 0.
+
+10.2 COMPACT CARD (the density most parents live in)
+  Compact tightens padding and type but KEEPS, non-negotiably: time, weather,
+  countdown, title, team dot, location, the 10.1 chip row, and (parent) a 44px
+  RSVP control. The chip row is REQUIRED in compact — it is the whole point of
+  the directive. Display chips are not tap targets and MAY be < 44px; the RSVP
+  control stays >= 44px. Countdown + weather right-align on the time row.
+
+10.3 DATA (no new N+1 — extends the §4 batch hook)
+  useScheduleData returns per event: going_count, rides_unfilled,
+  duties_unfilled, weather. Weather is batched per DISTINCT venue+date (not per
+  event) and cached, so the chip row adds ZERO per-card requests (VF-11 holds).
+  going_count / rides_unfilled / duties_unfilled come from the same batched
+  RSVP + coverage fetch already specced in §4.
+
+10.4 ROLE NOTES
+  - PARENT: shows the full 10.1 row PLUS their own commitment line ("You're
+    bringing snacks") when applicable. The count is the org count; the
+    commitment line is personal. Both can appear.
+  - COACH/ADMIN: already carry the ops chips (§5); 10.1 unifies the chip styling
+    and adds weather. Coach/admin counts are never suppressed (staff see roster).
+
+RENDER: schedule-parent-compact-mobile.html (the glanceable compact card).
+
+==============================================================================
+END SCHEDULE L99 BUILD SPEC
+==============================================================================

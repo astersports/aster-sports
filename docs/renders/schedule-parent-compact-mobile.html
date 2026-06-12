@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Schedule — Parent (Compact, glanceable)</title>
+<style>
+  :root{
+    --as-bg:#f5f6f8; --as-card:#ffffff; --as-border:#e6e8ec;
+    --as-text:#16181d; --as-text-2:#4b5563; --as-meta:#6b7280;
+    --as-accent:#4a8fd4; --as-live:#16a34a; --win:#15803d; --warn:#b45309;
+    --r6:6px; --r8:8px; --r10:10px;
+    --sh-sm:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.04);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:Inter,-apple-system,system-ui,sans-serif;background:#c9ccd2;
+    display:flex;justify-content:center;padding:20px;color:var(--as-text)}
+  .phone{width:390px;max-width:100%;background:var(--as-bg);border-radius:38px;overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,.3);position:relative;height:844px;display:flex;flex-direction:column}
+  .statusbar{height:50px;flex:none;display:flex;align-items:flex-end;justify-content:space-between;
+    padding:0 24px 8px;font-size:13px;font-weight:600}
+  .hdr{flex:none;padding:6px 18px 8px}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--as-meta);text-transform:uppercase}
+  .h1{font-size:24px;font-weight:700;letter-spacing:-.02em;margin-top:2px}
+  .controls{display:flex;justify-content:space-between;align-items:center;margin-top:11px}
+  .filter{display:flex;gap:6px;overflow-x:auto}
+  .fchip{font-size:12px;font-weight:600;padding:6px 11px;border-radius:999px;white-space:nowrap;
+    border:1.5px solid var(--as-border);background:var(--as-card);color:var(--as-text-2);display:flex;align-items:center;gap:6px}
+  .fchip.on{background:#16181d;border-color:#16181d;color:#fff}
+  .fdot{width:8px;height:8px;border-radius:3px}
+  .densitytoggle{display:inline-flex;background:var(--as-card);border:1.5px solid var(--as-border);border-radius:999px;padding:2px;flex:none}
+  .dbtn{font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;color:var(--as-text-2)}
+  .dbtn.on{background:var(--as-accent);color:#fff}
+  .scroll{flex:1;overflow-y:auto;padding:6px 18px 90px}
+  .bandlabel{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--as-meta);margin:12px 0 8px}
+  /* COMPACT CARD */
+  .card{background:var(--as-card);border:1px solid var(--as-border);border-radius:var(--r10);
+    box-shadow:var(--sh-sm);padding:10px 12px 10px 14px;position:relative;overflow:hidden;margin-bottom:8px}
+  .card .stripe{position:absolute;left:0;top:0;bottom:0;width:4px}
+  .row1{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .time{font-size:15px;font-weight:700;letter-spacing:-.01em}
+  .rightset{display:flex;align-items:center;gap:6px;flex:none}
+  .wx{display:flex;align-items:center;gap:3px;font-size:12px;font-weight:600;color:var(--as-text-2)}
+  .wx svg{width:14px;height:14px;color:var(--as-meta)}
+  .count{font-size:11px;font-weight:700;padding:3px 7px;border-radius:999px;white-space:nowrap}
+  .c-count{background:rgba(74,143,212,.12);color:var(--as-accent)}
+  .titleline{display:flex;align-items:center;gap:7px;margin-top:4px}
+  .title{font-size:14px;font-weight:600}
+  .tdot{width:8px;height:8px;border-radius:3px;flex:none}
+  .kid{font-size:12px;font-weight:600;color:var(--as-text-2)}
+  .loc{font-size:12px;color:var(--as-meta);margin-top:2px}
+  /* glanceable chip row */
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{font-size:11px;font-weight:700;padding:4px 8px;border-radius:var(--r6);display:flex;align-items:center;gap:5px;white-space:nowrap}
+  .chip svg{width:12px;height:12px}
+  .ch-going{background:rgba(22,163,74,.10);color:var(--win)}
+  .ch-warn{background:rgba(180,83,9,.10);color:var(--warn)}
+  .ch-ok{background:#f0f2f5;color:var(--as-meta)}
+  .commit{margin-top:7px;font-size:11px;font-weight:600;color:var(--as-accent);display:inline-flex;align-items:center;gap:5px}
+  /* compact RSVP segmented control, 44px */
+  .rsvp{display:flex;margin-top:9px;border:1.5px solid var(--as-border);border-radius:var(--r8);overflow:hidden;height:44px}
+  .rseg{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:700;color:var(--as-text-2)}
+  .rseg + .rseg{border-left:1.5px solid var(--as-border)}
+  .rseg.on-go{background:rgba(22,163,74,.12);color:var(--win)}
+  .rseg.on-no{background:#f6f7f9;color:var(--as-meta)}
+  .rsvp-locked{margin-top:9px;height:40px;border-radius:var(--r8);background:#f6f7f9;border:1.5px solid var(--as-border);
+    display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;font-weight:600;color:var(--as-meta)}
+  .nav{position:absolute;bottom:0;left:0;right:0;height:78px;background:rgba(255,255,255,.92);
+    backdrop-filter:blur(12px);border-top:1px solid var(--as-border);display:flex;padding-bottom:18px}
+  .nav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    font-size:10px;font-weight:600;color:var(--as-meta);text-decoration:none}
+  .nav a.on{color:var(--as-accent)}
+  .nav svg{width:22px;height:22px}
+  svg{stroke-width:1.75}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>9:41</span><span>5G &nbsp; 100%</span></div>
+  <div class="hdr">
+    <div class="eyebrow">Legacy Hoopers</div>
+    <div class="h1">Schedule</div>
+    <div class="controls">
+      <div class="filter">
+        <div class="fchip on">All my kids</div>
+        <div class="fchip"><span class="fdot" style="background:#f59e0b"></span>Milo</div>
+        <div class="fchip"><span class="fdot" style="background:#a78bfa"></span>Charlie</div>
+      </div>
+      <div class="densitytoggle"><span class="dbtn">Comfy</span><span class="dbtn on">Compact</span></div>
+    </div>
+  </div>
+  <div class="scroll">
+    <div class="bandlabel">Upcoming</div>
+
+    <!-- NOW slot: practice. going count + weather + countdown. no rides/snacks. -->
+    <div class="card" style="border:1.5px solid var(--as-accent);box-shadow:0 0 0 3px rgba(74,143,212,.10),var(--sh-sm)">
+      <div class="stripe" style="background:#a78bfa"></div>
+      <div class="row1">
+        <div class="time">Tomorrow 10:00a</div>
+        <div class="rightset">
+          <span class="wx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/></svg>63&deg;</span>
+          <span class="count c-count">in 17h</span>
+        </div>
+      </div>
+      <div class="titleline"><span class="title">Practice</span><span class="tdot" style="background:#a78bfa"></span><span class="kid">11U Girls &middot; Charlie</span></div>
+      <div class="loc">Rippowam Cisqua School &middot; Main Gym</div>
+      <div class="chips">
+        <span class="chip ch-going"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 21v-2a4 4 0 0 0-8 0v2"/><circle cx="12" cy="7" r="3.5"/></svg>9 going</span>
+      </div>
+      <div class="rsvp"><div class="rseg on-go"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Going</div><div class="rseg">Can't make it</div></div>
+    </div>
+
+    <!-- Tournament game: going + rides needed + snacks needed + own commitment -->
+    <div class="card">
+      <div class="stripe" style="background:#f59e0b"></div>
+      <div class="row1">
+        <div class="time">Sat 9:00a</div>
+        <div class="rightset">
+          <span class="wx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 17a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.5 1.5A3.5 3.5 0 0 0 7 17Z"/></svg>58&deg;</span>
+          <span class="count c-count">in 2d</span>
+        </div>
+      </div>
+      <div class="titleline"><span class="title">Bergen County Tournament</span><span class="tdot" style="background:#f59e0b"></span><span class="kid">8U Boys &middot; Milo</span></div>
+      <div class="loc">Koelbel Fieldhouse &middot; Pool A</div>
+      <div class="chips">
+        <span class="chip ch-going">7 going</span>
+        <span class="chip ch-warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 17h14M5 17a2 2 0 0 1-2-2V9l3-4h12l3 4v6a2 2 0 0 1-2 2M7 17v2M17 17v2"/></svg>2 rides needed</span>
+        <span class="chip ch-warn">Snacks open</span>
+      </div>
+      <div class="commit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>You're bringing snacks</div>
+      <div class="rsvp"><div class="rseg">Going</div><div class="rseg">Can't make it</div></div>
+    </div>
+
+    <!-- League game: going + rides covered (quiet) -->
+    <div class="card">
+      <div class="stripe" style="background:#06b6d4"></div>
+      <div class="row1">
+        <div class="time">Sun 1:00p</div>
+        <div class="rightset">
+          <span class="wx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 17a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.5 1.5A3.5 3.5 0 0 0 7 17Z"/><path d="M8 19v2M12 19v2M16 19v2"/></svg>49&deg;</span>
+          <span class="count c-count">in 3d</span>
+        </div>
+      </div>
+      <div class="titleline"><span class="title">League Play vs Scarsdale</span><span class="tdot" style="background:#06b6d4"></span><span class="kid">9U Boys &middot; Milo</span></div>
+      <div class="loc">Hommocks Middle School</div>
+      <div class="chips">
+        <span class="chip ch-going">11 going</span>
+        <span class="chip ch-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Rides covered</span>
+      </div>
+      <div class="rsvp"><div class="rseg">Going</div><div class="rseg on-no">Can't make it</div></div>
+    </div>
+
+    <!-- Futures Academy tryout: HIDDEN roster -> count suppressed, RSVP only -->
+    <div class="card">
+      <div class="stripe" style="background:#a78bfa"></div>
+      <div class="row1">
+        <div class="time">Tue 6:00p</div>
+        <div class="rightset"><span class="count c-count">in 5d</span></div>
+      </div>
+      <div class="titleline"><span class="title">Futures Academy &middot; Evaluation</span><span class="tdot" style="background:#a78bfa"></span><span class="kid">Charlie</span></div>
+      <div class="loc">Rippowam Cisqua School</div>
+      <div class="rsvp-locked"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Counts hidden for evaluations</div>
+      <div class="rsvp"><div class="rseg">Going</div><div class="rseg">Can't make it</div></div>
+    </div>
+
+  </div>
+  <div class="nav">
+    <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/></svg>Home</a>
+    <a href="#" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4.5" width="18" height="17" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>Schedule</a>
+    <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V5M9 19v-8M14 19V8M19 19v-5"/></svg>Records</a>
+    <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More</a>
+  </div>
+</div>
+</body>
+</html>

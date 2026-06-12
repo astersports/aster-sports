@@ -1,9 +1,6 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useActivities } from '../hooks/useActivities';
-import { useEventRsvpCounts } from '../hooks/useEventRsvpCounts';
-import { useEventRideCounts } from '../hooks/useEventRideCounts';
-import { useEventDutyCounts } from '../hooks/useEventDutyCounts';
+import { useScheduleData } from '../hooks/useScheduleData';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import FilterBar from '../components/schedule/FilterBar';
 import ChildFilterChips from '../components/schedule/ChildFilterChips';
@@ -14,7 +11,6 @@ import GamesView from '../components/schedule/GamesView';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import ScheduleListSections from '../components/schedule/ScheduleListSections';
 import { useDensity } from '../hooks/useDensity';
-import { useGameResultsMap } from '../hooks/useGameResultsMap';
 import { useWeather } from '../hooks/useWeather';
 import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
 import { isStaff } from '../lib/permissions';
@@ -23,10 +19,8 @@ const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActiv
 
 export default function SchedulePage() {
   const { orgId, myChildren, role } = useAuth();
-  const { activities, loading, refetch } = useActivities();
-  const { counts: rsvpCounts, refetch: refetchRsvpCounts } = useEventRsvpCounts(activities);
-  const { counts: rideCounts } = useEventRideCounts(activities);
-  const { counts: dutyCounts } = useEventDutyCounts(activities);
+  const scheduleData = useScheduleData();
+  const { activities, loading, refetch } = scheduleData;
   const [selectedTeam, setSelectedTeam] = useState(() => new URLSearchParams(window.location.search).get('team'));
   const [selectedType, setSelectedType] = useState(null);
   const [activeKidFilter, setActiveKidFilter] = useState(null);
@@ -34,9 +28,11 @@ export default function SchedulePage() {
   const [showCancelled, setShowCancelled] = useState(false);
   const [viewMode, setViewMode] = useState('all');
   const [selectedDate, setSelectedDate] = useState(null);
-  const { density } = useDensity('schedule-list');
-  const gameResults = useGameResultsMap(activities);
+  // SD-1: the dead 'schedule-list' density key is purged — the home-level
+  // card_density default (§16.2) is the ONE density control.
+  const { density } = useDensity('default');
   const weather = useWeather(...WEATHER_DEFAULT_COORDS);
+  const data = useMemo(() => ({ ...scheduleData, weather }), [scheduleData, weather]);
 
   useRefetchOnVisible(refetch);
 
@@ -91,7 +87,7 @@ export default function SchedulePage() {
           <>
             <ChildFilterChips kids={myChildren} activeFilter={activeKidFilter} onChange={setActiveKidFilter} />
             <FilterBar teams={activities} selectedTeam={selectedTeam} onSelectTeam={setSelectedTeam} selectedType={selectedType} onSelectType={setSelectedType} showCancelled={showCancelled} onToggleCancelled={() => setShowCancelled((v) => !v)} hideTeamRow={myChildren?.length >= 2} />
-            <ScheduleListSections filtered={filtered} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} density={density} gameResults={gameResults} weather={weather} onRsvpChange={refetchRsvpCounts} role={role} />
+            <ScheduleListSections filtered={filtered} data={data} density={density} role={role} />
           </>
         )}
       </div>

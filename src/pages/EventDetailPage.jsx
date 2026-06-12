@@ -26,6 +26,7 @@ import EventBriefingHistory from '../components/event/EventBriefingHistory';
 import ScopeChoiceDialog from '../components/event/ScopeChoiceDialog';
 import CollapsibleSection from '../components/shared/CollapsibleSection';
 import { composeFromEvent } from '../lib/briefings/composeFromEvent';
+import { eventTimeState } from '../lib/eventWindows';
 const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinOverlay'));
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 const ScheduleChangeComposer = lazy(() => import('../components/event/ScheduleChangeComposer'));
@@ -72,7 +73,7 @@ export default function EventDetailPage() {
   // Hooks must run on every render; gate the inner fetch on `enabled` instead.
   const isStaff = role === 'admin' || role === 'coach';
   const isGameType = event?.event_type === 'game' || event?.event_type === 'tournament';
-  const isPast = event ? (event.end_at ? new Date(event.end_at) < new Date() : new Date(event.start_at).getTime() + 14400000 < new Date().getTime()) : false;
+  const isPast = event ? eventTimeState(event) === 'completed' : false; // SD-2 spine (was a 4h inline fallback — divergent def #3)
   const canActivateAcademy = isStaff && isGameType && !isPast;
   const { activatedSet, toggle: toggleActivation } = useEventActivations(event?.id, canActivateAcademy);
   const lock = useEventRosterLock(event?.id);
