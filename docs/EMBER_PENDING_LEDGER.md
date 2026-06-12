@@ -687,6 +687,19 @@ arc bodies.
   failure pile-up** (Auto-retry exhausted on 7+ DUPLICATED copies of one RSVP nudge + 47 drafts
   stacked — Stream B auto-draft dedup + send-path failure smells; diagnosis lane on GO, not
   schedule-caused); academy-pill weight + home-coherence fold into the visual pass.
+  **VISUAL PASS RULED (2026-06-12, CC as acting architect — operator-directed after the external
+  design lane went unresponsive; Frank remains ratifier):**
+  `docs/RULINGS_SCHEDULE_VISUAL_PASS_2026-06-12.txt` (V0-V8) + render
+  `docs/renders/schedule-card-anatomy-mobile.html`. V1 kill the cobalt wash (white + team
+  stripe; game = 6px stripe + type tag); V2 two type families with one job each (pills =
+  time-status only; 6px chips = facts only; weather plain text; type tag on the meta line);
+  V3 Comfortable = six slots w/ two-button 44px RSVP; V4 Compact = three slots (time+title share
+  the glance row, one meta line, chips) + segmented RSVP — STRUCTURALLY distinct pair (~2x
+  height delta); V5 academy = facts chip, never a fake control in the RSVP slot; V6 state
+  treatments restated; V7 coherence scope (V7.1 detail-denominator ships FIRST, V7.2 home chip
+  vocabulary later, one PR each); V8 build plan PR-V1 (denominator + AP#43 test) → PR-V2 (card
+  pair to the render) → PR-V3 (home vocabulary, post-re-grade). AWAITING: Frank's ratification
+  (grade the render on device → GO).
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player

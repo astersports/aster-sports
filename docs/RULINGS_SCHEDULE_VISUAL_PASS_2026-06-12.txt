@@ -1,0 +1,129 @@
+==============================================================================
+RULINGS — SCHEDULE VISUAL PASS — 2026-06-12
+Acting architect: CC (operator-directed role assumption, 2026-06-12 — the
+external design lane is unresponsive; Frank: "you act as my architect").
+Frank remains the ratifier. Companion render:
+docs/renders/schedule-card-anatomy-mobile.html (grade on phone).
+Resolves: CC_SESSION_HANDOFF_2026-06-12_schedule_spread §1.3 fork -> (a),
+executed; §2.3 academy pill; §2.4 home-coherence scope; §4.D fold-in.
+==============================================================================
+
+V0 PRINCIPLE (the test for every rule below): a parent glances for THREE
+facts — when, where, is-my-kid-set — and the card answers without reading.
+Everything else is supporting cast: smaller, grayer, or absent. The deployed
+card failed not on data but on HIERARCHY: five same-weight text rows + four
+competing color systems. The fix is structure, not decoration.
+
+------------------------------------------------------------------------------
+V1 — CARD SURFACE: kill the cobalt wash. RULED.
+------------------------------------------------------------------------------
+Every card is WHITE (--as-bg-card) with the team-color left stripe. Game
+emphasis = 6px stripe (vs 4px practice) + the GAME/TOURNAMENT type tag —
+never a background wash. The wash made games read as selected/disabled
+states, fought the team color, and crushed chip contrast. One exception
+survives: the NOW slot's accent ring (V6). Cancelled/completed dim via
+opacity (unchanged from the spine).
+
+------------------------------------------------------------------------------
+V2 — TWO TYPE FAMILIES, EACH WITH ONE JOB. RULED.
+------------------------------------------------------------------------------
+PILLS (borderRadius 999) carry exactly one thing: TIME-STATUS, right of the
+time — countdown ("in 23h"), "Happening now", "Today". Nothing else is ever
+a pill on this card.
+CHIPS (borderRadius 6, 11px/700, soft bg) carry FACTS in one row below the
+meta line: going/denominator (green soft), rides/volunteers needed (amber
+soft), covered (neutral soft, check), academy status (academy soft, V5).
+W/L result chip (completed games) sits in the time-row right slot — it
+REPLACES the pill slot, same geometry as the countdown it supersedes.
+Weather is plain 12px tertiary text ("☀️ 74°"), right of time, before the
+pill — it is ambient, not a badge.
+The inline "Tournament/Practice" type label: 11px/600 UPPERCASE tracking
++0.05em tertiary, sitting right-aligned ON THE META LINE (not glued to the
+title). At compact it appears only when the title doesn't already say it
+(practice cards say "Practice" as the title; game cards carry the tag).
+
+------------------------------------------------------------------------------
+V3 — COMFORTABLE ANATOMY ("Detailed"): the planning view. RULED.
+------------------------------------------------------------------------------
+Six slots, 4px grid, padding 14px 16px (stripe side 16px):
+  1 TIME ROW      17px/700 time · right: weather + status pill (or W/L chip)
+  2 TITLE         15px/600 "vs. Atlantic Sharks" (opponent-first; tournament
+                  anchors show the tournament name) — 2-line clamp
+  3 META LINE     13px: team dot + team name (team color, 500) · kid name
+                  (secondary, 600) · right-aligned TYPE tag (V2)
+  4 LOCATION      13px secondary, pin icon, tappable (accent) when mapped
+  5 FACTS CHIPS   the V2 chip row + own-commitment line (accent soft)
+  6 RSVP          parent+upcoming only: TWO 44px buttons side by side —
+                  [✓ Going] [Can't make it] — quiet outline, going fills
+                  green-soft when selected. Live events: the 12px lock line
+                  "RSVP closed". Notes render here at comfortable only.
+Approximate height: 150-170px with RSVP; ~120px without.
+
+------------------------------------------------------------------------------
+V4 — COMPACT ANATOMY: the glance view. STRUCTURALLY DIFFERENT. RULED.
+------------------------------------------------------------------------------
+Three slots, padding 9px 12px:
+  1 GLANCE ROW    15px/700 time + 14px/600 title ON ONE LINE (title
+                  truncates) · right: weather + status pill
+  2 META LINE     12px, ONE truncating line: team dot · team · kid · "·"
+                  location (no pin icon at compact)
+  3 FACTS CHIPS   same V2 row (the §10.2 operator floor — chips stay) +
+                  commitment inline at row end when short
+  RSVP (parent+upcoming): the 44px SEGMENTED Going/Can't control, full
+  width — the one tall element compact keeps (tap-target floor).
+Approximate height: ~88px with RSVP; ~64px without. The pair now differs
+by STRUCTURE (3 slots vs 6) and ~2x height — visibly distinct at arm's
+length, which was the entire complaint.
+
+------------------------------------------------------------------------------
+V5 — ACADEMY TREATMENT: out of the RSVP slot. RULED.
+------------------------------------------------------------------------------
+An unactivated academy kid on a game card renders an ACADEMY CHIP in the
+facts row — "Milo · Academy" (academy soft/violet, 11px) — and NO RSVP
+control, no full-width pill. The old treatment put a violet pill where the
+RSVP lives, which read as a broken control three cards in a row (Frank's
+stack). Activated academy kids get the normal RSVP control and count in
+the denominator (SD-6, unchanged). Comfortable adds the quiet explainer
+under the chips: "Not activated for this game" 12px tertiary — compact
+omits it (the chip is enough at a glance).
+
+------------------------------------------------------------------------------
+V6 — STATE TREATMENTS (unchanged from the spine, restated for the pair).
+------------------------------------------------------------------------------
+NOW slot: accent ring + "NEXT UP" tab + countdown always — both densities.
+Live: green "Happening now" pill in the status slot; RSVP lock line.
+Completed: 0.55 opacity, W/L chip in the status slot (games only), no
+chips row, no RSVP. Cancelled: 0.55 + red CANCELLED tag in the status
+slot, strikethrough title, nothing interactive.
+
+------------------------------------------------------------------------------
+V7 — COHERENCE SCOPE (rules now, builds later — one PR each, post-ratify).
+------------------------------------------------------------------------------
+ V7.1 DETAIL-SURFACE DENOMINATOR (handoff §4.D): ships FIRST, before the
+      visual PR — correctness over paint. Detail hero / RsvpSummary /
+      roster-lock read the SD-6 contract; AP#43 cross-surface test locks
+      schedule chip == detail hero on the same event.
+ V7.2 HOME NEEDS-YOU cards adopt the V2 chip families (facts chips +
+      status pills) without changing home's card anatomy — vocabulary
+      coherence, not a rebuild. Separate small PR after the schedule pair
+      lands and Frank re-grades.
+ V7.3 Detail hero adopts V2 chips for its counts line in the same pass as
+      V7.1 where trivial; otherwise rides V7.2.
+
+------------------------------------------------------------------------------
+V8 — BUILD PLAN (on Frank's ratification of this doc + render)
+------------------------------------------------------------------------------
+ PR-V1: V7.1 denominator re-point + AP#43 test (small, mechanical).
+ PR-V2: the card pair — EventCard split into the two anatomies (shared
+        subcomponents: status slot, meta line, facts row), wash removed,
+        V5 academy chip, pill/chip discipline. Cross-surface rhythm test
+        per AP#46 (height delta between densities asserted structurally:
+        compact renders no LOCATION row element, comfortable does — a
+        DOM-shape assertion, not a px screenshot). Renders are the spec.
+ PR-V3: V7.2 home chip-vocabulary adoption (after re-grade).
+ HOLD:  nothing else on the schedule surface until Frank re-grades the
+        deployed pair against the render on device.
+==============================================================================
+RATIFICATION: Frank — grade the render, then one word: GO (build PR-V1+V2),
+or amendments inline on the render's numbered cards.
+==============================================================================

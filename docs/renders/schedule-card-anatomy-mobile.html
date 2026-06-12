@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Schedule Card Anatomy — Visual Pass Ruling (V1–V6)</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#ffffff; --border:#e6e8ec; --border-soft:#eef0f3;
+    --text:#16181d; --text2:#4b5563; --meta:#6b7280;
+    --accent:#4a8fd4; --accent-soft:rgba(74,143,212,.10);
+    --live:#16a34a; --win:#15803d; --win-soft:rgba(21,128,61,.10);
+    --warn:#b45309; --warn-soft:rgba(180,83,9,.10);
+    --danger:#b4453a; --danger-soft:rgba(180,69,58,.10);
+    --academy:#7c3aed; --academy-soft:rgba(124,58,237,.10);
+    --quiet:#f0f2f5;
+    --sh:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.04);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:Inter,-apple-system,system-ui,sans-serif;background:#c9ccd2;color:var(--text);
+    display:flex;justify-content:center;gap:28px;flex-wrap:wrap;padding:24px}
+  .col{display:flex;flex-direction:column;align-items:center;gap:10px}
+  .caption{font-size:13px;font-weight:700}
+  .subcap{font-size:11px;color:#4b5563;max-width:360px;text-align:center;line-height:1.45}
+  .phone{width:390px;max-width:100%;background:var(--bg);border-radius:38px;overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,.3);height:844px;display:flex;flex-direction:column}
+  .statusbar{height:50px;flex:none;display:flex;align-items:flex-end;justify-content:space-between;
+    padding:0 24px 8px;font-size:13px;font-weight:600}
+  .hdr{flex:none;padding:6px 18px 8px}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--meta);text-transform:uppercase}
+  .h1{font-size:24px;font-weight:700;letter-spacing:-.02em;margin-top:2px;display:flex;align-items:center;justify-content:space-between}
+  .densitytag{font-size:11px;font-weight:700;padding:6px 12px;border-radius:999px;background:var(--accent);color:#fff}
+  .scroll{flex:1;overflow-y:auto;padding:4px 18px 24px}
+  .bandlabel{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--meta);margin:10px 0 8px}
+  .marker{font-size:10px;font-weight:700;color:#9aa3b2;margin:10px 2px 3px;letter-spacing:.04em}
+
+  /* ── shared card chassis (V1: white + stripe, never a wash) ── */
+  .card{position:relative;background:var(--card);border:1px solid var(--border);border-radius:10px;
+    box-shadow:var(--sh);overflow:hidden;margin-bottom:8px}
+  .card .stripe{position:absolute;left:0;top:0;bottom:0;width:4px}
+  .card.game .stripe{width:6px}
+  .card.done{opacity:.55}
+  .nowslot{border:1.5px solid var(--accent);box-shadow:0 0 0 3px var(--accent-soft),var(--sh)}
+  .nowtag{position:absolute;top:-1px;right:14px;background:var(--accent);color:#fff;font-size:10px;
+    font-weight:700;letter-spacing:.04em;padding:3px 9px;border-radius:0 0 7px 7px;text-transform:uppercase}
+
+  /* status slot (V2: pills = time-status only) */
+  .rightset{display:flex;align-items:center;gap:7px;flex-shrink:0}
+  .wx{font-size:12px;color:var(--meta);font-weight:600}
+  .pill{font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap}
+  .p-count{background:var(--accent-soft);color:var(--accent)}
+  .p-live{background:var(--win-soft);color:var(--live);display:inline-flex;align-items:center;gap:5px}
+  .p-live .d{width:6px;height:6px;border-radius:50%;background:var(--live)}
+  .reschip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:6px}
+  .res-w{background:var(--win-soft);color:var(--win)}
+
+  /* facts chips (V2: chips = facts only) */
+  .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .chip{font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  .ch-going{background:var(--win-soft);color:var(--win)}
+  .ch-warn{background:var(--warn-soft);color:var(--warn)}
+  .ch-ok{background:var(--quiet);color:var(--meta);font-weight:600}
+  .ch-academy{background:var(--academy-soft);color:var(--academy)}
+  .commit{font-size:11px;font-weight:600;color:var(--accent);background:var(--accent-soft);
+    padding:4px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:5px}
+
+  .typetag{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--meta)}
+  .tdot{width:8px;height:8px;border-radius:3px;display:inline-block;flex:none}
+  .lockline{font-size:12px;color:var(--meta);display:flex;align-items:center;gap:6px}
+
+  /* ── COMFORTABLE anatomy (V3: six slots) ── */
+  .cf{padding:14px 16px 14px 18px}
+  .cf .row-time{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .cf .time{font-size:17px;font-weight:700;letter-spacing:-.01em}
+  .cf .title{font-size:15px;font-weight:600;margin-top:5px}
+  .cf .title.cx{text-decoration:line-through;color:var(--text2)}
+  .cf .meta-line{display:flex;align-items:center;gap:6px;font-size:13px;margin-top:4px}
+  .cf .meta-line .team{color:var(--text2);font-weight:500;display:inline-flex;align-items:center;gap:6px}
+  .cf .meta-line .kid{color:var(--text2);font-weight:600}
+  .cf .meta-line .typetag{margin-left:auto}
+  .cf .loc{font-size:13px;color:var(--accent);margin-top:4px;display:flex;align-items:center;gap:5px}
+  .cf .loc.plain{color:var(--meta)}
+  .cf .chips{margin-top:10px}
+  .cf .explain{font-size:12px;color:var(--meta);margin-top:6px}
+  .cf .rsvp{display:flex;gap:8px;margin-top:12px;padding-top:11px;border-top:1px solid var(--border-soft)}
+  .cf .rbtn{flex:1;height:44px;border-radius:8px;font-size:13px;font-weight:700;border:1.5px solid var(--border);
+    background:var(--card);color:var(--text2);display:flex;align-items:center;justify-content:center;gap:6px}
+  .cf .rbtn.on{background:var(--win-soft);border-color:var(--live);color:var(--win)}
+  .cf .lockline{margin-top:11px;padding-top:11px;border-top:1px solid var(--border-soft)}
+
+  /* ── COMPACT anatomy (V4: three slots) ── */
+  .cp{padding:9px 12px 9px 14px}
+  .cp .row-glance{display:flex;align-items:center;gap:8px}
+  .cp .time{font-size:15px;font-weight:700;flex:none;letter-spacing:-.01em}
+  .cp .title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+  .cp .title.cx{text-decoration:line-through;color:var(--text2)}
+  .cp .meta-line{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--meta);margin-top:3px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cp .meta-line .team{color:var(--text2);font-weight:500}
+  .cp .chips{margin-top:7px}
+  .cp .rsvp{display:flex;margin-top:8px;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;height:44px}
+  .cp .rseg{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:700;color:var(--text2)}
+  .cp .rseg + .rseg{border-left:1.5px solid var(--border)}
+  .cp .rseg.on{background:var(--win-soft);color:var(--win)}
+  .cp .lockline{margin-top:7px}
+
+  svg{stroke-width:1.75}
+</style>
+</head>
+<body>
+
+<!-- ════════════ FRAME 1 — COMFORTABLE ("Detailed") ════════════ -->
+<div class="col">
+  <div class="caption">V3 · Comfortable ("Detailed") — the planning view</div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span>5G&nbsp;&nbsp;100%</span></div>
+    <div class="hdr">
+      <div class="eyebrow">Legacy Hoopers</div>
+      <div class="h1">Schedule <span class="densitytag">Detailed</span></div>
+    </div>
+    <div class="scroll">
+      <div class="bandlabel">Saturday, Jun 13</div>
+
+      <div class="marker">① NEXT UP · game · academy kid (V5 — chip, not a fake control)</div>
+      <div class="card game nowslot">
+        <div class="nowtag">Next up</div>
+        <div class="stripe" style="background:#f59e0b"></div>
+        <div class="cf">
+          <div class="row-time">
+            <span class="time">8:00 AM</span>
+            <span class="rightset"><span class="wx">☀️ 74°</span><span class="pill p-count">in 23h</span></span>
+          </div>
+          <div class="title">vs. Atlantic Sharks</div>
+          <div class="meta-line">
+            <span class="team"><span class="tdot" style="background:#f59e0b"></span>8U Boys</span>
+            <span class="kid">· Milo</span>
+            <span class="typetag">Tournament</span>
+          </div>
+          <div class="loc"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>East Coast Sports &amp; Fitness</div>
+          <div class="chips">
+            <span class="chip ch-going">0 going / 10 rostered</span>
+            <span class="chip ch-warn">2 rides needed</span>
+            <span class="chip ch-academy">Milo · Academy</span>
+          </div>
+          <div class="explain">Not activated for this game — no RSVP needed.</div>
+        </div>
+      </div>
+
+      <div class="marker">② game · rostered kid · commitment + two-button RSVP</div>
+      <div class="card game">
+        <div class="stripe" style="background:#a78bfa"></div>
+        <div class="cf">
+          <div class="row-time">
+            <span class="time">1:00 PM</span>
+            <span class="rightset"><span class="wx">⛅ 85°</span><span class="pill p-count">Today</span></span>
+          </div>
+          <div class="title">vs. Level Up</div>
+          <div class="meta-line">
+            <span class="team"><span class="tdot" style="background:#a78bfa"></span>11U Girls</span>
+            <span class="kid">· Charlie</span>
+            <span class="typetag">Tournament</span>
+          </div>
+          <div class="loc"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Harry S. Truman HS</div>
+          <div class="chips">
+            <span class="chip ch-going">9 going / 11 rostered</span>
+            <span class="chip ch-ok"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Rides covered</span>
+            <span class="commit"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>You're bringing snacks</span>
+          </div>
+          <div class="rsvp">
+            <div class="rbtn on"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Going</div>
+            <div class="rbtn">Can't make it</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="marker">③ practice · duty gap · unanswered RSVP</div>
+      <div class="card">
+        <div class="stripe" style="background:#a78bfa"></div>
+        <div class="cf">
+          <div class="row-time">
+            <span class="time">5:30 PM</span>
+            <span class="rightset"><span class="wx">☁️ 71°</span></span>
+          </div>
+          <div class="title">Practice</div>
+          <div class="meta-line">
+            <span class="team"><span class="tdot" style="background:#a78bfa"></span>11U Girls</span>
+            <span class="kid">· Charlie</span>
+          </div>
+          <div class="loc plain"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Rippowam Cisqua School · Main Gym</div>
+          <div class="chips">
+            <span class="chip ch-going">6 going / 11 rostered</span>
+            <span class="chip ch-warn">2 volunteers needed</span>
+          </div>
+          <div class="rsvp">
+            <div class="rbtn">Going</div>
+            <div class="rbtn">Can't make it</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bandlabel" style="display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:var(--live);box-shadow:0 0 0 3px var(--win-soft)"></span>Happening now</div>
+
+      <div class="marker">④ live · RSVP locked</div>
+      <div class="card game">
+        <div class="stripe" style="background:#4a8fd4"></div>
+        <div class="cf">
+          <div class="row-time">
+            <span class="time">4:30 PM</span>
+            <span class="rightset"><span class="pill p-live"><span class="d"></span>Happening now</span></span>
+          </div>
+          <div class="title">vs. Rye Raiders</div>
+          <div class="meta-line">
+            <span class="team"><span class="tdot" style="background:#4a8fd4"></span>10U Black</span>
+            <span class="typetag">League Play</span>
+          </div>
+          <div class="loc plain"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Harry S. Truman HS · Court 2</div>
+          <div class="lockline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>RSVP closed</div>
+        </div>
+      </div>
+
+      <div class="bandlabel">Past 7 days</div>
+
+      <div class="marker">⑤ completed · W/L chip replaces the status pill</div>
+      <div class="card game done">
+        <div class="stripe" style="background:#4a8fd4"></div>
+        <div class="cf">
+          <div class="row-time">
+            <span class="time">Wed 6:00 PM</span>
+            <span class="rightset"><span class="reschip res-w">W 38–31</span></span>
+          </div>
+          <div class="title">vs. Greenwich</div>
+          <div class="meta-line">
+            <span class="team"><span class="tdot" style="background:#4a8fd4"></span>10U Black</span>
+            <span class="typetag">League Play</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="subcap">Six slots: time · title · meta(+type tag) · location · facts chips · RSVP. White card + team stripe everywhere (V1). Pills only ever mean time-status; chips only ever mean facts (V2). Academy = a chip, never a fake control (V5).</div>
+</div>
+
+<!-- ════════════ FRAME 2 — COMPACT ════════════ -->
+<div class="col">
+  <div class="caption">V4 · Compact — the glance view (same five cards)</div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span>5G&nbsp;&nbsp;100%</span></div>
+    <div class="hdr">
+      <div class="eyebrow">Legacy Hoopers</div>
+      <div class="h1">Schedule <span class="densitytag">Compact</span></div>
+    </div>
+    <div class="scroll">
+      <div class="bandlabel">Saturday, Jun 13</div>
+
+      <div class="marker">① NEXT UP — time + title share the glance row</div>
+      <div class="card game nowslot">
+        <div class="nowtag">Next up</div>
+        <div class="stripe" style="background:#f59e0b"></div>
+        <div class="cp">
+          <div class="row-glance">
+            <span class="time">8:00 AM</span>
+            <span class="title">vs. Atlantic Sharks</span>
+            <span class="rightset"><span class="wx">☀️ 74°</span><span class="pill p-count">in 23h</span></span>
+          </div>
+          <div class="meta-line"><span class="tdot" style="background:#f59e0b"></span><span class="team">8U Boys</span> · Milo · East Coast Sports &amp; Fitness</div>
+          <div class="chips">
+            <span class="chip ch-going">0 going / 10</span>
+            <span class="chip ch-warn">2 rides needed</span>
+            <span class="chip ch-academy">Milo · Academy</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="marker">② rostered kid — chips + the one tall element (44px segmented)</div>
+      <div class="card game">
+        <div class="stripe" style="background:#a78bfa"></div>
+        <div class="cp">
+          <div class="row-glance">
+            <span class="time">1:00 PM</span>
+            <span class="title">vs. Level Up</span>
+            <span class="rightset"><span class="wx">⛅ 85°</span><span class="pill p-count">Today</span></span>
+          </div>
+          <div class="meta-line"><span class="tdot" style="background:#a78bfa"></span><span class="team">11U Girls</span> · Charlie · Harry S. Truman HS</div>
+          <div class="chips">
+            <span class="chip ch-going">9 going / 11</span>
+            <span class="chip ch-ok"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Rides covered</span>
+            <span class="commit"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Snacks</span>
+          </div>
+          <div class="rsvp"><div class="rseg on"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Going</div><div class="rseg">Can't make it</div></div>
+        </div>
+      </div>
+
+      <div class="marker">③ practice</div>
+      <div class="card">
+        <div class="stripe" style="background:#a78bfa"></div>
+        <div class="cp">
+          <div class="row-glance">
+            <span class="time">5:30 PM</span>
+            <span class="title">Practice</span>
+            <span class="rightset"><span class="wx">☁️ 71°</span></span>
+          </div>
+          <div class="meta-line"><span class="tdot" style="background:#a78bfa"></span><span class="team">11U Girls</span> · Charlie · Rippowam Cisqua School</div>
+          <div class="chips">
+            <span class="chip ch-going">6 going / 11</span>
+            <span class="chip ch-warn">2 volunteers needed</span>
+          </div>
+          <div class="rsvp"><div class="rseg">Going</div><div class="rseg">Can't make it</div></div>
+        </div>
+      </div>
+
+      <div class="bandlabel" style="display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:var(--live);box-shadow:0 0 0 3px var(--win-soft)"></span>Happening now</div>
+
+      <div class="marker">④ live</div>
+      <div class="card game">
+        <div class="stripe" style="background:#4a8fd4"></div>
+        <div class="cp">
+          <div class="row-glance">
+            <span class="time">4:30 PM</span>
+            <span class="title">vs. Rye Raiders</span>
+            <span class="rightset"><span class="pill p-live"><span class="d"></span>Live</span></span>
+          </div>
+          <div class="meta-line"><span class="tdot" style="background:#4a8fd4"></span><span class="team">10U Black</span> · Harry S. Truman HS · Court 2</div>
+          <div class="lockline"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>RSVP closed</div>
+        </div>
+      </div>
+
+      <div class="bandlabel">Past 7 days</div>
+
+      <div class="marker">⑤ completed</div>
+      <div class="card game done">
+        <div class="stripe" style="background:#4a8fd4"></div>
+        <div class="cp">
+          <div class="row-glance">
+            <span class="time">Wed 6:00 PM</span>
+            <span class="title">vs. Greenwich</span>
+            <span class="rightset"><span class="reschip res-w">W 38–31</span></span>
+          </div>
+          <div class="meta-line"><span class="tdot" style="background:#4a8fd4"></span><span class="team">10U Black</span> · League Play</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="subcap">Three slots: glance row (time+title+status) · one meta line · facts chips. ~2x shorter than Comfortable; the RSVP segmented control is the only tall element (44px floor). Same chip vocabulary — the densities now differ by STRUCTURE, not padding.</div>
+</div>
+
+</body>
+</html>
