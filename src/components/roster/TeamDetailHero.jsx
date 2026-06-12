@@ -6,7 +6,7 @@ import { TYPE_LABELS } from '../../lib/constants';
 import { formatTime } from '../../lib/formatters';
 import { useTeamHeadCoach } from '../../hooks/useTeamHeadCoach';
 import { useEventRsvpCounts } from '../../hooks/useEventRsvpCounts';
-import ChildRsvp from '../schedule/ChildRsvp';
+import ChildRsvp from '../shared/ChildRsvp';
 import RsvpProgressBar from '../shared/RsvpProgressBar';
 import ShareScheduleButton from '../shared/ShareScheduleButton';
 

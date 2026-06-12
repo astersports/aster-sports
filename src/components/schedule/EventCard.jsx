@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { MapPin } from 'lucide-react';
+import { Lock, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatCountdown, formatTime } from '../../lib/formatters';
 import { TYPE_LABELS } from '../../lib/constants';
@@ -10,7 +10,7 @@ import { useMapsUrl } from '../../hooks/useMapsUrl';
 import { eventTimeState, isRsvpOpen } from '../../lib/eventWindows';
 import { isStaff } from '../../lib/permissions';
 import { cacheKey } from '../../lib/rsvpCache';
-import ChildRsvp from './ChildRsvp';
+import ChildRsvp from '../shared/ChildRsvp';
 import EventCardChips from './EventCardChips';
 import Badge from '../shared/Badge';
 
@@ -106,6 +106,13 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
                   onSave={onRsvpChange} />
               </div>
             ))}
+          </div>
+        )}
+        {/* SD-11 closed-state treatment (parent render .rsvp-closed): live
+            events show a quiet closed line, not disabled buttons. */}
+        {role === 'parent' && childrenOnTeam.length > 0 && live && (
+          <div style={{ marginTop: 8, fontSize: 12, color: 'var(--as-text-tertiary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Lock size={12} strokeWidth={1.75} aria-hidden="true" />RSVP closed
           </div>
         )}
       </div>

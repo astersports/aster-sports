@@ -10,9 +10,13 @@ import LoadingSkeleton from '../shared/LoadingSkeleton';
 // academy-activation trio (canActivateAcademy / activatedSet /
 // onToggleActivation) was added when the dedicated Academy Players
 // panel was removed and the toggle moved inline onto academy RSVP rows.
+// SD-11 (PR-B'): `overrideActive` = staff editing after start_at — shows
+// the logged-edits hint; `auditMap` (playerId -> latest event_rsvp_audit
+// row) renders the §16.8 "[Override · name · time]" marker per row.
 export default function EventRsvpTab({
   roster, rsvps, rsvpMap, teamColor, onSetRsvp, onSaveNote, loading,
-  readOnly = false, canActivateAcademy = false, activatedSet, onToggleActivation,
+  readOnly = false, overrideActive = false, auditMap = {},
+  canActivateAcademy = false, activatedSet, onToggleActivation,
 }) {
   if (loading) {
     return <div style={{ padding: 16 }}><LoadingSkeleton variant="list" count={5} /></div>;
@@ -20,6 +24,12 @@ export default function EventRsvpTab({
   if (roster.length === 0) {
     return <div style={{ padding: 16, color: 'var(--as-text-tertiary)', fontSize: 15 }}>No players on this team yet.</div>;
   }
+  const overrideMarker = (playerId) => {
+    const a = auditMap[playerId];
+    if (!a) return null;
+    const at = new Date(a.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
+    return `Override · ${a.actor_name || 'Staff'} · ${at}`;
+  };
 
   const statusOrder = { going: 0, maybe: 1, not_going: 2 };
   const sorted = [...roster].sort((a, b) => {
@@ -36,6 +46,11 @@ export default function EventRsvpTab({
   return (
     <div style={{ padding: '16px 16px 32px' }}>
       <RsvpSummary roster={roster} rsvps={rsvps} />
+      {overrideActive && (
+        <div role="status" style={{ fontSize: 12, fontWeight: 500, color: 'var(--as-warning)', backgroundColor: 'var(--as-warning-soft)', padding: '8px 10px', borderRadius: 6, marginBottom: 8 }}>
+          RSVPs closed at start — staff edits are logged to the audit trail.
+        </div>
+      )}
       {sorted.map((player, i) => {
         const status = rsvpMap[player.id] || 'none';
         const prevStatus = i > 0 ? (rsvpMap[sorted[i - 1].id] || 'none') : null;
@@ -59,6 +74,11 @@ export default function EventRsvpTab({
               isActivated={activatedSet?.has(player.id) || false}
               onToggleActivation={onToggleActivation}
             />
+            {overrideMarker(player.id) && (
+              <div style={{ fontSize: 11, color: 'var(--as-text-tertiary)', padding: '0 0 6px 2px' }}>
+                [{overrideMarker(player.id)}]
+              </div>
+            )}
           </div>
         );
       })}

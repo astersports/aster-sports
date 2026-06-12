@@ -15,7 +15,7 @@ vi.mock('../../../context/AuthContext', () => ({
 }));
 vi.mock('../../../hooks/useNow', () => ({ useNow: () => Date.now() }));
 vi.mock('../../../hooks/useMapsUrl', () => ({ useMapsUrl: () => null }));
-vi.mock('../ChildRsvp', () => ({ default: () => null }));
+vi.mock('../../shared/ChildRsvp', () => ({ default: () => null }));
 
 import EventCard from '../EventCard';
 
