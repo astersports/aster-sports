@@ -1,0 +1,503 @@
+SCHEDULE MULTI-AGENT REVIEW — 2026-06-12
+================================================================
+Companion to docs/SCHEDULE_L99_AUDIT_2026-06-12.txt (merged same day).
+Operator directive: "deploy multiple agents for another review for the
+architect. expand the agents to cover every aspect of every level."
+Six parallel read-only review agents, one per level, plus AP #58
+cross-agent synthesis (this doc):
+  A1 DB/RLS/schema (live prod queries + advisors, SELECT-only)
+  A2 Data layer (hooks/libs/perf; SDK behavior verified against
+     installed @supabase/postgrest-js source)
+  A3 Component/render (tokens, §7, state pipelines, §6 splits)
+  A4 UX / a11y / per-role (parent, coach, admin walked separately)
+  A5 Cross-surface integration + test coverage (Pattern A hunt)
+  A6 Independent adversarial verification of the merged audit
+Verification basis: file reads at main 60ae752d; production queries
+2026-06-12 (project vrwwpsbfbnveawqwbdmj); A6 re-ran every production
+claim live. Finding IDs preserved: DB-*, DL-*, CP-*, UX-*, XS-*, VF-*
+(agent reports); SCH-*, SD-* (the merged audit).
+Status: REVIEW + DECISION REQUEST. No redesign code ships until
+rulings. The §1 P0 lane is the exception CC requests a GO on.
+
+----------------------------------------------------------------
+§0 EXECUTIVE — WHAT'S WRONG
+----------------------------------------------------------------
+TIER 1 — broken in production NOW (found by A1/A5, independently):
+ 1. The public/outside-the-app funnel is DEAD end-to-end:
+    a. Anon public-schedule RLS fail-closed since 2026-05-28: the
+       public-listing rewrite gates anon reads on a subquery over
+       `organizations`, which has NO anon-readable policy — the gate
+       always evaluates empty. Verified as anon: 0 teams, 0 events.
+       Every logged-out QR scan / shared link -> "Team not found."
+       (DB-1, P0)
+    b. PublicSchedulePage selects nonexistent `events.location_name`
+       (it's a client-side alias in useActivities, never a column)
+       -> PostgREST 42703 for EVERY role; the error is swallowed
+       (AP #36 shape) -> even logged-in visitors see "No upcoming
+       events scheduled," and the Download-.ics / Subscribe buttons
+       never render (gated on events.length>0). (DB-2 = XS-1, P0)
+    c. team-feed ICS edge function selects the same phantom column,
+       DOES check its error, and returns 500 -> Apple/Google
+       calendar subscriptions are dead. (XS-1, P0)
+    Two stacked separate-cause bugs (AP #26 pattern) + a third
+    surface. The operator's 2026-06-12 capability mandate (calendar
+    sync, Skylight-style family feeds) builds directly on this rail.
+ 2. Inverse leak + latent grant risk:
+    a. `game_results_select_public` has no org/public-listing gate:
+       anon reads ALL 91 published results (scores, quarter scores,
+       point differential). (DB-3, P1)
+    b. Anon retains full-column INSERT/UPDATE/REFERENCES grants on
+       all 12 in-scope tables and full-column SELECT on teams (incl.
+       `team_feed_token`!) and locations (incl. admin_notes) —
+       fail-closed today ONLY by RLS + helper EXECUTE revocations.
+       Fixing 1a naively (anon org read) makes feed-token
+       enumeration live. ORDERING CONSTRAINT: tighten grants BEFORE
+       the RLS fix. (DB-4, P1)
+
+TIER 2 — wrong/missing data shown to families in the authed app:
+ 3. Games-tab standings are season-unscoped on a season-scoped page:
+    7 teams / 91 results mixing Winter 2025-26 + Spring 2026 render
+    under a Spring-only schedule. Prod-verified: 5 Spring teams (67
+    results) + 2 Winter teams (24). (VF-1 = DL-12 = XS-8, P1 —
+    found by three agents independently; missed by the audit, whose
+    §1 inventory omitted useTeams/useOrgTeamRecords/useSeason.)
+ 4. "No response" denominators are wrong twice over: counts include
+    13 futures-academy kids who cannot respond (prod-verified:
+    13 academy + 82 rostered current members), and a partial query
+    failure FABRICATES "everyone unresponsive" (rsvps query fails +
+    roster succeeds -> every card renders full-roster NR as truth,
+    no error). Three denominator sources exist across surfaces; the
+    admin shortfall alert already uses the right one.
+    (SCH-14 = DL-11 = XS-4; DL-2 = VF-3; P1 cluster)
+ 5. RSVP-close enforcement contradicts the operator-locked
+    "closes at start time" rule: the schedule card disables on
+    end_at-or-never (parents can flip RSVPs after tip-off;
+    5 prod events with null end_at NEVER close), event detail uses
+    end_at-or-start+4h, home chip uses start. Three close times for
+    the same kid x event; one mount passes no disabled at all.
+    (XS-3 + SCH-12/XS-2, P1)
+ 6. In-progress games vanish mid-game into the collapsed "Past 7
+    days" section ("is past" has FOUR incompatible definitions and
+    three duration-fallback constants: 60min / 2h / 4h).
+    (SCH-4 = XS-2 = DL-10 = CP-30, P1)
+ 7. Parents at the default density get NO inline RSVP pills (§16.2
+    "never gates a Needs-you item" violated; SCH-6a = UX-1); when
+    visible they're 32px vs the 44px non-negotiable floor (SCH-3 =
+    CP-2 = UX-4); and keyboard users can't RSVP or open maps from
+    any card — EventCard's onKeyDown preventDefault+navigates
+    without the nested-interactive guard its onClick has (CP-3, P1,
+    new). Coach coverage signals (rides/duties) are density-gated
+    off at default too (UX-12).
+ 8. Correctness details shipping wrong today: weather chip matches
+    the wrong hour for any non-Eastern device (Open-Meteo returns
+    tz-naive NY-local hour strings parsed browser-local — DL-13);
+    LH-cobalt tint hardcoded for all tenants (SCH-1 = CP-1 = UX-19);
+    `?wizard=1` mounts the full admin wizard for ANY role (UI-only;
+    RLS blocks the write — VF-2); ChildRsvp races can visually
+    deselect a saved RSVP (DL-15, VF-4); maps lookups can resolve
+    the WRONG venue via unordered fuzzy ilike when the right one is
+    already joined one hop away (DL-8 = VF-6).
+
+TIER 3 — structural / scale ceilings:
+ 9. Request economics: worst-case ~104 requests on first admin
+    paint (useMapsUrl thundering herd up to ~95 duplicate lookups;
+    settles to ~18 warm) + 47-92 for a maximum-density parent
+    (ChildRsvp N+1); `.in(190-ids)` GETs sit at the 8,000-char URL
+    threshold TODAY (~7.7KB) and hard-fail near 2x volume, with
+    failures landing in silently-swallowed error paths; `select *`
+    hauls 150-400KB of jsonb-heavy unused columns per visit; the
+    Games tab refetches game_results EVERY 60 SECONDS (useNow-driven
+    dep churn); ~100 unvirtualized "Later" cards each run their own
+    60s timer and defeat their own memo via fresh weather-object
+    identity. (DL-1/4/5/6/8, SCH-18, VF-5, CP-32)
+10. Pattern A (#63) is the dominant disease here as platform-wide:
+    is-past x4, RSVP denominator x3, cancelled policy x3 (toggle
+    honored by exactly 1 of 4 sub-surfaces), share button x2,
+    density truth x2 (+ a phantom third 'medium' state still
+    reachable in production via PastEventsSection), standings scope
+    x2, is-today x2, tournament-draft predicate x2, maps-URL
+    resolution x2, event-duration constant x3. ZERO cross-surface
+    invariant tests lock any of these; the schedule tree has 4
+    single-component tests total and no E2E. (XS-2..XS-9, XS-11/12)
+
+Audit reliability (A6): 31 CONFIRMED / 1 CONFIRMED-ADJUST /
+0 REFUTED / 0 UNVERIFIABLE; all 33 LOC counts and all prod numbers
+reproduced exactly. Its blind spot was structural: dependency hooks
+omitted from the §1 inventory (where VF-1 lived), the public edge,
+and the DB grant layer. Two "WHAT'S ALREADY CLEAN" claims carry
+caveats: formatDateHeader mixes device-local parse with ET format
+(VF-7), and only the weather localStorage fallback (not the
+sessionStorage primary) is cacheBuster-registered.
+
+----------------------------------------------------------------
+§1 P0 EMERGENCY LANE — CC REQUESTS GO (SD-10)
+----------------------------------------------------------------
+Production-repair work, mechanical + security class, independent of
+all redesign rulings. Proposed order (the ordering IS the security
+constraint per DB-4):
+  STEP 1  Grant tightening migration: REVOKE INSERT/UPDATE/
+          REFERENCES FROM anon (PUBLIC first per AP #23) across the
+          12 schedule tables; column-narrow anon SELECT on teams
+          (drop team_feed_token et al.) and locations (drop
+          admin_notes et al.) to the public-render set.
+  STEP 2  Anon org-gate repair (DB-1): SECURITY DEFINER helper
+          `org_is_public_listed(uuid)` (STABLE, search_path=public,
+          EXECUTE revoked from PUBLIC then granted to anon +
+          authenticated) consumed by the four *_select_public
+          policies — avoids exposing organizations rows to anon at
+          all. [CC lean over the alternative anon-SELECT policy on
+          organizations; architect may prefer the policy form.]
+  STEP 3  game_results public gate (DB-3): same helper traversal
+          events->teams->org_is_public_listed; drop the shadowed
+          dead `game_results_select_parent` policy (DB-5).
+  STEP 4  Column fix (DB-2/XS-1): PublicSchedulePage.jsx:35 select
+          `location` (alias client-side) + destructure/render the
+          error; team-feed/index.ts:123 same column fix (mirror-pair
+          discipline n/a — feed is standalone; activate the deferred
+          team-feed<->icalHelpers mirror audit per XS-11).
+  STEP 5  Locks: (a) select-column-vs-schema audit test (the
+          timezoneAuditPin-style grep that would have caught XS-1);
+          (b) public-sibling render smoke (XS-14 fixture);
+          (c) get_advisors re-run; (d) Frank device-smoke: QR scan
+          logged-out, .ics subscribe in Apple/Google.
+Blast radius: anon surface only; authed app untouched. Rollback:
+each step its own migration/PR. CC ships the lane same-session on a
+one-word GO (per the 2026-06-12 lane note: CC runs every migration).
+
+----------------------------------------------------------------
+§2 MERGED FINDINGS REGISTER (deduplicated across 6 agents + audit)
+----------------------------------------------------------------
+Format: cluster — severity — constituent IDs — one-line state.
+Full per-finding detail lives in the agent reports (appended to the
+PR description) and the audit doc; this register is the canonical
+dedupe map.
+
+P0 (production breakage):
+ R1  Public funnel dead (RLS gate + phantom column + ICS 500) —
+     DB-1, DB-2, XS-1 — §1 lane.
+
+P1:
+ R2  Anon grant surface + results leak — DB-3, DB-4 (+DB-5 dead
+     policy) — §1 lane steps 1/3.
+ R3  Season-unscoped standings on Games tab — VF-1 = DL-12 = XS-8 —
+     thread activeSeason.id into useTeams/useOrgTeamRecords +
+     AP #43 lock vs Records page (SCORE-1 lineage).
+ R4  Expected-responders denominator x3 + fabrication on partial
+     failure — SCH-14 = DL-11 = XS-4; DL-2 = VF-3; corollary
+     usePendingRsvps demands action unactivated kids can't take
+     (XS-4c) — single expected-set helper + either-query-fails bail;
+     SD-6 rules the denominator.
+ R5  RSVP-close rule contradicted (3 close times; null-end_at never
+     closes; one mount unguarded) — XS-3 + SCH-12/XS-2 + DB-8
+     (import path writes end_at NULL; 5 prod rows, growing) —
+     `isRsvpOpen()` in rsvpDeadline.js consumed by all 4 ChildRsvp
+     mounts; SD-11 rules the enforcement surface.
+ R6  Time-state incoherence (is-past x4, in-progress vanishes,
+     3 duration constants) — SCH-4 = XS-2 = DL-10 = CP-30 = UX-10 —
+     one `eventTimeState(event, now)` in lib/eventWindows.js;
+     SD-2 (amended) rules placement; operator countdown/completed
+     mandate lands here.
+ 7  Needs-you gating + input floor: RSVP hidden at default density
+     (SCH-6a = UX-1), 32px pills (SCH-3 = CP-2 = UX-4), keyboard
+     hijack (CP-3), coverage signals density-gated (UX-12) —
+     PR-B' cluster; SCH-2 = DL-7 batch hook is a HARD PREREQUISITE
+     (VF-11: shipping SCH-6a first detonates the N+1 for every
+     parent).
+ R8  Error-surface absence platform-edge: useActivities error has
+     ZERO consumers across 7 surfaces (SCH-5 = DL-3 = UX-2);
+     per-hook silent failures fabricate or blank data (DL-2, DL-8
+     cache poisoning, DL-15 deselect-on-error, VF-9 false
+     "Not activated", DL-9/XS-17 unhandled throw) — error contract
+     sweep + retry strip + cross-surface invariant test.
+ R9  Contrast: --as-text-tertiary (3.8:1) as functional text at
+     ~12 schedule sites — UX-3 — adopt the §0-sanctioned
+     --as-text-meta (#6B7280) as the text floor (the locked
+     corollary instance; comment naming the gap required).
+ R10 Hardcoded LH tint — SCH-1 = CP-1 = UX-19 — var(--as-accent-soft)
+     one-liner + widen §0 grep #3 to brand-value rgba literals.
+
+P2 clusters (constituents compressed; full text in agent reports):
+ R11 Request economics + scale wall — DL-1 (URL threshold), DL-4
+     (60s refetch), DL-5 (100 cards/timers; §16.10), DL-6
+     (select *), DL-8+VF-6 (maps herd + wrong-venue ilike; data is
+     one join away), VF-5/CP-32 (memo defeated), DL-19, SCH-18.
+ R12 TZ class (NEW sub-class: non-toLocale calendar math invisible
+     to timezoneAuditPin) — SCH-10/11, CP-8, DL-13 (weather hour
+     parse — fix regardless via &timeformat=unixtime), DL-14,
+     DL-20/21, UX-26, XS-9, VF-7 — extend the audit grep to
+     toDateString/getDate/getDay/naive Date parses (XS-13 enumerates
+     the blind spots).
+ R13 Density model — SCH-6b/c = CP-4/6 = UX-18/33 = XS-7 = DL-22/26
+     + DB-9 (prod storage 100% legacy: every row still carries
+     'medium' values the 2-state hook discards; CHECK still admits
+     'medium') + UpcomingEvents hardcodes minimal (suppressing team-
+     detail RSVP) — SD-1 rules; cleanup includes storage purge fork.
+ R14 Share duplication — SCH-7 = CP-12 = UX-15 = XS-6 + VF-8
+     (AbortError on share-cancel) — consolidate on shared/ QR
+     component; SD-4 rules placement; static audit: `/schedule/${`
+     nowhere outside publicUrls.js.
+ R15 Games-view coherence — SCH-9 (count vs slice(-10)), SCH-17/XS-5
+     (cancelled policy x3; toggle honored by 1 of 4 zones), SCH-19
+     (filters silently dropped + parallel team filter), SCH-31/DL-21
+     (DST week buckets), CP-31, VF-12b (WeekStrip dead in Games
+     mode) — SD-3/SD-5 rule; GamesView §6 split rides along (CP-15).
+ R16 a11y cluster — SCH-16 = UX-5/7/8/23/24 + CP-34/41 — headings,
+     tab-role misuse, cancelled state absent from accessible names
+     (SR users RSVP to cancelled events), disabled semantics,
+     G/M/N/NR expansion; plus UX-13/14 microcopy (parent jargon).
+ R17 Filter UX — SCH-13 = UX-6/9 = CP-28 = XS-18 + VF-12a
+     (DensityToggle unreachable when week empty) — filtered-empty
+     state + invisible deep-link filter + dots honesty; SD-7/8 rule.
+ R18 State pipelines (AP #44) — CP-5 (minimal branch suppresses
+     Today+countdown on exactly the next event), CP-6 (density
+     flash), CP-7 (academy badge flash), DL-16 (season-switch race +
+     loading-semantics), VF-4 — null-sentinel + fetch-token sweep.
+ R19 ChildRsvp is de-facto shared (4 mounts, 3 outside schedule/) —
+     XS-10 — relocation + signature migration in one PR (AP #34);
+     SD-12.
+ R20 RSVP integrity — DB-7 (guardian_id written on 10/1,701 rows;
+     §16.8 attribution unrecoverable — load-bearing for the
+     multi-family mandate; player_id nullable despite being the
+     conflict key), VF-10 (write policy lacks team-membership
+     predicate — own-kid-on-any-org-event pollution, low exploit
+     value) — payload fix + SET NOT NULL + policy predicate.
+ R21 Tournament-draft predicate x2 (CP-11) + public-sibling
+     divergences once unbroken (XS-14: draft treatment, cancelled
+     vanishing, venue fallback, 3 different calendar horizons) —
+     shared isTournamentAnchor() + public parity fixture.
+
+P3: the long tails stand as catalogued — SCH-20..32, CP-17..41,
+DL-17..26, UX-21..34, XS-15..20, VF-12, DB-10..17 — notably DB-10
+(latitude/longitude columns are DEAD: 0 exclusive rows, 0 code
+readers; lat/lon is the live pair -> drop candidates, which
+unblocks per-venue weather cleanly), DB-16 (program-delete CASCADE
+chain flagged for the architect), DL-24 (TOURNAMENT_MESSAGE_TYPES
+constants drift vs the canonical 12 kinds — out of scope, real),
+and CP-13 (border-radius literals outside the §7 set).
+
+----------------------------------------------------------------
+§3 CAPABILITY MAP (operator mandates, 2026-06-12 — two messages)
+----------------------------------------------------------------
+"dynamic weather, directions, ride shares, volunteers, AI, ML,
+APIs, whatever else is available" + "countdowns, gray-out/completed
+section, built for multiple families, calendar sync, family hub for
+multi kids across multiple programs, in-app and outside (think
+Skylight)."
+Per entry: current state -> substrate -> build shape -> constraints.
+
+ C1 DYNAMIC WEATHER (per-venue, time-matched)
+    Now: one Open-Meteo fetch at default coords, time-matched per
+    event; venue-blind; hour-parse TZ bug (DL-13). Substrate: coords
+    on 15/27 locations (live lat/lon pair; dead latitude/longitude
+    pair to drop per DB-10); 30-min cache infra. Build: fix DL-13
+    (unixtime) regardless; per-venue = fetch per unique venue of
+    visible events (≤9 venues today, cached), join coords through
+    useActivities. Constraint: backfill coords on the 12 venues
+    missing them (admin locations UI exists). [SD-9 amended]
+ C2 DIRECTIONS (Google/Apple/Waze)
+    Now: Google live on cards (via the flawed name-match hook).
+    Substrate: lib/mapsUrls.js ALREADY exports all three builders
+    (§15 deferred them). Build: resolve via the existing locations
+    join (kills DL-8/VF-6), re-add Apple/Waze on event detail's
+    Location tab first; card keeps single-tap Google. [SD-14]
+ C3 RIDE SHARES surfaced
+    Now: full schema + batched counts + event-detail board; hidden
+    at default density on cards (UX-12); "requests" semantics
+    include confirmed claims (SCH-27 VERIFY). Build: non-zero
+    unmet-request badge at every density; semantics fix per ride
+    domain. [folds into SD-15]
+ C4 VOLUNTEERS surfaced
+    Now: duty counts at maximum density only. Build: unfilled-slot
+    badge (warning) at every density; tap -> detail duties.
+    [SD-15]
+ C5 COUNTDOWNS
+    Now: chip on the single next event, <24h, detailed-density only
+    (CP-5 suppresses it at minimal). Build: countdown as the
+    time-state spine's "upcoming-soon" treatment (today/tonight/
+    T-minus), every role. [rides SD-2 amended]
+ C6 GRAY-OUT / COMPLETED SECTION
+    Now: 0.5-opacity dimming + collapsed "Past 7 days", but four
+    is-past definitions and in-progress events land in "Past"
+    mid-game. Build: the R6 eventTimeState spine — upcoming ->
+    happening-now (pinned NOW slot) -> completed (retired section,
+    W/L chip) — this IS the redesign's backbone. [SD-2 amended]
+ C7 MULTI-FAMILY (multi-guardian households)
+    Now: data model supports it (player_guardians; both-parent
+    households live); but guardian attribution on RSVPs is
+    unrecoverable (DB-7: 10/1,701) so "which parent answered" can't
+    render. Build: write guardian_id (R20) -> "Answered by Dad"
+    treatment; per-kid color identity on cards. [SD-16 phase 0]
+ C8 CALENDAR SYNC (repair + extend)
+    Now: BUILT AND DEAD (R1). Per-team ICS feed + public page +
+    QR all exist. Build: §1 P0 lane = step one of this mandate;
+    then horizon unification (public 50-event slice vs feed
+    2yr/500 vs app — three calendars today, XS-14). [§1 + SD-16]
+ C9 FAMILY HUB (in-app) + SKYLIGHT BRIDGE (outside)
+    Now: parent schedule already aggregates all kids across teams/
+    programs (org-scoped query spans programs); no family-week
+    presentation; feeds are per-TEAM only. Build: (in-app) family
+    week view — kid color-coded lanes, one RSVP/ride/duty surface —
+    the parent wireframe's natural v2; (outside) per-FAMILY ICS
+    feed: guardian-scoped token (same mint/verify pattern as the 4
+    existing token handlers) merging all kids' events -> one
+    subscribe URL consumable by Google/Apple/Skylight. Constraint:
+    feed-token hygiene FIRST (DB-4 step 1; teams.team_feed_token is
+    anon-SELECTable today). [SD-16]
+ C10 AI
+    Now: more live than assumed — anthropic_api_key provisioned in
+    app_secrets; three edge functions already call Anthropic
+    (parse-tournament-schedule, briefing-ai-draft,
+    suggest-briefing-closer). Build candidates (each a read-now
+    surface per §16.16, pick by ruling): schedule-conflict /
+    double-booking detection on create; family week-digest
+    composer (extends the briefing engine's existing kinds); smart
+    nudge timing for Stream B. [SD-17]
+ C11 ML / INTELLIGENCE + PUSH RAIL
+    Now: no trained models; PostHog events + attendance/RSVP
+    history accumulating; rsvpNudgeThreshold is rule-based (fine).
+    Constraints: §16.12 LOCKS per-player game stats out of 2026 —
+    engagement-side only (attendance/RSVP-likelihood); §16.7
+    privacy locks apply; §16.16 demands a read-now consumer, so
+    "ML" enters as heuristics behind a concrete surface (e.g.
+    at-risk-attendance flag for coaches) or not at all this year.
+    Push: send-push edge function + sw.js push listener EXIST —
+    schedule reminders have a delivery rail; §16.5 Stream A governs
+    cadence. [SD-17/SD-18]
+
+----------------------------------------------------------------
+§4 DECISIONS — AMENDED + NEW (consolidated for one ruling round)
+----------------------------------------------------------------
+A6 graded SD-1..SD-9: 8 WELL-POSED, SD-5 FLAWED-LIGHT (missing
+middle option), SD-3 borderline-settled. Amendments + additions:
+
+ SD-1  (stands) Density model. + A6 evidence: AppearanceForm's own
+       comment frames section-vs-default as deliberate. + DB-9
+       storage fork: purge stored 'medium' values + tighten CHECK,
+       or accept dead keys. CC lean unchanged: collapse to .default.
+ SD-2  (AMENDED) Time-state spine: eventTimeState() everywhere,
+       NOW slot, completed section, countdown generalization,
+       null-end_at fallback (+DB-8 import fix). Operator mandate
+       effectively ratifies direction; placement details remain the
+       ruling. CC lean: (a) NOW slot pinned top.
+ SD-3  (stands; count/display honesty ships as mandated-fix
+       regardless) Depth mechanism: paging vs Records link.
+ SD-4  (stands) Share placement; consolidation is hygiene.
+ SD-5  (AMENDED per A6) + option (c): toggle governs list+Past;
+       Games stays cancelled-free by design. CC lean moves to (c).
+ SD-6  (stands; materiality now prod-verified: 13 academy kids)
+       Denominator. CC lean: rostered + activated-academy.
+ SD-7  (stands) Persistence: viewMode + URL team only.
+ SD-8  (AMENDED per A6/VF-12b) + fact: strip is dead in Games mode
+       — hide it there or per-mode behavior. CC lean: (a) + hide in
+       Games.
+ SD-9  (AMENDED) Per-venue weather: DL-13 unixtime fix ships in
+       PR-A' regardless; per-venue build gated on DB-10 column drop
+       + coord backfill. CC lean: build in capability arc, not
+       Phase B core.
+ SD-10 NEW — P0 emergency lane GO (§1) + fix shape: SECDEF
+       org_is_public_listed() helper vs anon SELECT policy on
+       organizations. CC lean: helper; REQUEST: one-word GO to ship
+       the lane now.
+ SD-11 NEW — RSVP-close enforcement surface (XS-3): does the locked
+       closes-at-start rule disable controls everywhere, or chip-
+       only? CC lean: disable everywhere via isRsvpOpen(); coach/
+       admin override stays on detail (audit-logged per §16.8).
+ SD-12 NEW — ChildRsvp relocation to shared/ + signature (XS-10,
+       4 mounts) with AP #34 same-PR migration. CC lean: move it in
+       PR-B'.
+ SD-13 NEW — game_results anon exposure (DB-3): gate to
+       public-listing traversal (lean) vs keep open-by-design.
+       Ships in §1 lane step 3 unless ruled otherwise.
+ SD-14 NEW — Directions: re-add Apple/Waze (C2). CC lean: detail
+       Location tab first; cards stay Google single-tap.
+ SD-15 NEW — Coverage badges at every density (C3/C4 + UX-12):
+       unmet rides + unfilled duties always visible when non-zero.
+       CC lean: yes; verbosity stays density-gated.
+ SD-16 NEW — Family hub + per-family ICS feed phasing (C7/C8/C9):
+       phase 0 = §1 repair + guardian_id attribution (R20);
+       phase 1 = guardian-token family feed (one URL, all kids);
+       phase 2 = in-app family week view. CC lean: ratify phases
+       0-1 now, wireframe phase 2 in the Phase B ruling round.
+ SD-17 NEW — AI feature selection (C10): conflict detection /
+       family digest / smart nudge timing — pick ≤1 read-now
+       candidate for this arc per §16.16, or defer all. CC lean:
+       conflict detection (smallest, clearest read-now value,
+       no new privacy surface).
+ SD-18 NEW — Push schedule reminders on the existing send-push rail
+       (C11): enter Stream A cadence per §16.5, or backlog. CC
+       lean: backlog until after Phase B core (avoid parallel
+       notification work mid-redesign).
+
+----------------------------------------------------------------
+§5 REVISED BUILD SEQUENCE
+----------------------------------------------------------------
+ P0 LANE (immediate on SD-10 GO; CC ships same-session):
+    §1 steps 1-5. Unblocks the calendar/QR/Skylight mandate.
+ PR-A' MECHANICAL (no rulings; expanded from the audit's PR-A):
+    R10 tint token; R8 error sweep (useActivities consumer strip +
+    DL-2/VF-3 bail + VF-9 + DL-15 + DL-9 catch); R3 season scoping
+    + invariant; CP-3 keyboard guard; VF-2 wizard gate; R12 DL-13
+    weather unixtime + audit-grep extension (XS-13 list); tap-target
+    sweep (R7 floor part); a11y sweep (R16); SCH-30 dead prop;
+    column-manifest audit test (if not landed in P0 lane).
+    HARD PREREQ carried: SCH-2/DL-7 batch RSVP+activation hook
+    lands HERE (before PR-B' per VF-11).
+ PR-B' DENSITY + NEEDS-YOU (SD-1, SD-12, SD-15): SCH-6a ungate +
+    SCH-15 + phantom-medium removal + coverage badges + ChildRsvp
+    relocation; EventCard §6 split (CP-14) rides along; AP #43
+    needs-you x density x role invariant.
+ PR-C' TIME-STATE SPINE (SD-2, SD-11): eventTimeState + isRsvpOpen
+    helpers consumed at every mount (XS-2/XS-3 site lists);
+    NOW slot; completed section; countdown generalization;
+    ScheduleListSections split.
+ PR-D' SHARE + FEED PHASE 1 (SD-4, SD-16): consolidation + delete
+    schedule/ copy (AP #34 grep) + per-family feed token + feed
+    horizon unification (XS-14).
+ PR-E' GAMES VIEW (SD-3, SD-5): paging honesty, one cancelled
+    policy, filter-context handoff, GamesView split (CP-15),
+    standings-scope invariant vs Records.
+ PR-F' FILTERS + STRIP (SD-7, SD-8): filtered-empty + clear action,
+    deep-link visibility, WeekStrip fixes (+hide in Games), dots
+    from filtered set.
+ CAPABILITY ARCS (post-ruling, ordered by lean): C1 weather ->
+    C2 directions -> C9 family hub phase 2 -> C10 AI candidate ->
+    C11 push. Backlog: virtualization/windowing (R11 — measure at
+    next tenant), DB-16 program-delete semantics, DL-24 constants
+    drift, DB-10 column drops (rides with C1).
+
+----------------------------------------------------------------
+§6 CROSS-AGENT PATTERN SYNTHESIS (AP #58)
+----------------------------------------------------------------
+1. Pattern A (#63) count across the domain: ~12 distinct instances
+   (§0 Tier-3 list) — three found independently by 3+ agents each
+   (is-past, denominators, standings scope). The platform's
+   dominant bug class, reconfirmed at every level including schema
+   (duplicate coordinate pairs) and policy (shadowed dead policy).
+2. NEW sub-class locked: non-toLocale TZ math (toDateString/getDate/
+   getDay/naive Date parses) invisible to timezoneAuditPin — 8
+   sites across 5 files; extend the audit test (XS-13 enumerates).
+3. NEW sub-class: sub-44px tap targets (6 sites) — add a §0-style
+   grep for minHeight/minWidth literals under 44 in interactive
+   styles.
+4. NEW audit-grep class: select-column-vs-schema manifest (would
+   have caught the P0 phantom column at CI time).
+5. Error-handling style census: FIVE styles for the same failure
+   class across one domain (throw-into-void / console.error-return /
+   console.warn-continue-FABRICATE / swallow-and-render-empty /
+   cache-poison) — the error sweep (R8) should ship a single
+   documented contract, not five local fixes.
+6. AP #36's "checked but unconsumed" variant recurs: hooks that DO
+   build error contracts (useActivities) with zero consumers — the
+   anti-pattern catalog covers silent swallowing at the callsite;
+   consider a corollary for orphaned error contracts.
+7. Verification ROI datapoint (AP #53 lineage): the adversarial
+   re-check confirmed 31/32 and found 12 misses including 1 P1 —
+   the misses clustered exactly where the original inventory drew
+   its scope line. Lesson: audit inventories must list DATA
+   DEPENDENCIES (hooks-of-hooks), not just mounted files.
+
+----------------------------------------------------------------
+END — three asks: (1) SD-10 GO for the P0 lane; (2) rulings on
+SD-1..SD-18 (amended) off the audit's wireframes + this register;
+(3) relay both docs to the architect per §11.8.
+================================================================

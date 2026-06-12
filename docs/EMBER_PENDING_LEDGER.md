@@ -524,6 +524,18 @@ arc bodies.
   as pure parallelism while D-a..D-f relay is pending. Schema flags for architect: events.end_at
   nullable (5/193 prod rows null, all past) + locations duplicate coord pairs (lat/lon AND
   latitude/longitude) — migration-arc candidates, NOT in the Schedule UI sequence.
+  **MULTI-AGENT REVIEW (operator-directed, same day):** 6 parallel agents (DB/RLS, data layer,
+  components, UX/per-role, cross-surface+tests, adversarial verification) →
+  `docs/SCHEDULE_MULTIAGENT_REVIEW_2026-06-12.txt`. **P0 FOUND: the public funnel is DEAD in
+  production** — anon RLS gate fail-closed since 2026-05-28 (DB-1) + phantom `events.location_name`
+  select in PublicSchedulePage AND team-feed ICS (DB-2/XS-1) → QR/shared links show nothing,
+  calendar subscriptions 500. Plus anon grant surface (DB-4, incl. team_feed_token SELECT) and
+  game_results anon leak (DB-3). §1 P0 emergency lane proposed — **awaiting operator GO (SD-10)**;
+  grant-tightening MUST precede the RLS fix. Audit verification: 31/32 CONFIRMED, 0 refuted;
+  +1 new P1 (VF-1 season-unscoped Games-tab standings, prod-verified Winter+Spring mix).
+  Decision set expanded SD-1..SD-18 (capability map per operator mandates: weather/directions/
+  rides/volunteers/countdowns/completed-section/multi-family/calendar-sync/family-hub+Skylight/
+  AI/ML+push). VF-11 sequencing lock: SCH-2 batch hook is a HARD PREREQ of the density PR.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
