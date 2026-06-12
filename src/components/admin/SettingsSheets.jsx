@@ -1,4 +1,5 @@
 import AutoNotificationSettingsForm from './AutoNotificationSettingsForm';
+import EventFeaturesForm from './EventFeaturesForm';
 import ChannelMatrixForm from './ChannelMatrixForm';
 import AlertSettingsForm from './AlertSettingsForm';
 import SenderIdentityForm from './SenderIdentityForm';
@@ -10,7 +11,7 @@ import PilotModeForm from './PilotModeForm';
 // at the Step-4 cap-pressure trigger). Each form is mounted always (returns null
 // when closed) and seeded from the live hooks. Bucket-A sections write via
 // os.save; auto-notifications writes via an.save (the RPC).
-export default function SettingsSheets({ openForm, setOpenForm, an, os, al, org }) {
+export default function SettingsSheets({ openForm, setOpenForm, an, os, al, fs = {}, org }) {
   const s = os.settings;
   const close = () => setOpenForm(null);
   return (
@@ -24,6 +25,11 @@ export default function SettingsSheets({ openForm, setOpenForm, an, os, al, org 
         open={openForm === 'autonotif'} onClose={close}
         initial={{ remindersOn: an.remindersOn, nudgesOn: an.nudgesOn, minGoing: an.minGoing }}
         onSave={an.save} saving={an.saving}
+      />
+      <EventFeaturesForm
+        open={openForm === 'features'} onClose={close}
+        initial={{ ridesOn: fs.ridesOn, dutiesOn: fs.dutiesOn }}
+        onSave={fs.save} saving={fs.saving}
       />
       <ChannelMatrixForm
         open={openForm === 'channels'} onClose={close}

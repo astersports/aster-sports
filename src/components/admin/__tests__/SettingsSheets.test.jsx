@@ -27,10 +27,11 @@ const al = {
   ],
   save: vi.fn(), saving: false,
 };
+const fs = { ridesOn: true, dutiesOn: true, save: vi.fn(), saving: false };
 const org = { name: 'Legacy Hoopers LLC', mailing_address: '4 Byram Brook Place' };
 
 function renderSheets(openForm) {
-  return render(<SettingsSheets openForm={openForm} setOpenForm={() => {}} an={an} os={os} al={al} org={org} />);
+  return render(<SettingsSheets openForm={openForm} setOpenForm={() => {}} an={an} os={os} al={al} fs={fs} org={org} />);
 }
 
 describe('SettingsSheets — openForm routing', () => {
@@ -42,6 +43,7 @@ describe('SettingsSheets — openForm routing', () => {
   it.each([
     ['org', /organization/i],
     ['autonotif', /automatic messages/i],
+    ['features', /event features/i],
     ['channels', /channels/i],
     ['alerts', /alerts/i],
     ['sender', /sender identity/i],

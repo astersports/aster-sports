@@ -23,8 +23,9 @@ const railTime = (iso) => new Date(iso).toLocaleTimeString('en-US', { hour: 'num
 // Compact is the same bones at 17px rail + folded venue (R2-1/R2-2).
 export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger, isNext, density = 'minimal', gameResult, weather, childRsvpMap, activatedMap, commitment, suppressCount, onRsvpChange }) {
   const navigate = useNavigate();
-  const { role, myChildren } = useAuth();
+  const { role, myChildren, org } = useAuth();
   const now = useNow();
+  const features = org?.feature_settings ?? {};
   const compact = density === 'minimal';
   const kids = (myChildren || []).filter((c) => c.teamIds?.includes(event.team_id) || c.teamId === event.team_id);
   const team = event.teams;
@@ -108,7 +109,8 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
         )}
 
         {!completed && !isCancelled && (
-          <EventCardFacts suppressCount={suppressCount} isStaffView={isStaff(role)} count={rsvpCount} rideCount={rideCount} dutyCount={dutyCount} commitment={commitment} academyNames={academyNames} compact={compact} />
+          <EventCardFacts suppressCount={suppressCount} isStaffView={isStaff(role)} count={rsvpCount} rideCount={rideCount} dutyCount={dutyCount} commitment={commitment} academyNames={academyNames} compact={compact}
+            ridesEnabled={features.rides_enabled !== false} dutiesEnabled={features.duties_enabled !== false} />
         )}
 
         {role === 'parent' && rsvpKids.length > 0 && timeState === 'upcoming' && !isCancelled && (

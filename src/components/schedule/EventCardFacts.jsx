@@ -4,13 +4,15 @@ import { Check, Lock } from 'lucide-react';
 // retired. Gray when life is fine, amber 600 only when something needs
 // you, violet for academy activation notes, accent only on the personal
 // commitment. Data rides the useScheduleData batch (zero requests here).
-export default function EventCardFacts({ suppressCount, isStaffView, count, rideCount, dutyCount, commitment, academyNames = [], compact }) {
+export default function EventCardFacts({ suppressCount, isStaffView, count, rideCount, dutyCount, commitment, academyNames = [], compact, ridesEnabled = true, dutiesEnabled = true }) {
   const fs = compact ? 12 : 13;
   const going = count?.going;
   const denom = count?.denominator;
-  const requests = rideCount?.requests || 0;
-  const offers = rideCount?.offers || 0;
-  const dutiesOpen = dutyCount ? Math.max(0, dutyCount.total - dutyCount.claimed) : 0;
+  // Org feature gates (system settings, 2026-06-12): disabled programs
+  // contribute NOTHING to the line — no needs, no "covered".
+  const requests = ridesEnabled ? (rideCount?.requests || 0) : 0;
+  const offers = ridesEnabled ? (rideCount?.offers || 0) : 0;
+  const dutiesOpen = dutiesEnabled && dutyCount ? Math.max(0, dutyCount.total - dutyCount.claimed) : 0;
 
   const needs = [];
   if (requests > 0) needs.push(`${requests} ride${requests === 1 ? '' : 's'} needed`);
