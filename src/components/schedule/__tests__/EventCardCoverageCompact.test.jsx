@@ -28,17 +28,32 @@ const upcoming = () => ({
 });
 
 describe('EventCard — SD-15 coverage badges at every density', () => {
-  it.each(['minimal', 'maximum'])('rides + duties + denominator render at density=%s', (density) => {
+  // R3 (PR-V4): the densities differ on INFORMATION, not spacing —
+  // compact glances, detailed reads the operational detail.
+  it('compact: terse glance line', () => {
     const { container } = render(
       <MemoryRouter>
-        <EventCard event={upcoming()} density={density}
+        <EventCard event={upcoming()} density="minimal"
           rsvpCount={{ going: 8, denominator: 10 }}
           rideCount={{ requests: 2, offers: 1 }}
           dutyCount={{ total: 3, claimed: 1 }} />
       </MemoryRouter>
     );
-    // R2-2 facts line (PR-V2): one aggregated line, not chips.
-    expect(container.textContent).toContain('8 of 10 going · 2 rides needed · 2 volunteers needed');
+    expect(container.textContent).toContain('8/10 going · 2 rides needed · 2 volunteers needed');
+  });
+
+  it('detailed: seat math + named open slots when available', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <EventCard event={upcoming()} density="maximum"
+          rsvpCount={{ going: 8, denominator: 10, maybe: 1, not_going: 1 }}
+          rideCount={{ requests: 2, offers: 1 }}
+          dutyCount={{ total: 3, claimed: 1, openNames: ['Snacks', 'Carpool lead'] }} />
+      </MemoryRouter>
+    );
+    expect(container.textContent).toContain("8 of 10 going · 1 maybe · 1 can't");
+    expect(container.textContent).toContain('2 ride seats needed · 1 offered');
+    expect(container.textContent).toContain('Snacks open · Carpool lead open');
   });
 
   it('zero-coverage cards stay quiet at compact (no amber noise)', () => {

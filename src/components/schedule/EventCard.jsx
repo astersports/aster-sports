@@ -107,10 +107,18 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
             ? <button type="button" onClick={(e) => { e.stopPropagation(); window.open(mapsUrl, '_blank', 'noopener,noreferrer'); }} style={{ fontSize: 13, color: 'var(--as-accent)', background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer', textAlign: 'left', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.location_name}</button>
             : <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.location_name}</div>
         )}
+        {/* R3 (PR-V4): Detailed EARNS its space — operational lines compact
+            never shows: the arrival call + event notes (below the facts). */}
+        {!compact && event.arrival_minutes_before > 0 && timeState === 'upcoming' && !isCancelled && (
+          <div style={{ fontSize: 13, color: 'var(--as-text-secondary)', fontWeight: 500, marginTop: 3 }}>Arrive {event.arrival_minutes_before} min early</div>
+        )}
 
         {!completed && !isCancelled && (
           <EventCardFacts suppressCount={suppressCount} isStaffView={isStaff(role)} count={rsvpCount} rideCount={rideCount} dutyCount={dutyCount} commitment={commitment} academyNames={academyNames} compact={compact}
             ridesEnabled={features.rides_enabled !== false} dutiesEnabled={features.duties_enabled !== false} />
+        )}
+        {!compact && event.notes && !completed && !isCancelled && (
+          <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{event.notes}</div>
         )}
 
         {role === 'parent' && rsvpKids.length > 0 && timeState === 'upcoming' && !isCancelled && (

@@ -15,11 +15,21 @@ export default function EventCardFacts({ suppressCount, isStaffView, count, ride
   const dutiesOpen = dutiesEnabled && dutyCount ? Math.max(0, dutyCount.total - dutyCount.claimed) : 0;
 
   const needs = [];
-  if (requests > 0) needs.push(`${requests} ride${requests === 1 ? '' : 's'} needed`);
-  if (dutiesOpen > 0) needs.push(`${dutiesOpen} volunteer${dutiesOpen === 1 ? '' : 's'} needed`);
+  if (requests > 0) needs.push(compact ? `${requests} ride${requests === 1 ? '' : 's'} needed` : `${requests} ride seat${requests === 1 ? '' : 's'} needed${offers > 0 ? ` · ${offers} offered` : ''}`);
+  if (dutiesOpen > 0) {
+    // R3: detailed NAMES the open slots ("Snacks open"); compact counts.
+    const names = !compact && dutyCount?.openNames?.length ? dutyCount.openNames : null;
+    needs.push(names ? names.map((n) => `${n} open`).join(' · ') : `${dutiesOpen} volunteer${dutiesOpen === 1 ? '' : 's'} needed`);
+  }
 
   const showCount = denom > 0 && !(suppressCount && !isStaffView);
-  const countText = showCount ? `${going} of ${denom} going` : null;
+  // R3: compact glances ("9/11 going"); detailed reads the full
+  // breakdown ("9 of 11 going · 1 maybe · 1 can't").
+  const countText = !showCount ? null
+    : compact ? `${going}/${denom} going`
+    : [`${going} of ${denom} going`,
+       count.maybe > 0 ? `${count.maybe} maybe` : null,
+       count.not_going > 0 ? `${count.not_going} can't` : null].filter(Boolean).join(' · ');
   // V2.1: compact folds the academy note INTO the one line (a separate
   // violet line per card made compact as tall as detailed).
   const academyInline = compact && academyNames.length > 0

@@ -730,8 +730,17 @@ arc bodies.
   bundle already carries the map); partition re-pointed to eventTimeState (live games stay in
   their week group with the Live treatment); tournament anchors keep their name-title via
   formatEventTitle (canonical composer upgraded — list view benefits too); standings + WEEK
-  headers + team filter unchanged. Static vocabulary gate test. NEXT: Frank re-grades the full
-  surface (list + Games + settings toggles).
+  headers + team filter unchanged. Static vocabulary gate test.
+  FULL-SURFACE RE-GRADE 6/10 → ROUND 3 RULED (R3-1/R3-2 in the visual-pass doc): densities
+  differ by INFORMATION not spacing — compact glances ("9/11 going" + generic amber), detailed
+  READS (RSVP breakdown w/ maybe/can't, ride seat math, NAMED open duty slots via
+  useEventDutyCounts.openNames, arrival call, notes 2-line clamp; weather-label-in-rail
+  considered + rejected). **ENRICHMENT EXECUTED (operator-approved verbatim "Approved to change
+  all future events to be enriched"):** 17 future LH events seeded with dummy rides/volunteers
+  (34 duty slots Snacks/Scoreboard, 5 open requests, 6 offers; needs/covered/mixed deterministic
+  flavors) — rides/volunteers are NOT rolling out to parents; the PR-FS toggles are the
+  kill-switch. **PR-V4 SHIPPED** with the R3 contract + per-density tests.
+  NEXT: Frank re-grades Detailed vs Compact (same card, two different questions answered).
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
