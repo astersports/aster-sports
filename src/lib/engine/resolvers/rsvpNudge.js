@@ -24,17 +24,34 @@
 import { buildOrgContext } from '../buildOrgContext';
 import { computeUrgency, EventAlreadyStartedError, EventHasNoTeamError } from './rsvpNudgeHelpers';
 import { resolvePilotRedirect } from './pilotRedirect';
+import { eligibleRoster, isGameType } from '../../rsvpEligibility';
 
 
 const EVENT_SELECT = 'id, title, team_id, event_type, start_at, end_at, location, location_id, opponent, status, publish_status, teams ( id, name, team_color, sort_order, org_id )';
 
 async function fetchUnrespondedSlices(supabase, event, now, pilotOnly) {
   // Beta B6 audit — anti-pattern #36.
-  const { data: tpData, error: tpErr } = await supabase.from('team_players').select('player_id, joined_at, left_at, status, players ( first_name )').eq('team_id', event.team_id).eq('status', 'active');
+  const { data: tpData, error: tpErr } = await supabase.from('team_players').select('player_id, joined_at, left_at, status, players ( first_name, member_type )').eq('team_id', event.team_id).eq('status', 'active');
   if (tpErr) throw tpErr;
   const tpRows = tpData || [];
   const nowMs = now.getTime();
-  const active = tpRows.filter((r) => (!r.left_at || new Date(r.left_at).getTime() > nowMs) && (!r.joined_at || new Date(r.joined_at).getTime() <= nowMs));
+  const windowed = tpRows.filter((r) => (!r.left_at || new Date(r.left_at).getTime() > nowMs) && (!r.joined_at || new Date(r.joined_at).getTime() <= nowMs));
+
+  // Audit 2026-06-12 F-4: the SD-6 eligibility contract applies to the
+  // EMAIL lane too — a game nudge must never prompt a family whose kid
+  // has no RSVP control in the app (unactivated academy). Shared module
+  // (lib/rsvpEligibility) so this lane can't drift from the surfaces;
+  // practices keep ALL academy kids, so the activations read is
+  // game/tournament-only. totalRoster shrinks with it (the denominator
+  // in nudge copy matches denominatorFor everywhere else).
+  let activatedSet = null;
+  if (isGameType(event.event_type)) {
+    const { data: actData, error: actErr } = await supabase.from('player_activations').select('player_id').eq('event_id', event.id);
+    if (actErr) throw actErr;
+    activatedSet = new Set((actData || []).map((a) => a.player_id));
+  }
+  const eligibleIds = new Set(eligibleRoster(windowed.map((r) => ({ id: r.player_id, member_type: r.players?.member_type })), event.event_type, activatedSet).map((p) => p.id));
+  const active = windowed.filter((r) => eligibleIds.has(r.player_id));
   const totalRoster = active.length;
 
   // Beta B6 audit — anti-pattern #36.

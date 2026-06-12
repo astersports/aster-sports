@@ -91,6 +91,7 @@ export function mockClient(fixtures) {
     organizations: fixtures.organization ? [fixtures.organization] : [],
     organization_settings: fixtures.organization_settings ? [fixtures.organization_settings] : [],
     player_guardians: fixtures.player_guardians || [],
+    player_activations: fixtures.player_activations || [],
     game_results: fixtures.game_result ? [fixtures.game_result] : (fixtures.game_results || []),
     players: fixtures.player_of_game ? [fixtures.player_of_game] : (fixtures.player ? [fixtures.player] : (fixtures.players || [])),
   };
