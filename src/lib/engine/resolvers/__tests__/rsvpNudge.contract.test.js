@@ -138,6 +138,34 @@ describe('rsvp_nudge resolver — contract', () => {
       .rejects.toBeInstanceOf(EventAlreadyStartedError);
   });
 
+  // Audit 2026-06-12 F-4: the SD-6 eligibility contract on the EMAIL lane.
+  // The app already suppresses the control + the pending prompt (B2); the
+  // nudge resolver was still emailing unactivated-academy game families.
+  describe('F-4 eligibility — unactivated academy kids never nudged for games', () => {
+    const AUBTIN = 'fa384908-7441-447d-b23a-eea152b37a59';
+    const GAME = { ...event, event_type: 'game' };
+    const academize = (rows) => rows.map((r) => r.player_id === AUBTIN ? { ...r, players: { ...r.players, member_type: 'futures_academy' } } : r);
+    const nudgedIds = (slices) => slices.flatMap((s) => s.unresponded_kids.map((k) => k.player_id));
+
+    it('game + unactivated: excluded from slices AND total_roster', async () => {
+      const base = await resolveRsvpNudge({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient({ ...FIXTURES, event: GAME }), now: NOW });
+      const { context, slices } = await resolveRsvpNudge({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient({ ...FIXTURES, event: GAME, team_players: academize(team_players) }), now: NOW });
+      expect(context.rsvp_summary.total_roster).toBe(base.context.rsvp_summary.total_roster - 1);
+      expect(nudgedIds(slices)).not.toContain(AUBTIN);
+    });
+
+    it('game + ACTIVATED: nudged like anyone else', async () => {
+      const fx = { ...FIXTURES, event: GAME, team_players: academize(team_players), player_activations: [{ event_id: EVENT_ID, player_id: AUBTIN }] };
+      const { slices } = await resolveRsvpNudge({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient(fx), now: NOW });
+      expect(nudgedIds(slices)).toContain(AUBTIN);
+    });
+
+    it('practice: academy kid stays nudgeable (practices ARE the academy program)', async () => {
+      const { slices } = await resolveRsvpNudge({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient({ ...FIXTURES, team_players: academize(team_players) }), now: NOW });
+      expect(nudgedIds(slices)).toContain(AUBTIN);
+    });
+  });
+
   it('11. urgency formatter coverage: Today / Tomorrow (Weekday) / Weekday / Month Day', async () => {
     // Today: now ~30 min before event start (same NY date)
     const today = await resolveRsvpNudge({ eventId: EVENT_ID, pilotOnly: false }, { supabase: mockClient(FIXTURES), now: new Date('2026-05-11T23:00:00Z') });
