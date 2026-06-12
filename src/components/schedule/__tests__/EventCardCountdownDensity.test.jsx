@@ -37,6 +37,14 @@ describe('EventCard — countdown renders at every density (CP-5)', () => {
     expect(container.textContent).toMatch(/in \d+h|in \d+m/);
   });
 
+  it('V2.1: the NOW-slot tag ABSORBS the countdown — exactly one countdown, no pill behind the tag', () => {
+    const { container } = render(
+      <MemoryRouter><EventCard event={event()} isNext density="maximum" /></MemoryRouter>
+    );
+    expect(container.textContent).toMatch(/Next up · in \d+h/i);
+    expect(container.textContent.match(/in \d+h/g)).toHaveLength(1);
+  });
+
   it('non-next upcoming card inside 24h also shows countdown at minimal density', () => {
     const { container } = render(
       <MemoryRouter><EventCard event={event()} isNext={false} density="minimal" /></MemoryRouter>
