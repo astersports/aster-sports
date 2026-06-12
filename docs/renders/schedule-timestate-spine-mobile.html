@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Time-state spine (mobile)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--as-navy:#22304f;--as-cobalt:#4a8fd4;--as-cobalt-dark:#3070b0;--as-green:#1f9d57;--as-red:#c0392b;--as-amber:#c2700a;--as-live:#d6492f;
+    --as-surface:#f1f3f7;--as-border:#e6e9ef;--as-border-2:#eef1f5;--as-text:#151924;--as-text-2:#475467;--as-muted:#6b7686;}
+  *{box-sizing:border-box;margin:0;padding:0}html{-webkit-text-size-adjust:100%}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--as-surface);color:var(--as-text);-webkit-font-smoothing:antialiased;line-height:1.45}
+  .wrap{width:100%;max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+  .statusbar{background:#fff;padding:max(11px,env(safe-area-inset-top)) 22px 6px;display:flex;justify-content:space-between;font:600 14px Inter}
+  .hdr{background:var(--as-navy);color:#fff;display:flex;align-items:center;gap:11px;padding:11px 16px}
+  .hdr .logo{width:32px;height:32px;border-radius:8px;background:#16223c;display:grid;place-items:center;font-size:16px;flex:none}
+  .hdr h1{font-size:17px;font-weight:700;flex:1}
+  .body{padding:13px 14px calc(28px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:9px}
+  .lbl{font:700 11px Inter;letter-spacing:.06em;text-transform:uppercase;color:var(--as-muted);padding:7px 2px 1px}
+  .lbl.now{color:var(--as-live);display:flex;align-items:center;gap:6px}
+  .pulse{width:8px;height:8px;border-radius:50%;background:var(--as-live)}
+
+  .card{background:#fff;border:1px solid var(--as-border);border-radius:12px;padding:13px 15px;display:flex;align-items:center;gap:11px}
+  .when{font:700 13px Inter;color:var(--as-navy);white-space:nowrap;width:62px}
+  .info{flex:1;min-width:0}.info .t{font-size:14px;font-weight:700;color:var(--as-navy)}.info .s{font-size:12px;color:var(--as-text-2);margin-top:1px}
+  .right{text-align:right;white-space:nowrap}
+
+  /* upcoming + countdown */
+  .cd{font:700 11px Inter;color:var(--as-cobalt-dark);background:#eef5fc;padding:3px 8px;border-radius:6px}
+  .cd.soon{color:var(--as-amber);background:#fbf0df}
+
+  /* happening now */
+  .card.live{border:1.5px solid var(--as-live);box-shadow:0 0 0 3px rgba(214,73,47,.08)}
+  .livebadge{font:700 9px Inter;letter-spacing:.05em;color:#fff;background:var(--as-live);padding:3px 8px;border-radius:5px}
+
+  /* completed */
+  .completed{opacity:.62}
+  .wl{font:700 12px Inter;padding:3px 9px;border-radius:6px}
+  .wl.w{color:#157a43;background:#e7f6ee}.wl.l{color:#a23226;background:#fbeae7}
+  .score{font:600 11px Inter;color:var(--as-muted);margin-top:2px}
+  .csec{display:flex;align-items:center;justify-content:space-between;padding:7px 2px 1px}
+  .csec .l{font:700 11px Inter;letter-spacing:.06em;text-transform:uppercase;color:var(--as-muted)}
+  .csec .rec{font:700 12px Inter;color:var(--as-text-2)}
+
+  .anno{background:#f3f8fe;border:1px solid #cfe0f5;border-radius:11px;padding:13px 14px;margin-top:6px}
+  .anno h3{font:700 11px Inter;letter-spacing:.04em;text-transform:uppercase;color:var(--as-cobalt-dark);margin-bottom:7px}
+  .anno p{font-size:12px;color:var(--as-text-2)}.anno p b{color:var(--as-text);font-weight:600}
+  code{font-family:ui-monospace,monospace;font-size:10.5px;background:var(--as-surface);padding:1px 4px;border-radius:4px}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="statusbar"><span>5:48</span><span>&#9679;&#9679;&#9679;&#9679;&#9679;</span></div>
+  <div class="hdr"><span class="logo">&#9876;&#65039;</span><h1>Schedule</h1></div>
+
+  <div class="body">
+    <!-- HAPPENING NOW -->
+    <div class="lbl now"><span class="pulse"></span>Happening now</div>
+    <div class="card live"><span class="when">5:00p</span><div class="info"><div class="t">Practice</div><div class="s">10U Black &middot; WCC Gym 2</div></div><span class="livebadge">LIVE</span></div>
+
+    <!-- UPCOMING + COUNTDOWN -->
+    <div class="lbl">Next 7 days</div>
+    <div class="card"><span class="when">Tonight 7:30p</span><div class="info"><div class="t">Game vs Harrison</div><div class="s">10U Black &middot; @ Harrison HS</div></div><span class="right"><span class="cd soon">in 1h 42m</span></span></div>
+    <div class="card"><span class="when">Sat 9:00a</span><div class="info"><div class="t">Game vs Rye Rebels</div><div class="s">10U Black &middot; WCC Gym 1</div></div><span class="right"><span class="cd">in 2 days</span></span></div>
+
+    <!-- COMPLETED -->
+    <div class="csec"><span class="l">Completed</span><span class="rec">2W &ndash; 1L</span></div>
+    <div class="card completed"><span class="when">Tue 6:00p</span><div class="info"><div class="t">Game vs White Plains</div><div class="s">@ WP Rec</div></div><span class="right"><span class="wl w">W</span><div class="score">38&ndash;31</div></span></div>
+    <div class="card completed"><span class="when">Sun 1:00p</span><div class="info"><div class="t">Game vs Scarsdale</div><div class="s">WCC Gym 1</div></div><span class="right"><span class="wl l">L</span><div class="score">29&ndash;34</div></span></div>
+
+    <div class="anno">
+      <h3>SD-2 , the spine</h3>
+      <p><b>One <code>eventTimeState(event, now)</code> drives all three states.</b> upcoming (countdown: tonight / in 1h 42m / in 2 days) &rarr; happening_now (pinned NOW slot, never dropping into Past mid-game) &rarr; completed (its own section, W/L chip + score, dimmed). Collapses the four is-past definitions and three duration constants into one <code>EVENT_DEFAULT_DURATION_MS</code>. This is the redesign backbone the operator's countdown + completed-section mandate rides on.</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

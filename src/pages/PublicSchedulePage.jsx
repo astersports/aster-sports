@@ -20,24 +20,36 @@ export default function PublicSchedulePage() {
   const [team, setTeam] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showSubscribe, setShowSubscribe] = useState(false);
 
-  // RLS (anon): teams_select_public + events_select_public gate by
-  // organizations.public_listing_enabled (Wave 1 P0 #4 closure, mig
-  // 20260528140000_wave_1_public_listing_gating — replaced the prior
-  // hardcoded LH org_id with a per-org flag). Default for new tenants
-  // flipped to false by mig 20260602154853 (Wave 3.B #28 P0-4) so a
-  // pilot org opts INTO public listing after content review.
+  // RLS (anon): teams_select_public + events_select_public gate via the
+  // SECURITY DEFINER org_is_public_listed() helper (P0 lane STEP 2,
+  // 2026-06-12 — repairs the fail-closed gate shipped in 20260528140000,
+  // which subqueried organizations that anon cannot read). The feed token +
+  // org display name come from the gated get_public_subscribe_info() RPC;
+  // anon bulk SELECT of teams.team_feed_token was revoked in STEP 1.
   useEffect(() => {
     (async () => {
-      const [teamRes, eventsRes] = await Promise.all([
-        supabase.from('teams').select('id, name, team_color, org_id, team_feed_token, organizations(name, display_name)').eq('id', teamId).maybeSingle(),
-        supabase.from('events').select('id, title, event_type, start_at, end_at, opponent, location_name, status')
+      const [teamRes, eventsRes, infoRes] = await Promise.all([
+        supabase.from('teams').select('id, name, team_color, org_id').eq('id', teamId).maybeSingle(),
+        supabase.from('events').select('id, title, event_type, start_at, end_at, opponent, location_name:location, status')
           .eq('team_id', teamId).neq('status', 'cancelled')
           .gte('start_at', new Date().toISOString())
           .order('start_at', { ascending: true }).limit(50),
+        supabase.rpc('get_public_subscribe_info', { p_team_id: teamId }),
       ]);
-      setTeam(teamRes.data);
+      if (teamRes.error || eventsRes.error) {
+        console.error('PublicSchedule load:', (teamRes.error || eventsRes.error).message);
+        setLoadError(true);
+        setLoading(false);
+        return;
+      }
+      // RPC failure degrades to "subscribe unavailable", not a page error.
+      const info = infoRes.data?.[0] || null;
+      setTeam(teamRes.data
+        ? { ...teamRes.data, team_feed_token: info?.feed_token ?? null, org_display_name: info?.org_display_name ?? '' }
+        : null);
       setEvents(eventsRes.data || []);
       setLoading(false);
     })();
@@ -49,9 +61,10 @@ export default function PublicSchedulePage() {
   }, [team]);
 
   if (loading) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Loading schedule…</div>;
+  if (loadError) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Couldn&rsquo;t load this schedule. Try again in a moment.</div>;
   if (!team) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Team not found.</div>;
 
-  const orgName = team.organizations?.display_name || team.organizations?.name || '';
+  const orgName = team.org_display_name || '';
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', padding: '16px 16px 80px', backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' }}>
