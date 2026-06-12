@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useOrgTeamRecords } from '../../hooks/useOrgTeamRecords';
-import { useTeams } from '../../hooks/useTeams';
+import { useActiveSeasonTeams } from '../../hooks/useActiveSeasonTeams';
 import { isCompetitiveTeam } from '../../lib/teamTypes';
 import { useSeason } from '../../context/SeasonContext';
 import { useNow } from '../../hooks/useNow';
@@ -20,9 +20,11 @@ import Badge from '../shared/Badge';
 // week group with the Live treatment instead of jumping to Results).
 export default function GamesView({ activities, orgId, data, density }) {
   const { byTeamId: recordsByTeamId } = useOrgTeamRecords(orgId);
-  const { teams: orgTeams } = useTeams(orgId);
-  // C-12: standings exclude non-competitive teams (camp/clinic/training/academy).
-  const allTeams = useMemo(() => orgTeams.filter(isCompetitiveTeam), [orgTeams]);
+  // D7 (design system): ACTIVE-SEASON teams only — the org-wide fetch
+  // mixed Winter 2025-26 and Spring 2026 rows in the standings
+  // (operator-caught, round 4). C-12 competitive filter unchanged.
+  const { teams: seasonTeams } = useActiveSeasonTeams();
+  const allTeams = useMemo(() => seasonTeams.filter(isCompetitiveTeam), [seasonTeams]);
   const { activeSeason } = useSeason();
   const seasonStartDate = activeSeason?.start_date;
   const now = useNow();
@@ -54,9 +56,9 @@ export default function GamesView({ activities, orgId, data, density }) {
 
   const totalGames = useMemo(() => {
     let count = 0;
-    for (const s of Object.values(recordsByTeamId)) count += s.gamesPlayed || 0;
+    for (const t of allTeams) count += recordsByTeamId[t.id]?.gamesPlayed || 0;
     return count;
-  }, [recordsByTeamId]);
+  }, [recordsByTeamId, allTeams]);
 
   const weekGroups = useMemo(() => {
     const seasonStart = seasonStartDate ? new Date(seasonStartDate).getTime() : null;
