@@ -715,10 +715,17 @@ arc bodies.
   the tag was half-covering the status pill); checkmark EARNS its place (tick beside "0 of 10
   going" was a lie — renders only when going > 0); compact folds the academy note INTO the one
   facts line (a separate violet line per card made compact as tall as detailed); detailed rail
-  hour to 24px + roomier padding so the density pair separates at arm's length. FLAGGED for the
-  next scope call: the GAMES TAB is untouched old design and now visibly drags the surface —
-  PR-V3 candidates are (a) Games-tab adoption of the rail/facts vocabulary or (b) home
-  chip-vocabulary coherence; CC lean (a), same surface first. NEXT: Frank re-grades.
+  hour to 24px + roomier padding so the density pair separates at arm's length. V2.1 DEPLOY GRADED 7/10 with two
+  directives: (1) Games tab adoption (= PR-V3, directed); (2) ride-share + volunteer activation
+  move to SYSTEM SETTINGS level. **PR-FS SHIPPED:** `organizations.feature_settings` jsonb
+  (defaults both ON) + admin-gated merged-write `set_org_feature_settings` RPC (mirrors the A2
+  auto-notifications precedent; migration `20260612164911` + AP#21 mirror); §16.16 read-now
+  compliant — readers in the same PR: EventCardFacts gates rides/duties contributions,
+  EventDetailPage gates the Rides + Volunteers sections, AuthContext org select carries the
+  column (zero extra queries); operator UI = "Event features" row at /admin/settings → Events
+  (EventFeaturesForm, 2 toggles, FullScreenForm mirroring the sibling; useOrgFeatureSettings
+  hook). Tests: facts gating + sheet routing extended. NEXT: PR-V3 (Games tab adopts the
+  rail/facts vocabulary — EventCard rows replace MatchupCard; standings stay) → Frank re-grades.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player

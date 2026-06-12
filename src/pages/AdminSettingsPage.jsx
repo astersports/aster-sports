@@ -6,6 +6,7 @@ import SettingsSheets from '../components/admin/SettingsSheets';
 import { useOrgAutoNotifications } from '../hooks/useOrgAutoNotifications';
 import { useOrgSettings } from '../hooks/useOrgSettings';
 import { useAlertConfigs } from '../hooks/useAlertConfigs';
+import { useOrgFeatureSettings } from '../hooks/useOrgFeatureSettings';
 
 // /admin/settings — org-level admin settings (admin-only route). Thin row-list:
 // each row opens a FullScreenForm from SettingsSheets. General + Communications +
@@ -43,6 +44,7 @@ export default function AdminSettingsPage() {
   const an = useOrgAutoNotifications();
   const os = useOrgSettings(orgId);
   const al = useAlertConfigs();
+  const fs = useOrgFeatureSettings();
   const [openForm, setOpenForm] = useState(null);
   const s = os.settings;
 
@@ -74,6 +76,11 @@ export default function AdminSettingsPage() {
         <Row title="Alerts" summary={alertsSummary} disabled={al.loading} onClick={() => setOpenForm('alerts')} />
       </div>
 
+      <h2 style={SECTION_LABEL}>Events</h2>
+      <div style={CARD}>
+        <Row title="Event features" summary={fs.loading ? 'Loading…' : `Rides ${fs.ridesOn ? 'on' : 'off'} · Volunteers ${fs.dutiesOn ? 'on' : 'off'}`} disabled={fs.loading} onClick={() => setOpenForm('features')} />
+      </div>
+
       <h2 style={SECTION_LABEL}>Communications</h2>
       <div style={CARD}>
         <Row title="Sender identity" summary={senderSummary} disabled={os.loading} onClick={() => setOpenForm('sender')} />
@@ -87,7 +94,7 @@ export default function AdminSettingsPage() {
         Clearing the test address sends real email to families — the go-live cutover.
       </p>
 
-      <SettingsSheets openForm={openForm} setOpenForm={setOpenForm} an={an} os={os} al={al} org={org} />
+      <SettingsSheets openForm={openForm} setOpenForm={setOpenForm} an={an} os={os} al={al} fs={fs} org={org} />
     </div>
   );
 }

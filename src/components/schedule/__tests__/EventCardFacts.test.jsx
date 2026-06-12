@@ -56,6 +56,16 @@ describe('EventCardFacts — R2-2 one-line contract', () => {
     expect(container.textContent).toBe('');
   });
 
+  it('org feature gates: disabled programs contribute nothing — no needs, no covered', () => {
+    const { container } = render(
+      <EventCardFacts count={count} rideCount={{ requests: 2, offers: 3 }} dutyCount={{ total: 3, claimed: 0 }}
+        ridesEnabled={false} dutiesEnabled={false} />
+    );
+    expect(container.textContent).not.toContain('rides');
+    expect(container.textContent).not.toContain('volunteers');
+    expect(container.textContent).toContain('9 of 11 going');
+  });
+
   it('V2.1: the checkmark EARNS its place — absent at 0 going, present above 0', () => {
     const zero = render(<EventCardFacts count={{ going: 0, denominator: 10 }} />);
     expect(zero.container.textContent).toContain('0 of 10 going');

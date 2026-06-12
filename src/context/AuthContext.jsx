@@ -53,7 +53,7 @@ export function AuthProvider({ children }) {
     // never .maybeSingle(), which errors on >1 row and would break a multi-org login.
     const { data: roleRows, error } = await supabase
       .from('user_roles')
-      .select('role, organization_id, organizations(id, name, display_name, slug, logo_url, brand_colors, tagline, primary_domain, mailing_address)')
+      .select('role, organization_id, organizations(id, name, display_name, slug, logo_url, brand_colors, tagline, primary_domain, mailing_address, feature_settings)')
       .eq('user_id', authUser.id);
     if (id !== fetchIdRef.current) return;
 
