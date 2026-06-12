@@ -50,7 +50,9 @@ POST-MERGE (same day): shipped as PR #986 (merge commit `20e9ad48`). Frank's 5-s
 smoke PASSED (app load · og link preview · Android maskable icon · iOS icon unchanged), and
 checklist step 5 self-verified — the SessionStart hook fired live on the next session resume
 (npm install + §9.1 pre-flight lines in startup context, including the AP #35 divergence
-catch this very reconcile resolves).
+catch this very reconcile resolves). Same-session Phase B early-start (operator-ratified):
+`docs/SCHEDULE_L99_AUDIT_2026-06-12.txt` — full §16.15 audit of /schedule (32 findings,
+3 role wireframes, SD-1..SD-9 open decisions); code gated on rulings.
 
 ### Session 2026-06-11 — money-seam unify + roster visibility + funnel select + pilot cutover (PRs #958, #967–#983) — RECONCILED 2026-06-11
 
@@ -514,6 +516,14 @@ arc bodies.
   Phase B = Schedule L99, §16.15 audit doc gates code; Phase C = LH-site cutover support).
   SHIPPED as PR #986 (merged 2026-06-12); Frank's 5-step deploy smoke PASSED same day, hook
   verified live on session resume. Phase A remains gated on the D-a..D-f rulings.
+  **Phase B EARLY-START (operator-ratified 2026-06-12, same session):** Schedule L99 audit doc
+  SHIPPED — `docs/SCHEDULE_L99_AUDIT_2026-06-12.txt` (all five §16.15 elements; 32 findings:
+  7 P1 / 12 P2 / 13 P3, file:line + prod-query grounded; 11/32 from the pass-2 addendum ~34%;
+  per-role wireframes parent/coach/admin PROPOSED; 9 open decisions SD-1..SD-9 with CC leans).
+  Phase B CODE stays gated on the SD-1..SD-9 rulings (audit-gates-code per §16.15); audit ran
+  as pure parallelism while D-a..D-f relay is pending. Schema flags for architect: events.end_at
+  nullable (5/193 prod rows null, all past) + locations duplicate coord pairs (lat/lon AND
+  latitude/longitude) — migration-arc candidates, NOT in the Schedule UI sequence.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
