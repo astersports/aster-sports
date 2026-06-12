@@ -13,8 +13,11 @@ import LoadingSkeleton from '../shared/LoadingSkeleton';
 // SD-11 (PR-B'): `overrideActive` = staff editing after start_at — shows
 // the logged-edits hint; `auditMap` (playerId -> latest event_rsvp_audit
 // row) renders the §16.8 "[Override · name · time]" marker per row.
+// `summaryRoster` (PR-V1): the SD-6 ELIGIBLE set for the summary
+// counts; the full roster keeps rendering rows (academy activation
+// management lives there). Defaults to roster for legacy callers.
 export default function EventRsvpTab({
-  roster, rsvps, rsvpMap, teamColor, onSetRsvp, onSaveNote, loading,
+  roster, summaryRoster, rsvps, rsvpMap, teamColor, onSetRsvp, onSaveNote, loading,
   readOnly = false, overrideActive = false, auditMap = {},
   canActivateAcademy = false, activatedSet, onToggleActivation,
 }) {
@@ -45,7 +48,7 @@ export default function EventRsvpTab({
 
   return (
     <div style={{ padding: '16px 16px 32px' }}>
-      <RsvpSummary roster={roster} rsvps={rsvps} />
+      <RsvpSummary roster={summaryRoster ?? roster} rsvps={rsvps} />
       {overrideActive && (
         <div role="status" style={{ fontSize: 12, fontWeight: 500, color: 'var(--as-warning)', backgroundColor: 'var(--as-warning-soft)', padding: '8px 10px', borderRadius: 6, marginBottom: 8 }}>
           RSVPs closed at start — staff edits are logged to the audit trail.
