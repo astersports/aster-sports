@@ -32,20 +32,24 @@ export default function EventLocationTab({ event }) {
     return () => { cancelled = true; };
   }, [event.event_type, event.tournament_id, orgId]);
 
+  // SD-14 (PR-D'): venue resolved via the location_id JOIN \u2014 the ilike
+  // name-match could return the WRONG venue (VF-6 class: "Westchester
+  // Community Center" matching "Westchester Community College"). The 19
+  // legacy text-only events (no location_id) get no enrichment fetch;
+  // directions degrade to a name-text search URL below.
   useEffect(() => {
-    if (!event.location || !orgId) return;
-    const searchName = event.location.replace(/[\u2018\u2019\u2032]/g, "'").split(' - ')[0].split('(')[0].trim();
-    if (!searchName) return;
+    if (!event.location_id || !orgId) return;
+    let cancelled = false;
     supabase.from('locations').select('name, address, lat, lon, google_maps_url, entry_instructions')
       .eq('org_id', orgId)
-      .is('archived_at', null)
-      .ilike('name', `%${searchName}%`)
-      .limit(1)
+      .eq('id', event.location_id)
+      .maybeSingle()
       .then(({ data, error }) => {
-        if (error) console.error('EventLocationTab locationSearch:', error.message);
-        if (data && data[0]) setLocationData(data[0]);
+        if (error) console.error('EventLocationTab location:', error.message);
+        if (!cancelled && data) setLocationData(data);
       });
-  }, [event.location, orgId]);
+    return () => { cancelled = true; };
+  }, [event.location_id, orgId]);
 
   const isTournamentNotPublished = event.event_type === 'tournament' &&
     (tournamentStatus === undefined || tournamentStatus === null || tournamentStatus === 'draft');
@@ -75,7 +79,8 @@ export default function EventLocationTab({ event }) {
     );
   }
 
-  const resolvedAddress = event.location_address || locationData?.address || null;
+  // Address > legacy name-text (the 19 pre-FK events keep a search link).
+  const resolvedAddress = event.location_address || locationData?.address || event.location || null;
   const urls = getDirectionUrls(resolvedAddress, locationData?.lat, locationData?.lon, locationData?.google_maps_url);
 
   return (
@@ -116,12 +121,25 @@ export default function EventLocationTab({ event }) {
           {locationData.entry_instructions}
         </div>
       )}
+      {/* SD-14 3-way: Apple / Google / Waze (§15 — formats un-deferred).
+          Apple/Waze need coords or an address; google_maps_url-only
+          venues render Google alone. */}
       {urls && (
         <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-          <Button variant="secondary" fullWidth onClick={() => window.open(urls.google, '_blank')}>
+          {urls.apple && (
+            <Button variant="secondary" fullWidth onClick={() => window.open(urls.apple, '_blank')} aria-label="Directions in Apple Maps">
+              Apple
+            </Button>
+          )}
+          <Button variant="secondary" fullWidth onClick={() => window.open(urls.google, '_blank')} aria-label="Directions in Google Maps">
             <Navigation size={15} strokeWidth={1.75} />
-            Get Directions
+            Google
           </Button>
+          {urls.waze && (
+            <Button variant="secondary" fullWidth onClick={() => window.open(urls.waze, '_blank')} aria-label="Directions in Waze">
+              Waze
+            </Button>
+          )}
         </div>
       )}
     </div>

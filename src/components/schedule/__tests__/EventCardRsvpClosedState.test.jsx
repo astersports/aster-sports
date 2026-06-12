@@ -15,7 +15,6 @@ vi.mock('../../../context/AuthContext', () => ({
   useAuth: () => ({ role: 'parent', myChildren: [{ playerId: 'p1', teamId: 't-1', teamIds: ['t-1'], firstName: 'Charlie' }] }),
 }));
 vi.mock('../../../hooks/useNow', () => ({ useNow: () => Date.now() }));
-vi.mock('../../../hooks/useMapsUrl', () => ({ useMapsUrl: () => null }));
 vi.mock('../../shared/ChildRsvp', () => ({
   default: () => <div data-testid="child-rsvp" />,
 }));

@@ -6,7 +6,7 @@ import { TYPE_LABELS } from '../../lib/constants';
 import { formatEventTitle } from '../../lib/eventTitle';
 import { useAuth } from '../../context/AuthContext';
 import { useNow } from '../../hooks/useNow';
-import { useMapsUrl } from '../../hooks/useMapsUrl';
+import { getDirectionUrls } from '../../lib/mapsUrls';
 import { eventTimeState, isRsvpOpen } from '../../lib/eventWindows';
 import { isStaff } from '../../lib/permissions';
 import { cacheKey } from '../../lib/rsvpCache';
@@ -41,7 +41,11 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
   const isToday = nyDay(event.start_at) === nyDay(now);
   const isTournamentDraft = event.event_type === 'tournament' && !event.opponent;
   const { prefix: titlePrefix, body: titleBody } = formatEventTitle(event);
-  const mapsUrl = useMapsUrl(event.location_name || null);
+  // SD-14: maps link from the JOINed location (useActivities embeds
+  // locations via location_id) — the per-card ilike lookup hook is gone.
+  // Text-only legacy events fall back to a name-text search URL.
+  const loc = event.locations;
+  const mapsUrl = getDirectionUrls(loc?.address ?? event.location_name, loc?.lat, loc?.lon, loc?.google_maps_url)?.google ?? null;
   const nowSlot = isNext && timeState === 'upcoming' && !isCancelled;
   const open = () => { navigator.vibrate?.(10); navigate(`/events/${event.id}`, { state: { event } }); };
 

@@ -625,9 +625,19 @@ arc bodies.
   detection on date-only parses), `lib/alerts/briefingOverdueEvaluators.js` (overdue week
   anchor) — each is a behavior change to briefing/inbox week boundaries; needs its own pass
   (briefingCronHelpers is CLEAN — Intl-parts derivation; mirror-file discipline applies when the
-  sweep lands). NEXT: PR-D' (SD-14 directions 3-way Apple/Google/Waze from lib/mapsUrls.js,
-  venue via location_id JOIN not ilike) → PR-E' (SD-15 coverage badges) → PR-F' (WeekStrip roles
-  + SD-16 family-hub ph1 + F-S1) → capability arcs.
+  sweep lands).
+  **PR-D' SHIPPED (2026-06-12, rolling GO):** SD-14 directions — detail Location tab renders the
+  3-way Apple/Google/Waze stack from the existing `getDirectionUrls` (§15 formats un-deferred;
+  Apple/Waze render only when coords/address exist); venue resolved via the location_id JOIN —
+  the ilike name-match (VF-6 wrong-venue class) is GONE from the maps path: EventLocationTab
+  fetches `.eq('id', location_id)` exact, EventCard builds its single Google link from the
+  useActivities `locations(...)` embed (+lat/lon/address added), and `useMapsUrl.js` (the
+  per-card ilike hook) is DELETED. The 19 legacy text-only events (149/193 carry the FK) degrade
+  to a name-text search URL with zero queries. §8 gates: mapsUrls 3-provider + address-fallback +
+  verified-pin-priority units + the static no-ilike/hook-deleted gate.
+  NEXT: PR-E' (SD-15 coverage badges — largely landed inside PR-A's §10.1 chip row; E' closes
+  the gaps) → PR-F' (WeekStrip roles + SD-16 family-hub ph1 + F-S1) → F-S2 standalone →
+  capability arcs.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
