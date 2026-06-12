@@ -5,7 +5,7 @@
 > re-discovery. Updated per session and per PR.
 >
 > Created: 2026-05-18 (Italy CEST) from L99 cross-role audit consolidation
-> Last updated: 2026-06-12 (§1 session entry + §4.0 top-of-stack refresh — dynamic-workflows substrate + brand kit + LH-site verification). Prior: 2026-06-09 (§4 reconciliation — settings-page arc SHIPPED per architect D6 ruling, PRs #897–#905; see the §4.0 reconciliation note).
+> Last updated: 2026-06-12 (§1 session entry + §4.0 top-of-stack refresh — dynamic-workflows substrate + brand kit + LH-site verification; post-merge reconcile: PR #986 merged, Frank's deploy smoke PASSED). Prior: 2026-06-09 (§4 reconciliation — settings-page arc SHIPPED per architect D6 ruling, PRs #897–#905; see the §4.0 reconciliation note).
 
 This doc complements (not replaces):
 - `docs/archive/SKYFIRE_BUILD_QUEUE_v2.md` — shipped-log roadmap, forward-only
@@ -46,6 +46,11 @@ constraint register, automation backlog). LH static site v1 (operator zip) VERIF
 self-contained + deploy-ready (16/16 assets local, zero Squarespace CDN refs); CC-side repo
 creation blocked (org 403, repo-scoped token) → Frank runs README-DEPLOY steps 1–3, domains/
 DNS untouched per Squarespace cutover sequence. Handoff: `docs/CC_SESSION_HANDOFF_2026-06-12.txt`.
+POST-MERGE (same day): shipped as PR #986 (merge commit `20e9ad48`). Frank's 5-step deploy
+smoke PASSED (app load · og link preview · Android maskable icon · iOS icon unchanged), and
+checklist step 5 self-verified — the SessionStart hook fired live on the next session resume
+(npm install + §9.1 pre-flight lines in startup context, including the AP #35 divergence
+catch this very reconcile resolves).
 
 ### Session 2026-06-11 — money-seam unify + roster visibility + funnel select + pilot cutover (PRs #958, #967–#983) — RECONCILED 2026-06-11
 
@@ -497,7 +502,8 @@ arc bodies.
 
 **OPEN at 2026-06-12 close (top-of-stack — read first):**
 - Two PHASE CLOSES (money-seam; privacy/roster/funnel): build-complete + audit-clean; gate =
-  Frank's device-smoke of the deploy → architect ratification (§11.8 r4).
+  Frank's device-smoke of the deploy → architect ratification (§11.8 r4). [2026-06-12: still
+  open — this admin/coach/parent walk is distinct from the #986 brand-deploy smoke, which passed.]
 - Product decisions D-a..D-f routed via `docs/ARCHITECT_DECISION_REQUEST_PRODUCT_DECISIONS_2026-06-11.txt`
   (evidence + CC leans; Frank/architect rule, then CC ships ruled items as small PRs by surface).
 - LH public-site v1: zip VERIFIED deploy-ready (2026-06-12); OPERATOR steps = README-DEPLOY 1–3
@@ -506,6 +512,8 @@ arc bodies.
 - Dynamic-workflows operating model + phase sequence locked in
   `docs/DYNAMIC_WORKFLOWS_NEXT_PHASES_2026-06-12.txt` (Phase A = D-a..D-f PRs on rulings;
   Phase B = Schedule L99, §16.15 audit doc gates code; Phase C = LH-site cutover support).
+  SHIPPED as PR #986 (merged 2026-06-12); Frank's 5-step deploy smoke PASSED same day, hook
+  verified live on session resume. Phase A remains gated on the D-a..D-f rulings.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
