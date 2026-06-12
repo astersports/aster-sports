@@ -35,6 +35,12 @@ export function formatEventTitle(event) {
     const prefix = event.home_away === 'away' ? '@ ' : 'vs. ';
     return { prefix, body: event.opponent };
   }
+  // Tournament anchor (no opponent yet): show the tournament's name, not
+  // a bare type label — preserves the MatchupCard treatment (2026-05-20)
+  // now that the Games tab rides EventCard (PR-V3).
+  if (isGameLike && event.tournament_name) {
+    return { prefix: '', body: event.tournament_name };
+  }
   return { prefix: '', body: typeLabel };
 }
 

@@ -724,8 +724,14 @@ arc bodies.
   EventDetailPage gates the Rides + Volunteers sections, AuthContext org select carries the
   column (zero extra queries); operator UI = "Event features" row at /admin/settings → Events
   (EventFeaturesForm, 2 toggles, FullScreenForm mirroring the sibling; useOrgFeatureSettings
-  hook). Tests: facts gating + sheet routing extended. NEXT: PR-V3 (Games tab adopts the
-  rail/facts vocabulary — EventCard rows replace MatchupCard; standings stay) → Frank re-grades.
+  hook). Tests: facts gating + sheet routing extended. **PR-V3 SHIPPED:** Games tab adopts the
+  rail/facts vocabulary — EventCard rows fed by the useScheduleData bundle replace MatchupCard
+  (RETIRED + its 2 tests, AP#34 zero-callers verified; local game_results query dropped — the
+  bundle already carries the map); partition re-pointed to eventTimeState (live games stay in
+  their week group with the Live treatment); tournament anchors keep their name-title via
+  formatEventTitle (canonical composer upgraded — list view benefits too); standings + WEEK
+  headers + team filter unchanged. Static vocabulary gate test. NEXT: Frank re-grades the full
+  surface (list + Games + settings toggles).
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
