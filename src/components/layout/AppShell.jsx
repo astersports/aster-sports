@@ -1,6 +1,7 @@
 import Header from './Header';
 import BottomNav from './BottomNav';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
+import { useHomeRole } from '../../hooks/useHomeRole';
 
 // App shell for every authenticated page. The root is pinned to the
 // dynamic viewport height (100dvh, with 100vh fallback) and clips
@@ -10,6 +11,9 @@ import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 // it while the header/nav stay locked to the viewport.
 export default function AppShell({ children }) {
   const online = useOnlineStatus();
+  // F-S2: the fixed preview banner (Header) adds 52px under the header
+  // bar while view-as is active — pad <main> to match.
+  const { isViewingAs } = useHomeRole();
   return (
     <div
       className="as-app-shell flex flex-col"
@@ -39,7 +43,7 @@ export default function AppShell({ children }) {
       <main
         className="flex-1 overflow-x-hidden overflow-y-auto"
         style={{
-          paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))',
+          paddingTop: `calc(${isViewingAs ? 108 : 56}px + env(safe-area-inset-top, 0px))`,
           paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
           overscrollBehavior: 'contain',
           WebkitOverflowScrolling: 'touch',

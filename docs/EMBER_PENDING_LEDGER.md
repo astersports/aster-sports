@@ -658,9 +658,18 @@ arc bodies.
   rollover, dots from the FILTERED set (a dot for a hidden event was a lie). SD-7 (a-minimal):
   `user_preferences.schedule_view` column persists viewMode; team filter reflects to the URL
   (replaceState); transient filters stay session-local. Gates: WeekStripA11y test, mirror +
-  verify_jwt audits green over the new function, anon-denial probe. NEXT: F-S2 standalone
-  (preview banner + auto-expiry) → capability arcs (C1 weather → C2 directions → C9 family-hub
-  ph2 wireframes → C10 AI → C11 push). Schedule L99 sequence A'–F': COMPLETE.
+  verify_jwt audits green over the new function, anon-denial probe.
+  **F-S2 SHIPPED (2026-06-12, rolling GO — standalone, app-shell-wide):** view-as is now a
+  WITHIN-SESSION tool — a sessionStorage marker gates the preview (cold start drops it; the 24h
+  window remains as a same-session backstop) + once-per-load stale-pref cleanup. The 6px stripe +
+  eyebrow became a full preview banner under the header: warning-soft, "Previewing as {role}" /
+  "Expires when you reopen the app", always-visible 44px Exit; AppShell pads main +52px while
+  active. HeaderRoleInvariant STRENGTHENED (banner+Exit replaces the stripe assertion);
+  `useHomeRole.coldStart` gate test (preview without this session's marker → real role + prefs
+  cleaned; with marker → holds; setViewAs arms / reset clears). The F-S2 class that cost the
+  operator several minutes on the smoke walk is closed. NEXT: capability arcs (C1 weather →
+  C2 directions → C9 family-hub ph2 wireframes → C10 AI → C11 push). **Schedule L99 sequence
+  A'–F' + both smoke fixes: COMPLETE.**
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
