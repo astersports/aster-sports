@@ -96,7 +96,7 @@ export default function SchedulePage() {
         <div style={{ width: 32, height: 3, backgroundColor: 'var(--as-accent)', borderRadius: 2, marginBottom: 8 }} />
 
         {viewMode === 'games' ? (
-          <GamesView activities={activities} orgId={orgId} />
+          <GamesView activities={activities} orgId={orgId} data={data} density={density} />
         ) : (
           <>
             {/* SD-5/SD-8 (VF-12b): strip hidden in Games mode — it was

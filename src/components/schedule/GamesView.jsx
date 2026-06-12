@@ -1,38 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { useMemo, useState } from 'react';
 import { useOrgTeamRecords } from '../../hooks/useOrgTeamRecords';
 import { useTeams } from '../../hooks/useTeams';
 import { isCompetitiveTeam } from '../../lib/teamTypes';
 import { useSeason } from '../../context/SeasonContext';
 import { useNow } from '../../hooks/useNow';
+import { eventTimeState } from '../../lib/eventWindows';
+import { getWeatherForTime } from '../../hooks/useWeather';
 import { ChevronRight } from 'lucide-react';
 import StandingsTable from './StandingsTable';
-import MatchupCard from './MatchupCard';
+import EventCard from './EventCard';
 import FilterSelect from '../shared/FilterSelect';
 import Badge from '../shared/Badge';
 
-function useGameResults(eventIds) {
-  const [byEventId, setByEventId] = useState({});
-  useEffect(() => {
-    if (!eventIds.length) return;
-    let cancelled = false;
-    Promise.resolve().then(async () => {
-      const { data, error } = await supabase.from('game_results')
-        .select('event_id, result, our_score, opponent_score, published_at')
-        .in('event_id', eventIds)
-        .not('published_at', 'is', null);
-      if (error) console.error('useGameResults:', error.message);
-      if (cancelled) return;
-      const map = {};
-      for (const r of (data || [])) map[r.event_id] = r;
-      setByEventId(map);
-    });
-    return () => { cancelled = true; };
-  }, [eventIds]);
-  return byEventId;
-}
-
-export default function GamesView({ activities, orgId }) {
+// PR-V3 (visual pass, operator-directed at the 7/10 grade): the Games
+// tab adopts the rail/facts card vocabulary — MatchupCard retired,
+// rows are EventCard fed by the useScheduleData bundle (`data`), so
+// results, counts, RSVP and weather all ride the same batch as the
+// list view. Partition reads eventTimeState (a live game stays in its
+// week group with the Live treatment instead of jumping to Results).
+export default function GamesView({ activities, orgId, data, density }) {
   const { byTeamId: recordsByTeamId } = useOrgTeamRecords(orgId);
   const { teams: orgTeams } = useTeams(orgId);
   // C-12: standings exclude non-competitive teams (camp/clinic/training/academy).
@@ -63,10 +49,8 @@ export default function GamesView({ activities, orgId }) {
   }, [gameEvents]);
 
   const filtered = useMemo(() => selectedTeam ? gameEvents.filter((e) => e.team_id === selectedTeam) : gameEvents, [gameEvents, selectedTeam]);
-  const upcoming = useMemo(() => filtered.filter((e) => new Date(e.start_at).getTime() >= now), [filtered, now]);
-  const past = useMemo(() => filtered.filter((e) => new Date(e.start_at).getTime() < now), [filtered, now]);
-  const pastIds = useMemo(() => past.map((e) => e.id), [past]);
-  const gameResultsMap = useGameResults(pastIds);
+  const upcoming = useMemo(() => filtered.filter((e) => eventTimeState(e, now) !== 'completed'), [filtered, now]);
+  const past = useMemo(() => filtered.filter((e) => eventTimeState(e, now) === 'completed'), [filtered, now]);
 
   const totalGames = useMemo(() => {
     let count = 0;
@@ -93,6 +77,17 @@ export default function GamesView({ activities, orgId }) {
     }
     return groups;
   }, [upcoming, seasonStartDate]);
+
+  const row = (e) => (
+    <div key={e.id} style={{ marginBottom: 8 }}>
+      <EventCard event={e} density={density}
+        rsvpCount={data?.counts?.[e.id]} rideCount={data?.rideCounts?.[e.id]} dutyCount={data?.dutyCounts?.[e.id]}
+        gameResult={data?.gameResults?.[e.id]} weather={getWeatherForTime(data?.weather, e.start_at)}
+        childRsvpMap={data?.childRsvpMap} activatedMap={data?.activatedMap}
+        commitment={data?.commitments?.[e.id]} suppressCount={data?.countSuppressedByTeam?.[e.team_id]}
+        onRsvpChange={data?.onRsvpSaved} />
+    </div>
+  );
 
   return (
     <div style={{ marginTop: 12 }}>
@@ -128,7 +123,7 @@ export default function GamesView({ activities, orgId }) {
               {group.dateLabel}
             </span>
           </div>
-          {group.events.map((e) => <MatchupCard key={e.id} event={e} />)}
+          {group.events.map(row)}
         </div>
       ))}
 
@@ -142,7 +137,7 @@ export default function GamesView({ activities, orgId }) {
             <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--as-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Results</span>
             <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)' }}>({past.length})</span>
           </button>
-          {showResults && past.slice(-10).reverse().map((e) => <MatchupCard key={e.id} event={e} gameResult={gameResultsMap[e.id]} />)}
+          {showResults && past.slice(-10).reverse().map(row)}
         </div>
       )}
     </div>
