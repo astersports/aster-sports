@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 104" role="img" aria-label="Aster Sports">
+  <!-- one-color gold brand variant; #C9952E is the locked --as-accent value (CLAUDE.md §3) -->
+  <g stroke="#C9952E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M50,12 L16,62"/>
+    <path d="M50,12 L84,62"/>
+    <path d="M50,12 L50,92"/>
+    <path d="M50,52 L34,66"/>
+    <path d="M50,52 L66,66"/>
+    <path d="M34,66 L50,92"/>
+    <path d="M66,66 L50,92"/>
+    <path d="M16,62 L34,66"/>
+    <path d="M84,62 L66,66"/>
+  </g>
+  <g fill="#C9952E">
+    <circle cx="50" cy="52" r="4"/>
+    <circle cx="34" cy="66" r="3.4"/>
+    <circle cx="66" cy="66" r="3.4"/>
+    <circle cx="50" cy="92" r="4"/>
+    <path d="M50,1 L53,9 L61,12 L53,15 L50,23 L47,15 L39,12 L47,9 Z"/>
+    <path d="M16,55 L18,60 L23,62 L18,64 L16,69 L14,64 L9,62 L14,60 Z"/>
+    <path d="M84,55 L86,60 L91,62 L86,64 L84,69 L82,64 L77,62 L82,60 Z"/>
+  </g>
+</svg>

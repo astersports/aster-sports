@@ -40,5 +40,9 @@ test-results/
 /WAVE_3A_PROMPT_v2.md
 .mcp.json
 
-# Claude Code worktree storage (per-session ephemera)
-.claude/
+# Claude Code worktree storage (per-session ephemera) — worktrees stay
+# ignored, but the repo-level SessionStart hook + settings are tracked so
+# every web session runs the §9.1 pre-flight automatically
+.claude/*
+!.claude/hooks/
+!.claude/settings.json
