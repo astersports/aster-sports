@@ -92,19 +92,23 @@ describe('Header — per-role invariant (anti-pattern #43)', () => {
     expect(container.querySelector('[aria-label="Switch role view"]')).not.toBeNull();
   });
 
-  it('admin in view-as mode: orange warning stripe + viewed-as role label', () => {
+  it('admin in view-as mode: preview banner with always-visible Exit (F-S2 — was the 6px stripe)', () => {
+    // F-S2 strengthened this invariant: the stripe+eyebrow signal lost
+    // the operator several minutes (2026-06-12 smoke walk). The visible
+    // view-as signal is now a full banner with an Exit control.
     authRef.current = { role: 'admin', org: null, orgName: null };
     homeRoleRef.current = {
       activeRole: 'parent',
       isViewingAs: true,
       canSwitchRoles: true,
+      resetToRealRole: () => Promise.resolve(),
     };
-    const { container } = renderHeader();
-    // Warning stripe: top fixed bar at z-50 with as-warning background
-    const stripe = Array.from(container.querySelectorAll('div')).find((el) =>
-      el.style.background === 'var(--as-warning)',
-    );
-    expect(stripe).toBeTruthy();
+    const { container, getByText } = renderHeader();
+    const banner = container.querySelector('[role="status"]');
+    expect(banner).toBeTruthy();
+    expect(banner.textContent).toMatch(/Previewing as parent/);
+    expect(banner.textContent).toMatch(/Expires when you reopen/);
+    expect(getByText('Exit')).toBeTruthy();
     expect(container.textContent).toMatch(/Viewing as parent/);
     // Eye icon still present in view-as state
     expect(container.querySelector('[aria-label="Switch role view"]')).not.toBeNull();
