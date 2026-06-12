@@ -15,7 +15,6 @@ vi.mock('../../../context/AuthContext', () => ({
   useAuth: () => ({ role: 'parent', myChildren: [] }),
 }));
 vi.mock('../../../hooks/useNow', () => ({ useNow: () => Date.now() }));
-vi.mock('../../../hooks/useMapsUrl', () => ({ useMapsUrl: () => null }));
 // ChildRsvp imports lib/supabase (throws at import without env vars in
 // vitest — AP #27 class); not under test here.
 vi.mock('../../shared/ChildRsvp', () => ({ default: () => null }));
