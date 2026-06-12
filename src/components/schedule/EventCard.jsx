@@ -35,7 +35,10 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
   const hasResult = completed && isGameType && gameResult?.published_at;
   const msUntil = new Date(event.start_at).getTime() - now;
   const showCountdown = timeState === 'upcoming' && !isCancelled && (isNext || msUntil < 24 * 60 * 60 * 1000); // CP-5: every density; NOW slot always
-  const isToday = new Date(event.start_at).toDateString() === new Date(now).toDateString();
+  // R12: NY-pinned day compare (toDateString was browser-local — "Today"
+  // flipped at the viewer's midnight, not the org's).
+  const nyDay = (t) => new Date(t).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const isToday = nyDay(event.start_at) === nyDay(now);
   const isTournamentDraft = event.event_type === 'tournament' && !event.opponent;
   const { prefix: titlePrefix, body: titleBody } = formatEventTitle(event);
   const mapsUrl = useMapsUrl(event.location_name || null);

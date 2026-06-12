@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import { registerCacheBuster } from '../lib/cacheBuster';
 import { WEATHER_TZ } from '../lib/constants';
 
-const CACHE_PREFIX = 'aster-weather-cache:';
-const FALLBACK_PREFIX = 'aster-weather-fallback:';
+// v2 keys (DL-13, PR-C'): the hourly shape changed from TZ-naive local
+// strings to epoch ms (`timeMs`). Versioned prefixes orphan any v1
+// cached/fallback entries so the numeric matcher never sees string times.
+const CACHE_PREFIX = 'aster-weather-cache-v2:';
+const FALLBACK_PREFIX = 'aster-weather-fallback-v2:';
 const CACHE_TTL = 30 * 60 * 1000;
 
 // May 16 audit P2 #8 — register a signOut cache buster so the
@@ -65,13 +68,18 @@ export function useWeather(lat, lon) {
         if (Date.now() - parsed.ts < CACHE_TTL) { Promise.resolve().then(() => setWeather(parsed.data)); return; }
       } catch { /* ignore */ }
     }
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weather_code&temperature_unit=fahrenheit&timezone=${encodeURIComponent(WEATHER_TZ)}&forecast_days=7`;
+    // DL-13 (SCHEDULE_L99_BUILD_SPEC SD-9, PR-C'): &timeformat=unixtime.
+    // With timezone=America/New_York alone, Open-Meteo returns TZ-NAIVE
+    // local strings ("2026-06-12T14:00") which new Date() parses as
+    // BROWSER-local — every hour match was off by the viewer's TZ delta.
+    // Unixtime is absolute; matching is pure epoch arithmetic.
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weather_code&temperature_unit=fahrenheit&timezone=${encodeURIComponent(WEATHER_TZ)}&timeformat=unixtime&forecast_days=7`;
     fetch(url).then((r) => r.json()).then((json) => {
       if (!json.hourly) return;
       const codes = json.hourly.weather_code || json.hourly.weathercode;
       if (!codes) return;
       const hours = json.hourly.time.map((t, i) => ({
-        time: t,
+        timeMs: t * 1000,
         temp: Math.round(json.hourly.temperature_2m[i]),
         code: codes[i],
         icon: WMO_ICONS[codes[i]] || '🌡️',
@@ -94,10 +102,11 @@ export function useWeather(lat, lon) {
 
 export function getWeatherForTime(weather, isoTime) {
   if (!weather?.hours || !isoTime) return null;
-  const target = new Date(isoTime);
-  if (isNaN(target.getTime())) return null;
+  const target = new Date(isoTime).getTime();
+  if (isNaN(target)) return null;
   const closest = weather.hours.reduce((best, h) => {
-    const diff = Math.abs(new Date(h.time) - target);
+    if (typeof h.timeMs !== 'number') return best; // v1-shape guard
+    const diff = Math.abs(h.timeMs - target);
     return diff < best.diff ? { ...h, diff } : best;
   }, { diff: Infinity });
   return closest.diff < 2 * 60 * 60 * 1000 ? closest : null;

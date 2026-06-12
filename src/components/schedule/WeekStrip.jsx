@@ -2,14 +2,24 @@ import { useMemo } from 'react';
 
 const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+// SD-8 fix-in-place (SCHEDULE_L99_BUILD_SPEC §2 PR-C', R12 class): the
+// old cells mixed an NY-pinned dateStr with BROWSER-LOCAL getDate()/
+// getDay() labels — any non-NY viewer near a day boundary saw day
+// numbers that didn't match the bucket they filtered. Cells now derive
+// every field from one NY-anchored date-only value, stepped with UTC
+// calendar arithmetic (DST-proof: no 24h instant-stepping).
 export default function WeekStrip({ eventDates, selectedDate, onSelect }) {
   const days = useMemo(() => {
-    const today = new Date();
+    const todayNY = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    const [y, m, d] = todayNY.split('-').map(Number);
     return Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(today);
-      d.setDate(today.getDate() + i);
-      const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-      return { dateStr, dayNum: d.getDate(), dayAbbr: DAY_ABBR[d.getDay()], isToday: i === 0 };
+      const cell = new Date(Date.UTC(y, m - 1, d + i, 12)); // noon-UTC anchor, calendar-day step
+      return {
+        dateStr: cell.toISOString().slice(0, 10),
+        dayNum: cell.getUTCDate(),
+        dayAbbr: DAY_ABBR[cell.getUTCDay()],
+        isToday: i === 0,
+      };
     });
   }, []);
 
@@ -21,7 +31,7 @@ export default function WeekStrip({ eventDates, selectedDate, onSelect }) {
         const isActive = selectedDate === d.dateStr;
         const hasEvents = dateSet.has(d.dateStr);
         return (
-          <button key={d.dateStr} type="button" role="tab" aria-selected={isActive} aria-label={`${d.dayAbbr} ${d.dayNum}`}
+          <button key={d.dateStr} type="button" role="tab" aria-selected={isActive} aria-label={`${d.dayAbbr} ${d.dayNum}${hasEvents ? ', has events' : ''}`}
             onClick={() => { navigator.vibrate?.(10); onSelect(isActive ? null : d.dateStr); }}
             className="as-press"
             style={{
