@@ -11,6 +11,7 @@ import { eventTimeState, isRsvpOpen } from '../../lib/eventWindows';
 import { isStaff } from '../../lib/permissions';
 import { cacheKey } from '../../lib/rsvpCache';
 import { isGameType as isGame } from '../../lib/rsvpEligibility';
+import { dutiesEnabledFor, ridesEnabledFor } from '../../lib/featureGates';
 import ChildRsvp from '../shared/ChildRsvp';
 import EventCardFacts from './EventCardFacts';
 import Badge from '../shared/Badge';
@@ -25,7 +26,6 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
   const navigate = useNavigate();
   const { role, myChildren, org } = useAuth();
   const now = useNow();
-  const features = org?.feature_settings ?? {};
   const compact = density === 'minimal';
   const kids = (myChildren || []).filter((c) => c.teamIds?.includes(event.team_id) || c.teamId === event.team_id);
   const team = event.teams;
@@ -115,7 +115,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
 
         {!completed && !isCancelled && (
           <EventCardFacts suppressCount={suppressCount} isStaffView={isStaff(role)} count={rsvpCount} rideCount={rideCount} dutyCount={dutyCount} commitment={commitment} academyNames={academyNames} compact={compact}
-            ridesEnabled={features.rides_enabled !== false && event.enable_rides === true} dutiesEnabled={features.duties_enabled !== false} />
+            ridesEnabled={ridesEnabledFor(org, event)} dutiesEnabled={dutiesEnabledFor(org)} />
         )}
         {!compact && event.notes && !completed && !isCancelled && (
           <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{event.notes}</div>

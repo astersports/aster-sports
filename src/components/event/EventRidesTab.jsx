@@ -13,14 +13,14 @@ import ClaimSeatForm from '../ride/ClaimSeatForm';
 import RequestRideForm from '../ride/RequestRideForm';
 import RideRequestCard from '../ride/RideRequestCard';
 import Button from '../shared/Button';
+import { ridesEnabledFor } from '../../lib/featureGates';
 const lblStyle = { fontSize: 11, fontWeight: 600, color: 'var(--as-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 };
 const emptyStyle = { padding: 24, textAlign: 'center', color: 'var(--as-text-tertiary)', fontSize: 13, border: '1px dashed var(--as-border-subtle)', borderRadius: 10 };
 
 export default function EventRidesTab({ event }) {
-  const { user, orgId, role } = useAuth();
+  const { user, orgId, role, org } = useAuth();
   const canModerate = role === 'admin';
-  const eventId = event?.id;
-  const rideEnabled = event?.enable_rides === true;
+  const eventId = event?.id, rideEnabled = ridesEnabledFor(org, event); // defense-in-depth under the page-level F-3 gate
 
   const {
     offers,

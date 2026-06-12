@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { dutiesEnabledFor } from '../lib/featureGates';
 import { formatEventTitleString } from '../lib/eventTitle';
 
 // §4.C Sprint B — ACTION ZONE third signal: open volunteer slots.
@@ -15,12 +17,16 @@ import { formatEventTitleString } from '../lib/eventTitle';
 // Per anti-pattern #36: data + error destructured separately.
 
 export function useVolunteerSlots(myChildren, upcomingActivities) {
+  const { org } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Events where the parent has a kid on the team.
+  // Events where the parent has a kid on the team. Hook-entry gate
+  // (audit 2026-06-12 F-2): the D3 org duties toggle applies before any
+  // signal exists — same class as the F-1 Home/detail contradiction.
   const candidateEvents = useMemo(() => {
+    if (!dutiesEnabledFor(org)) return [];
     const myTeamIds = new Set();
     for (const k of myChildren || []) {
       for (const tid of (k.teamIds || (k.teamId ? [k.teamId] : []))) {
@@ -28,7 +34,7 @@ export function useVolunteerSlots(myChildren, upcomingActivities) {
       }
     }
     return (upcomingActivities || []).filter((ev) => ev?.id && ev?.team_id && myTeamIds.has(ev.team_id));
-  }, [upcomingActivities, myChildren]);
+  }, [upcomingActivities, myChildren, org]);
 
   const refetch = useCallback(async () => {
     if (!candidateEvents.length) {

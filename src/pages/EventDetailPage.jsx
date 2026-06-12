@@ -28,6 +28,7 @@ import CollapsibleSection from '../components/shared/CollapsibleSection';
 import { composeFromEvent } from '../lib/briefings/composeFromEvent';
 import { eventTimeState, isRsvpOpen } from '../lib/eventWindows';
 import { eligibleRoster } from '../lib/rsvpEligibility';
+import { dutiesEnabledFor, ridesEnabledFor } from '../lib/featureGates';
 const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinOverlay'));
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 const ScheduleChangeComposer = lazy(() => import('../components/event/ScheduleChangeComposer'));
@@ -118,14 +119,13 @@ export default function EventDetailPage() {
       )}
 
       <EventLocationSlot role={role} event={event} teamId={teamId} myChildren={myChildren} rsvps={rsvps} />
-      {org?.feature_settings?.rides_enabled !== false && <CollapsibleSection title="Rides" sectionKey="rides" defaultOpen={false}>
-        <EventRidesTab event={event} />
-      </CollapsibleSection>}
+      {/* F-3: the FULL D3 chain (org AND event) — a section whose only content is "rides are off" must not render. */}
+      {ridesEnabledFor(org, event) && <CollapsibleSection title="Rides" sectionKey="rides" defaultOpen={false}><EventRidesTab event={event} /></CollapsibleSection>}
       <CollapsibleSection title="RSVPs" sectionKey="rsvps" defaultOpen={false} count={`${rsvps.filter((r) => r.response === 'going').length}/${roster.length}`}>
         <EventRsvpTab roster={roster} summaryRoster={eligible} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} readOnly={isStaff ? false : !isRsvpOpen(event.start_at)} overrideActive={isStaff && !isRsvpOpen(event.start_at)} auditMap={auditMap} canActivateAcademy={canActivateAcademy} activatedSet={activatedSet} onToggleActivation={toggleActivation} />
       </CollapsibleSection>
       {isStaff && isGameType && teamId && !isPast && <CollapsibleSection title="Academy call-ups" sectionKey="academy-callups" defaultOpen={false}><AcademyCallupPicker event={event} team={team} isStaff={isStaff} isLocked={lock.isLocked} academyCallupPlayerIds={lock.academyCallupPlayerIds} addCallup={lock.addCallup} removeCallup={lock.removeCallup} /></CollapsibleSection>}
-      {dutyCount > 0 && org?.feature_settings?.duties_enabled !== false && <CollapsibleSection title="Volunteers" sectionKey="duties" defaultOpen={false} count={`${dutyCount}`}><EventDutiesTab eventId={event.id} /></CollapsibleSection>}
+      {dutyCount > 0 && dutiesEnabledFor(org) && <CollapsibleSection title="Volunteers" sectionKey="duties" defaultOpen={false} count={`${dutyCount}`}><EventDutiesTab eventId={event.id} /></CollapsibleSection>}
       {(event.notes || event.coach_notes) && <CollapsibleSection title="Notes" sectionKey="notes" defaultOpen={false}><EventNotes notes={event.notes} coachNotes={event.coach_notes} /></CollapsibleSection>}
       <CollapsibleSection title="Comments" sectionKey="comments" defaultOpen={false}><EventCommentsTab eventId={event.id} /></CollapsibleSection>
       {isStaff && <CollapsibleSection title="Briefings" sectionKey="briefings" defaultOpen={false}><EventBriefingHistory event={event} /></CollapsibleSection>}

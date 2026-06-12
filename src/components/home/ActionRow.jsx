@@ -2,6 +2,7 @@ import { AlertTriangle, ChevronRight, DollarSign, ListChecks, Send } from 'lucid
 import ChildRsvp from '../shared/ChildRsvp';
 import Badge from '../shared/Badge';
 import { formatDayTime } from '../../lib/formatters';
+import { isRsvpOpen } from '../../lib/eventWindows';
 
 // ActionRow — the "action" card archetype (shell contract v2), one of three
 // platform archetypes. Variants by domain: rsvp (inline ChildRsvp), comms
@@ -68,8 +69,11 @@ export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
         </div>
         <div style={EVLINE}>{formatDayTime(item.start_at)}</div>
         {/* V7: the D4 tri-state segmented control — same grammar as the
-            compact schedule card (was the legacy 3-pill picker). */}
+            compact schedule card. F-11: disabled at start_at like every
+            other surface (the item drops on the next tick; this closes
+            the boundary race where Home allowed a write detail blocks). */}
         <ChildRsvp child={item.child} eventId={item.event_id} eventType={item.eventType} variant="segmented"
+          disabled={!isRsvpOpen(item.start_at)}
           onSave={() => onRsvpResolved(item.event_id, item.player_id)} />
       </div>
     );

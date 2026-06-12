@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { ridesEnabledFor } from '../lib/featureGates';
 import { formatEventTitleString } from '../lib/eventTitle';
 
 // §4.C Sprint B — ACTION ZONE second signal: ride needed.
@@ -19,14 +21,19 @@ import { formatEventTitleString } from '../lib/eventTitle';
 // Per anti-pattern #36: data + error destructured separately.
 
 export function useRideNeeded(myChildren, upcomingActivities, userId) {
+  const { org } = useAuth();
   const [needed, setNeeded] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Hook-entry gate (audit 2026-06-12 F-1): D3's ONE chain — org toggle
+  // AND events.enable_rides — applies BEFORE any signal exists. The Home
+  // "Ride needed" card contradicting the detail page's "coordination is
+  // off" was this hook reading ride tables ungated.
   const candidates = useMemo(() => {
     const out = [];
     for (const ev of upcomingActivities || []) {
-      if (!ev?.id || !ev?.team_id) continue;
+      if (!ev?.id || !ev?.team_id || !ridesEnabledFor(org, ev)) continue;
       for (const k of myChildren || []) {
         const teamIds = k.teamIds || (k.teamId ? [k.teamId] : []);
         if (!teamIds.includes(ev.team_id)) continue;
@@ -42,7 +49,7 @@ export function useRideNeeded(myChildren, upcomingActivities, userId) {
       }
     }
     return out;
-  }, [upcomingActivities, myChildren]);
+  }, [upcomingActivities, myChildren, org]);
 
   const refetch = useCallback(async () => {
     if (!userId || !candidates.length) {
