@@ -1,5 +1,8 @@
 import { memo, useMemo } from 'react';
 import { useNow } from '../../hooks/useNow';
+import { isRsvpOpen } from '../../lib/eventWindows';
+import { isStaff } from '../../lib/permissions';
+import { cacheKey } from '../../lib/rsvpCache';
 import TeamDetailHero from './TeamDetailHero';
 
 // 2026-05-21 (Teams audit C7) — useNow lifted OUT of TeamDetailPage into
@@ -12,9 +15,13 @@ import TeamDetailHero from './TeamDetailHero';
 // teamId + now. TeamDetailHero stays time-agnostic (preserves the
 // existing per-role invariant test which passes nextEvent as a prop).
 //
-// Also closes audit C2: enrichedPlayers no longer sits in a render tree
-// that re-evaluates every minute.
-function TeamDetailHeroSlot({ team, role, summary, myChild, myChildPlayer, activities, teamId }) {
+// Wave-2 F-7 (audit 2026-06-12): the slot also pre-shapes the hero's
+// RSVP slice from the PAGE's useScheduleData instance (`data`) — counts
+// carry the SD-6 denominator the schedule card shows, the parent control
+// is batch-fed, and §10.1(2) hidden-roster suppression nulls the counts
+// for non-staff. One source; the hero's per-event useEventRsvpCounts
+// read (roster_members total, PATTERN A divergence) is gone.
+function TeamDetailHeroSlot({ team, role, summary, myChild, myChildPlayer, activities, teamId, data }) {
   const now = useNow();
   const nextEvent = useMemo(
     () => (activities || [])
@@ -23,6 +30,14 @@ function TeamDetailHeroSlot({ team, role, summary, myChild, myChildPlayer, activ
       .find((a) => new Date(a.start_at).getTime() >= now),
     [activities, teamId, now],
   );
+  const { counts, childRsvpMap, activatedMap, countSuppressedByTeam, onRsvpSaved } = data || {};
+  const suppressed = !isStaff(role) && !!countSuppressedByTeam?.[teamId];
+  const nextCount = nextEvent && !suppressed ? (counts?.[nextEvent.id] ?? null) : null;
+  const k = nextEvent && myChild ? cacheKey(nextEvent.id, myChild.playerId) : null;
+  const rsvp = k ? {
+    response: childRsvpMap ? (childRsvpMap[k] ?? null) : undefined,
+    activated: activatedMap ? (activatedMap[k] ?? false) : undefined,
+  } : undefined;
   return (
     <TeamDetailHero
       team={team}
@@ -31,6 +46,10 @@ function TeamDetailHeroSlot({ team, role, summary, myChild, myChildPlayer, activ
       myChild={myChild}
       myChildPlayer={myChildPlayer}
       nextEvent={nextEvent}
+      nextCount={nextCount}
+      rsvp={rsvp}
+      rsvpOpen={nextEvent ? isRsvpOpen(nextEvent.start_at, now) : true}
+      onRsvpSaved={onRsvpSaved}
     />
   );
 }

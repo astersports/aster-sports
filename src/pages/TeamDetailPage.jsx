@@ -9,7 +9,7 @@ import { useRoster } from '../hooks/useRoster';
 import { useFilteredRoster } from '../hooks/useFilteredRoster';
 import { useAttendanceData } from '../hooks/useAttendanceData';
 import { useTeamRecords } from '../hooks/useTeamRecords';
-import { useActivities } from '../hooks/useActivities';
+import { useScheduleData } from '../hooks/useScheduleData';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { usePlayerSortOrder } from '../hooks/usePlayerSortOrder';
 import EmptyState from '../components/shared/EmptyState';
@@ -54,7 +54,10 @@ export default function TeamDetailPage() {
   const handleRefresh = useCallback(() => { rosterRefetch(); setLastFetchedAt(Date.now()); }, [rosterRefetch]);
   const { grid } = useAttendanceData(teamId);
   const { summary, loading: recordsLoading } = useTeamRecords(teamId);
-  const { activities } = useActivities();
+  // Wave-2 F-7: ONE useScheduleData instance for the page — the hero slot
+  // and UpcomingEvents share it (same SD-6 counts, no duplicate batch).
+  const scheduleData = useScheduleData();
+  const { activities } = scheduleData;
   // 2026-05-21 (Teams audit C7) — useNow lifted INTO TeamDetailHeroSlot so
   // the 60s tick no longer re-renders the full page subtree. Also closes
   // C2 — enrichedPlayers no longer sits under a 60s-ticking parent.
@@ -107,12 +110,12 @@ export default function TeamDetailPage() {
       {/* PR B: hero replaces TeamHeaderCard+MyChildSpotlight+CoachQuickActions
           per §16.14. PR C / V8: "Spring 2026" scope tag below the hero
           surfaces season scope (data IS season-scoped). */}
-      <TeamDetailHeroSlot team={team} role={role} summary={recordsLoading ? null : summary} myChild={myChild} myChildPlayer={myChildPlayer} activities={activities} teamId={teamId} />
+      <TeamDetailHeroSlot team={team} role={role} summary={recordsLoading ? null : summary} myChild={myChild} myChildPlayer={myChildPlayer} activities={activities} teamId={teamId} data={scheduleData} />
       <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)', padding: '0 4px 8px' }}>
         Spring 2026
       </div>
       <CollapsibleSection title="Upcoming" subtitle="next 7 days">
-        <UpcomingEvents teamId={teamId} />
+        <UpcomingEvents teamId={teamId} data={scheduleData} />
       </CollapsibleSection>
 
       {rosterLoading ? (

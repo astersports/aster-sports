@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useScheduleData } from '../../hooks/useScheduleData';
 import { useNow } from '../../hooks/useNow';
 import { getWeatherForTime, useWeather } from '../../hooks/useWeather';
 import { WEATHER_DEFAULT_COORDS } from '../../lib/constants';
@@ -13,10 +12,9 @@ const MAX_EVENTS = 5;
 // SD-15 (PR-E'): team-detail upcoming cards ride the batch hook so the
 // §10.1 coverage chips (going / rides / duties / commitment) render here
 // too — pre-E' this list passed bare events and the chip row was empty.
-// useScheduleData wraps the same module-cached useActivities fetch;
-// request count stays constant (VF-11).
-export default function UpcomingEvents({ teamId }) {
-  const data = useScheduleData();
+// Wave-2 F-7: `data` is the PAGE's useScheduleData instance (shared with
+// the hero slot) — one batch, one set of counts (VF-11 holds).
+export default function UpcomingEvents({ teamId, data }) {
   const { activities } = data;
   const navigate = useNavigate();
   const now = useNow();

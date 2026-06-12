@@ -49,7 +49,9 @@ export function useEventRsvpCounts(activities) {
     ]).then(([rsvpRes, rosterRes]) => {
       if (rsvpRes.error) { console.warn('useEventRsvpCounts (rsvps):', rsvpRes.error.message); }
       if (rosterRes.error) { console.warn('useEventRsvpCounts (roster):', rosterRes.error.message); }
-      if (rsvpRes.error && rosterRes.error) return;
+      // F-9 (audit 2026-06-12): EITHER failure aborts — computing counts
+      // from one good + one empty result rendered "0 going · N no reply".
+      if (rsvpRes.error || rosterRes.error) return;
       const counts = {};
       (rsvpRes.data || []).forEach((r) => {
         if (!counts[r.event_id]) counts[r.event_id] = { going: 0, not_going: 0, maybe: 0 };

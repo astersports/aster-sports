@@ -778,9 +778,22 @@ arc bodies.
   DISCARDED as false positives with evidence (incl. the standings season-mixing re-flag — teams
   are per-season rows, DB-verified). Fix-wave plan staged: W1 featureGates.js ONE-chain helper +
   hook-entry gates + AP#43 static gate; W1b nudge eligibility; W2 number parity + TeamDetailHero
-  D4 adoption + pills-variant retirement (AP#51); W3 typography/perf sweep. THREE RATIFICATION
-  ASKS open (W1+1b GO; F-10 D3 amber amendment; W2 scope). NEXT: Frank ratifies the fix waves —
-  no code ships until then.
+  D4 adoption + pills-variant retirement (AP#51); W3 typography/perf sweep. ALL THREE ASKS
+  RATIFIED (Frank, 2026-06-12 22:26 UTC: "Go on all 3"). **W1+W1b SHIPPED** (one 2-commit PR):
+  lib/featureGates.js ONE chain + hook-entry gates (useRideNeeded/useVolunteerSlots) +
+  EventDetailPage full-chain Rides gate + EventCard/EventRidesTab re-point + ActionRow
+  isRsvpOpen disable + AP#43 static gate; rsvpNudge recipients filtered through
+  lib/rsvpEligibility (player_activations on games only; total_roster matches denominatorFor;
+  3 contract tests). **W2 SHIPPED:** EventDetailPage RSVP header count → eligible.length (F-6);
+  TeamDetailPage lifts ONE useScheduleData instance shared by UpcomingEvents + TeamDetailHeroSlot
+  — the hero's RsvpProgressBar reads the SD-6 denominator from the batch (F-7, useEventRsvpCounts
+  read dropped), parent control = D4 buttons batch-fed w/ isRsvpOpen + §10.1(2) suppression at
+  the slot + D5 academy sentence (F-8); ChildRsvp pills variant + compact param RETIRED (AP#51,
+  zero consumers; default variant now 'buttons'); useEventRsvpCounts either-error guard (F-9);
+  D3 AMENDED per F-10 ruling (needs-row-only amber — doc edit in same PR). Invariant tests:
+  featureGates static gate, nudge eligibility trio, hero F-7 width-parity + academy-sentence
+  cases. W3 (typography/perf sweep F-12..F-21) PARKED to trail the device re-grade. NEXT:
+  Frank re-grades Home + Schedule + detail on device against the fixed gates.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
