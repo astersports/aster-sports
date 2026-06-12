@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { MapPin, Repeat } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatCountdown, formatTime } from '../../lib/formatters';
 import { TYPE_LABELS } from '../../lib/constants';
@@ -7,141 +7,105 @@ import { formatEventTitle } from '../../lib/eventTitle';
 import { useAuth } from '../../context/AuthContext';
 import { useNow } from '../../hooks/useNow';
 import { useMapsUrl } from '../../hooks/useMapsUrl';
+import { eventTimeState, isRsvpOpen } from '../../lib/eventWindows';
+import { isStaff } from '../../lib/permissions';
+import { cacheKey } from '../../lib/rsvpCache';
 import ChildRsvp from './ChildRsvp';
-import RsvpCountRow from './RsvpCountRow';
-import RideIndicator from '../shared/RideIndicator';
+import EventCardChips from './EventCardChips';
 import Badge from '../shared/Badge';
 
-export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger, isNext, density = 'medium', gameResult, weather, onRsvpChange }) {
+// SD-2 spine card (SCHEDULE_L99_BUILD_SPEC §1.2 + §10). One layout, two
+// densities: compact tightens padding/type but keeps time, weather,
+// countdown, title, team dot, location, the §10.1 chip row, and the 44px
+// RSVP control — non-negotiable per §10.2. State treatments: upcoming
+// full color (+NOW-slot ring), happening_now Live badge, completed 0.55.
+export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger, isNext, density = 'minimal', gameResult, weather, childRsvpMap, activatedMap, commitment, suppressCount, onRsvpChange }) {
   const navigate = useNavigate();
   const { role, myChildren } = useAuth();
   const now = useNow();
+  const compact = density === 'minimal';
   const childrenOnTeam = (myChildren || []).filter((c) => c.teamIds?.includes(event.team_id) || c.teamId === event.team_id);
   const team = event.teams;
   const teamColor = team?.team_color || 'var(--as-neutral)';
-  const teamName = team?.name || '';
-  const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
   const isCancelled = event.status === 'cancelled';
-  const isPast = event.end_at ? new Date(event.end_at) < new Date() : false;
-  const isToday = new Date(event.start_at).toDateString() === new Date().toDateString();
-  const isTournamentDraft = event.event_type === 'tournament' && !event.opponent;
-  const dimmed = isCancelled || isPast;
+  const timeState = eventTimeState(event, now);
+  const live = timeState === 'happening_now' && !isCancelled;
+  const completed = timeState === 'completed';
+  const isGameType = event.event_type === 'game' || event.event_type === 'tournament';
+  const hasResult = completed && isGameType && gameResult?.published_at;
   const msUntil = new Date(event.start_at).getTime() - now;
-  const showCountdown = isNext && msUntil > 0 && msUntil < 24 * 60 * 60 * 1000 && !isCancelled; // PR #379: !isCancelled drops countdown chip on cancelled events.
+  const showCountdown = timeState === 'upcoming' && !isCancelled && (isNext || msUntil < 24 * 60 * 60 * 1000); // CP-5: every density; NOW slot always
+  const isToday = new Date(event.start_at).toDateString() === new Date(now).toDateString();
+  const isTournamentDraft = event.event_type === 'tournament' && !event.opponent;
   const { prefix: titlePrefix, body: titleBody } = formatEventTitle(event);
-  const titleAria = `${titlePrefix}${titleBody}`;
   const mapsUrl = useMapsUrl(event.location_name || null);
+  const nowSlot = isNext && timeState === 'upcoming' && !isCancelled;
+  const open = () => { navigator.vibrate?.(10); navigate(`/events/${event.id}`, { state: { event } }); };
 
   return (
     <div
-      role="link"
-      tabIndex={0}
-      aria-label={`${teamName} ${titleAria}, ${formatTime(event.start_at)}`}
-      className={`as-press ${dimmed ? '' : (stagger || '')}`}
-      onClick={(e) => { if (e.target.closest('a, button')) return; navigator.vibrate?.(10); navigate(`/events/${event.id}`, { state: { event } }); }}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/events/${event.id}`, { state: { event } }); } }}
+      role="link" tabIndex={0}
+      aria-label={`${team?.name || ''} ${titlePrefix}${titleBody}, ${formatTime(event.start_at)}${live ? ', happening now' : ''}`}
+      className={`as-press ${(isCancelled || completed) ? '' : (stagger || '')}`}
+      onClick={(e) => { if (e.target.closest('a, button')) return; open(); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } }}
       style={{
-        display: 'flex',
-        alignItems: 'stretch',
-        backgroundColor: (event.event_type === 'game' || event.event_type === 'tournament') ? 'rgba(74, 143, 212, 0.10)' : 'var(--as-bg-card)',
-        borderRadius: 10,
-        border: '1px solid var(--as-border-default)',
-        boxShadow: 'var(--as-shadow-sm)',
-        overflow: 'hidden',
-        opacity: dimmed ? 0.5 : 1,
-        transition: 'box-shadow 150ms ease-out, transform 150ms ease-out, opacity 150ms ease-out',
+        display: 'flex', alignItems: 'stretch', position: 'relative',
+        backgroundColor: isGameType ? 'rgba(74, 143, 212, 0.10)' : 'var(--as-bg-card)',
+        borderRadius: 10, overflow: 'hidden',
+        border: nowSlot ? '1.5px solid var(--as-accent)' : '1px solid var(--as-border-default)',
+        boxShadow: nowSlot ? '0 0 0 3px var(--as-accent-soft), var(--as-shadow-sm)' : 'var(--as-shadow-sm)',
+        opacity: (isCancelled || completed) ? 0.55 : 1,
+        transition: 'box-shadow 150ms ease-out, opacity 150ms ease-out',
       }}
     >
-      <div style={{ width: (event.event_type === 'game' || event.event_type === 'tournament') ? 6 : 4, flexShrink: 0, backgroundColor: teamColor }} />
-      <div style={{ flex: 1, padding: density === 'minimal' ? '6px 12px' : '10px 14px' }}>
-        {density === 'minimal' ? (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: 1 }}>
-                <span className="font-bold" style={{ fontSize: 17, color: 'var(--as-text-primary)' }}>{formatTime(event.start_at)}</span>
-                <span style={{ fontSize: 13, color: 'var(--as-text-tertiary)' }}>· {typeLabel}</span>
-                {isTournamentDraft && <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', padding: '2px 6px', borderRadius: 4, backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-secondary)', textTransform: 'uppercase' }}>Draft</span>}
-                {isToday && !showCountdown && <Badge variant="info" pill>Today</Badge>}
-                {gameResult?.published_at && <span style={{ fontSize: 13, fontWeight: 700, color: gameResult.result === 'W' ? 'var(--as-success)' : gameResult.result === 'L' ? 'var(--as-danger)' : 'var(--as-text-secondary)', marginLeft: 'auto' }}>{gameResult.result} {gameResult.our_score}-{gameResult.opponent_score}</span>}
-                {isCancelled && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--as-danger)', backgroundColor: 'var(--as-danger-soft)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Cancelled</span>}
-              </div>
-              {/* Weather is the rightmost badge so it stays put as RSVP
-                  counts come in. RSVP varies in length (14NR vs 6G · 7NR
-                  vs absent); weather is a stable 2-3 char "78°" cell. */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                <RsvpCountRow rsvpCount={rsvpCount} compact={true} />
-                {weather && !isPast && <span style={{ fontSize: 12, color: 'var(--as-text-tertiary)' }}>{weather.icon} {weather.temp}°</span>}
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, marginTop: 2 }}>
-              {teamName && <span style={{ color: teamColor, fontWeight: 500 }}>{teamName}</span>}
-              {teamName && event.location_name && <span style={{ color: 'var(--as-text-tertiary)' }}>·</span>}
-              {event.location_name && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: 'var(--as-text-tertiary)' }}>
-                  <MapPin size={11} strokeWidth={1.75} />
-                  {mapsUrl ? (
-                    <button type="button" onClick={(e) => { e.stopPropagation(); window.open(mapsUrl, '_blank', 'noopener,noreferrer'); }} style={{ color: 'var(--as-text-secondary)', textDecoration: 'none', background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }}>{event.location_name}</button>
-                  ) : event.location_name}
-                </span>
-              )}
-            </div>
-          </>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
-                <span className="font-bold" style={{ fontSize: 17, color: 'var(--as-text-primary)' }}>{formatTime(event.start_at)}</span>
-                {showCountdown && <Badge variant="accent" pill>{formatCountdown(event.start_at)}</Badge>}
-                {isToday && !showCountdown && <Badge variant="info" pill>Today</Badge>}
-                <span style={{ fontSize: 13, color: 'var(--as-text-tertiary)' }}>· {typeLabel}</span>
-                {isTournamentDraft && <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', padding: '2px 6px', borderRadius: 4, backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-secondary)', textTransform: 'uppercase' }}>Draft</span>}
-                {gameResult?.published_at && <span style={{ fontSize: 13, fontWeight: 700, color: gameResult.result === 'W' ? 'var(--as-success)' : gameResult.result === 'L' ? 'var(--as-danger)' : 'var(--as-text-secondary)' }}>{gameResult.result} {gameResult.our_score}-{gameResult.opponent_score}</span>}
-                {isCancelled && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--as-danger)', backgroundColor: 'var(--as-danger-soft)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Cancelled</span>}
-              </div>
-              <div style={{ fontSize: 15, color: 'var(--as-text-primary)', marginTop: 2, marginBottom: 2, textDecoration: isCancelled ? 'line-through' : 'none' }}>
-                {titlePrefix}{titleBody}
-              </div>
-              {teamName && <div style={{ fontSize: 13, color: teamColor, fontWeight: 500 }}>{teamName}</div>}
-              {event.location_name && (
-                <div style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 2, marginTop: 1 }}>
-                  <MapPin size={11} strokeWidth={1.75} color="var(--as-text-tertiary)" style={{ flexShrink: 0 }} />
-                  {mapsUrl ? (
-                    <button type="button" onClick={(e) => { e.stopPropagation(); window.open(mapsUrl, '_blank', 'noopener,noreferrer'); }} style={{ color: 'var(--as-accent)', textDecoration: 'none', background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer', textAlign: 'left' }}>{event.location_name}</button>
-                  ) : <span style={{ color: 'var(--as-text-tertiary)' }}>{event.location_name}</span>}
-                </div>
-              )}
-              {density !== 'maximum' && rideCount?.requests > 0 && (
-                <div style={{ marginTop: 4 }}>
-                  <RideIndicator count={rideCount.requests} kind="requests" compact />
-                </div>
-              )}
-            </div>
-            {/* RSVP on top, weather on bottom — keeps weather pinned to
-                the bottom-right corner. RSVP cell length varies; weather
-                position stays stable. */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0, textAlign: 'right' }}>
-              <RsvpCountRow rsvpCount={rsvpCount} compact={true} />
-              {weather && !isPast && <span style={{ fontSize: 12, color: 'var(--as-text-tertiary)' }}>{weather.icon} {weather.temp}°</span>}
-            </div>
+      <div style={{ width: isGameType ? 6 : 4, flexShrink: 0, backgroundColor: teamColor, opacity: completed ? 0.5 : 1 }} />
+      {nowSlot && <div aria-hidden="true" style={{ position: 'absolute', top: 0, right: 14, backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', padding: '3px 9px', borderRadius: '0 0 7px 7px', textTransform: 'uppercase' }}>Next up</div>}
+      <div style={{ flex: 1, minWidth: 0, padding: compact ? '8px 12px' : '10px 14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <span className="font-bold" style={{ fontSize: compact ? 15 : 17, color: 'var(--as-text-primary)' }}>{formatTime(event.start_at)}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, marginRight: nowSlot ? 56 : 0 }}>
+            {weather && timeState === 'upcoming' && <span style={{ fontSize: 12, color: 'var(--as-text-tertiary)' }}>{weather.icon} {weather.temp}°</span>}
+            {isCancelled && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--as-danger)', backgroundColor: 'var(--as-danger-soft)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Cancelled</span>}
+            {!isCancelled && hasResult && <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, backgroundColor: gameResult.result === 'W' ? 'var(--as-success-soft)' : gameResult.result === 'L' ? 'var(--as-danger-soft)' : 'var(--as-neutral-soft)', color: gameResult.result === 'W' ? 'var(--as-success)' : gameResult.result === 'L' ? 'var(--as-danger)' : 'var(--as-text-secondary)' }}>{gameResult.result} {gameResult.our_score}–{gameResult.opponent_score}</span>}
+            {live && <Badge variant="success" pill style={{ gap: 5, fontWeight: 700 }}><span aria-hidden="true" className="as-pulse-dot" style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--as-success)' }} />Happening now</Badge>}
+            {showCountdown && <Badge variant="accent" pill>{formatCountdown(event.start_at)}</Badge>}
+            {!showCountdown && !live && !completed && !isCancelled && isToday && <Badge variant="info" pill>Today</Badge>}
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginTop: 3 }}>
+          <span style={{ fontSize: compact ? 14 : 15, fontWeight: 600, color: 'var(--as-text-primary)', textDecoration: isCancelled ? 'line-through' : 'none' }}>{titlePrefix}{titleBody}</span>
+          <span style={{ fontSize: 12, color: 'var(--as-text-tertiary)' }}>{TYPE_LABELS[event.event_type] || event.event_type}</span>
+          {isTournamentDraft && isStaff(role) && <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', padding: '2px 6px', borderRadius: 4, backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-secondary)', textTransform: 'uppercase' }}>Draft</span>}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, fontSize: compact ? 12 : 13, marginTop: 2 }}>
+          {team?.name && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: teamColor, fontWeight: 500 }}><span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 3, backgroundColor: teamColor, display: 'inline-block' }} />{team.name}</span>}
+          {role === 'parent' && childrenOnTeam.length === 1 && <span style={{ color: 'var(--as-text-secondary)', fontWeight: 600 }}>· {childrenOnTeam[0].firstName}</span>}
+        </div>
+        {event.location_name && (
+          <div style={{ fontSize: compact ? 12 : 13, display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
+            <MapPin size={11} strokeWidth={1.75} color="var(--as-text-tertiary)" style={{ flexShrink: 0 }} />
+            {mapsUrl && !completed ? (
+              <button type="button" onClick={(e) => { e.stopPropagation(); window.open(mapsUrl, '_blank', 'noopener,noreferrer'); }} style={{ color: 'var(--as-accent)', background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer', textAlign: 'left' }}>{event.location_name}</button>
+            ) : <span style={{ color: 'var(--as-text-tertiary)' }}>{event.location_name}</span>}
           </div>
         )}
-        {density === 'maximum' && (
-          <>
-            {event.notes && <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginTop: 2, WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', display: '-webkit-box', overflow: 'hidden' }}>{event.notes}</div>}
-            {rideCount && (rideCount.offers > 0 || rideCount.requests > 0) && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                {rideCount.offers > 0 && <RideIndicator count={rideCount.offers} kind="offers" />}
-                {rideCount.requests > 0 && <RideIndicator count={rideCount.requests} kind="requests" urgent={rideCount.urgent} />}
-              </div>
-            )}
-            {dutyCount && dutyCount.total > 0 && (
-              <div style={{ fontSize: 13, marginTop: 4, color: dutyCount.claimed < dutyCount.total ? 'var(--as-warning)' : 'var(--as-success)' }}>{dutyCount.claimed}/{dutyCount.total} volunteers</div>
-            )}
-          </>
+        {!completed && !isCancelled && (
+          <EventCardChips isStaffView={isStaff(role)} suppressCount={suppressCount} count={rsvpCount} rideCount={rideCount} dutyCount={dutyCount} commitment={commitment} />
         )}
-        {density !== 'minimal' && role === 'parent' && childrenOnTeam.length > 0 && (
-          <div style={{ marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
-            {childrenOnTeam.map((child) => (<ChildRsvp key={child.playerId} child={child} eventId={event.id} eventType={event.event_type} compact disabled={isPast || isCancelled} onSave={onRsvpChange} />))}
+        {!compact && event.notes && !completed && <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginTop: 4, WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', display: '-webkit-box', overflow: 'hidden' }}>{event.notes}</div>}
+        {role === 'parent' && childrenOnTeam.length > 0 && timeState === 'upcoming' && !isCancelled && (
+          <div onClick={(e) => e.stopPropagation()}>
+            {childrenOnTeam.map((child) => (
+              <div key={child.playerId}>
+                {childrenOnTeam.length > 1 && <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--as-text-secondary)', marginTop: 8 }}>{child.firstName}</div>}
+                <ChildRsvp child={child} eventId={event.id} eventType={event.event_type} variant="segmented"
+                  disabled={!isRsvpOpen(event.start_at, now)}
+                  initialResponse={childRsvpMap ? (childRsvpMap[cacheKey(event.id, child.playerId)] ?? null) : undefined}
+                  initialActivated={activatedMap ? (activatedMap[cacheKey(event.id, child.playerId)] ?? false) : undefined}
+                  onSave={onRsvpChange} />
+              </div>
+            ))}
           </div>
         )}
       </div>

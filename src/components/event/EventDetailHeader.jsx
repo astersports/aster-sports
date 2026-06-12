@@ -2,12 +2,13 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Ban, MoreHorizontal, Pencil, Trash2, UserCheck } from 'lucide-react';
 import { TYPE_LABELS } from '../../lib/constants';
+import { eventTimeState } from '../../lib/eventWindows';
 import SendBriefingButton from '../briefings/SendBriefingButton';
 import BottomSheet from '../shared/BottomSheet';
 
 function eventBriefingKinds(event) {
   const kinds = ['schedule_change', 'announcement', 'custom_message'];
-  const isPast = event?.start_at ? new Date(event.start_at) < new Date() : false;
+  const isPast = event?.start_at ? eventTimeState(event) === 'completed' : false; // SD-2 spine (was start-based — recap offered mid-game)
   const isGame = event?.event_type === 'game' || event?.event_type === 'tournament';
   if (isPast && isGame) kinds.unshift('game_recap');
   if (!isPast) kinds.push('rsvp_nudge');

@@ -1,10 +1,9 @@
 import { Clock } from 'lucide-react';
 import { useNow } from '../../hooks/useNow';
 import { formatEventTitleString } from '../../lib/eventTitle';
+import { EVENT_DEFAULT_DURATION_MS } from '../../lib/eventWindows';
 import Badge from '../shared/Badge';
 import Label from '../shared/Label';
-
-const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
 
 // Arrival protocol copy (HOME_RENDER_RULES_CC #3): games + tournaments call
 // for 15 minutes early ("· game day"), practices (+ everything else) for 5.
@@ -14,7 +13,7 @@ function useLiveCountdown(targetDate) {
   const now = useNow(1000);
   if (!targetDate) return null;
   const start = new Date(targetDate).getTime();
-  if (now - start > DEFAULT_EVENT_DURATION_MS) return null;
+  if (now - start > EVENT_DEFAULT_DURATION_MS) return null;
   const diff = start - now;
   if (diff <= 0) return 'Now';
   const days = Math.floor(diff / 86400000);

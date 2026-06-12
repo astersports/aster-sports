@@ -41,10 +41,11 @@ describe('useEventTimeWindow.computeFlags', () => {
     expect(f.isPast).toBe(true);
   });
 
-  it('default 60min duration when end_at missing', () => {
-    const event = { start_at: new Date(NOW - 30 * 60 * 1000).toISOString() };
-    const f = computeFlags(event, NOW);
-    expect(f.isLive).toBe(true);
+  it('default 2h duration when end_at missing (SD-2 spine — was 60min)', () => {
+    const ninetyMinIn = { start_at: new Date(NOW - 90 * 60 * 1000).toISOString() };
+    expect(computeFlags(ninetyMinIn, NOW).isLive).toBe(true);
+    const threeHoursIn = { start_at: new Date(NOW - 3 * 3600 * 1000).toISOString() };
+    expect(computeFlags(threeHoursIn, NOW).isPast).toBe(true);
   });
 
   it('returns null timeToStart when event has no start_at', () => {

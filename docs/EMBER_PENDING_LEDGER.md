@@ -568,9 +568,34 @@ arc bodies.
   shown to a parent (UX-11). **Execution evidence + deviations register for the architect:**
   `docs/P0_LANE_EXECUTION_REPORT_2026-06-12.txt` (before/after policy quals + grant matrices,
   anon probe data, advisor delta, v9 verify_jwt incident, D1-D7 deviations awaiting ratification
-  incl. the proposed AP #31 MCP-deploy corollary, residual-risk register R-1..R-6). NEXT: PR-A' (greenlit by the L99 rulings — "can ship now"; carries
-  the SCH-2 batch hook hard-prereq per VF-11) → PR-B'..F' per the ratified sequence → capability
-  arcs (C1 weather → C2 directions → C9 family-hub ph2 → C10 AI → C11 push).
+  incl. the proposed AP #31 MCP-deploy corollary, residual-risk register R-1..R-6).
+  **PR-A' SHIPPED (2026-06-12):** the SCHEDULE_L99_BUILD_SPEC arrived (committed:
+  `docs/SCHEDULE_L99_BUILD_SPEC_2026-06-12.txt` + 6 renders in `docs/renders/`) and PR-A' built to
+  it: SD-2 time-state spine (`eventTimeState`/`eventEnd`/`isRsvpOpen` in `lib/eventWindows.js`,
+  2h EVENT_DEFAULT_DURATION_MS as the ONE constant; FIVE divergent is-past predicates re-pointed —
+  the spec's 4 plus an EventDetailHeader stray — and a NextEventCard duplicate constant removed);
+  three-band Schedule (Happening now / Upcoming w/ NOW-slot ring + countdown-at-every-density
+  CP-5 / Completed collapsed w/ W/L on game types only per SD-5); VF-11 batch hook
+  `useScheduleData` (constant request count, per-child RSVP + activation batched — ChildRsvp
+  per-row N+1 killed via initialResponse/initialActivated props); §10 card content model at both
+  densities (chip row: going w/ SD-6 rostered+activated denominator, staff "/N rostered" form,
+  Hidden-roster suppression w/ "Counts hidden for evaluations" lock note, rides-needed/covered,
+  volunteers-needed, own-commitment line; 44px segmented Going/Can't RSVP at compact per §10.2);
+  SD-1 density collapse (dead 'schedule-list' key purged → 'default', migration `20260612105307`
+  swept 5 'medium' + 3 'schedule-list' rows and tightened the CHECK to 2-state); UX-11 DRAFT chip
+  staff-gated. CI locks: `eventWindows.test.js` (spine contract incl. NULL-end completed +
+  mid-game happening_now), `eventTimeStateAudit.test.js` (grep gate: isPast defs must read
+  eventTimeState; duration-constant redefinitions banned), CP-5 countdown-at-both-densities test,
+  §10.1 chips test, VF-11 request-count-constant test. Build-shape deviations for architect
+  ratification: formatCountdown STAYS in `lib/formatters.js` (existing TZ-pinned NY implementation
+  + test suite; spec §4 placed it in eventWindows — moving would churn the timezone audit for no
+  behavior change); cancelled-card RSVP invariant STRENGTHENED (hidden entirely vs render-disabled);
+  duty chip ships the generic "N volunteers needed" form (duty names not in the count batch —
+  "Snacks open" name-form deferred to PR-E' coverage work); weather chip keeps the existing
+  org-coords now-window behavior (per-venue+date batching lands with PR-C' per SD-9/DB-10).
+  NEXT: PR-B' (always-on RSVP ungate + isRsvpOpen everywhere + ChildRsvp → shared/; batch-hook
+  prereq now satisfied) → PR-C'..F' per the ratified sequence → capability arcs (C1 weather →
+  C2 directions → C9 family-hub ph2 → C10 AI → C11 push).
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player

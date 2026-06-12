@@ -1,9 +1,15 @@
 import { useMemo, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useNow } from '../../hooks/useNow';
+import { eventTimeState } from '../../lib/eventWindows';
 import DateGroupedList from './DateGroupedList';
 
-export default function PastEventsSection({ activities, rsvpCounts, rideCounts, dutyCounts, gameResults, weather, onRsvpChange }) {
+// COMPLETED section (spec §1.4): last 7 days, collapsed by default,
+// newest-first, summary in the header. Membership reads eventTimeState
+// 'completed' — in-progress events stay in the Happening-now band (the
+// old start_at < now check pulled live games in here mid-game), and
+// NULL-end_at events retire 2h after start via eventEnd (DB-8 tolerance).
+export default function PastEventsSection({ activities, data, density }) {
   const [open, setOpen] = useState(false);
   const now = useNow();
 
@@ -12,18 +18,17 @@ export default function PastEventsSection({ activities, rsvpCounts, rideCounts, 
     return activities
       .filter((a) => {
         if (!a.start_at || a.status === 'cancelled') return false;
-        const t = new Date(a.start_at).getTime();
-        return t >= cutoff && t < now;
+        return new Date(a.start_at).getTime() >= cutoff && eventTimeState(a, now) === 'completed';
       })
       .sort((a, b) => new Date(b.start_at) - new Date(a.start_at));
   }, [activities, now]);
 
   const summary = useMemo(() => {
-    if (!gameResults) return null;
-    const wCount = past7.filter(a => gameResults[a.id]?.result === 'W').length;
-    const lCount = past7.filter(a => gameResults[a.id]?.result === 'L').length;
+    if (!data.gameResults) return null;
+    const wCount = past7.filter((a) => data.gameResults[a.id]?.result === 'W').length;
+    const lCount = past7.filter((a) => data.gameResults[a.id]?.result === 'L').length;
     return wCount + lCount > 0 ? `${wCount}W-${lCount}L` : null;
-  }, [past7, gameResults]);
+  }, [past7, data.gameResults]);
 
   if (past7.length === 0) return null;
 
@@ -39,7 +44,7 @@ export default function PastEventsSection({ activities, rsvpCounts, rideCounts, 
         </span>
         <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)' }}>({past7.length}){!open && summary ? ` · ${summary}` : ''}</span>
       </button>
-      {open && <DateGroupedList events={past7} rsvpCounts={rsvpCounts} rideCounts={rideCounts} dutyCounts={dutyCounts} gameResults={gameResults} weather={weather} onRsvpChange={onRsvpChange} />}
+      {open && <DateGroupedList events={past7} data={data} density={density} onRsvpChange={data.onRsvpSaved} />}
     </div>
   );
 }

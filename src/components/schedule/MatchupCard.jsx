@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { formatTime } from '../../lib/formatters';
+import { eventTimeState } from '../../lib/eventWindows';
 
 export default function MatchupCard({ event, gameResult }) {
   const navigate = useNavigate();
@@ -16,7 +17,9 @@ export default function MatchupCard({ event, gameResult }) {
   const tournamentLabel = event.tournament_name || 'Tournament';
   const isAway = event.home_away === 'away';
   const isCancelled = event.status === 'cancelled';
-  const isPast = new Date(event.start_at) < new Date();
+  // SD-2: spine re-point — the old start_at check flipped in-progress
+  // games into the past treatment at tip-off.
+  const isPast = eventTimeState(event) === 'completed';
   const gr = gameResult || null;
   const hasResult = isPast && gr?.published_at;
 
