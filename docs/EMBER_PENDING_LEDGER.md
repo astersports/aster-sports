@@ -565,7 +565,10 @@ arc bodies.
   (3) NO in-app calendar-subscribe affordance for logged-in parents (Subscribe lives only on the
   public page) → rides with SD-16 phase 1 (per-family feed needs the in-app entry point anyway).
   Smoke also live-corroborated two ruled items: inflated "12NR" denominators (SD-6) + DRAFT badge
-  shown to a parent (UX-11). NEXT: PR-A' (greenlit by the L99 rulings — "can ship now"; carries
+  shown to a parent (UX-11). **Execution evidence + deviations register for the architect:**
+  `docs/P0_LANE_EXECUTION_REPORT_2026-06-12.txt` (before/after policy quals + grant matrices,
+  anon probe data, advisor delta, v9 verify_jwt incident, D1-D7 deviations awaiting ratification
+  incl. the proposed AP #31 MCP-deploy corollary, residual-risk register R-1..R-6). NEXT: PR-A' (greenlit by the L99 rulings — "can ship now"; carries
   the SCH-2 batch hook hard-prereq per VF-11) → PR-B'..F' per the ratified sequence → capability
   arcs (C1 weather → C2 directions → C9 family-hub ph2 → C10 AI → C11 push).
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
