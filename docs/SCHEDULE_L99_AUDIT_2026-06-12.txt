@@ -1,0 +1,639 @@
+SCHEDULE L99 AUDIT — 2026-06-12
+================================================================
+Surface: authed /schedule (SchedulePage.jsx + full mount tree)
+Method: CLAUDE.md §16.15 (a)-(e) — initial line-by-line pass, 2-pass
+  deep-read addendum, anti-pattern catalog cross-reference, per-role
+  wireframes, explicit out-of-scope list.
+Verification basis (AP #60 / §11.7): file:line reads at main commit
+  9fc50fcb (2026-06-12) + production schema/data queries via Supabase
+  MCP (information_schema + events counts, 2026-06-12). No inference
+  where a query could settle it; the two VERIFY items that remain are
+  labeled as such.
+Status: AUDIT ONLY — no redesign code ships until the SD-* decisions
+  in §7 are ruled (operator guardrail, 2026-06-12: "the audit surfaces
+  the live shape, it doesn't rule the redesign"). Phase B of
+  docs/DYNAMIC_WORKFLOWS_NEXT_PHASES_2026-06-12.txt.
+Author: CC. Reviewer: architect (via Frank relay, §11.8).
+
+----------------------------------------------------------------
+§1 MOUNT TREE INVENTORY
+----------------------------------------------------------------
+Page
+  src/pages/SchedulePage.jsx ......................... 112 LOC
+
+Components (src/components/schedule/)
+  ScheduleListSections.jsx ........................... 57
+  DateGroupedList.jsx ................................ 29
+  EventCard.jsx ...................................... 150  << AT §6 cap
+  ChildRsvp.jsx ...................................... 122
+  RsvpCountRow.jsx ................................... 39
+  PastEventsSection.jsx .............................. 45
+  GamesView.jsx ...................................... 150  << AT §6 cap
+  MatchupCard.jsx .................................... 115
+  StandingsTable.jsx ................................. 83
+  FilterBar.jsx ...................................... 50
+  ChildFilterChips.jsx ............................... 19
+  WeekStrip.jsx ...................................... 42
+  ViewToggle.jsx ..................................... 28
+  ScheduleFab.jsx .................................... 35
+  ShareScheduleButton.jsx ............................ 50   (the QR-less one — see SCH-7)
+
+Hooks (src/hooks/)
+  useActivities.js ................................... 68
+  useEventRsvpCounts.js .............................. 78
+  useEventRideCounts.js .............................. 54
+  useEventDutyCounts.js .............................. 43
+  useGameResultsMap.js ............................... 31
+  useDensity.js ...................................... 54
+  useWeather.js ...................................... 104
+  useNow.js / useRefetchOnVisible.js / useMapsUrl.js . 24 / 11 / 52
+
+Libs / shared touched
+  lib/scheduleHelpers.js (18), lib/teamRecords.js (81),
+  lib/rsvpCache.js (5), lib/eventTitle.js, lib/formatters.js,
+  lib/constants.js (TYPE_LABELS/TYPE_OPTIONS/WEATHER_DEFAULT_COORDS),
+  lib/permissions.js (isStaff);
+  shared/FilterSelect.jsx (34), shared/ShareScheduleButton.jsx (57 — QR),
+  home/DensityToggle.jsx (103), shared/ModalBackground.jsx (33 — AP #2 ✓),
+  shared/{TextEmptyState,Label,RideIndicator,Badge,LoadingSkeleton,
+  BottomSheet} (cross-surface primitives — touchpoint checks only).
+
+External consumer of schedule components (AP #43 blast radius):
+  src/components/roster/UpcomingEvents.jsx imports schedule/EventCard.
+  Any EventCard change must re-verify that surface.
+
+Existing invariant coverage (good — AP #43/#46 lineage already live):
+  __tests__/MatchupCardRowRhythm.test.jsx,
+  EventCardCancelledState.test.jsx, EventCardTournamentDraft.test.jsx,
+  MatchupCardTournamentAnchor.test.jsx.
+
+WHAT'S ALREADY CLEAN (so this audit is fair):
+  - ET pinning broadly correct where toLocale* is used
+    (scheduleHelpers, GamesView labels, MatchupCard past date).
+  - Optimistic RSVP with rollback + exact §16.3 microcopy + vibrate
+    (ChildRsvp) — §16.1 compliant.
+  - Batched count hooks with value-stable keys (rsvp/ride/duty) —
+    AP #4 compliant, documented PATTERN A key technique.
+  - useActivities: error destructured AND thrown, last-known-good
+    cache preserved, org/role scoping server-side (AP #36, #37 ✓ —
+    events is FK-scoped via teams, correctly NOT org_id-filtered).
+  - rsvpCache + weather caches registered with cacheBuster (signout
+    hygiene ✓). ModalBackground locks rgba(0,0,0,0.3) (AP #2 ✓).
+  - Standings are team-level only — §16.12 compliant.
+  - FAB 56px, ViewToggle/DensityToggle 44px targets, aria labels ✓.
+
+----------------------------------------------------------------
+§2 ELEMENT (a) — INITIAL AUDIT PASS (P0/P1/P2/P3, file:line)
+----------------------------------------------------------------
+P0: none. The surface works; nothing loses data or crashes.
+
+--- P1 ---
+
+SCH-1  Hardcoded LH-cobalt tint on game/tournament cards
+  EventCard.jsx:46 — backgroundColor literal rgba(74,143,212,0.10)
+  for game/tournament events. That is Legacy Hoopers' accent-soft
+  baked into a platform component: every other tenant's schedule will
+  render LH blue tints over their own brand. Should be
+  var(--as-accent-soft) (identical value for LH at runtime via org
+  override). AP #8 / §0 rule 4 violation; the §0 grep #3 only scans
+  #FFFFFF so this class evades it.
+
+SCH-2  Parent list fires N+1 queries (per-child, per-card)
+  ChildRsvp.jsx:25-29 (player_activations, one query per academy
+  child per card) + :31-44 (event_rsvps, one query per child per
+  card). A parent with 2 kids and ~20 visible cards ≈ up to 60-80
+  requests on first paint; rsvpCache only suppresses re-renders, not
+  initial fan-out. Meanwhile useEventRsvpCounts already batch-fetches
+  every rsvp row for the same events (2 queries total). Fix shape:
+  batch hook keyed event×player (one .in() for rsvps, one for
+  activations) or derive per-child response from the rows the counts
+  hook already pulls. AP #4 class.
+
+SCH-3  Sub-44px tap targets on primary controls
+  ChildRsvp.jsx:87 (compact minHeight 32 — the parent's MAIN action
+  on this page), shared/FilterSelect.jsx:10 (minHeight 36 — the
+  team/type/child filters on both views),
+  schedule/ShareScheduleButton.jsx:37 (copy button minHeight 36).
+  §7 "44px minimum (non-negotiable)" / §16.4.
+
+SCH-4  In-progress events vanish into the collapsed Past section
+  ScheduleListSections.jsx:25-31 — lookbackMs=0 means upcoming =
+  start_at >= now: an event leaves "Next 7 days" the second it
+  starts and lands inside the closed "Past 7 days" expander while
+  it is being played. GamesView.jsx:66-67 same split (in-progress
+  game shows under Results with a "—" pending marker). Game day is
+  the highest-traffic moment for this page; the event being played
+  is the one thing not visible. → SD-2.
+
+SCH-5  Fetch errors invisible on the page
+  useActivities.js:53-59 deliberately preserves last-known-good and
+  returns `error` for a "Couldn't refresh — retry" surface;
+  SchedulePage.jsx:26 destructures only {activities, loading,
+  refetch} — the error contract is built upstream and consumed
+  nowhere. On a flaky connection parents silently see stale-or-empty.
+  Same omission at ParentHome/AdminHome/CoachHome (:35/:32/:33) —
+  cross-surface; fix here + AP #43 invariant test covering all four.
+  AP #36 corollary (error surfaced-but-unconsumed) + AP #44 lineage.
+
+SCH-6  Density: doctrine drift cluster (§16.2)
+  (a) EventCard.jsx:142 — `density !== 'minimal'` gates the parent's
+      inline ChildRsvp. §16.2: density "never gates whether a
+      Needs-you item appears." Compounding: Schedule's density
+      defaults to 'minimal' (useDensity.js:6 FALLBACK + no explicit
+      default at SchedulePage.jsx:37), so a fresh parent account gets
+      NO inline RSVP on Schedule until they discover the Detailed
+      toggle. Fix regardless of SD-1: ChildRsvp renders in minimal
+      too (it already has a compact row form).
+  (b) Per-section density keys still live: 'schedule-list'
+      (SchedulePage.jsx:37, ScheduleListSections.jsx:41),
+      'locations-list' (AdminLocationsPage.jsx:26,44), 'rides-list'
+      (EventRidesTab.jsx:67, ride/OfferCard.jsx:33). They SHADOW the
+      Account-level card_density.default written by
+      AppearanceForm.jsx:43 (resolution order in useDensity.js:24-30:
+      sectionKey -> default -> fallback). Once a user touches the
+      Schedule toggle, the Account "Density" preference permanently
+      stops affecting Schedule. Two controls, two truths. And NO home
+      surface consumes useDensity at all (grep: zero home callers) —
+      §16.2's "home-level setting" currently governs no home cards.
+      → SD-1 (genuinely open: doctrine text vs live shape).
+  (c) Retired 3-level remnants: EventCard.jsx:15 default
+      density='medium'; EventCard.jsx:113 `density !== 'maximum'`
+      branch reachable ONLY via the undefined-density path (see
+      SCH-15) — i.e. the third state survives as implicit behavior.
+
+SCH-7  Two different ShareScheduleButton components (same name)
+  schedule/ShareScheduleButton.jsx (mounted by SchedulePage.jsx:21,81)
+  = copy-link only, builds URL from window.location.origin, custom
+  modal, false "Copied" confirmation when clipboard API is missing
+  (:12-14 — navigator.clipboard?.writeText no-ops, setCopied(true)
+  runs anyway). shared/ShareScheduleButton.jsx = QR (qrcode.react) +
+  BottomSheet + publicUrls lib + graceful clipboard rejection — the
+  component CLAUDE.md §8 credits as the shipped QR arc, used by
+  TeamDetailHero and PublicSchedulePage. Net: the same "share this
+  team's schedule" action gives staff QR from Team detail but not
+  from Schedule (AP #63 same-action divergence; AP #42 parallel
+  system; §7 "all shared components in shared/"). Bonus bug:
+  SchedulePage.jsx:81 passes teamName="" so the share sheet / modal
+  title renders " Schedule". Fix: consolidate on shared/, delete the
+  schedule/ copy with an AP #34 caller grep in the same PR. → SD-4.
+
+--- P2 ---
+
+SCH-8  game_results: duplicate fetch paths + an unhandled-throw
+  GamesView.jsx:14-33 defines a private useGameResults even though
+  SchedulePage already computed useGameResultsMap for the same events
+  (GamesView just doesn't receive it). The private copy also refetches
+  every 60s on the Games tab: pastIds (GamesView.jsx:66-68) is rebuilt
+  each useNow tick, new array ref -> effect refires. And the shared
+  hook useGameResultsMap.js:22 does `if (error) throw error` inside
+  .then() with no catch — an unhandled promise rejection (Sentry noise,
+  zero UI signal); GamesView's copy console.errors; the counts hooks
+  console.warn. Three error styles for one concept. Consolidate to the
+  one hook, {data,error} contract, pass down from the page.
+
+SCH-9  Results header count vs list truncation
+  GamesView.jsx:143 shows "(past.length)"; :145 renders only
+  past.slice(-10). "(23)" with 10 rows and no "show more" affordance
+  reads as broken. → SD-3.
+
+SCH-10 WeekStrip cluster
+  WeekStrip.jsx:7-12 — dateStr is ET-pinned but dayNum/dayAbbr come
+  from device-local getDate()/getDay(): for a non-ET device near
+  midnight the chip's day number and its underlying date diverge.
+  :14 useMemo([]) freezes "today" at mount (stale strip after
+  midnight in a long-lived tab/PWA resume). :29 minWidth 42 (<44).
+  SchedulePage.jsx:43-45 — eventDates feeding the dots come from RAW
+  activities (kid/team/type filters NOT applied; cancelled included
+  while hidden): dots advertise days whose groups aren't rendered,
+  and handleDaySelect (:47-57) silently no-ops when the target group
+  doesn't exist. Also role="tablist"/tab semantics for what is
+  actually a scroll affordance (no tabpanel; no arrow-key nav).
+  → SD-8.
+
+SCH-11 "Today" badge computed in device TZ
+  EventCard.jsx:26 — toDateString() comparison; platform discipline
+  is ET-pinned calendar math (PR #234 lineage). The timezoneAuditPin
+  grep only catches toLocale* calls, so this class is invisible to
+  the existing audit test. Extend helper + audit grep (see §4).
+
+SCH-12 "Is this event past?" — same concept, three sources (Pattern A)
+  EventCard.jsx:25 uses end_at (null end_at -> NEVER past);
+  MatchupCard.jsx:19, GamesView.jsx:66-67, ScheduleListSections.jsx
+  :26-31, PastEventsSection.jsx:10-17 all use start_at. Production
+  check (2026-06-12): events total 193, end_at NULL on 5 — all 5 in
+  the past — so 5 live cards never dim and keep ChildRsvp enabled
+  (disabled gate EventCard.jsx:144 keys off isPast). Fix shape: one
+  shared isEventPast(event, now) helper (AP #7) with explicit
+  in-progress semantics (SD-2 decides where in-progress renders);
+  separately flag wizard/end_at hygiene (out-of-scope edge, §6).
+
+SCH-13 Filter UX dead-ends
+  ScheduleListSections.jsx:35-36 — the empty state can't tell
+  filtered-empty from truly-empty: with a kid/type filter active it
+  says "No events this week" with no "clear filters" hint (§16.3
+  actionability). Worse deep-link case: SchedulePage.jsx:30 reads
+  ?team= into selectedTeam, but :93 hides FilterBar's team row when
+  myChildren >= 2 — a 2-kid parent following a shared team link gets
+  an ACTIVE team filter with NO visible control to see or clear it.
+
+SCH-14 noResponse denominator includes non-activated Academy kids
+  useEventRsvpCounts.js:48 sizes = ALL current roster_members
+  (left_at IS NULL; roster_members has no roster_type). For game
+  events the "NR" count therefore includes futures_academy players
+  who were never activated for that game — inflated no-response
+  numbers on exactly the cards coaches scan for coverage. VERIFY
+  against event-detail's expected-responder scope (likely differs ->
+  AP #63 cross-surface contradiction). → SD-6.
+
+SCH-15 Past cards ignore density (and render disabled RSVP noise)
+  PastEventsSection.jsx:42 passes no density prop ->
+  EventCard.jsx:15 defaults to 'medium' -> past cards ALWAYS render
+  the expanded branch (user's minimal preference ignored) AND the
+  density!=='maximum' ride row (:113) becomes reachable — the only
+  live path to the retired third state. Parents also get rows of
+  disabled RSVP pills on every past card (:142 renders with
+  disabled={isPast}) — pure noise. Tie into SCH-6 fix.
+
+SCH-16 a11y sweep
+  DateGroupedList.jsx:8 date headers are styled <div>s, not
+  <h2>/<h3> — screen-reader heading navigation sees one h1 and
+  nothing else on the page's main content. StandingsTable.jsx th
+  cells lack scope="col". WeekStrip/ViewToggle use tab roles without
+  the tabs keyboard pattern. §16.4.
+
+SCH-17 Cancelled-event policy differs by zone
+  List view: toggle, dimmed cards (SchedulePage.jsx:68 +
+  EventCard). Past section: cancelled ALWAYS excluded even with
+  "Show cancelled" on (PastEventsSection.jsx:14). Games view:
+  cancelled ALWAYS hidden (GamesView.jsx:48). Three policies on one
+  page. → SD-5.
+
+SCH-18 Full-season fetch, unbounded "Later", no virtualization
+  useActivities.js:37-43 has no date window (entire season per org/
+  team scope); ScheduleListSections "Later" renders everything past
+  +7d; admin currently ~193 events org-wide. §16.10 requires
+  virtualization >30 items. At LH scale it holds up; it is the
+  scaling cliff for multi-tenant. Enhancement-class: date-window or
+  paginate "Later", virtualize if list >30 stays possible.
+
+SCH-19 Games mode silently discards filter context
+  SchedulePage.jsx:88-95 — GamesView receives RAW activities: kid
+  chips, type filter, cancelled toggle neither render nor apply in
+  Games mode, and GamesView keeps its OWN selectedTeam state
+  (GamesView.jsx:43) disconnected from the list's team filter.
+  Switching views resets mental context with no signal.
+
+--- P3 (compact) ---
+
+SCH-20 StandingsTable.jsx:53-57 parses wins/losses back out of the
+  record STRING — lib/teamRecords.js should export wins/losses
+  numerically (display pct does match lib winPct formula — verified,
+  no sort/display mismatch today; this is fragility, not a bug).
+SCH-21 MatchupCard.jsx:52 fixed 100px nowrap team column — longer
+  multi-tenant team names clip silently.
+SCH-22 MatchupCard.jsx:27 aria-label says "vs TBD" on tournament
+  anchors while the visual shows the tournament name; :99 past rows
+  drop the @/vs home-away mark entirely.
+SCH-23 EventCard.jsx + GamesView.jsx both at exactly 150 LOC — any
+  next material edit triggers the §6 split. Plan splits INTO the
+  redesign PRs (see §8), don't band-aid.
+SCH-24 Naming: FilterBar prop `teams` receives activities;
+  ChildFilterChips renders a select, not chips.
+SCH-25 viewMode/filters reset every visit (only ?team= deep-links
+  IN, never OUT). Coach who lives in Games re-taps every time. → SD-7.
+SCH-26 Weather is venue-blind: one Open-Meteo fetch for
+  WEATHER_DEFAULT_COORDS at page level (SchedulePage.jsx:39),
+  time-matched per event (DateGroupedList.jsx:22). Known 2-B
+  partial. Schema note for the eventual fix: locations carries TWO
+  coordinate pairs — lat/lon (double precision) AND latitude/
+  longitude (numeric) — reconcile before building per-venue weather.
+  → SD-9.
+SCH-27 useEventRideCounts.js:35-42 — confirmed claims still count in
+  "requests" (a fully-matched ride renders like outstanding demand;
+  urgent flag is correct). VERIFY against ride-board domain intent.
+SCH-28 useGameResultsMap.js:8 captures `new Date()` inside the memo —
+  results for a game that just ended don't appear until an
+  activities refetch (visibility refetch usually masks it).
+SCH-29 useActivities module cache seeds initial state only — two
+  simultaneously-mounted consumers (TeamDetailPage +
+  roster/UpcomingEvents) can briefly diverge after one refetches.
+SCH-30 EventCard `stagger` prop: no caller passes it (grep) — dead.
+SCH-31 GamesView.jsx:84 week numbers via raw ms ÷ 7d — off-by-one
+  across DST boundaries (Fall seasons).
+SCH-32 GamesView empty state (:112-116) lacks the staff CTA variant
+  the list empty state has; Badge at :123 takes a style override
+  instead of a variant.
+
+----------------------------------------------------------------
+§3 ELEMENT (b) — DEEP-READ ADDENDUM (pass 2)
+----------------------------------------------------------------
+Pass 2 re-walked the full tree per category (data correctness,
+perf, a11y, tokens, cross-role, errors, TZ, §16 doctrine, dead
+code) after the initial pass. Findings ABOVE that originated in
+pass 2 — i.e. would have shipped missed under a single pass:
+
+  SCH-4  (in-progress drop — caught only when re-reading the window
+          math with "game day" eyes), SCH-6(c) dead 'medium' branch
+          reachability via PastEventsSection's missing prop,
+          SCH-10's unfiltered eventDates + silent no-op scroll,
+          SCH-12's null-end_at edge (then quantified in prod: 5/193),
+          SCH-13's invisible-filter deep-link case, SCH-15, SCH-19,
+          SCH-27 ride-semantics question, SCH-29, SCH-30, SCH-31.
+
+That is 11 of 32 findings from the addendum pass (~34% — consistent
+with the historical ~40% single-pass miss rate that §16.15(b)
+exists to close).
+
+Pass-2 verifications run against production (AP #60):
+  - events.end_at IS NULLABLE; 5/193 rows null (all past).
+  - locations has BOTH lat/lon AND latitude/longitude columns.
+  - 25/193 events have neither location text nor location_id
+    (render fine — venue line simply absent; no action).
+  - useDensity callers enumerated app-wide (3 section keys + the
+    Account default writer; zero home consumers).
+
+----------------------------------------------------------------
+§4 ELEMENT (c) — ANTI-PATTERN CATALOG CROSS-REFERENCE
+----------------------------------------------------------------
+Finding    Registered pattern(s)
+SCH-1      AP #8 (hardcoded hex/color), §0 rule 4; evades §0 grep #3
+           (which only scans #FFFFFF) — suggest widening that grep to
+           rgba literals matching brand values.
+SCH-2      AP #4 class (per-row queries -> batch .in()).
+SCH-3      §7 44px / §16.4 (ELITE table stakes).
+SCH-4      §16.14 spirit (game-day surface priority); Pattern A of
+           time semantics (with SCH-12).
+SCH-5      AP #36 corollary (error built upstream, unconsumed at
+           gate) + AP #44 (trace full state pipeline); AP #43 fix
+           shape (4 surfaces share the omission).
+SCH-6      §16.2 doctrine drift; AP #51 flavor (retired model
+           surviving as live config); the (c) remnants are exactly
+           the "dead 3-level references" §16.2 claims were removed.
+SCH-7      AP #42 (parallel system), AP #63/Pattern A (same action,
+           divergent surfaces), AP #34 (removal needs caller grep),
+           §7 (shared components live in shared/).
+SCH-8      AP #36 (error contract), useNow-driven refetch churn is
+           the AP #48-adjacent "JS-side derivation" lesson applied
+           to deps; duplication = AP #7.
+SCH-10/11  PR #234 timezone-pin lineage; NEW sub-class: non-toLocale
+           calendar math (toDateString/getDate/getDay) is invisible
+           to timezoneAuditPin.test.js — extend that audit grep when
+           fixing (AP #43: lock the class, not the instance).
+SCH-12     AP #63 Pattern A (dominant platform pattern, instance:
+           isPast); AP #7 (shared helper).
+SCH-13     §16.3 (actionability), kindness microcopy.
+SCH-14     AP #63 Pattern A candidate (expected-responder scope);
+           §11.5 ground-truth (roster_members historical-window
+           exception is correctly used — the issue is the SEMANTIC
+           denominator, not the table choice).
+SCH-15     §16.2 (uniform application).
+SCH-16     §16.4.
+SCH-17/19  AP #63 Pattern A (cancelled policy / filter scope across
+           zones of one surface).
+SCH-18     §16.10 budgets.
+SCH-23     §6 150-line discipline (cap-pressure trigger rule).
+
+Cross-batch pattern check (AP #58): this audit CONTINUES Pattern A
+(#63) as the dominant class — 5 instances here (SCH-12 isPast,
+SCH-14 denominator, SCH-17 cancelled policy, SCH-7 share action,
+SCH-6b density truth). One new local cluster: SUB-44 TAP TARGETS
+(SCH-3, 3 instances) — worth a §0-style grep (minHeight: [123]?[0-9]\b
+in interactive styles) during fix. TZ-mix forms a second new
+sub-class (SCH-10/11) extending the PR #234 lineage to non-toLocale
+APIs. No new instance of AP #36 destructured-default (the 2026-05-24
+synthesis gate's "don't lock" call stands); the SCH-8 unhandled-throw
+is a sibling, not the same shape.
+
+----------------------------------------------------------------
+§5 ELEMENT (d) — PER-ROLE WIREFRAMES
+----------------------------------------------------------------
+Three roles = three different Schedule surfaces (operator guardrail).
+These are PROPOSED shapes FOR RULING — nothing here is decided. The
+current state is drawn first as the shared baseline.
+
+CURRENT (all roles — differences are bolt-ons)
+  +----------------------------------------------+
+  | Schedule                    [All|Games] [Share*]|  *staff+team-filter only
+  | ────                                          |
+  | [Su][Mo][Tu][We][Th][Fr][Sa]   (WeekStrip)    |
+  | [Child filter*]              *parent 2+ kids  |
+  | [Team v][Type v][Show cancelled]              |
+  | NEXT 7 DAYS                  [Compact/Detailed]|
+  |  THURSDAY JUN 12 · TODAY                      |
+  |  | 6:00 PM · Practice  [Today]      2G·1NR 78°|
+  |  | 10U Black · WCC Gym 2                      |
+  |  |  Mia   [Going][Maybe][Can't]   (parent,    |
+  |  |  Leo   [Going][Maybe][Can't]    not minimal)|
+  | LATER (unbounded)                             |
+  | > PAST 7 DAYS (3) · 2W-1L     (collapsed)     |
+  |                                   (+) FAB*    |  *staff
+  +----------------------------------------------+
+  Games mode: standings table + WEEK n groups + collapsed Results
+  (last 10) — filters/chips from list mode silently inert.
+
+PARENT (proposed) — "where and when is my kid"
+  +----------------------------------------------+
+  | Schedule                          [All|Games] |
+  | [Mia v]                  (kid filter, 2+ kids)|
+  | [Su][Mo][Tu][We][Th][Fr][Sa]                  |
+  | ── HAPPENING NOW ──────────────────────────── |  SD-2
+  | | LIVE 10U Black @ WCC Gym 2 · started 5:12p ||
+  | ── NEXT 7 DAYS ────────────────────────────── |
+  |  THURSDAY · TODAY                             |
+  |  | 6:00 PM Practice · 10U Black     [map] 78°||
+  |  |   Mia  [Going][Maybe][Can't]  << ALWAYS    |  SCH-6a: never
+  |  |   Leo  [Going][Maybe][Can't]     44px      |  density-gated
+  | ── LATER ──────────────────────────────────── |
+  | > PAST 7 DAYS (3) · 2W-1L                     |
+  +----------------------------------------------+
+  Time + venue-with-map + inline RSVP are the three parent jobs;
+  everything else (rides, duties, counts) stays behind Detailed
+  density or the detail page. No FAB, no share, no team dropdown
+  (kid filter implies teams).
+
+COACH (proposed) — "my team's next thing"
+  +----------------------------------------------+
+  | Schedule                    [All|Games] [Share]|  share = QR (SD-4)
+  | ── NEXT UP — 10U BLACK ────────────────────── |
+  | | SAT 9:00 AM vs Rye Rebels @ WCC            ||
+  | | RSVP 8/13 going · 2 rides short · 1 duty   ||  coverage trio
+  | | [Nudge RSVPs]              (-> Radar draft) ||  §16.5 Stream B
+  | ── NEXT 7 DAYS ────────────────────────────── |
+  |  (cards w/ RSVP counts prominent, no inline   |
+  |   pills — coach acts via event detail)        |
+  | > PAST 7 DAYS (3) · 2W-1L                     |
+  |                                       (+) FAB |
+  +----------------------------------------------+
+  Coach's scope is already server-filtered to their teams; the
+  proposal adds a NEXT UP hero row (16.14 hero pattern applied to
+  the list's head) with the coverage trio (going / rides / duties)
+  that today hides in per-card glyphs.
+
+ADMIN (proposed) — density + edit affordances
+  +----------------------------------------------+
+  | Schedule              [All|Games] [Share][⋯]  |
+  | [Team v][Type v][Show cancelled]  [Density]   |  default Detailed
+  | [Su][Mo][Tu][We][Th][Fr][Sa]                  |  (SD-1 scope)
+  | ── NEXT 7 DAYS ────────────────────────────── |
+  |  THURSDAY · TODAY                             |
+  |  | 6:00p Practice 10U Black  WCC   12/14 NR2 ||
+  |  | 7:30p Game 11U Girls @Harrison  8/11 🚗1  ||
+  |  (dense rows, counts-forward, weather, tap -> |
+  |   detail; long-press/⋯ -> quick edit later)   |
+  | ── LATER (paged) ──────────────────────────── |
+  | > PAST 7 DAYS (5) · 3W-2L                     |
+  |                                       (+) FAB |
+  +----------------------------------------------+
+  Admin keeps every filter, defaults to maximum density, full-org
+  scope. Edit affordances stay on the detail page for now (quick
+  actions = enhancement backlog, not this arc).
+
+----------------------------------------------------------------
+§6 ELEMENT (e) — EXPLICIT OUT-OF-SCOPE
+----------------------------------------------------------------
+NOT touched by this audit or the resulting PR sequence:
+  1. CreateActivityWizard internals (own arc; only its mount checked).
+  2. EventDetailPage + tabs (already redesigned — PRs #392-#394).
+  3. PublicSchedulePage + publicUrls/RLS (public surface, own audit).
+  4. Records page (standings/scorebooks beyond the shared
+     teamRecords lib notes here).
+  5. Home pages (the SCH-5 error-surface fix adds the cross-surface
+     invariant test, but home zone layouts are not redesigned here).
+  6. Shared primitives' contracts (BottomSheet, Badge, FilterSelect
+     beyond the 44px bump, LoadingSkeleton, TextEmptyState).
+  7. useActivities cache architecture + date-window pagination
+     (SCH-18 flags it; redesigning the data window is its own
+     decision with Home consumers in the blast radius).
+  8. Virtualization implementation (measure first; §16.10 trigger).
+  9. Schema changes: events.end_at backfill/NOT NULL default and the
+     duplicate locations coordinate pairs — flagged for the
+     architect as migration-arc candidates; NOT part of Schedule UI
+     PRs. (CC runs any resulting migrations per the 2026-06-12 lane
+     note.)
+ 10. Per-venue weather build (SD-9 decides whether it enters the
+     backlog; the 2-B partial stays as-is meanwhile).
+ 11. i18n string extraction (§16.6 routing happens platform-wide).
+ 12. roster/UpcomingEvents.jsx — EventCard consumer; verified for
+     blast radius only, no redesign.
+ 13. Notification streams (§16.5) — the coach wireframe's [Nudge]
+     button routes to the EXISTING Radar draft flow, no new sends.
+
+----------------------------------------------------------------
+§7 OPEN DESIGN DECISIONS (SD-1..SD-9) — FOR RULING
+----------------------------------------------------------------
+Per the operator guardrail these are LISTED OPEN, with CC's labeled
+lean (AP #39: committed, not hedged). Nothing ships until ruled.
+
+SD-1  Density model: per-section keys vs single default
+  Live shape: Account writes card_density.default; Schedule/
+  Locations/Rides toggles write section keys that shadow it; home
+  reads nothing. §16.2 text says single home-level setting.
+  Options: (a) collapse to .default everywhere (section toggles
+  write default; read-through for old keys), amend §16.2 to
+  "platform-level"; (b) bless per-section as deliberate, amend
+  §16.2; (c) status quo.
+  CC LEAN: (a). One knob, one mental model; the per-section map is
+  the retired model still breathing. SCH-6a ships regardless.
+
+SD-2  In-progress events: where do they live?
+  Options: (a) NOW slot pinned at top of list (and Games upcoming)
+  from start_at until end_at (fallback start+2h); (b) keep current
+  drop-to-past; (c) keep in "Next 7 days" until end.
+  CC LEAN: (a) — game day is the page's peak moment; a live event
+  is the single most relevant row. Pairs with the shared
+  isEventPast helper (SCH-12).
+
+SD-3  Games-view results depth
+  Options: (a) "Show all" paging by 10 with honest count; (b) cap
+  10 + link to Records page; (c) unbounded list.
+  CC LEAN: (a) — count/display honesty (SCH-9) with bounded DOM;
+  Records stays the full ledger.
+
+SD-4  Share entry point + consolidation
+  Consolidate on shared/ShareScheduleButton (QR) is hygiene, not a
+  decision (SCH-7). The decision: where does share live on
+  Schedule? (a) staff-only, visible when a team is selected OR the
+  staff user has exactly one team (auto-resolve); (b) always
+  visible w/ team picker sheet; (c) drop from Schedule (Team detail
+  only).
+  CC LEAN: (a) — preserves current placement logic, kills the
+  blank-name bug, single-team coaches stop needing the filter step.
+
+SD-5  Cancelled-event policy (one page, one policy)
+  Options: (a) toggle governs ALL zones (list, Past, Games) —
+  cancelled render dimmed everywhere when on; (b) document the
+  3-way status quo as intended.
+  CC LEAN: (a). Three silent policies on one surface is the AP #63
+  shape users report as bugs.
+
+SD-6  noResponse denominator on game events
+  Options: (a) active roster (team_players rostered) + activated
+  academy for THAT event; (b) full roster_members as today.
+  CC LEAN: (a) — coverage numbers exist for "can we field a team";
+  counting never-activated academy kids as non-responders distorts
+  exactly that. Requires the same scope on event-detail (AP #43
+  invariant locks both surfaces; VERIFY current detail scope first).
+
+SD-7  View/filter persistence
+  Options: (a) persist viewMode per user (user_preferences) +
+  reflect team filter to URL; transient filters (kid/type/
+  cancelled) stay session-local; (b) all transient as today.
+  CC LEAN: (a) minimal version — viewMode only + URL team. Cheap,
+  fixes the coach re-tap; avoids invisible sticky filters (which
+  SCH-13 shows are already a trap).
+
+SD-8  WeekStrip semantics
+  Options: (a) keep scroll-to-day, fix dots to the FILTERED set,
+  drop tab roles (plain buttons + aria-pressed), ET-pin day
+  derivation, 44px, live "today"; (b) make it a real day FILTER;
+  (c) remove the strip.
+  CC LEAN: (a) — scroll is the established behavior; fixing
+  honesty/a11y/TZ is mechanical. (b) is a UX rethink that wants its
+  own wireframe round if desired.
+
+SD-9  Per-venue weather (2-B completion)
+  Options: (a) build now in this arc (locations coords exist —
+  after reconciling the duplicate column pairs); (b) defer to its
+  own arc; (c) drop the ambition, default-coords forever.
+  CC LEAN: (b) — real value, but it drags a schema reconcile +
+  rate-limit/caching design into a UI redesign arc. Backlog it.
+
+----------------------------------------------------------------
+§8 SUGGESTED PR SEQUENCE (post-ruling; each PR small, §0-clean)
+----------------------------------------------------------------
+PR-A  Mechanical correctness (no rulings needed):
+      SCH-1 token swap; SCH-5 error strip (+4-surface AP #43 test);
+      SCH-8 consolidate game-results hook + error contract;
+      SCH-11/12 shared isEventPast helper (behavior-preserving:
+      keep start_at split until SD-2; null-end_at fallback);
+      SCH-3 tap-target sweep; SCH-16 a11y sweep; SCH-30 dead prop.
+      Invariant tests: tint-token grep, error-surface cross-page,
+      isEventPast TZ/null cases, extended timezoneAuditPin grep.
+PR-B  Density doctrine: SCH-6a (RSVP never density-gated — ships
+      whichever way SD-1 goes), SCH-15, SCH-6c remnants, + SD-1
+      ruling implementation. EventCard hits cap -> §6 split
+      (extract density branches into EventCardMinimal/Expanded or
+      zone files). AP #43 test: needs-you affordance present at
+      every density × role.
+PR-C  NOW slot (SD-2): ScheduleListSections split (NowSlot +
+      sections), GamesView in-progress placement.
+PR-D  Share consolidation (SD-4): delete schedule/ copy w/ AP #34
+      caller grep; SchedulePage mounts shared/ QR component; label
+      from teams join (kills teamName="").
+PR-E  Games-view coherence (SD-3/SD-5 + SCH-9/17/19): results
+      paging, one cancelled policy, filter context across modes;
+      GamesView split lands here (already at cap).
+PR-F  Filter UX (SCH-13 + SD-7/SD-8): filtered-empty state w/ clear
+      action, deep-link visibility fix, WeekStrip fixes.
+Defer/backlog: SCH-18 (window/virtualize — measure at next tenant),
+SCH-14 (lands with SD-6 ruling — could fold into PR-A if ruled
+early), SCH-26/SD-9, schema items (§6.9).
+
+Estimated shape: 6 PRs, each touching <=6 files, every cross-role
+fix carrying its invariant test, EventCard + GamesView splits
+riding inside the PRs that force them (no preemptive decomposition,
+§6 discipline).
+
+----------------------------------------------------------------
+END — awaiting SD-1..SD-9 rulings before any Phase B code.
+================================================================
