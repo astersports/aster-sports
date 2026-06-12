@@ -503,6 +503,13 @@ grep + MCP query on 2026-05-27. Read this before trusting the detailed
 arc bodies.
 
 **OPEN at 2026-06-12 close (top-of-stack — read first):**
+- St. Patrick's (Armonk) website rebuild — SIDE PROJECT, not platform work. Audit doc SHIPPED:
+  `docs/AUDIT_ST_PATRICKS_WEBSITE_REBUILD_2026-06-12.txt` (4-lane multi-agent audit of
+  stpatrickinarmonk.org; search-index-derived — egress blocked the host; 2 P0 / 8 P1 findings;
+  Wix sitemap + WCAG-corrected palette + 3-phase migration plan). NEXT gated on operator:
+  B-1 re-auth Wix MCP connector; B-2 add stpatrickinarmonk.org to egress allowlist for the
+  live verification pass; B-3 Phase 0 interim eCatholic fixes are operator-applied (CC has no
+  eCatholic access). Decisions D-1..D-4 open in the audit doc §J.
 - Two PHASE CLOSES (money-seam; privacy/roster/funnel): build-complete + audit-clean; gate =
   Frank's device-smoke of the deploy → architect ratification (§11.8 r4). [2026-06-12: still
   open — this admin/coach/parent walk is distinct from the #986 brand-deploy smoke, which passed.]
