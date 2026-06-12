@@ -55,4 +55,23 @@ describe('EventCardFacts — R2-2 one-line contract', () => {
     const { container } = render(<EventCardFacts />);
     expect(container.textContent).toBe('');
   });
+
+  it('V2.1: the checkmark EARNS its place — absent at 0 going, present above 0', () => {
+    const zero = render(<EventCardFacts count={{ going: 0, denominator: 10 }} />);
+    expect(zero.container.textContent).toContain('0 of 10 going');
+    expect(zero.container.querySelector('svg')).toBeNull();
+    cleanup();
+    const some = render(<EventCardFacts count={{ going: 3, denominator: 10 }} />);
+    expect(some.container.querySelector('svg')).not.toBeNull();
+  });
+
+  it('V2.1: compact academy note folds INTO the one facts line (no second line)', () => {
+    const { container } = render(
+      <EventCardFacts count={{ going: 0, denominator: 10 }} academyNames={['Milo']} compact />
+    );
+    const lines = container.querySelectorAll(':scope > div');
+    expect(lines).toHaveLength(1);
+    expect(lines[0].textContent).toContain('0 of 10 going');
+    expect(lines[0].textContent).toContain('Milo not activated');
+  });
 });

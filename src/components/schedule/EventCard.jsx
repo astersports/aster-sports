@@ -67,26 +67,29 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
         transition: 'box-shadow 150ms ease-out, opacity 150ms ease-out',
       }}
     >
-      {nowSlot && <div aria-hidden="true" style={{ position: 'absolute', top: 0, right: 14, backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', padding: '3px 9px', borderRadius: '0 0 7px 7px', textTransform: 'uppercase', zIndex: 1 }}>Next up</div>}
+      {/* V2.1: the tag ABSORBS the countdown — one element, no collision
+          with the status slot (the deployed tag half-covered the pill). */}
+      {nowSlot && <div style={{ position: 'absolute', top: 0, right: 14, backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', padding: '3px 9px', borderRadius: '0 0 7px 7px', textTransform: 'uppercase', zIndex: 1 }}>Next up · {formatCountdown(event.start_at)}</div>}
 
-      {/* R2-1: the rail */}
-      <div style={{ flexShrink: 0, width: compact ? 54 : 64, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, borderRight: '1px solid var(--as-border-subtle)', padding: compact ? '10px 0 9px' : '13px 0 11px' }}>
-        <span style={{ fontSize: compact ? 17 : 20, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1, color: completed ? 'var(--as-text-tertiary)' : teamColor }}>{hm}</span>
+      {/* R2-1 rail — V2.1: detailed hour to 24px (scale top) so the pair
+          separates at arm's length; compact stays 17. */}
+      <div style={{ flexShrink: 0, width: compact ? 54 : 68, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, borderRight: '1px solid var(--as-border-subtle)', padding: compact ? '10px 0 9px' : '15px 0 13px' }}>
+        <span style={{ fontSize: compact ? 17 : 24, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1, color: completed ? 'var(--as-text-tertiary)' : teamColor }}>{hm}</span>
         <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--as-text-tertiary)' }}>{mer}</span>
         {weather && timeState === 'upcoming' && (
           <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)', marginTop: 5 }}>{compact ? `${weather.temp}°` : `${weather.icon} ${weather.temp}°`}</span>
         )}
       </div>
 
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: compact ? '9px 12px 9px 11px' : '13px 14px 13px 13px' }}>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: compact ? '9px 12px 9px 11px' : '15px 14px 15px 13px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <span style={{ fontSize: compact ? 14 : 15, fontWeight: 600, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--as-text-primary)', textDecoration: isCancelled ? 'line-through' : 'none', marginRight: nowSlot ? 52 : 0 }}>{prefix}{body}</span>
           {/* V2: ONE status slot */}
           {isCancelled ? <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--as-danger)', backgroundColor: 'var(--as-danger-soft)', padding: '3px 8px', borderRadius: 6, textTransform: 'uppercase', flexShrink: 0 }}>Cancelled</span>
             : hasResult ? <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 9px', borderRadius: 6, flexShrink: 0, backgroundColor: gameResult.result === 'W' ? 'var(--as-success-soft)' : gameResult.result === 'L' ? 'var(--as-danger-soft)' : 'var(--as-neutral-soft)', color: gameResult.result === 'W' ? 'var(--as-success)' : gameResult.result === 'L' ? 'var(--as-danger)' : 'var(--as-text-secondary)' }}>{gameResult.result} {gameResult.our_score}–{gameResult.opponent_score}</span>
             : live ? <Badge variant="success" pill style={{ gap: 5, fontWeight: 700, flexShrink: 0 }}><span aria-hidden="true" className="as-pulse-dot" style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--as-success)' }} />{compact ? 'Live' : 'Happening now'}</Badge>
-            : showCountdown ? <Badge variant="accent" pill style={{ flexShrink: 0 }}>{formatCountdown(event.start_at)}</Badge>
-            : isToday ? <Badge variant="info" pill style={{ flexShrink: 0 }}>Today</Badge> : null}
+            : showCountdown && !nowSlot ? <Badge variant="accent" pill style={{ flexShrink: 0 }}>{formatCountdown(event.start_at)}</Badge>
+            : isToday && !nowSlot ? <Badge variant="info" pill style={{ flexShrink: 0 }}>Today</Badge> : null}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: compact ? 12 : 13, color: 'var(--as-text-tertiary)', marginTop: compact ? 2 : 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
