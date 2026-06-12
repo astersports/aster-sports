@@ -1,0 +1,126 @@
+==============================================================================
+ARCHITECT -> CC : RULINGS , SCHEDULE L99 AUDIT (PR-A GATE + SD-1..SD-9)
+Date 2026-06-12. Architect lane (rule + render; CC builds + runs migrations; architect does NOT
+touch DB/repo , the Supabase migration tools are injected into context this turn and are UNUSED).
+Responds to SCHEDULE_L99_AUDIT_2026-06-12 (#988). Renders: schedule-parent-mobile.html,
+schedule-coach-mobile.html, schedule-admin-mobile.html. NOTHING APPLIED.
+==============================================================================
+
+ASSESSMENT: audit is sound. 32 findings file:line + production-grounded; 34% from the pass-2
+addendum (at the historical miss rate that pass exists to close); per-role wireframes kept
+separate; zero design calls baked in. The §16.15 discipline held. Ruling the PR-A gate + all nine
+SD decisions so Phase B can proceed.
+
+------------------------------------------------------------------------------
+PR-A , CONCUR: mechanical correctness, ships PARALLEL to the SD rulings. Two refinements:
+------------------------------------------------------------------------------
+  R1. SCH-11/12 ships as a THREE-STATE helper, not a boolean isEventPast. The surface has two
+      different questions , "has it started" (start_at) and "is it over" (end_at) , and the call
+      sites disagree ON PURPOSE today (EventCard dims on end_at; the list splits on start_at). A
+      single boolean forces a hidden decision. Ship eventTimeStatus(event, now) ->
+      'upcoming'|'in_progress'|'past', with isOver = (end_at ?? start_at + EVENT_DEFAULT_DURATION_MS).
+      EVENT_DEFAULT_DURATION_MS lives in lib/constants.js (Rule 12 / AP#12, no magic 2h). Call
+      sites PRESERVE current placement (list still treats in_progress as past until SD-2); the
+      null-end_at bug (5/193, all past) is fixed at read time. SD-2 then only moves where
+      in_progress RENDERS , the helper is already there.
+  R2. The WeekStrip tab-role removal moves OUT of PR-A's a11y sweep into PR-F (with the rest of
+      the WeekStrip work, SD-8), so the file isn't double-touched. PR-A keeps heading semantics
+      (SCH-16 <h2>/<h3>) + scope="col". Everything else in PR-A stands (SCH-1 token, SCH-5 error
+      strip + 4-surface AP#43 test [copy/placement match the existing §16.3 pattern, don't
+      invent], SCH-8 consolidate game-results hook + {data,error}, SCH-3 tap sweep, SCH-30 dead
+      prop). PR-A needs no ruling and can ship now.
+
+------------------------------------------------------------------------------
+SD-1..SD-9 , RULED (concur except SD-3)
+------------------------------------------------------------------------------
+  SD-1 DENSITY , RULED (a): collapse to one .default everywhere; section toggles write the global
+       default; read-through for old section keys; amend §16.2 wording to "platform-level". The
+       per-section map is the retired model still breathing , and the trap (touch Schedule's
+       toggle once, Account density stops governing Schedule forever) is the bug. One knob.
+       SCH-6a (RSVP NEVER density-gated) + SCH-15 + SCH-6c remnants ship regardless of this.
+
+  SD-2 IN-PROGRESS , RULED (a): NOW slot pinned at top of the list (and Games upcoming) from
+       start_at until isOver. Vanishing into collapsed Past the second a game starts is the worst
+       case on the page's peak surface. Uses the eventTimeStatus helper + EVENT_DEFAULT_DURATION_MS.
+
+  SD-3 RESULTS DEPTH , RULED (b) , DIVERGING from CC lean (a). Do NOT build a second full results
+       browser in the Games tab parallel to Records , that is the AP#42 parallel-system shape this
+       same audit flags on ShareScheduleButton (SCH-7). Label "Recent results" (last 10, honest
+       count of what's shown) + "See all in Records". VERIFY: Records must deep-link to a single
+       team's results for the link to land usefully; IF it cannot today, fall back to CC's (a)
+       in-place pager. Primary is (b). Fixes SCH-9's count/display dishonesty by making the label
+       honest + bounding DOM, without duplicating the ledger.
+
+  SD-4 SHARE , RULED (a): staff-only, visible when a team is in context (selected) OR the staff
+       user has exactly one team (auto-resolve). Matches the artifact's team-scoping; kills the
+       teamName="" blank-name bug (label from the teams join); single-team coaches skip the
+       filter step. Consolidate on shared/ShareScheduleButton (QR) with an AP#34 caller grep
+       deleting the schedule/ copy , hygiene, already not a decision.
+
+  SD-5 CANCELLED POLICY , RULED (a): the "Show cancelled" toggle governs ALL zones (list, Past,
+       Games) , dimmed everywhere when on, hidden everywhere when off. Three silent policies on
+       one page is the AP#63 shape users report as bugs.
+
+  SD-6 NR DENOMINATOR , RULED (a): active roster (rostered) + academy players ACTIVATED for THAT
+       event; not full roster_members. Counting never-activated academy kids as non-responders
+       distorts the coverage number coaches scan. AP#43 invariant locks Schedule + event-detail
+       to the SAME denominator , and the ruling is BOTH CONFORM TO (a), not "match whatever
+       event-detail does now". VERIFY event-detail's current scope first, then codify (a) on both.
+
+  SD-7 PERSISTENCE , RULED (a-minimal): persist viewMode per user (user_preferences) + reflect
+       the team filter to the URL. Transient filters (kid/type/cancelled) stay session-local ,
+       sticky invisible filters are already a trap (SCH-13). Fixes the coach re-tap (SCH-25)
+       without inventing new ones. CC runs the user_preferences write.
+
+  SD-8 WEEKSTRIP , RULED (a): keep scroll-to-day; fix dots to the FILTERED set; drop tab roles
+       (plain buttons + aria-pressed); ET-pin day derivation; 44px; live "today". Making it a
+       real day FILTER (b) is a UX rethink that gets its own wireframe round if Frank wants it ,
+       not folded in here. Rides in PR-F with the moved a11y role fix (R2 above).
+
+  SD-9 PER-VENUE WEATHER , RULED (b): defer to its own arc. Real value, but it drags the duplicate
+       locations coordinate-column reconcile (lat/lon double precision AND latitude/longitude
+       numeric) + a rate-limit/caching design into a UI redesign. Backlog it; the 2-B
+       single-default-coords partial stays as-is meanwhile.
+
+------------------------------------------------------------------------------
+SCHEMA ARC (the two items the audit flagged up to the architect, §6)
+------------------------------------------------------------------------------
+  events.end_at: the read-time fallback (PR-A's helper) removes the urgency , no surface
+    mis-renders once it ships. Then fix the CreateActivityWizard to ALWAYS set end_at (derive from
+    start + the type's default duration) so the null class stops growing. A backfill of the 5
+    existing + a NOT NULL constraint is LOW-PRIORITY cleanup AFTER the wizard guarantees it, not
+    now. CC runs any migration.
+  locations duplicate coordinate columns: rides with the SD-9 weather arc (it's that arc's
+    prerequisite), not now. Known schema debt; logged.
+
+------------------------------------------------------------------------------
+PER-ROLE DIRECTION , RATIFIED + RENDERED
+------------------------------------------------------------------------------
+  Three surfaces, not one skinned three ways , the split I asked you to hold, held. Renders are
+  the Phase-B build targets, reflecting the SD rulings:
+    PARENT (schedule-parent-mobile.html): NOW slot (SD-2); always-on inline RSVP at 44px, never
+      density-gated (SCH-6a); time + venue-with-map + RSVP are the three jobs; no FAB, no share,
+      no team dropdown (kid filter implies teams).
+    COACH (schedule-coach-mobile.html): NEXT UP hero (16.14 head-of-list) with the coverage trio
+      (going / rides short / duties) that today hides in per-card glyphs; counts-forward cards;
+      share = QR (SD-4); FAB. Coach scope already server-filtered to their teams.
+    ADMIN (schedule-admin-mobile.html): dense counts-forward rows; all filters; density defaults
+      to the resolved default (SD-1); full-org scope; FAB. Edit affordances stay on the detail
+      page (quick actions = backlog, not this arc).
+
+------------------------------------------------------------------------------
+PR SEQUENCE , CONFIRMED (CC's A-F holds, one change)
+------------------------------------------------------------------------------
+  PR-A mechanical (ships now, R1/R2 refinements) | PR-B density (SD-1=a) + SCH-6a/15/6c, EventCard
+  hits cap -> §6 split | PR-C NOW slot (SD-2=a) | PR-D share consolidation (SD-4=a) | PR-E Games
+  coherence , now SD-3=(b) recent+link (NOT a pager) + SD-5=a + SCH-9/17/19, GamesView split lands
+  here | PR-F filter UX (SCH-13 + SD-7=a-min + SD-8=a + the moved WeekStrip role fix). Each PR
+  small, every cross-role fix carries its AP#43 invariant test, the two cap-pressure splits ride
+  inside the PRs that force them (no preemptive decomposition, §6).
+
+LANE: CC runs all migrations (end_at wizard/backfill, user_preferences viewMode, any future
+weather/locations) + the invariant tests + the impersonated replays. Architect ruled + rendered.
+The injected Supabase tools stay shut , deliberately.
+==============================================================================
+END RULINGS , SCHEDULE L99.
+==============================================================================

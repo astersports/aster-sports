@@ -1,0 +1,159 @@
+==============================================================================
+ARCHITECT -> CC : RULINGS , SCHEDULE MULTI-AGENT REVIEW (P0 LANE + SD-1..SD-18)
+Date 2026-06-12. Architect lane (rule + render; CC runs EVERY migration; architect does NOT touch
+DB/repo). The Supabase tools , apply_migration, execute_sql, get_advisors, create_branch , are
+injected into context this turn and are UNUSED. The P0 lane is an anon-grant + RLS security
+migration: its ship-GO is FRANK'S per Rule 19, CC executes. Responds to
+SCHEDULE_MULTIAGENT_REVIEW_2026-06-12 (#989). Renders: public-schedule-repaired-mobile.html,
+schedule-timestate-spine-mobile.html. NOTHING APPLIED.
+==============================================================================
+
+ASSESSMENT: the review is strong and the adversarial pass earned its keep , 31/32 confirmed,
+1 adjusted, 0 refuted, and it caught the original audit's structural blind spot (data-dependency
+hooks omitted from the §1 inventory, where the season-scope P1 lived). The Tier-1 production
+breakage is real and verified as anon. Ruling the P0 lane shape + all eighteen SDs.
+
+==============================================================================
+§A , P0 EMERGENCY LANE (SD-10 + SD-13) , SHAPE RATIFIED; FRANK GIVES THE GO
+==============================================================================
+RECOMMENDATION: GO tonight. Production-down two weeks (QR / shared links / calendar feeds), fix
+is mechanical + well-understood, blast radius is anon-only, each step its own rollback. The
+literal authorization is Frank's (Rule 19: RLS/auth/grant migration). CC runs it same-session on
+Frank's GO and re-runs get_advisors after. Architect does not run it.
+
+  SD-10 , RULED: the SECURITY DEFINER helper org_is_public_listed(uuid), NOT the anon SELECT
+    policy on organizations. STABLE, search_path=public, EXECUTE revoked from PUBLIC then granted
+    to anon + authenticated, consumed by the four *_select_public policies. Tighter , it never
+    exposes organizations rows to anon. (Matches the project's existing SECDEF-helper RLS pattern,
+    avoids the recursion class.)
+
+  ORDERING , RULED NON-NEGOTIABLE: grants BEFORE RLS. STEP 1 (REVOKE) precedes STEP 2 (org-gate).
+    Reversed, the org-gate repair makes teams.team_feed_token enumerable by anon the instant the
+    gate evaluates , feed-token exposure. STEP 1: REVOKE INSERT/UPDATE/REFERENCES from PUBLIC
+    first (AP#23 , PUBLIC grants cascade to all roles; revoking anon alone leaves it), then anon,
+    across the 12 schedule tables; column-narrow anon SELECT on teams (drop team_feed_token et al.)
+    + locations (drop admin_notes et al.) to the public-render set.
+
+  SD-13 , RULED: gate game_results to the public-listing traversal (events->teams->
+    org_is_public_listed). Today it leaks all 91 published results to anon across EVERY org with
+    no gate , a multi-tenant leak. Drop the dead shadowed game_results_select_parent policy (DB-5).
+
+  STEP 4 (column fix) , RULED: PublicSchedulePage selects the real `location` column (not the
+    client-side `location_name` alias) AND destructures/renders the swallowed error; team-feed
+    edge fn same fix; activate the deferred team-feed<->icalHelpers mirror audit (XS-11).
+
+  STEP 5 (locks) , RULED all: (a) select-column-vs-schema manifest audit test (the grep that
+    catches the phantom-column class at CI , would have caught XS-1); (b) public-sibling render
+    smoke (XS-14 fixture); (c) get_advisors re-run (CC); (d) Frank device-smoke , logged-out QR
+    scan + .ics subscribe in Apple/Google. Render = public-schedule-repaired-mobile.html (the
+    observable target the smoke confirms).
+
+==============================================================================
+§B , SD-1..SD-9 (amendments off the adversarial review)
+==============================================================================
+  SD-1 density , RULED (a) collapse to .default , STANDS. + DB-9 fork RULED: PURGE the legacy
+    stored 'medium' values + tighten the CHECK to the resolved domain. Leaving dead values the
+    hook silently discards is the retired-model-still-breathing pattern SD-1 exists to kill. CC
+    runs the normalize+CHECK migration. SCH-6a/15/6c ship regardless.
+  SD-2 time-state , RULED (a) NOW slot , AMENDED to the SPINE. One eventTimeState(event, now) in
+    lib/eventWindows.js -> upcoming | happening_now | completed (aligning my prior eventTimeStatus
+    name to CC's R6). Collapses the FOUR is-past defs + THREE duration constants into ONE
+    EVENT_DEFAULT_DURATION_MS (lib/constants.js). NOW slot (happening_now), completed section
+    (retired "Past", W/L chip), countdown as the upcoming treatment (today/tonight/T-minus). +DB-8
+    import-path end_at-NULL fix so the null class stops growing. This IS the redesign backbone (C6).
+    Render = schedule-timestate-spine-mobile.html.
+  SD-3 depth , RULED (b) recent+link, STANDS (verify Records per-team deep-link else fall back to
+    pager). Count/display honesty (SCH-9) ships as a mechanical fix regardless.
+  SD-4 share , RULED (a) staff-only when team-in-context or single-team, STANDS. + handle VF-8
+    AbortError on share-cancel gracefully. Consolidation on shared/ QR = hygiene.
+  SD-5 cancelled , RULED (c) , REVERSING my prior (a). The adversarial pass surfaced the middle
+    option I didn't have: Games is an OUTCOMES view , a cancelled game has no score and no
+    standings effect, so it is noise there. Toggle governs the list + Past; Games is cancelled-free
+    BY DESIGN, documented + locked by the AP#43 test (intentional, not the silent divergence that
+    was the bug). Updating on the better option.
+  SD-6 denominator , RULED (a) rostered + activated-academy, STANDS (materiality prod-verified:
+    13 academy kids). Both surfaces conform to (a); verify event-detail's current scope, then lock.
+  SD-7 persistence , RULED (a-min) viewMode + URL team, STANDS.
+  SD-8 WeekStrip , RULED (a) fix-in-place, AMENDED: + HIDE the strip in Games mode (it's inert
+    there , Games uses WEEK n buckets). Dots from the FILTERED set; ET-pin; 44px; live today;
+    plain buttons + aria-pressed.
+  SD-9 weather , RULED (b) defer to capability arc C1, AMENDED: the DL-13 hour-parse TZ bug ships
+    in PR-A' regardless via &timeformat=unixtime (correctness, not the feature). Per-venue BUILD
+    (C1) gated on the DB-10 dead-column drop (latitude/longitude verified dead: 0 rows, 0 readers)
+    + coord backfill on the 12 missing venues.
+
+==============================================================================
+§C , NEW SDs (SD-11..SD-18)
+==============================================================================
+  SD-11 RSVP-close , RULED: ONE isRsvpOpen(start_at) helper (rsvpDeadline.js), consumed by all 4
+    ChildRsvp mounts , controls DISABLE at start everywhere (enforces the operator-locked
+    closes-at-start rule; kills the 3-close-time divergence; null-end_at is moot keying on start).
+    Coach/admin late-RSVP override stays a detail-page action, audit-logged per §16.8.
+  SD-12 ChildRsvp relocation , RULED: move to shared/ + signature migration + AP#34 caller grep
+    in ONE PR (PR-B'). It's de-facto shared (4 mounts, 3 outside schedule/).
+  SD-13 , ruled in §A (gate).
+  SD-14 directions , RULED: event-detail Location tab gets the 3-way (Apple/Waze re-added from the
+    existing lib/mapsUrls.js builders); cards stay single-tap Google. Resolve venue via the
+    existing locations JOIN, not the fuzzy ilike (kills DL-8/VF-6 wrong-venue). Capability arc C2.
+  SD-15 coverage badges , RULED: unmet-rides + unfilled-duties badges ALWAYS visible when non-zero,
+    every density , a coverage GAP is a needs-you item (§16.2: density never gates needs-you).
+    Verbose counts stay density-gated. + fix ride "requests" semantics (SCH-27: confirmed claims
+    must not read as outstanding demand).
+  SD-16 family hub + per-family feed , RULED: ratify phases 0-1 now, wireframe phase 2 in the
+    Phase B round. Phase 0 = the §A P0 repair + the guardian_id attribution fix (R20, see §D).
+    Phase 1 = per-FAMILY ICS feed, a guardian-scoped token (same mint/verify pattern as the 4
+    existing handlers) merging all the guardian's kids into one subscribe URL (Apple/Google/
+    Skylight). Gated on the §A STEP-1 feed-token hygiene. Phase 2 = in-app family week view
+    (kid-color lanes) , the parent wireframe's v2, wireframed later.
+  SD-17 AI , RULED: conflict-detection is the right ≤1 pick (smallest, clear read-now value per
+    §16.16, no new privacy surface) , BUT sequence it AFTER the family-hub arc (C9). The family
+    feed is the actual Skylight priority; AI does not jump it. Not now.
+  SD-18 push , RULED: backlog until after Phase B core. The rail exists (send-push + sw.js) but
+    opening notification cadence mid-redesign is parallel-work risk; §16.5 Stream A governs when it
+    enters. ML stays §16.12-locked (no per-player stats 2026) , engagement heuristics behind a
+    concrete surface only, or not at all this year.
+
+==============================================================================
+§D , RSVP INTEGRITY (R20 / DB-7) , sequencing note
+==============================================================================
+  guardian_id: written on 10/1,701 rows -> historical attribution UNRECOVERABLE. Fix the write
+  payload NOW (forward attribution, load-bearing for the multi-family mandate). SET NOT NULL
+  CANNOT ship , 1,691 existing nulls would fail the constraint; defer NOT NULL until a backfill or
+  sentinel decision (don't pretend the history is recoverable). player_id nullable despite being
+  the conflict key , SET NOT NULL after confirming 0 nulls (separate from guardian_id). VF-10
+  write-policy team-membership predicate , add (low exploit value, correct hygiene). CC runs;
+  payload-now, NOT-NULL-later.
+
+==============================================================================
+§E , BUILD SEQUENCE , RATIFIED with one hard lock
+==============================================================================
+  P0 LANE (Frank GO) -> PR-A' -> PR-B' -> PR-C' -> PR-D' -> PR-E' -> PR-F' -> capability arcs
+  (C1 weather -> C2 directions -> C9 family-hub phase 2 -> C10 AI conflict-detection -> C11 push).
+  HARD LOCK: the SCH-2/DL-7 batch RSVP+activation hook lands in PR-A', BEFORE PR-B' ungates the
+  always-on RSVP (SCH-6a). Ship the ungate first and every default-density parent detonates the
+  47-92-request N+1 (VF-11). This ordering is not optional.
+  PR-A' also carries: R3 season-scope + invariant vs Records (the audit's blind-spot P1); the R8
+  error sweep shipping ONE documented error contract (not five local fixes , the census found five
+  styles for one failure class); CP-3 keyboard guard; VF-2 wizard gate; the R12 TZ-grep extension
+  (toDateString/getDate/getDay/naive parses, XS-13 list); the tap-target + a11y sweeps; the
+  column-manifest test if not already landed in the P0 lane.
+
+==============================================================================
+§F , PROCESS / AUDIT DISCIPLINE (ratified amendments)
+==============================================================================
+  - Audit inventories MUST list DATA DEPENDENCIES (hooks-of-hooks), not just mounted files. The
+    season-scope P1 lived in useTeams/useOrgTeamRecords/useSeason, omitted from the §1 mount tree.
+    The inventory line is now a dependency graph.
+  - New CI grep classes ratified: (1) select-column-vs-schema manifest; (2) sub-44 tap-target
+    literals in interactive styles; (3) non-toLocale calendar math (extends timezoneAuditPin).
+  - Error-contract corollary: orphaned error contracts (built upstream, zero consumers , e.g.
+    useActivities) are an AP#36 sibling worth its own catalog line.
+
+LANE: CC runs the P0 security migration (on Frank GO), the density normalize+CHECK, the DB-8/
+DB-10 migrations, the guardian_id/player_id integrity migrations, the family-feed token handler,
+every invariant test + impersonated replay. Architect ruled + rendered. The injected Supabase
+tools stay shut , this turn most pointedly of all, because the live lane is a production security
+migration.
+==============================================================================
+END RULINGS , SCHEDULE MULTI-AGENT REVIEW.
+==============================================================================

@@ -18,10 +18,11 @@
 // param, `(e as Error)` cast) that the normalizer cannot fully strip.
 //
 // Deferred (spec edge cases + 150-line cap):
-//   - team-feed/index.ts inline ICS block ↔ src/lib/icalHelpers.js
-//     (needs marker-extraction or _helpers.ts split first).
 //   - briefing-auto-draft-tick/_handlers.ts + _draftRow.ts (Deno-only).
 //   - send-tournament-message/_lib.ts (no src/lib mirror today).
+// ACTIVATED 2026-06-12 (P0 lane STEP 4/5): team-feed ICS core split into
+//   team-feed/_helpers.ts ↔ src/lib/icsCore.js (was the deferred inline
+//   block; icalHelpers.js keeps the browser download wrapper + re-export).
 
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
@@ -36,6 +37,7 @@ const PAIRS = [
   { ts: 'supabase/functions/briefing-auto-draft-tick/_rsvpNudgeThreshold.ts', js: 'src/lib/cron/rsvpNudgeThreshold.js', baseline: 0 },
   { ts: 'supabase/functions/send-tournament-message/_dispatch.ts', js: 'src/lib/briefings/sendDispatch.js', baseline: 4 },
   { ts: 'supabase/functions/briefing-auto-draft-tick/_dispatch.ts', js: 'src/lib/briefings/sendDispatch.js', baseline: 4 },
+  { ts: 'supabase/functions/team-feed/_helpers.ts', js: 'src/lib/icsCore.js', baseline: 10 },
 ];
 
 function stripComments(src) {

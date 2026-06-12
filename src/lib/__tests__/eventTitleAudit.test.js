@@ -11,7 +11,9 @@
 //
 // Allowlisted callers (machine/semi-machine emit channels that
 // intentionally preserve admin-curated free-text labels):
-//   - lib/icalHelpers.js (ICS SUMMARY for calendar export)
+//   - lib/icsCore.js (ICS DESCRIPTION for calendar export — the
+//     generation core split out of icalHelpers.js in the P0 lane,
+//     2026-06-12; same composition, relocated)
 //   - lib/engine/renderers/eventCard.js (briefing email HTML)
 //   - lib/engine/resolvers/*.js (briefing label resolution —
 //     respects admin-set title for schedule_change, rsvp_nudge,
@@ -29,7 +31,7 @@ const __dirname = dirname(__filename);
 const SRC_ROOT = join(__dirname, '..', '..');
 const ALLOWLIST = new Set([
   'lib/eventTitle.js',
-  'lib/icalHelpers.js',
+  'lib/icsCore.js',
   'lib/engine/renderers/eventCard.js',
   'lib/constants.js',
   'lib/__tests__/eventTitle.test.js',

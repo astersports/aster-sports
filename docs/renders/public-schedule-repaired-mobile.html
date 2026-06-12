@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Public schedule , repaired (mobile)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--as-navy:#22304f;--as-cobalt:#4a8fd4;--as-cobalt-dark:#3070b0;--as-green:#1f9d57;--as-amber:#c2700a;
+    --as-surface:#f1f3f7;--as-border:#e6e9ef;--as-border-2:#eef1f5;--as-text:#151924;--as-text-2:#475467;--as-muted:#6b7686;}
+  *{box-sizing:border-box;margin:0;padding:0}html{-webkit-text-size-adjust:100%}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--as-surface);color:var(--as-text);-webkit-font-smoothing:antialiased;line-height:1.45}
+  .wrap{width:100%;max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+  .statusbar{background:#fff;padding:max(11px,env(safe-area-inset-top)) 22px 6px;display:flex;justify-content:space-between;font:600 14px Inter}
+  .pubbar{background:#fff;border-bottom:1px solid var(--as-border);padding:9px 16px;display:flex;align-items:center;gap:8px;justify-content:center}
+  .pubbar .lock{width:14px;height:14px;stroke:var(--as-muted);stroke-width:2;fill:none}
+  .pubbar .u{font:600 12px Inter;color:var(--as-muted)}
+  .hero{background:var(--as-navy);color:#fff;padding:20px 18px 18px;text-align:center}
+  .hero .mark{width:44px;height:44px;border-radius:11px;background:#16223c;display:grid;place-items:center;font-size:22px;margin:0 auto 10px}
+  .hero h1{font-size:21px;font-weight:700}
+  .hero .org{font-size:13px;color:#9fb0d0;margin-top:3px}
+  .hero .pill{display:inline-block;margin-top:11px;font:700 10px Inter;letter-spacing:.05em;text-transform:uppercase;color:#bfe3cd;background:rgba(31,157,87,.22);padding:4px 10px;border-radius:6px}
+
+  .actions{display:flex;gap:9px;padding:14px 16px 4px}
+  .act{flex:1;min-height:48px;border-radius:11px;display:flex;align-items:center;justify-content:center;gap:7px;font:700 13px Inter}
+  .act.sub{background:var(--as-cobalt);color:#fff}
+  .act.ics{background:#fff;border:1px solid var(--as-border);color:var(--as-navy)}
+  .act svg{width:17px;height:17px;stroke-width:2;fill:none}
+  .act.sub svg{stroke:#fff}.act.ics svg{stroke:var(--as-navy)}
+
+  .body{padding:12px 16px calc(28px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:11px}
+  .daylbl{font:700 11px Inter;letter-spacing:.05em;text-transform:uppercase;color:var(--as-muted);padding:4px 2px 0}
+  .card{background:#fff;border:1px solid var(--as-border);border-radius:12px;padding:13px 15px;display:flex;align-items:flex-start;gap:11px}
+  .when{font:700 13px Inter;color:var(--as-navy);white-space:nowrap;width:58px}
+  .info{flex:1}.info .t{font-size:14px;font-weight:700;color:var(--as-navy)}.info .s{font-size:12px;color:var(--as-text-2);margin-top:2px}
+  .typ{font:700 9px Inter;letter-spacing:.03em;text-transform:uppercase;padding:1px 6px;border-radius:4px;background:#fbe6cf;color:var(--as-amber)}
+
+  .anno{background:#eaf6ee;border:1px solid #c2e6d0;border-radius:11px;padding:12px 14px;margin-top:4px}
+  .anno p{font-size:12px;color:#246b43}.anno p b{color:#17532f;font-weight:700}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679;&#9679;&#9679;</span></div>
+  <div class="pubbar"><svg class="lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span class="u">astersports.app/s/10u-black</span></div>
+
+  <div class="hero">
+    <div class="mark">&#9876;&#65039;</div>
+    <h1>10U Black</h1>
+    <div class="org">Legacy Hoopers &middot; Spring 2026</div>
+    <span class="pill">&#10003; Public schedule</span>
+  </div>
+
+  <div class="actions">
+    <span class="act sub"><svg viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/></svg>Subscribe</span>
+    <span class="act ics"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download .ics</span>
+  </div>
+
+  <div class="body">
+    <div class="daylbl">Saturday Jun 14</div>
+    <div class="card"><span class="when">9:00a</span><div class="info"><div class="t"><span class="typ">Game</span> vs Rye Rebels</div><div class="s">WCC Gym 1</div></div></div>
+    <div class="daylbl">Tuesday Jun 17</div>
+    <div class="card"><span class="when">6:00p</span><div class="info"><div class="t">Practice</div><div class="s">WCC Gym 2</div></div></div>
+
+    <div class="anno"><p><b>This is the P0 smoke target.</b> Logged out (no session), the QR / shared link resolves: team name, events, and live Subscribe + Download buttons. Today this page shows "Team not found" (anon RLS fail-closed since May 28) or "No upcoming events" (phantom column). Green = the rail the calendar-sync / Skylight mandate builds on is alive.</p></div>
+  </div>
+</div>
+</body>
+</html>

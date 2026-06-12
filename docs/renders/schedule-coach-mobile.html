@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Schedule , coach (mobile)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--as-navy:#22304f;--as-cobalt:#4a8fd4;--as-cobalt-dark:#3070b0;--as-green:#1f9d57;--as-red:#c0392b;--as-amber:#c2700a;
+    --as-surface:#f1f3f7;--as-border:#e6e9ef;--as-border-2:#eef1f5;--as-text:#151924;--as-text-2:#475467;--as-muted:#6b7686;}
+  *{box-sizing:border-box;margin:0;padding:0}html{-webkit-text-size-adjust:100%}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--as-surface);color:var(--as-text);-webkit-font-smoothing:antialiased;line-height:1.45}
+  .wrap{width:100%;max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;position:relative}
+  .statusbar{background:#fff;padding:max(11px,env(safe-area-inset-top)) 22px 6px;display:flex;justify-content:space-between;font:600 14px Inter}
+  .hdr{background:var(--as-navy);color:#fff;display:flex;align-items:center;gap:11px;padding:11px 16px}
+  .hdr .logo{width:32px;height:32px;border-radius:8px;background:#16223c;display:grid;place-items:center;font-size:16px;flex:none}
+  .hdr h1{font-size:17px;font-weight:700;flex:1}
+  .toggle{display:flex;background:#16223c;border-radius:9px;padding:3px;gap:3px}
+  .toggle b{font:700 12px Inter;padding:6px 12px;border-radius:7px;color:#9fb0d0}.toggle b.on{background:#2b3c5e;color:#fff}
+  .share{width:36px;height:36px;border-radius:9px;background:#16223c;display:grid;place-items:center;flex:none}
+  .share svg{width:19px;height:19px;stroke:#cfe0f5;stroke-width:1.9;fill:none}
+  .body{padding:13px 14px calc(90px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+
+  .sectlbl{font:700 11px Inter;letter-spacing:.06em;text-transform:uppercase;color:var(--as-muted);padding:4px 2px 0}
+
+  /* NEXT UP hero */
+  .hero{background:#fff;border:1px solid var(--as-border);border-top:3px solid var(--as-cobalt);border-radius:14px;overflow:hidden}
+  .hh{padding:14px 16px 12px}
+  .hh .when{font:700 12px Inter;letter-spacing:.04em;text-transform:uppercase;color:var(--as-cobalt-dark)}
+  .hh .t{font-size:19px;font-weight:700;color:var(--as-navy);margin-top:4px}
+  .hh .s{font-size:13px;color:var(--as-text-2);margin-top:3px}
+  .trio{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--as-border-2)}
+  .trio div{padding:12px 6px;text-align:center;border-right:1px solid var(--as-border-2)}
+  .trio div:last-child{border-right:none}
+  .trio .v{font:700 19px Inter;color:var(--as-navy);font-variant-numeric:tabular-nums}
+  .trio .v.warn{color:var(--as-amber)}
+  .trio .l{font:600 10px Inter;color:var(--as-muted);margin-top:2px;text-transform:uppercase;letter-spacing:.03em}
+  .nudge{display:block;width:calc(100% - 24px);margin:0 12px 12px;min-height:46px;background:#eef5fc;color:var(--as-cobalt-dark);border:1px solid #cfe0f5;border-radius:10px;font:700 14px Inter}
+
+  .card{background:#fff;border:1px solid var(--as-border);border-radius:12px;padding:13px 15px;display:flex;align-items:center;gap:11px}
+  .card .when{font:700 13px Inter;color:var(--as-navy);white-space:nowrap;width:62px}
+  .card .info{flex:1}.card .info .t{font-size:14px;font-weight:700;color:var(--as-navy)}.card .info .s{font-size:12px;color:var(--as-text-2);margin-top:1px}
+  .count{font:700 13px Inter;color:var(--as-text-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+  .fab{position:absolute;right:18px;bottom:calc(22px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;background:var(--as-cobalt);box-shadow:0 6px 18px rgba(74,143,212,.42);display:grid;place-items:center}
+  .fab svg{width:26px;height:26px;stroke:#fff;stroke-width:2.4;fill:none}
+
+  .anno{background:#f3f8fe;border:1px solid #cfe0f5;border-radius:11px;padding:12px 14px}
+  .anno p{font-size:12px;color:var(--as-text-2)}.anno p b{color:var(--as-text);font-weight:600}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679;&#9679;&#9679;</span></div>
+  <div class="hdr"><span class="logo">&#9876;&#65039;</span><h1>Schedule</h1><span class="toggle"><b class="on">All</b><b>Games</b></span><span class="share"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="20" y2="14"/><line x1="14" y1="20" x2="20" y2="20"/><line x1="20" y1="14" x2="20" y2="20"/></svg></span></div>
+
+  <div class="body">
+    <div class="sectlbl">Next up &middot; 10U Black</div>
+    <div class="hero">
+      <div class="hh"><div class="when">Sat 9:00 AM</div><div class="t">vs Rye Rebels</div><div class="s">WCC Gym 1 &middot; League Play</div></div>
+      <div class="trio">
+        <div><div class="v">8/13</div><div class="l">Going</div></div>
+        <div><div class="v warn">2 short</div><div class="l">Rides</div></div>
+        <div><div class="v warn">1 open</div><div class="l">Duty</div></div>
+      </div>
+      <button class="nudge">Nudge RSVPs &rarr;</button>
+    </div>
+
+    <div class="sectlbl">Next 7 days</div>
+    <div class="card"><span class="when">Tue 6:00p</span><div class="info"><div class="t">Practice</div><div class="s">10U Black &middot; WCC Gym 2</div></div><span class="count">11/13</span></div>
+    <div class="card"><span class="when">Thu 6:00p</span><div class="info"><div class="t">Practice</div><div class="s">10U Black &middot; WCC Gym 2</div></div><span class="count">9/13</span></div>
+
+    <div class="anno"><p><b>Coach job: my team&rsquo;s next thing.</b> The NEXT UP hero (16.14 applied to the list head) surfaces the coverage trio , going / rides short / duties , that today hides in per-card glyphs. Nudge routes to the existing Radar draft, no new sends. Share is the QR component (SD-4); scope is already server-filtered to the coach&rsquo;s teams.</p></div>
+  </div>
+  <div class="fab"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+</div>
+</body>
+</html>

@@ -526,16 +526,38 @@ arc bodies.
   latitude/longitude) — migration-arc candidates, NOT in the Schedule UI sequence.
   **MULTI-AGENT REVIEW (operator-directed, same day):** 6 parallel agents (DB/RLS, data layer,
   components, UX/per-role, cross-surface+tests, adversarial verification) →
-  `docs/SCHEDULE_MULTIAGENT_REVIEW_2026-06-12.txt`. **P0 FOUND: the public funnel is DEAD in
+  `docs/SCHEDULE_MULTIAGENT_REVIEW_2026-06-12.txt`. **P0 FOUND: the public funnel was DEAD in
   production** — anon RLS gate fail-closed since 2026-05-28 (DB-1) + phantom `events.location_name`
-  select in PublicSchedulePage AND team-feed ICS (DB-2/XS-1) → QR/shared links show nothing,
-  calendar subscriptions 500. Plus anon grant surface (DB-4, incl. team_feed_token SELECT) and
-  game_results anon leak (DB-3). §1 P0 emergency lane proposed — **awaiting operator GO (SD-10)**;
-  grant-tightening MUST precede the RLS fix. Audit verification: 31/32 CONFIRMED, 0 refuted;
-  +1 new P1 (VF-1 season-unscoped Games-tab standings, prod-verified Winter+Spring mix).
-  Decision set expanded SD-1..SD-18 (capability map per operator mandates: weather/directions/
-  rides/volunteers/countdowns/completed-section/multi-family/calendar-sync/family-hub+Skylight/
-  AI/ML+push). VF-11 sequencing lock: SCH-2 batch hook is a HARD PREREQ of the density PR.
+  select in PublicSchedulePage AND team-feed ICS (DB-2/XS-1) → QR/shared links showed nothing,
+  calendar subscriptions 500'd. Plus anon grant surface (DB-4, incl. team_feed_token SELECT) and
+  game_results anon leak (DB-3).
+  **RULINGS LANDED + P0 LANE SHIPPED (2026-06-12, same session):** architect ruled ALL decisions —
+  `docs/RULINGS_SCHEDULE_L99_2026-06-12.txt` (PR-A gate + SD-1..9; eventTimeStatus 3-state R1,
+  WeekStrip-roles-to-PR-F R2, SD-3=(b) recent+link diverging from CC lean) +
+  `docs/RULINGS_SCHEDULE_MULTIAGENT_2026-06-12.txt` (P0 shape + SD-1..18; SD-5 REVERSED to (c)
+  Games-cancelled-free-by-design; SD-2 spine `eventTimeState`; §E hard lock: SCH-2 batch hook in
+  PR-A' BEFORE the PR-B' RSVP ungate; §D guardian_id forward-only, NOT NULL deferred over 1,691
+  nulls; SD-17 AI = conflict-detection but AFTER family-hub arc; SD-18 push backlogged). Renders
+  committed: `docs/renders/{public-schedule-repaired,schedule-timestate-spine,schedule-admin,
+  schedule-coach}-mobile.html` (parent render referenced but not yet relayed). **Frank gave the
+  SD-10 GO (Rule 19) and CC executed the P0 lane same-session:** migrations 20260612030252
+  (STEP 1 anon grant lockdown: write-class revoked on 12 tables, SELECT revoked on 8 no-public-need
+  tables, teams/locations column-narrowed — team_feed_token + admin_notes off anon) / 20260612030320
+  (STEP 2: SECDEF org_is_public_listed() + get_public_subscribe_info() + 4 *_select_public policies
+  rewritten) / 20260612030336 (STEP 3: game_results gated to parent-event visibility — also closes
+  the cross-org authed read; dead game_results_select_parent dropped). Verified as anon: teams 9 /
+  events 193 (=published parity) / results 91 / subscribe RPC 1 row; team_feed_token + event_rsvps
+  probes DENIED (42501). App fixes: PublicSchedulePage (location_name:location alias + error
+  surfacing + RPC subscribe info), team-feed redeployed v10 (alias fix + ICS core split to
+  _helpers.ts; v9 briefly flipped verify_jwt=true via MCP deploy default — AP #31 class, caught on
+  the deploy response, v10 restored false). Locks: eventsSelectColumnsAudit.test.js (column-vs-
+  schema manifest, parser validated against 3 embed forms), PublicSchedulePage.test.jsx (error-strip
+  + alias regression), edgeFunctionMirrorAudit team-feed↔icsCore pair ACTIVATED (baseline 10
+  measured). Advisors re-run: 0 ERRORs; 4 new WARNs = by-design anon-executable SECDEF gates (same
+  class as verify_*_token). **REMAINING GATE: Frank's device smoke — logged-out QR scan + .ics
+  subscribe in Apple/Google.** NEXT: PR-A' (greenlit, no rulings needed, carries the SCH-2 batch
+  hook hard-prereq) → PR-B'..F' per the ratified sequence → capability arcs (C1 weather → C2
+  directions → C9 family-hub ph2 → C10 AI → C11 push).
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
