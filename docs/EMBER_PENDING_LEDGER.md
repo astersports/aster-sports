@@ -635,8 +635,15 @@ arc bodies.
   per-card ilike hook) is DELETED. The 19 legacy text-only events (149/193 carry the FK) degrade
   to a name-text search URL with zero queries. §8 gates: mapsUrls 3-provider + address-fallback +
   verified-pin-priority units + the static no-ilike/hook-deleted gate.
-  NEXT: PR-E' (SD-15 coverage badges — largely landed inside PR-A's §10.1 chip row; E' closes
-  the gaps) → PR-F' (WeekStrip roles + SD-16 family-hub ph1 + F-S1) → F-S2 standalone →
+  **PR-E' SHIPPED (2026-06-12, rolling GO):** SD-15 close-out — the §10.1 chip row from PR-A'
+  already carried rides/duties/denominator at every density on the Schedule list; E' closed the
+  remaining gap: team-detail `UpcomingEvents` was passing bare events (empty chip row, no RSVP
+  batch) — now rides the same useScheduleData batch (module-cached events fetch; VF-11 constant
+  holds). §8 gate: `EventCardCoverageCompact.test.jsx` — rides+duties+denominator render at BOTH
+  densities, zero-coverage stays quiet. Deliberately small; flagged candidate (NOT ruled, NOT
+  built): coach/admin HOME next-event cards don't carry coverage chips — surface for a future
+  rulings round if wanted. NEXT: PR-F' (WeekStrip roles per the R2 deferral + SD-16 family-hub
+  phase 1 guardian-scoped authed ICS feed + F-S1 parent-overflow hide) → F-S2 standalone →
   capability arcs.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
