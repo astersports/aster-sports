@@ -44,12 +44,13 @@ describe('EventCard — countdown renders at every density (CP-5)', () => {
     expect(container.textContent).toMatch(/in \d+h|in \d+m/);
   });
 
-  it('happening_now card shows the Live treatment instead of a countdown', () => {
+  it('happening_now card shows the Live treatment instead of a countdown (compact label "Live", comfortable "Happening now")', () => {
     const liveEvent = { ...event(), start_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(), end_at: new Date(Date.now() + 60 * 60 * 1000).toISOString() };
-    const { container } = render(
-      <MemoryRouter><EventCard event={liveEvent} density="minimal" /></MemoryRouter>
-    );
-    expect(container.textContent).toMatch(/Happening now/);
-    expect(container.textContent).not.toMatch(/in \d+m/);
+    const a = render(<MemoryRouter><EventCard event={liveEvent} density="minimal" /></MemoryRouter>);
+    expect(a.container.textContent).toMatch(/Live/);
+    expect(a.container.textContent).not.toMatch(/in \d+m/);
+    cleanup();
+    const b = render(<MemoryRouter><EventCard event={liveEvent} density="maximum" /></MemoryRouter>);
+    expect(b.container.textContent).toMatch(/Happening now/);
   });
 });

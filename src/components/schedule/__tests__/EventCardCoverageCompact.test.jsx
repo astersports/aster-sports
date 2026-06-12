@@ -37,9 +37,8 @@ describe('EventCard — SD-15 coverage badges at every density', () => {
           dutyCount={{ total: 3, claimed: 1 }} />
       </MemoryRouter>
     );
-    expect(container.textContent).toContain('2 rides needed');
-    expect(container.textContent).toContain('2 volunteers needed');
-    expect(container.textContent).toContain('8 going / 10 rostered');
+    // R2-2 facts line (PR-V2): one aggregated line, not chips.
+    expect(container.textContent).toContain('8 of 10 going · 2 rides needed · 2 volunteers needed');
   });
 
   it('zero-coverage cards stay quiet at compact (no amber noise)', () => {

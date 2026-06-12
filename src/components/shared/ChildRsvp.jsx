@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/useToast';
 
 import { cacheKey, responseCache } from '../../lib/rsvpCache';
+import { ButtonsVariant, SegmentedVariant } from './ChildRsvpVariants';
 
 const PILLS = [
   { value: 'going',     label: 'Going',     color: 'var(--as-success)' },
@@ -99,6 +100,10 @@ export default function ChildRsvp({ child, eventId, eventType, compact = false, 
   const minH = compact ? 32 : 44, pillSize = compact ? 12 : 13;
 
   if (!isActivated) {
+    // Card variants render NOTHING — the card's facts line carries the
+    // academy note (R2 / PR-V2). The pills variant (hero, home rows)
+    // keeps the inline pill.
+    if (variant !== 'pills') return null;
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: compact ? 4 : 8 }}>
         <span style={{ fontSize: pillSize, fontWeight: 500, color: 'var(--as-text-primary)', marginRight: 'auto' }}>{child.firstName}</span>
@@ -107,19 +112,11 @@ export default function ChildRsvp({ child, eventId, eventType, compact = false, 
     );
   }
 
-  if (variant === 'segmented') {
-    const segs = [
-      { value: 'going', label: 'Going', on: { backgroundColor: 'var(--as-success-soft)', color: 'var(--as-success)' } },
-      { value: 'not_going', label: "Can't make it", on: { backgroundColor: 'var(--as-bg-secondary)', color: 'var(--as-text-tertiary)' } },
-    ];
+  if (variant === 'segmented' || variant === 'buttons') {
+    const V = variant === 'segmented' ? SegmentedVariant : ButtonsVariant;
     return (
-      <div role="group" aria-label={`RSVP for ${child.firstName}`} style={{ display: 'flex', marginTop: 8, border: '1.5px solid var(--as-border-default)', borderRadius: 8, overflow: 'hidden', minHeight: 44, opacity: disabled ? 0.5 : 1 }}>
-        {segs.map((s, i) => (
-          <button key={s.value} type="button" onClick={(e) => handleClick(e, s.value)} className="as-press" aria-pressed={response === s.value}
-            style={{ flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 13, fontWeight: 600, fontFamily: 'inherit', border: 'none', borderLeft: i > 0 ? '1.5px solid var(--as-border-default)' : 'none', background: 'transparent', color: 'var(--as-text-secondary)', cursor: 'pointer', ...(response === s.value ? s.on : {}), ...(disabled ? { pointerEvents: 'none' } : {}) }}>
-            {s.label}
-          </button>
-        ))}
+      <div role="group" aria-label={`RSVP for ${child.firstName}`}>
+        <V response={response} disabled={disabled} onPick={handleClick} />
       </div>
     );
   }
