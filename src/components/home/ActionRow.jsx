@@ -67,7 +67,9 @@ export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
           )}
         </div>
         <div style={EVLINE}>{formatDayTime(item.start_at)}</div>
-        <ChildRsvp child={item.child} eventId={item.event_id} eventType={item.eventType}
+        {/* V7: the D4 tri-state segmented control — same grammar as the
+            compact schedule card (was the legacy 3-pill picker). */}
+        <ChildRsvp child={item.child} eventId={item.event_id} eventType={item.eventType} variant="segmented"
           onSave={() => onRsvpResolved(item.event_id, item.player_id)} />
       </div>
     );

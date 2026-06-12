@@ -760,9 +760,12 @@ arc bodies.
   activation state (activatedSet threaded page→hero→actions — Home's same bug is B2, queued in
   V7); B1 THE ONE GATE CHAIN ruled into D6 + enforced: rides surface anywhere ⟺ org toggle AND
   events.enable_rides (card now respects it; 11 seeded future events had enable_rides flipped ON
-  so evaluation data is consistent with detail). NEXT: **PR-V7 — Home adoption** (Needs-You
-  vocabulary + B2 eligibility: no RSVP actions for unactivated academy kids' games) → Frank
-  re-grades detail + home.
+  so evaluation data is consistent with detail). **PR-V7 SHIPPED (Home adoption + B2):** Needs-You RSVP rows
+  adopt the D4 tri-state segmented control (was the legacy 3-pill picker); B2 closed at the
+  source — usePendingRsvps applies the ONE eligibility contract (isGameType from
+  lib/rsvpEligibility + one batched activations read): an unactivated academy kid's GAME pair is
+  INELIGIBLE (never prompted), practices stay pending, activated kids prompt normally —
+  hook-level gate test locks all three. NEXT: Frank re-grades detail + home on device.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
