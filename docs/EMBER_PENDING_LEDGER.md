@@ -670,6 +670,16 @@ arc bodies.
   operator several minutes on the smoke walk is closed. NEXT: capability arcs (C1 weather →
   C2 directions → C9 family-hub ph2 wireframes → C10 AI → C11 push). **Schedule L99 sequence
   A'–F' + both smoke fixes: COMPLETE.**
+  **SESSION-2 HANDOFF + DEVICE SMOKE (2026-06-12 ~08:40):**
+  `docs/CC_SESSION_HANDOFF_2026-06-12_schedule_spread.txt` is the architect relay (screenshots
+  relayed by Frank). HEADLINE: operator verdict — density pair visually indistinguishable +
+  card language below the render bar ("not a 10/10 design style") → VISUAL-PASS ruling requested
+  (CC lean: delta ruling vs existing renders); CC HOLDS Schedule UI iteration until ruled. Also
+  filed: SD-6 denominator did NOT propagate to event detail (admin chip "0 going / 10 rostered"
+  vs detail hero "14 no reply" — PATTERN A live; mechanical fix on GO); **briefings queue
+  failure pile-up** (Auto-retry exhausted on 7+ DUPLICATED copies of one RSVP nudge + 47 drafts
+  stacked — Stream B auto-draft dedup + send-path failure smells; diagnosis lane on GO, not
+  schedule-caused); academy-pill weight + home-coherence fold into the visual pass.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
