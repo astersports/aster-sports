@@ -127,3 +127,54 @@ V8 — BUILD PLAN (on Frank's ratification of this doc + render)
 RATIFICATION: Frank — grade the render, then one word: GO (build PR-V1+V2),
 or amendments inline on the render's numbered cards.
 ==============================================================================
+
+==============================================================================
+ROUND 2 — 2026-06-12 15:45 ET. Frank graded round 1: 5/10. Round 1 was a
+cleanup, not a design — same-weight text rows, chip confetti, timid time.
+Round 2 SUPERSEDES the EXPRESSION of V2/V3/V4 (the semantics of V1, V5-V8
+stand: white cards, academy-out-of-the-RSVP-slot, state treatments, build
+order). Benchmark recalibration per CLAUDE.md §1: Apple Calendar's temporal
+structure + Linear's typographic density + Nike Run Club's action
+confidence. Companion render REBUILT in place.
+==============================================================================
+
+R2-1 — THE TIME RAIL (supersedes V3/V4 slot anatomy). RULED.
+Every card is rail + content. The LEFT RAIL (56px comfortable / 48px
+compact, hairline divider) carries the time as the card's hero: 20px/700
+hour:minute in the TEAM COLOR (17px at compact), meridian 11px under it,
+weather 11px under that. Team color now MEANS "whose kid" at the card's
+most-scanned element; the stripe is retired (the colored rail + a team dot
+in the meta line carry identity). The schedule reads as a time axis again —
+scan the rail, find your hour.
+
+R2-2 — ONE QUIET FACTS LINE (supersedes V2's chip row). RULED.
+Chip confetti is gone. Coverage renders as ONE 13px text line under the
+meta line, color-coded by urgency, not decorated:
+  fine   -> tertiary text: "9 of 11 going · rides covered" (tiny check)
+  needs  -> 600-weight amber text: "2 rides needed · snacks open"
+  academy-> violet text: "Milo isn't activated for this game" (comfortable)
+            / "not activated" appended to the meta line (compact)
+Pills survive ONLY in the status slot (countdown / Happening now / Today /
+W-L / CANCELLED) — one pill max per card. The commitment note keeps its
+accent tint ("You're bringing snacks") as the single warm accent.
+
+R2-3 — RSVP PRIMACY (supersedes V3/V4 control styling). RULED.
+Comfortable: [✓ Going] is a FILLED success button when selected and a
+success-tinted outline when not — "Can't make it" is always the quiet
+outline. One bold action per card, Nike-style. Compact keeps the 44px
+segmented control; the selected side fills success-soft at 700. Live cards
+keep the 12px lock line.
+
+R2-4 — DATE HEADERS WITH A TODAY STATE. RULED.
+Section headers carry "SATURDAY · JUN 13" 12px/700; TODAY's header leads
+with an accent dot + accent "TODAY". The NOW-slot ring + NEXT UP tab stay
+(round 1's one survivor that already read well).
+
+R2-5 — LOCKED-SYSTEM COMPLIANCE NOTE. All round-2 values sit inside the
+§7 system: sizes from the 24/20/17/15/13/11 scale, weights ≤700, 10px card
+radius, shadow-sm, locked palette tokens. The 5/10 was composition, not
+the system — no token changes requested or required.
+
+RATIFICATION (round 2): grade the rebuilt render. GO builds PR-V1 then
+PR-V2 to THIS spec; or amend on the numbered cards.
+==============================================================================
