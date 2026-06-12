@@ -1,0 +1,339 @@
+P0 LANE EXECUTION REPORT — PUBLIC-FUNNEL REPAIR — 2026-06-12
+================================================================
+CC -> ARCHITECT (via Frank relay, §11.8). Authorization chain: architect
+ratified the lane shape (RULINGS_SCHEDULE_MULTIAGENT §A, SD-10/SD-13);
+Frank gave the security GO per Rule 19 (2026-06-12, in-session,
+AskUserQuestion record); CC executed every migration and deploy. Lane
+status: SHIPPED + OPERATOR-SMOKED + CLOSED. This doc is the execution
+evidence + the deviations-from-ruling register for ratification
+(§11.8 r4: forks ratified; the architect asked to be flagged on any
+execution delta — D1..D7 below).
+
+Production references: PR #990 (merge f2a38a2d, all checks green),
+PR #991 (ledger close, in flight), migrations 20260612030252 / 030320 /
+030336 (applied via MCP + AP #21 mirrors in-repo), team-feed edge
+function v10. Project vrwwpsbfbnveawqwbdmj.
+
+----------------------------------------------------------------
+§1 WHAT WAS BROKEN (recap, one paragraph)
+----------------------------------------------------------------
+Since migration 20260528140000, the four *_select_public RLS policies
+gated anon reads on `org_id IN (SELECT id FROM organizations WHERE
+public_listing_enabled = true)`. Policy USING expressions evaluate as
+the CALLER; organizations has no anon-readable policy; the subquery
+returned empty for anon, permanently. Verified pre-fix as anon: 0 teams,
+0 events. Stacked on that (AP #26 two-cause pattern): PublicSchedulePage
+and the team-feed ICS edge function both selected a nonexistent
+`events.location_name` column (42703) — the page swallowed the error
+(AP #36) and rendered a false "No upcoming events"; the feed checked it
+and 500'd. Net: QR links, shared schedules, and calendar subscriptions
+all dead for ~2 weeks. Inverse leak: game_results_select_public had no
+org gate (anon read all 91 published results); anon also held
+write-class grants on all 12 schedule tables, fail-closed only by RLS.
+
+----------------------------------------------------------------
+§2 EXECUTION SEQUENCE (as ruled: grants BEFORE RLS)
+----------------------------------------------------------------
+ 1. 20260612030252  STEP 1 grant lockdown          (applied, verified)
+ 2. 20260612030320  STEP 2 org-gate repair          (applied, verified)
+ 3. 20260612030336  STEP 3 game_results gate        (applied, verified)
+ 4. team-feed v10 deploy (column alias + _helpers.ts split;
+    v9 verify_jwt incident — see §6/D7)
+ 5. App fixes: PublicSchedulePage (alias + error surfacing + RPC)
+ 6. CI locks: 3 test files (§7)
+ 7. get_advisors re-run (security): 0 ERRORs (§5)
+ 8. PR #990 (19 files, +1190/−165) merged on green
+ 9. Operator smoke PASSED ~5:36 AM ET (§8)
+
+----------------------------------------------------------------
+§3 DB STATE — BEFORE / AFTER (verified via information_schema +
+   pg_policies, not inferred)
+----------------------------------------------------------------
+3.1 GRANTS, anon role, the 12 schedule tables
+BEFORE (role_table_grants + column_privileges, 2026-06-12 pre-fix):
+  - INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER: ALL 12 tables
+    (events 51 cols, teams 22, locations 17, event_rsvps 7,
+    player_activations 5, game_results 15, roster_members 12,
+    event_ride_offers 18, event_ride_claims 19, event_ride_requests 12,
+    event_duties 8, user_preferences 12)
+  - SELECT: full-column on 10 tables; column-narrowed only on events
+    (42/51, wave_3b) and game_results (9/15, wave_3b). Notably
+    anon-SELECTable: teams.team_feed_token + team_feed_token_issued_at
+    (the calendar bearer secret), locations.admin_notes.
+  - All grants DIRECT per-role (no PUBLIC grantee rows; authenticated +
+    service_role hold their own — verified before any REVOKE, so the
+    lockdown could not touch the authed app).
+AFTER:
+  - Write-class (all 6 privileges): REVOKED from PUBLIC then anon on all
+    12 tables (AP #23 ordering; AP #57 explicit per-role).
+  - SELECT REVOKED ENTIRELY (PUBLIC then anon) on the 8 tables with no
+    anon-facing policy: event_rsvps, player_activations, roster_members,
+    event_ride_offers, event_ride_claims, event_ride_requests,
+    event_duties, user_preferences.  [extension — see D1]
+  - teams anon SELECT re-granted on exactly: id, org_id, season_id,
+    name, age_group, division, circuit, circuit_name, gender,
+    sort_order, team_color, practice_day, practice_location.
+    (Dropped: team_feed_token, team_feed_token_issued_at, home_jersey,
+    away_jersey, gamechanger_team_alias, team_type_id,
+    roster_visibility_override, created_at, updated_at.)
+  - locations anon SELECT re-granted on exactly: id, org_id, name,
+    address, lat, lon, google_maps_url, parking_notes,
+    entry_instructions. (Dropped: admin_notes, notes, archived_at,
+    sub_locations, latitude, longitude [the DB-10 dead pair],
+    created_at, updated_at.)
+  - events (42-col) + game_results (9-col) anon SELECT: UNCHANGED
+    (wave_3b narrowing preserved).
+
+3.2 POLICIES — verbatim before -> after
+ a. events_select_public (roles {anon})
+    BEFORE: publish_status='published' AND team_id IN (SELECT t.id FROM
+      teams t WHERE t.org_id IN (SELECT organizations.id FROM
+      organizations WHERE public_listing_enabled = true))
+    AFTER:  publish_status='published' AND EXISTS (SELECT 1 FROM teams t
+      WHERE t.id = events.team_id AND org_is_public_listed(t.org_id))
+    [composition note — see D4]
+ b. teams_select_public (roles {anon, authenticated})
+    BEFORE: org_id IN (SELECT ... public_listing_enabled = true)
+    AFTER:  org_is_public_listed(org_id)
+ c. tournaments_select_public (roles {anon, authenticated})
+    BEFORE: org_id IN (SELECT ... )      AFTER: org_is_public_listed(org_id)
+ d. tournament_teams_select_public (roles {anon, authenticated})
+    BEFORE: tournament_id IN (SELECT tt.id FROM tournaments tt WHERE
+      tt.org_id IN (SELECT ...))
+    AFTER:  tournament_id IN (SELECT tt.id FROM tournaments tt WHERE
+      org_is_public_listed(tt.org_id))
+ e. game_results_select_public (roles {anon, authenticated})
+    BEFORE: published_at IS NOT NULL          -- no gate at all
+    AFTER:  published_at IS NOT NULL AND EXISTS (SELECT 1 FROM events e
+      WHERE e.id = game_results.event_id)
+    [composes through the caller's events visibility — see D3]
+ f. game_results_select_parent (roles {authenticated}) — DROPPED (DB-5:
+    fully shadowed dead policy; raw roster_members/player_guardians
+    joins against §11.5; no left_at window). Parents retain read via
+    (e): they can see their events, so EXISTS passes.
+    game_results_select_staff untouched.
+
+3.3 NEW FUNCTIONS (both SECURITY DEFINER, STABLE, search_path=public;
+    EXECUTE: REVOKE FROM PUBLIC, REVOKE FROM anon [AP #57 clears the
+    default-privilege auto-grant], then GRANT TO anon, authenticated)
+ - org_is_public_listed(p_org_id uuid) RETURNS boolean
+   = EXISTS(org row with public_listing_enabled = true). The DB-1 fix:
+   runs as definer, so the gate evaluates without exposing organizations
+   rows to anon. (The ruled shape, ruled over the alternative anon
+   SELECT policy on organizations.)
+ - get_public_subscribe_info(p_team_id uuid)
+   RETURNS TABLE(feed_token text, org_display_name text)
+   = team's feed token + COALESCE(org display_name, name), ONLY when the
+   org is public-listed. [NEW — not in the ruling; see D2]
+
+----------------------------------------------------------------
+§4 VERIFICATION EVIDENCE (anon probes, live production)
+----------------------------------------------------------------
+SET LOCAL ROLE anon (transaction, rolled back):
+  teams visible ............ 9     (was 0 pre-fix)
+  events visible ........... 193   (was 0) — EXACT parity with
+                                   publish_status='published' count
+                                   (193/193; no gate bypass)
+  game_results visible ..... 91    (LH is public-listed; the gate
+                                   composes — a non-listed org's results
+                                   would now be invisible to anon)
+  get_public_subscribe_info  1 row (token + 'Legacy Hoopers')
+Denial probes (must fail, did fail):
+  SELECT team_feed_token FROM teams  -> 42501 permission denied
+  SELECT count(*) FROM event_rsvps   -> 42501 (helper EXECUTE + grant
+                                       revocation both hold)
+CI: PR #990 all 5 checks green (lint-test-build full suite passed on CI
+with env present). Container test delta vs clean main: ZERO (6
+env-class import-fails + 3 wave_4_1d_2 fails reproduce identically on
+main — verified by stash/run/restore in the same container).
+
+----------------------------------------------------------------
+§5 ADVISORS (get_advisors security, post-apply)
+----------------------------------------------------------------
+59 lints total: 54 WARN, 5 INFO, 0 ERROR. Delta from this lane: exactly
+4 new WARNs — anon_/authenticated_security_definer_function_executable
+on the two new functions. These are BY DESIGN (the functions exist to be
+anon-callable gates) and are the same advisor class the four existing
+token-handler RPCs already carry. No new lint on any rewritten policy.
+
+----------------------------------------------------------------
+§6 EDGE FUNCTION + APP CHANGES
+----------------------------------------------------------------
+ - team-feed v10 (live): events select now `location_name:location`
+   (PostgREST alias of the REAL column — downstream ICS generator
+   contract unchanged); ICS generation core extracted to
+   team-feed/_helpers.ts, mirroring NEW src/lib/icsCore.js per AP #30.
+   The previously-DEFERRED mirror pair is now ACTIVE in
+   edgeFunctionMirrorAudit (baseline 10, measured via baseline-0 probe —
+   residual = TS annotations the normalizer can't strip).
+   icalHelpers.js keeps downloadTeamIcs + re-export; zero callers moved.
+ - v9 INCIDENT (process datum, D7): the MCP deploy tool DEFAULTS
+   verify_jwt=true; v9 deploy silently flipped the token-auth feed to
+   JWT-required (the AP #31 gateway class — 4th occurrence of this exact
+   regression shape on this project). Caught on the deploy response
+   field (the container's egress allowlist made curl probes useless —
+   the 403s were the proxy, not Supabase); v10 redeployed with
+   verify_jwt=false within minutes. Feed downtime bounded to the v9->v10
+   window during a period the feed was already broken.
+ - PublicSchedulePage: teams select narrowed to (id, name, team_color,
+   org_id) — no token, no organizations embed; events select aliased;
+   BOTH results' errors now surfaced ("Couldn't load this schedule. Try
+   again in a moment." — distinct from "Team not found"); subscribe
+   token + org display name via get_public_subscribe_info (RPC failure
+   degrades to "subscribe unavailable", not a page error).
+
+----------------------------------------------------------------
+§7 CI LOCKS SHIPPED (STEP 5)
+----------------------------------------------------------------
+ - eventsSelectColumnsAudit.test.js — select-column-vs-schema manifest
+   for `events` (51-column manifest captured from information_schema;
+   maintenance note in-file). Walks src/ + supabase/functions/, parses
+   .from('events')...select(...) strings, validates every token.
+   Parser validated against the repo's 3 live embed forms:
+   `teams!inner ( ... )` (space before paren), `locations ( ... )`,
+   `locations:location_id ( ... )` (alias-embed). First run surfaced 13
+   false positives -> parser fixed -> 0 violations; the phantom-column
+   class is now unshippable for events selects.
+ - PublicSchedulePage.test.jsx — locks BOTH halves of the incident:
+   (1) fetch error -> error strip, NEVER the false "No upcoming events"
+   (the AP #36 silence that hid this for 2 weeks); (2) success renders
+   the venue from the aliased field.
+ - eventTitleAudit allowlist relocation: the ICS `vs.` composition moved
+   from icalHelpers.js (allowlisted) to icsCore.js; allowlist follows
+   the code [D6 — mechanical]. icalHelpers.js correctly DROPPED from
+   the allowlist (it no longer composes).
+
+----------------------------------------------------------------
+§8 OPERATOR SMOKE (the ruled STEP 5d) — PASSED
+----------------------------------------------------------------
+Frank, 2026-06-12 ~5:36 AM ET, screenshot-evidenced in-session:
+ - Logged-out Safari, astersports.app/schedule/<11U-Girls-id>:
+   org eyebrow "LEGACY HOOPERS" (via the new RPC), "11U Girls",
+   "Upcoming schedule · 4 events", four event cards WITH VENUES
+   ("Harry S. Truman", "Rippowam Cisqua School" — the alias rendering
+   through real PostgREST), Download (.ics) + Subscribe + Share/QR
+   buttons live.
+ - Subscribe sheet rendered Apple Calendar + Google Calendar options
+   (only renders when the feed token arrives -> RPC path confirmed).
+ - In-app QR sheet (admin mode, team detail) shows the QR + the public
+   URL; the URL matches the DB team id.
+Smoke detour findings (filed in ledger, none lane-caused):
+ F-S1 Parent-mode 3-dot overflow on TeamDetail duplicates the bottom-nav
+      tabs verbatim (View records / View full schedule are its ONLY
+      items for parents; staff get +Edit team +Tournaments). OPEN
+      decision: hide-for-parents vs parent-relevant items.
+ F-S2 Parent-preview stickiness: the 24h-persisted "view as parent" hid
+      the entire staff stack; the only signal is the small PARENT
+      eyebrow. Operator hunted for the Share button for several minutes.
+      OPEN decision: louder preview treatment (banner / auto-expiry on
+      reopen).
+ F-S3 No in-app calendar-subscribe affordance for logged-in parents —
+      Subscribe lives ONLY on the public page. Rides with SD-16 phase 1
+      (the per-family feed needs an in-app entry point regardless).
+Live corroborations of already-ruled items, seen in the operator's own
+screenshots: "1G · 12NR" inflated denominator on tournament cards
+(SD-6, ruled (a)) and the DRAFT badge rendered to a parent (UX-11).
+
+----------------------------------------------------------------
+§9 DEVIATIONS / EXTENSIONS vs THE RULED SHAPE — FOR RATIFICATION
+----------------------------------------------------------------
+ D1 SELECT revoked ENTIRELY on the 8 no-public-need tables. The ruling's
+    STEP 1 text named only teams/locations column-narrowing; the "et
+    al." principle (anon sees only what public render needs) extended
+    naturally to tables with ZERO public-render need and ZERO anon
+    policies (verified before revoking). Strictly tightening; nothing
+    anon-side reads them; authed grants untouched.
+    RISK: none identified. ASK: ratify.
+ D2 get_public_subscribe_info() is NEW (not in the ruling). Forced move:
+    the ruled token-column revoke would have re-broken the public page's
+    Subscribe (it bulk-selected teams.team_feed_token). The RPC serves
+    the token one-team-at-a-time, only for public-listed orgs. CAVEAT
+    stated plainly: for a PUBLIC-LISTED org, anyone holding a team id
+    can fetch that team's feed token — which is exactly the page's
+    intended function (the feed is the thing being publicly offered);
+    what's closed is bulk enumeration and any access to non-listed
+    orgs' tokens. Token rotation (20260602225959 annual) unaffected.
+    ASK: ratify, or rule a stricter shape (e.g., short-lived signed
+    subscribe URLs) for the SD-16 family-feed arc to adopt.
+ D3 game_results gate composes through PARENT-EVENT VISIBILITY
+    (EXISTS events as the caller) rather than the literal
+    events->teams->org_is_public_listed traversal in the ruling text.
+    For anon the outcomes are identical (anon's event visibility IS the
+    public-listing gate). For authenticated it is STRICTER than ruled:
+    cross-org authed users lose the read (they can't see the parent
+    event) — closing a leak the review hadn't even graded. Org members
+    and parents unaffected (their event visibility covers them; plus
+    game_results_select_staff). Chosen for single-source-of-truth: the
+    results gate can never drift from the events gate.
+    ASK: ratify the composition (it's the AP #63-resistant shape).
+ D4 events_select_public composes through teams-as-caller (EXISTS teams
+    t WHERE org_is_public_listed) — the teams row must be anon-visible
+    via teams_select_public, which holds by construction. Equivalent to
+    the literal form under current policies; noted for completeness.
+ D5 Write-class revoke included DELETE, TRUNCATE, TRIGGER beyond the
+    ruled INSERT/UPDATE/REFERENCES — anon held all six (discovered at
+    execution); revoking the worse three is unambiguously in-intent.
+    ASK: ratify (formality).
+ D6 eventTitleAudit allowlist relocation (mechanical consequence of the
+    ruled _helpers.ts/icsCore split; the audit's intent preserved —
+    icalHelpers.js itself is no longer allowlisted).
+ D7 PROCESS: the MCP deploy default flipped verify_jwt=true on v9
+    (caught + corrected in v10). PROPOSED DOCTRINE ADDITION (AP #31
+    corollary): "MCP deploy_edge_function calls MUST pass verify_jwt
+    explicitly, matching supabase/config.toml; the tool default is
+    true and silently overrides config for shared-secret functions."
+    Cheap, closes the 4th recurrence of this class.
+    ASK: ratify the corollary text for CLAUDE.md.
+
+----------------------------------------------------------------
+§10 RESIDUAL RISK REGISTER (anon/public surface, post-lane)
+----------------------------------------------------------------
+ R-1 tournaments + tournament_teams anon SELECT remain FULL-COLUMN
+     (their public policies are correctly gated now, but no column
+     narrowing was ruled or applied — out of lane scope). Candidate for
+     a follow-up narrowing pass if those tables grow sensitive columns.
+ R-2 events anon SELECT stays at the wave_3b 42-column set (includes
+     coach_notes? NO — verified excluded by wave_3b; includes
+     operational fields like coach_checklist_state? excluded; the 42-col
+     set predates this lane and was not re-audited tonight).
+     Candidate: re-audit the 42-col set against "public-render need"
+     with the same principle as D1.
+ R-3 DB-6 multiple-permissive-policies perf WARNs (event_rsvps x3,
+     game_results now x3 post-drop, roster_members x3) — untouched,
+     pre-existing, queued as consolidation hygiene.
+ R-4 VF-10 (event_rsvps write policy lacks team-membership predicate) +
+     R20/DB-7 (guardian_id payload fix + player_id NOT NULL) — ruled
+     (§D forward-only) but NOT in this lane; queued (guardian_id payload
+     fix belongs in PR-A'-adjacent work; ruled CC-runs).
+ R-5 DB-8 (import path writes end_at NULL) — ruled into the wizard fix
+     (PR-C' / schema-arc); null class still grows until then.
+ R-6 The public page renders no org branding colors for anon (brand
+     tokens default to Ember palette) — cosmetic, pre-existing,
+     unchanged by the lane.
+
+----------------------------------------------------------------
+§11 BOARD STATE AFTER THE LANE
+----------------------------------------------------------------
+ - P0 lane: CLOSED (operator-smoked). Calendar/QR/Skylight rail alive.
+ - PR-A': GREENLIT by the L99 rulings ("can ship now"), refinements R1
+   (eventTimeStatus 3-state -> superseded by eventTimeState naming per
+   the multiagent rulings) + R2 (WeekStrip roles move to PR-F) +
+   the VF-11 hard lock (batch RSVP hook lands in PR-A', before the
+   PR-B' ungate). Awaiting operator start signal only.
+ - PR-B'..F': sequenced per §E of the multiagent rulings.
+ - Capability arcs: C1 weather -> C2 directions -> C9 family-hub ph2 ->
+   C10 AI (conflict-detection, AFTER family hub) -> C11 push (backlog).
+ - Open on the operator side: parent render relay
+   (schedule-parent-mobile.html — referenced by the rulings, never
+   uploaded); D-a..D-f relay (Phase A gate, unchanged).
+ - New OPEN decisions from the smoke walk: F-S1 (parent overflow menu),
+   F-S2 (preview stickiness) — both small, both UX-rulings material for
+   the next round; F-S3 rides with SD-16.
+
+----------------------------------------------------------------
+ASKS (3): (1) ratify D1-D5 + D7's doctrine corollary (D6 is mechanical);
+(2) rule F-S1 + F-S2 when convenient (one line each); (3) PR-A' start
+is authorized by the rulings — CC begins on the operator's word.
+================================================================
+END P0 LANE EXECUTION REPORT
+================================================================

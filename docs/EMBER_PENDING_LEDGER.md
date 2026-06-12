@@ -554,10 +554,23 @@ arc bodies.
   schema manifest, parser validated against 3 embed forms), PublicSchedulePage.test.jsx (error-strip
   + alias regression), edgeFunctionMirrorAudit team-feed↔icsCore pair ACTIVATED (baseline 10
   measured). Advisors re-run: 0 ERRORs; 4 new WARNs = by-design anon-executable SECDEF gates (same
-  class as verify_*_token). **REMAINING GATE: Frank's device smoke — logged-out QR scan + .ics
-  subscribe in Apple/Google.** NEXT: PR-A' (greenlit, no rulings needed, carries the SCH-2 batch
-  hook hard-prereq) → PR-B'..F' per the ratified sequence → capability arcs (C1 weather → C2
-  directions → C9 family-hub ph2 → C10 AI → C11 push).
+  class as verify_*_token). **SMOKE PASSED (Frank, 2026-06-12 ~5:36 AM ET):** logged-out Safari rendered the
+  11U Girls public page (org eyebrow via RPC, 4 events WITH venues = alias verified through live
+  PostgREST, Download/Subscribe/Share live) + Subscribe sheet offered Apple/Google (feed token via
+  the gated RPC). **P0 LANE CLOSED.** Three findings filed from the smoke walk: (1) TeamDetail
+  3-dot overflow in PARENT mode duplicates the bottom-nav tabs verbatim (View records/View full
+  schedule only — staff items make it sensible; parents get pure duplication) → open decision,
+  hide-vs-enrich; (2) parent-preview stickiness — 24h-persisted "view as parent" hid the entire
+  staff stack with only the small PARENT eyebrow as signal → louder treatment, open decision;
+  (3) NO in-app calendar-subscribe affordance for logged-in parents (Subscribe lives only on the
+  public page) → rides with SD-16 phase 1 (per-family feed needs the in-app entry point anyway).
+  Smoke also live-corroborated two ruled items: inflated "12NR" denominators (SD-6) + DRAFT badge
+  shown to a parent (UX-11). **Execution evidence + deviations register for the architect:**
+  `docs/P0_LANE_EXECUTION_REPORT_2026-06-12.txt` (before/after policy quals + grant matrices,
+  anon probe data, advisor delta, v9 verify_jwt incident, D1-D7 deviations awaiting ratification
+  incl. the proposed AP #31 MCP-deploy corollary, residual-risk register R-1..R-6). NEXT: PR-A' (greenlit by the L99 rulings — "can ship now"; carries
+  the SCH-2 batch hook hard-prereq per VF-11) → PR-B'..F' per the ratified sequence → capability
+  arcs (C1 weather → C2 directions → C9 family-hub ph2 → C10 AI → C11 push).
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
