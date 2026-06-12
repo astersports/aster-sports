@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useActivities } from '../../hooks/useActivities';
+import { useScheduleData } from '../../hooks/useScheduleData';
 import { useNow } from '../../hooks/useNow';
 import { getWeatherForTime, useWeather } from '../../hooks/useWeather';
 import { WEATHER_DEFAULT_COORDS } from '../../lib/constants';
@@ -10,8 +10,14 @@ import EventCard from '../schedule/EventCard';
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_EVENTS = 5;
 
+// SD-15 (PR-E'): team-detail upcoming cards ride the batch hook so the
+// §10.1 coverage chips (going / rides / duties / commitment) render here
+// too — pre-E' this list passed bare events and the chip row was empty.
+// useScheduleData wraps the same module-cached useActivities fetch;
+// request count stays constant (VF-11).
 export default function UpcomingEvents({ teamId }) {
-  const { activities } = useActivities();
+  const data = useScheduleData();
+  const { activities } = data;
   const navigate = useNavigate();
   const now = useNow();
   const weather = useWeather(...WEATHER_DEFAULT_COORDS);
@@ -46,7 +52,11 @@ export default function UpcomingEvents({ teamId }) {
         <>
           {upcoming.map((evt, i) => (
             <div key={evt.id} style={{ marginBottom: i < upcoming.length - 1 ? 6 : 0 }}>
-              <EventCard event={evt} density="minimal" weather={getWeatherForTime(weather, evt.start_at)} />
+              <EventCard event={evt} density="minimal" weather={getWeatherForTime(weather, evt.start_at)}
+                rsvpCount={data.counts?.[evt.id]} rideCount={data.rideCounts?.[evt.id]} dutyCount={data.dutyCounts?.[evt.id]}
+                childRsvpMap={data.childRsvpMap} activatedMap={data.activatedMap}
+                commitment={data.commitments?.[evt.id]} suppressCount={data.countSuppressedByTeam?.[evt.team_id]}
+                onRsvpChange={data.onRsvpSaved} />
             </div>
           ))}
           <button type="button" onClick={() => { navigator.vibrate?.(10); navigate(`/schedule?team=${teamId}`); }}
