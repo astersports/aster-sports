@@ -18,19 +18,24 @@ export default function EventCardFacts({ suppressCount, isStaffView, count, ride
 
   const showCount = denom > 0 && !(suppressCount && !isStaffView);
   const countText = showCount ? `${going} of ${denom} going` : null;
+  // V2.1: compact folds the academy note INTO the one line (a separate
+  // violet line per card made compact as tall as detailed).
+  const academyInline = compact && academyNames.length > 0
+    ? <span style={{ color: 'var(--as-academy)', fontWeight: 500 }}> · {academyNames.join(', ')} not activated</span>
+    : null;
   const lines = [];
 
   if (suppressCount && !isStaffView) {
     // §10.1(2) privacy guard — tryout/eval rosters hide even the headcount.
     lines.push(
       <div key="lock" style={{ fontSize: fs, color: 'var(--as-text-tertiary)', marginTop: compact ? 4 : 6, display: 'flex', alignItems: 'center', gap: 5 }}>
-        <Lock size={12} strokeWidth={1.75} aria-hidden="true" />Counts hidden for evaluations
+        <Lock size={12} strokeWidth={1.75} aria-hidden="true" />Counts hidden for evaluations{academyInline}
       </div>
     );
   } else if (needs.length > 0) {
     lines.push(
       <div key="needs" style={{ fontSize: fs, fontWeight: 600, color: 'var(--as-warning)', marginTop: compact ? 4 : 6 }}>
-        {[countText, ...needs].filter(Boolean).join(' · ')}
+        {[countText, ...needs].filter(Boolean).join(' · ')}{academyInline}
       </div>
     );
   } else if (countText) {
@@ -39,18 +44,20 @@ export default function EventCardFacts({ suppressCount, isStaffView, count, ride
     if (compact && commitment) fine.push(commitment);
     lines.push(
       <div key="fine" style={{ fontSize: fs, color: 'var(--as-text-tertiary)', marginTop: compact ? 4 : 6, display: 'flex', alignItems: 'center', gap: 5 }}>
-        <Check size={12} strokeWidth={1.75} aria-hidden="true" style={{ flexShrink: 0 }} />
-        <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: compact ? 'nowrap' : 'normal' }}>{fine.join(' · ')}</span>
+        {/* V2.1: the check EARNS its place — a tick beside "0 of 10" was a lie. */}
+        {going > 0 && <Check size={12} strokeWidth={1.75} aria-hidden="true" style={{ flexShrink: 0 }} />}
+        <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: compact ? 'nowrap' : 'normal' }}>{fine.join(' · ')}{academyInline}</span>
       </div>
     );
+  } else if (academyInline) {
+    lines.push(<div key="academy-only" style={{ fontSize: fs, marginTop: 4 }}>{academyInline}</div>);
   }
 
-  if (academyNames.length > 0) {
-    const txt = compact
-      ? `${academyNames.join(', ')} not activated`
-      : `${academyNames.join(' and ')} ${academyNames.length === 1 ? "isn't" : "aren't"} activated for this game`;
+  if (!compact && academyNames.length > 0) {
     lines.push(
-      <div key="academy" style={{ fontSize: fs, fontWeight: 500, color: 'var(--as-academy)', marginTop: compact ? 3 : 4 }}>{txt}</div>
+      <div key="academy" style={{ fontSize: fs, fontWeight: 500, color: 'var(--as-academy)', marginTop: 4 }}>
+        {`${academyNames.join(' and ')} ${academyNames.length === 1 ? "isn't" : "aren't"} activated for this game`}
+      </div>
     );
   }
 

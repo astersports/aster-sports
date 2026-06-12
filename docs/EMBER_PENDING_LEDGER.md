@@ -710,8 +710,15 @@ arc bodies.
   segmented at compact — variants extracted to `ChildRsvpVariants.jsx` for the cap; academy
   no-control state owned by the facts line); R2-4 TODAY header (accent dot) in DateGroupedList;
   cobalt wash dead. Tests rewritten to the new contract (facts line, Live label per density).
-  NEXT: Frank re-grades the deployed pair on device → PR-V3 (home chip-vocabulary coherence)
-  on his number.
+  ROUND-2 DEPLOY GRADED 6/10 → **PR-V2.1 SHIPPED** (conformance
+  fixes from the device screenshots): NEXT UP tag absorbs the countdown ("Next up · in 19h" —
+  the tag was half-covering the status pill); checkmark EARNS its place (tick beside "0 of 10
+  going" was a lie — renders only when going > 0); compact folds the academy note INTO the one
+  facts line (a separate violet line per card made compact as tall as detailed); detailed rail
+  hour to 24px + roomier padding so the density pair separates at arm's length. FLAGGED for the
+  next scope call: the GAMES TAB is untouched old design and now visibly drags the surface —
+  PR-V3 candidates are (a) Games-tab adoption of the rail/facts vocabulary or (b) home
+  chip-vocabulary coherence; CC lean (a), same surface first. NEXT: Frank re-grades.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
