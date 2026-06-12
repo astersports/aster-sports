@@ -30,7 +30,7 @@ vi.mock('../../../hooks/useTeamHeadCoach', () => ({
 vi.mock('../../../hooks/useEventRsvpCounts', () => ({
   useEventRsvpCounts: () => ({ counts: {}, refetch: () => {} }),
 }));
-vi.mock('../../schedule/ChildRsvp', () => ({ default: () => <div data-testid="child-rsvp" /> }));
+vi.mock('../../shared/ChildRsvp', () => ({ default: () => <div data-testid="child-rsvp" /> }));
 
 const { default: TeamDetailHero } = await import('../TeamDetailHero');
 

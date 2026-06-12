@@ -16,10 +16,10 @@
 import { Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import ChildRsvp from '../schedule/ChildRsvp';
+import ChildRsvp from '../shared/ChildRsvp';
 import ParentArrivalActions from '../gameday/ParentArrivalActions';
 import { useNow } from '../../hooks/useNow';
-import { PARENT_ARRIVAL_WINDOW_AFTER_MS, PARENT_ARRIVAL_WINDOW_BEFORE_MS } from '../../lib/eventWindows';
+import { isRsvpOpen, PARENT_ARRIVAL_WINDOW_AFTER_MS, PARENT_ARRIVAL_WINDOW_BEFORE_MS } from '../../lib/eventWindows';
 import { composeFromEvent } from '../../lib/briefings/composeFromEvent';
 
 const ROW = { display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' };
@@ -45,9 +45,11 @@ export default function EventHeroActions({
     const msAfter = now - new Date(event.start_at).getTime();
     const inArrivalWindow = msUntil <= PARENT_ARRIVAL_WINDOW_BEFORE_MS && msAfter <= PARENT_ARRIVAL_WINDOW_AFTER_MS;
     if (inArrivalWindow && isGameType) return <ParentArrivalActions event={event} />;
+    // SD-11: parent RSVP closes AT start_at (was end-based isPast — a
+    // parent could flip an RSVP mid-game).
     return (
       <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {kids.map((c) => <ChildRsvp key={c.playerId} child={c} eventId={event.id} eventType={event.event_type} disabled={isPast} onSave={onRsvpChange} />)}
+        {kids.map((c) => <ChildRsvp key={c.playerId} child={c} eventId={event.id} eventType={event.event_type} disabled={!isRsvpOpen(event.start_at, now)} onSave={onRsvpChange} />)}
       </div>
     );
   }

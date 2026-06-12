@@ -26,7 +26,7 @@ import EventBriefingHistory from '../components/event/EventBriefingHistory';
 import ScopeChoiceDialog from '../components/event/ScopeChoiceDialog';
 import CollapsibleSection from '../components/shared/CollapsibleSection';
 import { composeFromEvent } from '../lib/briefings/composeFromEvent';
-import { eventTimeState } from '../lib/eventWindows';
+import { eventTimeState, isRsvpOpen } from '../lib/eventWindows';
 const EventCheckinOverlay = lazy(() => import('../components/event/EventCheckinOverlay'));
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 const ScheduleChangeComposer = lazy(() => import('../components/event/ScheduleChangeComposer'));
@@ -38,11 +38,13 @@ export default function EventDetailPage() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { orgId, role, myChildren } = useAuth();
+  const { orgId, role, user, myChildren } = useAuth();
   const { showToast } = useToast();
   const { event, loading: eventLoading, refetch, patchEvent } = useEventDetail(id, location.state?.event);
   const teamId = event?.team_id || null;
-  const { rsvps, roster, loading: rsvpLoading, setRsvp, saveNote, refetch: refetchRsvps } = useRsvps(id, teamId);
+  // SD-11: staff edits stay possible post-start on THIS surface only; they audit-log per §16.8.
+  const { rsvps, roster, auditMap, loading: rsvpLoading, setRsvp, saveNote, refetch: refetchRsvps } = useRsvps(id, teamId,
+    { startAt: event?.start_at, isStaff: role === 'admin' || role === 'coach', actorUserId: user?.id, actorName: user?.user_metadata?.full_name || user?.email || null });
   const refetchAll = useCallback(() => { refetch(); refetchRsvps(); }, [refetch, refetchRsvps]);
   useRefetchOnVisible(refetchAll);
   const [editing, setEditing] = useState(false);
@@ -119,7 +121,7 @@ export default function EventDetailPage() {
         <EventRidesTab event={event} />
       </CollapsibleSection>
       <CollapsibleSection title="RSVPs" sectionKey="rsvps" defaultOpen={false} count={`${rsvps.filter((r) => r.response === 'going').length}/${roster.length}`}>
-        <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} readOnly={isPast} canActivateAcademy={canActivateAcademy} activatedSet={activatedSet} onToggleActivation={toggleActivation} />
+        <EventRsvpTab roster={roster} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} readOnly={isStaff ? false : !isRsvpOpen(event.start_at)} overrideActive={isStaff && !isRsvpOpen(event.start_at)} auditMap={auditMap} canActivateAcademy={canActivateAcademy} activatedSet={activatedSet} onToggleActivation={toggleActivation} />
       </CollapsibleSection>
       {isStaff && isGameType && teamId && !isPast && <CollapsibleSection title="Academy call-ups" sectionKey="academy-callups" defaultOpen={false}><AcademyCallupPicker event={event} team={team} isStaff={isStaff} isLocked={lock.isLocked} academyCallupPlayerIds={lock.academyCallupPlayerIds} addCallup={lock.addCallup} removeCallup={lock.removeCallup} /></CollapsibleSection>}
       {dutyCount > 0 && <CollapsibleSection title="Volunteers" sectionKey="duties" defaultOpen={false} count={`${dutyCount}`}><EventDutiesTab eventId={event.id} /></CollapsibleSection>}

@@ -10,7 +10,7 @@ vi.mock('../../../context/AuthContext', () => ({
   useAuth: () => ({ role: 'admin', myChildren: [] }),
 }));
 vi.mock('../../../hooks/useNow', () => ({ useNow: () => Date.now() }));
-vi.mock('../../schedule/ChildRsvp', () => ({ default: () => null }));
+vi.mock('../../shared/ChildRsvp', () => ({ default: () => null }));
 vi.mock('../../gameday/ParentArrivalActions', () => ({ default: () => null }));
 
 import EventDetailHero from '../EventDetailHero';

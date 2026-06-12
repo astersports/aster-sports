@@ -593,9 +593,24 @@ arc bodies.
   duty chip ships the generic "N volunteers needed" form (duty names not in the count batch —
   "Snacks open" name-form deferred to PR-E' coverage work); weather chip keeps the existing
   org-coords now-window behavior (per-venue+date batching lands with PR-C' per SD-9/DB-10).
-  NEXT: PR-B' (always-on RSVP ungate + isRsvpOpen everywhere + ChildRsvp → shared/; batch-hook
-  prereq now satisfied) → PR-C'..F' per the ratified sequence → capability arcs (C1 weather →
-  C2 directions → C9 family-hub ph2 → C10 AI → C11 push).
+  **PR-B' SHIPPED (2026-06-12, operator GO):** SD-11 isRsvpOpen EVERYWHERE — parent RSVP closes
+  AT start_at on card (live cards show the quiet "RSVP closed" lock line per the render), detail
+  hero (`EventHeroActions` was end-based isPast — parents could flip mid-game), and the detail
+  RSVP tab (parents readOnly post-start). Staff override on the DETAIL surface only: staff stay
+  editable, and every post-start staff write logs an immutable `event_rsvp_audit` row (migration
+  `20260612111335` + AP #21 mirror: INSERT-only authenticated grants, zero anon, staff-scoped RLS
+  mirroring the game_results traversal, auth.uid() subselect-wrapped). EventRsvpTab renders the
+  §16.8 "[Override · Coach Kenny · 4:47 PM]" marker per overridden row + an amber "edits are
+  logged" hint when staff edit post-start; `useRsvps` owns the audit write + auditMap. SD-12:
+  ChildRsvp relocated to `src/components/shared/` (5 importers + 5 test mocks re-pointed). §8
+  gates shipped: override-audit hook test (staff-post-start logs w/ old/new; pre-start doesn't;
+  non-staff post-start blocked before any request), EventCard closed-state invariant test, and
+  the VF-11 batch-hook PRESENCE gate (`batchHookPresence.test.js` — PR-B' CI fails if the PR-A'
+  hook or its card wiring is absent). §16.8 parent surfacing note: audit SELECT is staff-only
+  this phase; the parent-visible override marker rides with the parent-surface wave (flagged).
+  NEXT: PR-C' (wizard/import end_at fix + SD-9 now-row weather TZ fix + SD-8 WeekStrip
+  fix-in-place + hide-in-Games-mode) → PR-D'..F' per the ratified sequence → capability arcs
+  (C1 weather → C2 directions → C9 family-hub ph2 → C10 AI → C11 push).
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player

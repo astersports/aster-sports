@@ -1,5 +1,5 @@
 import { AlertTriangle, ChevronRight, DollarSign, ListChecks, Send } from 'lucide-react';
-import ChildRsvp from '../schedule/ChildRsvp';
+import ChildRsvp from '../shared/ChildRsvp';
 import Badge from '../shared/Badge';
 import { formatDayTime } from '../../lib/formatters';
 
