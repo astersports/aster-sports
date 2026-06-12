@@ -1,0 +1,166 @@
+==============================================================================
+CC SESSION HANDOFF — 2026-06-12 (SESSION 2: SCHEDULE L99 SPREAD)
+P0 LANE -> PR-A'..F' + F-S2 — per CLAUDE.md §11.8 rule 5.
+(Session 1's handoff — SessionStart hook / brand rollout / LH site — is the
+separate docs/CC_SESSION_HANDOFF_2026-06-12.txt; this doc does not supersede
+its Frank-queue items.)
+==============================================================================
+CC -> ARCHITECT (via Frank relay). Session span ~2026-06-11 22:00 ->
+2026-06-12 ~12:30 ET. Everything in §3 is merged to main and live on
+production (astersports.app). Companion docs committed this session:
+SCHEDULE_MULTIAGENT_REVIEW_2026-06-12.txt, RULINGS_SCHEDULE_MULTIAGENT
+(relayed), SCHEDULE_L99_BUILD_SPEC_2026-06-12.txt + 6 renders
+(docs/renders/), P0_LANE_EXECUTION_REPORT_2026-06-12.txt.
+
+------------------------------------------------------------------------------
+§1 HEADLINE — OPERATOR SMOKE VERDICT: VISUAL PASS NEEDED
+------------------------------------------------------------------------------
+Frank smoked the deployed spread on-device (~08:40 ET; screenshots relayed
+to you alongside this doc). Verdict, his words: "The compact and detailed
+have no real differences ... this is not a 10/10 design style."
+
+CC's analysis of WHY (honest accounting):
+
+ 1.1 DENSITY PAIR COLLAPSED. Build-spec §10.2 made the glanceable floor
+     non-negotiable at compact (time, weather, countdown, title, team dot,
+     location, chip row, 44px RSVP). CC implemented ONE card layout for both
+     densities; the only deltas are padding (8/12 vs 10/14px), time size
+     (15 vs 17px), title size (14 vs 15px), notes-at-comfortable.
+     Imperceptible on device — confirmed by Frank's side-by-side shots.
+     The renders imply a STRUCTURAL pair (comfortable: roomier rows,
+     separate team line, two large RSVP buttons; compact: tight single-line
+     rhythm). Faithful-to-contract, visually degenerate.
+
+ 1.2 CARD LANGUAGE BELOW THE RENDER BAR. Two legacy treatments survived
+     that the renders don't have: (a) game/tournament cards keep a full
+     cobalt wash (rgba(74,143,212,.10) bg) vs the renders' white card +
+     team stripe; (b) the pill/chip mix is undisciplined (countdown pill,
+     weather text, going chip, academy pill, inline type label) vs the
+     renders' single chip row. Reads busy, not premium.
+
+ 1.3 REQUEST — visual-pass ruling round. Frank is relaying device
+     screenshots; renders are in docs/renders/. CC HOLDS on Schedule UI
+     iteration until ruled (no blind pixel-pushing). Options: (a) delta
+     ruling doc against the existing renders (card anatomy per density,
+     exact treatments); (b) re-render the pair against the now-live data
+     model (every chip/count/state in the renders has real data behind
+     it); (c) accept and park. CC lean (AP#39): (a) — the data layer is
+     done; this is purely a visual-contract problem now.
+
+------------------------------------------------------------------------------
+§2 OTHER SMOKE FINDINGS (Frank's screenshots, CC-triaged)
+------------------------------------------------------------------------------
+ 2.1 SD-6 DENOMINATOR DID NOT PROPAGATE TO EVENT DETAIL — caught live: the
+     admin schedule chip reads "0 going / 10 rostered" (correct, SD-6)
+     while the SAME game's detail hero reads "0 going · 14 no reply" (raw
+     roster incl. 4 unactivated academy kids). PATTERN A cross-surface
+     divergence (AP #63) — the exact class the spread was built to kill,
+     surviving on the detail surface (hero / RsvpSummary / roster-lock).
+     MECHANICAL fix; CC ships on a one-word GO + AP#43 cross-surface test.
+ 2.2 BRIEFINGS QUEUE FAILURE PILE-UP (operational, NOT schedule-caused):
+     the admin Briefings surface shows "Auto-retry exhausted (3 attempts)"
+     on 7+ DUPLICATED drafts of the same RSVP nudge ("10U Black · RSVP
+     needed for Hudson ... Atlantic Sharks") + "Ready to send 47". Two
+     distinct smells: the Stream B auto-draft tick appears to re-draft the
+     same trigger per tick instead of deduping, and the send path is
+     failing repeatedly for those drafts. Different subsystem
+     (briefing-auto-draft-tick + send pipeline) — needs its own diagnosis
+     lane (function logs + comms_messages rows). CC can run it next
+     session on GO. Until then the admin-facing noise grows daily.
+ 2.3 ACADEMY PILL occupies the RSVP slot on parent cards ("Academy · Not
+     activated" 3x in Frank's stack — Milo). Correct per the activation
+     contract; visually heavy. Fold treatment into the §1.3 pass.
+ 2.4 HOME NEEDS-YOU cards are a third visual system (amber wash, own
+     chips) alongside schedule cards + detail hero. Coherence question for
+     the visual pass, not a rebuild ask (home was ratified 2026-06-05).
+ 2.5 WORKING AS DESIGNED, device-confirmed: week-strip dots (filtered
+     set); NEXT UP ring + live countdown (admin home shows seconds);
+     per-card weather; SD-6 chips on schedule + team-detail; segmented
+     Going/Can't; "RSVP closes in ..." home chips; Games/List persistence;
+     admin alert lanes (RSVP shortfall · 12, location unassigned · 7).
+
+------------------------------------------------------------------------------
+§3 SHIPPED THIS SESSION (all merged + deployed; one line each)
+------------------------------------------------------------------------------
+ #985/#986  Six-agent Schedule review + synthesis (31 uniques, 5 forks).
+ #987/#988  Architect rulings committed (MULTIAGENT + L99 rounds).
+ #990  P0 LANE: public-funnel repair — anon grant lockdown (12 tables;
+       feed-token/admin_notes dead to anon), org_is_public_listed() SECDEF
+       gate, game_results composed gate, phantom-column fixes (page +
+       team-feed v10), get_public_subscribe_info() RPC, 3 CI locks.
+       Operator-smoked same night (logged-out page + subscribe sheet).
+ #991  P0 close: smoke record + P0_LANE_EXECUTION_REPORT (D1-D7 register).
+ #992  PR-A': time-state spine (3-state eventTimeState, ONE 2h constant, 5
+       divergent is-past predicates re-pointed), 3-band schedule w/ NOW
+       slot, VF-11 batch hook (constant request count; ChildRsvp N+1
+       dead), §10 card model (SD-6 denominator, Hidden-roster suppression,
+       commitment line), SD-1 density collapse (migration 20260612105307),
+       UX-11 DRAFT staff-gate, 5 CI locks incl. eventTimeStateAudit.
+ #993  PR-B': RSVP closes AT start everywhere; staff override audit-logged
+       (event_rsvp_audit, migration 20260612111335, §16.8 markers);
+       ChildRsvp -> shared/; VF-11 presence gate.
+ #994  PR-C': DB-8 import end_at fix; DL-13 weather unixtime + v2 cache
+       keys; SD-8 WeekStrip NY-pin repair; strip hidden in Games mode;
+       calendarMathAudit CI class (R12) + 4-file sweep batch flagged.
+ #995  PR-D': directions 3-way (Apple/Google/Waze) on detail; venue via
+       location_id JOIN; useMapsUrl ilike hook DELETED + static gate.
+ #996  PR-E': SD-15 close-out — team-detail UpcomingEvents on batch hook.
+ #997  PR-F': SD-16 ph1 FAMILY CALENDAR FEED LIVE (guardians.feed_token +
+       authed-only mint RPC anon-denied-verified + family-feed edge fn v1,
+       verify_jwt:false explicit + config.toml + mirror pair); F-S1+F-S3
+       closed (parent overflow = Subscribe only); WeekStrip R2 a11y +
+       dots-from-filtered + 44px; SD-7 viewMode persistence + team-in-URL.
+       Migration 20260612114742.
+ #998  F-S2: view-as session-scoped + full preview banner w/ 44px Exit;
+       HeaderRoleInvariant strengthened.
+
+ Production deltas: 6 migrations applied + mirrored; team-feed v10 +
+ family-feed v1 live; advisors 0 ERROR (4 by-design SECDEF WARNs); full
+ vitest delta vs pre-session baseline ZERO; ~20 new CI gates.
+
+------------------------------------------------------------------------------
+§4 DECISIONS AWAITING ARCHITECT (§11.8 r6 register)
+------------------------------------------------------------------------------
+ A. §1.3 visual-pass fork (a/b/c) — the headline. CC lean (a).
+ B. D1-D7 (P0_LANE_EXECUTION_REPORT) + the AP #31 MCP-deploy corollary text.
+ C. Build-shape deviations, ratify or amend:
+    C1 formatCountdown stays in lib/formatters.js (TZ-pinned + tested) vs
+       spec §4 eventWindows placement.
+    C2 cancelled-card RSVP invariant strengthened (hidden vs disabled).
+    C3 duty chip generic "N volunteers needed" (names not in count batch).
+    C4 §16.8 audit SELECT staff-only this phase; parent-visible marker
+       rides the parent-surface wave.
+ D. §2.1 detail-denominator re-point — one-word GO (mechanical).
+ E. §2.2 briefings pile-up diagnosis lane — one-word GO (read-only
+    diagnosis first; fixes ruled after evidence).
+ F. §2.3 academy-pill + §2.4 home-coherence — fold into the visual pass.
+ G. Flagged, unruled: coach/admin HOME coverage chips; R12 sweep batch
+    (useInboxHistory, digestPeriod, tournamentWeekend,
+    briefingOverdueEvaluators — briefing/inbox week-boundary behavior
+    changes); R-1/R-2 anon column re-audit triggers.
+
+------------------------------------------------------------------------------
+§5 NEXT ACTIONS (when rulings land)
+------------------------------------------------------------------------------
+ 1. Visual-pass delta ruling -> card-anatomy PR(s).
+ 2. §4.D GO -> detail-denominator PR (small, AP#43 test).
+ 3. §4.E GO -> briefings pile-up diagnosis (logs + comms_messages; report
+    before any fix).
+ 4. Capability arcs in ratified order: C1 per-venue weather (entry ticket =
+    DB-10 dead-column drop + coord backfill) -> C2 -> C9 family-hub PHASE 2
+    wireframes (ph1 feed live and waiting) -> C10 AI conflicts -> C11 push.
+ 5. Carried: guardian_id payload fix (§D, CC-runs); FU-1/FU-2/RV-6/D-d/D-e
+    triggers; FORK E punch list; Session-1 queue (D-a..D-f relay, LH site
+    deploy steps) unchanged.
+
+------------------------------------------------------------------------------
+§6 STANDING STATE (next session pre-flight)
+------------------------------------------------------------------------------
+ Branch claude/dazzling-bardeen-oz4lri == origin/main (8dbe4d4c) at close.
+ Ledger reconciled through #998 + this doc's commit. Production healthy:
+ public funnel alive (operator-verified), family feed alive (operator
+ verification pending), advisors clean. No in-flight work, no held PRs, no
+ open subscriptions. Known operational debt: §2.2 briefings pile-up.
+==============================================================================
+END HANDOFF (SESSION 2)
+==============================================================================
