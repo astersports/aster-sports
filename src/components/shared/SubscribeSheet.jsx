@@ -18,12 +18,17 @@ const calOptStyle = {
   textDecoration: 'none', marginBottom: 8,
 };
 
-export default function SubscribeSheet({ open, onClose, team }) {
+// SD-16 ph1 (PR-F'): optional `feedFn` + `feedToken` generalize the
+// sheet beyond team feeds — the family feed passes
+// feedFn="family-feed" + the RPC-minted guardian token. Team-shape
+// callers (public page) are untouched.
+export default function SubscribeSheet({ open, onClose, team, feedFn = 'team-feed', feedToken, title = 'Subscribe to Calendar' }) {
+  const token = feedToken ?? team?.team_feed_token;
   return (
     <BottomSheet open={open} onClose={onClose} initialHeight="30%">
-      <h3 style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)', marginBottom: 16 }}>Subscribe to Calendar</h3>
-      {FEED_HOST && team?.team_feed_token ? (() => {
-        const wc = `webcal://${FEED_HOST}/functions/v1/team-feed?token=${team.team_feed_token}`;
+      <h3 style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)', marginBottom: 16 }}>{title}</h3>
+      {FEED_HOST && token ? (() => {
+        const wc = `webcal://${FEED_HOST}/functions/v1/${feedFn}?token=${token}`;
         return (
           <>
             <a href={wc} style={calOptStyle} aria-label="Subscribe via Apple Calendar">
