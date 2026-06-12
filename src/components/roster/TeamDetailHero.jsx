@@ -5,7 +5,7 @@ import { isStaff } from '../../lib/permissions';
 import { TYPE_LABELS } from '../../lib/constants';
 import { formatTime } from '../../lib/formatters';
 import { useTeamHeadCoach } from '../../hooks/useTeamHeadCoach';
-import { useEventRsvpCounts } from '../../hooks/useEventRsvpCounts';
+import { isGameType } from '../../lib/rsvpEligibility';
 import ChildRsvp from '../shared/ChildRsvp';
 import RsvpProgressBar from '../shared/RsvpProgressBar';
 import ShareScheduleButton from '../shared/ShareScheduleButton';
@@ -21,13 +21,14 @@ function formatDate(iso) {
 // identity, state-at-a-glance, per-role action stack, head-coach contact
 // line (hidden when coach is viewing self). Per-row permissions still read
 // realRole via useAuth(); page passes activeRole via the `role` prop.
-export default function TeamDetailHero({ team, role, summary, myChild, myChildPlayer, nextEvent }) {
+export default function TeamDetailHero({ team, role, summary, myChild, myChildPlayer, nextEvent, nextCount, rsvp, rsvpOpen = true, onRsvpSaved }) {
+  // F-7 (audit 2026-06-12): counts arrive from the slot's useScheduleData
+  // slice — the SD-6 denominator the schedule card shows — replacing the
+  // per-event useEventRsvpCounts read whose roster_members total diverged
+  // from the card for the same event (PATTERN A).
   const navigate = useNavigate();
   const { user } = useAuth();
   const { coach } = useTeamHeadCoach(team?.id);
-  const nextEventArray = nextEvent ? [nextEvent] : [];
-  const { counts } = useEventRsvpCounts(nextEventArray);
-  const nextCount = nextEvent ? counts[nextEvent.id] : null;
   const tc = team?.team_color || 'var(--as-neutral)';
   const metaParts = [team?.age_group, CIRCUIT_LABELS[team?.circuit] || team?.circuit].filter(Boolean);
   if (summary?.gamesPlayed > 0) {
@@ -74,15 +75,19 @@ export default function TeamDetailHero({ team, role, summary, myChild, myChildPl
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--as-text-primary)' }}>{TYPE_LABELS[nextEvent.event_type] || 'Event'}</span>
               <span style={{ fontSize: 13, color: 'var(--as-text-secondary)' }}>{formatDate(nextEvent.start_at)} &middot; {formatTime(nextEvent.start_at)}</span>
             </div>
-            {nextCount && nextCount.total > 0 && (
-              <RsvpProgressBar going={nextCount.going} maybe={nextCount.maybe} out={nextCount.not_going} total={nextCount.total} compact />
+            {nextCount && nextCount.denominator > 0 && (
+              <RsvpProgressBar going={nextCount.going} maybe={nextCount.maybe} out={nextCount.not_going} total={nextCount.denominator} compact />
             )}
-            {/* PLATFORM ADDITION (Teams A4): hero ChildRsvp uses compact={false}
-                so the RSVP pills hit the 44px tap target inside the hero. */}
+            {/* D4 buttons (F-8 — was the retired pills variant); unactivated
+                academy gets the D5 sentence, same as EventHeroActions. */}
             {role === 'parent' && myChild && (
-              <div style={{ marginTop: 8 }}>
-                <ChildRsvp child={myChild} eventId={nextEvent.id} eventType={nextEvent.event_type} compact={false} />
-              </div>
+              myChild.memberType === 'futures_academy' && isGameType(nextEvent.event_type) && rsvp?.activated === false
+                ? <div style={{ marginTop: 8, fontSize: 13, fontWeight: 500, color: 'var(--as-academy)' }}>{myChild.firstName} isn&apos;t activated for this game</div>
+                : <div style={{ marginTop: 8 }}>
+                    <ChildRsvp child={myChild} eventId={nextEvent.id} eventType={nextEvent.event_type} variant="buttons"
+                      disabled={!rsvpOpen} initialResponse={rsvp ? rsvp.response : undefined}
+                      initialActivated={rsvp ? rsvp.activated : undefined} onSave={onRsvpSaved} />
+                  </div>
             )}
           </div>
         )}

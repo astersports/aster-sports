@@ -121,7 +121,7 @@ export default function EventDetailPage() {
       <EventLocationSlot role={role} event={event} teamId={teamId} myChildren={myChildren} rsvps={rsvps} />
       {/* F-3: the FULL D3 chain (org AND event) — a section whose only content is "rides are off" must not render. */}
       {ridesEnabledFor(org, event) && <CollapsibleSection title="Rides" sectionKey="rides" defaultOpen={false}><EventRidesTab event={event} /></CollapsibleSection>}
-      <CollapsibleSection title="RSVPs" sectionKey="rsvps" defaultOpen={false} count={`${rsvps.filter((r) => r.response === 'going').length}/${roster.length}`}>
+      <CollapsibleSection title="RSVPs" sectionKey="rsvps" defaultOpen={false} count={`${rsvps.filter((r) => r.response === 'going').length}/${eligible.length}`}>
         <EventRsvpTab roster={roster} summaryRoster={eligible} rsvps={rsvps} rsvpMap={rsvpMap} teamColor={teamColor} onSetRsvp={setRsvp} onSaveNote={saveNote} loading={rsvpLoading} readOnly={isStaff ? false : !isRsvpOpen(event.start_at)} overrideActive={isStaff && !isRsvpOpen(event.start_at)} auditMap={auditMap} canActivateAcademy={canActivateAcademy} activatedSet={activatedSet} onToggleActivation={toggleActivation} />
       </CollapsibleSection>
       {isStaff && isGameType && teamId && !isPast && <CollapsibleSection title="Academy call-ups" sectionKey="academy-callups" defaultOpen={false}><AcademyCallupPicker event={event} team={team} isStaff={isStaff} isLocked={lock.isLocked} academyCallupPlayerIds={lock.academyCallupPlayerIds} addCallup={lock.addCallup} removeCallup={lock.removeCallup} /></CollapsibleSection>}

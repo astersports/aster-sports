@@ -50,8 +50,11 @@ COMPACT — ICON GRAMMAR, one line, lucide 12px icon + count pairs:
   Whole line gray-quiet when nothing needs anyone; any need renders ONLY
   its own icon-pair amber (not the whole line).
 DETAILED — WORD GRAMMAR (spells out the categories):
-  RSVP row:  "9 of 11 going · 1 maybe · 1 can't"  (amber 600 when a need
-             exists anywhere, else tertiary; check icon only when going>0)
+  RSVP row:  "9 of 11 going · 1 maybe · 1 can't"  (tertiary ALWAYS; check
+             icon only when going>0. AMENDED 2026-06-12 per audit F-10,
+             Frank-ratified: need-amber lives on the NEEDS ROW ONLY —
+             double-amber rejected; matches compact's "only its own
+             pair amber" principle)
   Needs row: "2 ride seats needed · 3 offered" / "Snacks open · Carpool
              lead open" (named slots; generic count fallback)
   Covered:   "rides covered" folds into the RSVP row when quiet.

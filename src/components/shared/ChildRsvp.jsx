@@ -6,17 +6,13 @@ import { useToast } from '../../context/useToast';
 import { cacheKey, responseCache } from '../../lib/rsvpCache';
 import { ButtonsVariant, SegmentedVariant } from './ChildRsvpVariants';
 
-const PILLS = [
-  { value: 'going',     label: 'Going',     color: 'var(--as-success)' },
-  { value: 'maybe',     label: 'Maybe',     color: 'var(--as-warning)' },
-  { value: 'not_going', label: "Can't",      color: 'var(--as-danger)' },
-];
-
 // `initialResponse`/`initialActivated`: batch state from useScheduleData
 // (VF-11) — when supplied (even null) the per-row fetches are SKIPPED.
-// Batchless consumers (EventDetail, TeamDetailHero) keep the self-fetch
-// path. `variant="segmented"` = the §10.2 two-option 44px control.
-export default function ChildRsvp({ child, eventId, eventType, compact = false, disabled = false, onSave, initialResponse, initialActivated, variant = 'pills' }) {
+// Batchless consumers (EventDetail) keep the self-fetch path. D4 tri-state
+// only: variant 'buttons' (detailed) or 'segmented' (compact 44px 3-way).
+// The legacy pills variant retired with its last consumer (wave-2 F-8,
+// AP#51) — TeamDetailHero now rides the D4 buttons + batch feed.
+export default function ChildRsvp({ child, eventId, eventType, disabled = false, onSave, initialResponse, initialActivated, variant = 'buttons' }) {
   const { guardianId } = useAuth(), { showToast } = useToast();
   const batchFed = initialResponse !== undefined;
   const [response, setResponse] = useState(() => batchFed ? initialResponse : (responseCache.get(cacheKey(eventId, child.playerId)) ?? null));
@@ -97,51 +93,14 @@ export default function ChildRsvp({ child, eventId, eventType, compact = false, 
     else save(value);
   };
 
-  const minH = compact ? 32 : 44, pillSize = compact ? 12 : 13;
+  // Unactivated academy renders NOTHING — the D5 note belongs to the
+  // consumer (card facts line; the heroes render the violet sentence).
+  if (!isActivated) return null;
 
-  if (!isActivated) {
-    // Card variants render NOTHING — the card's facts line carries the
-    // academy note (R2 / PR-V2). The pills variant (hero, home rows)
-    // keeps the inline pill.
-    if (variant !== 'pills') return null;
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: compact ? 4 : 8 }}>
-        <span style={{ fontSize: pillSize, fontWeight: 500, color: 'var(--as-text-primary)', marginRight: 'auto' }}>{child.firstName}</span>
-        <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 4, backgroundColor: 'var(--as-academy-soft)', color: 'var(--as-academy)' }}>Academy · Not activated</span>
-      </div>
-    );
-  }
-
-  if (variant === 'segmented' || variant === 'buttons') {
-    const V = variant === 'segmented' ? SegmentedVariant : ButtonsVariant;
-    return (
-      <div role="group" aria-label={`RSVP for ${child.firstName}`}>
-        <V response={response} disabled={disabled} onPick={handleClick} />
-      </div>
-    );
-  }
-
+  const V = variant === 'segmented' ? SegmentedVariant : ButtonsVariant;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: compact ? 4 : 8 }}>
-      <span style={{ fontSize: pillSize, fontWeight: 500, color: 'var(--as-text-primary)', marginRight: 'auto' }}>{child.firstName}</span>
-      {PILLS.map((p) => {
-        const active = response === p.value;
-        return (
-          <button key={p.value} type="button" onClick={(e) => handleClick(e, p.value)} className="as-press"
-            aria-pressed={active}
-            style={{
-              minWidth: 44, minHeight: minH, borderRadius: 8, padding: '0 8px',
-              fontSize: pillSize, fontWeight: 600,
-              border: `1px solid ${p.color}`,
-              backgroundColor: active ? p.color : 'transparent',
-              color: active ? 'var(--as-text-inverse)' : p.color,
-              fontFamily: 'inherit',
-              ...(disabled ? { opacity: 0.5, pointerEvents: 'none' } : {}),
-            }}>
-            {p.label}
-          </button>
-        );
-      })}
+    <div role="group" aria-label={`RSVP for ${child.firstName}`}>
+      <V response={response} disabled={disabled} onPick={handleClick} />
     </div>
   );
 }
