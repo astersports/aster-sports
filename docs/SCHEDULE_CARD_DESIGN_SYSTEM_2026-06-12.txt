@@ -58,8 +58,12 @@ DETAILED — WORD GRAMMAR (spells out the categories):
 ZERO-DATA: no facts line at all (never placeholders).
 HIDDEN ROSTER (tryout/eval): lock icon + "Counts hidden for evaluations"
 replaces counts for parents; staff always see counts.
-FEATURE GATES: rides/volunteers contribute NOTHING (icons included) when
-the org toggle (Settings → Events) is off.
+FEATURE GATES — THE ONE CHAIN (amended round 6, operator-caught
+inconsistency: card showed ride needs while detail said "coordination is
+off"): rides surface ANYWHERE ⟺ org toggle ON (Settings → Events) AND
+events.enable_rides = true (the per-event wizard flag). Volunteers: org
+toggle only (no per-event flag exists). Every reader — card icons/words,
+detail sections, future home chips — derives from this chain.
 
 ------------------------------------------------------------------------------
 D4 RSVP CONTROL — TRI-STATE, fixed color semantics (operator ruling)

@@ -751,8 +751,21 @@ arc bodies.
   reflect maybe/can't (both densities); maps links converted to real ANCHORS (window.open from
   the standalone PWA left the blank pseudo-page the operator hit — card venue + detail 3-way);
   GAMES SEASON BUG fixed (standings mixed Winter+Spring team rows — useActiveSeasonTeams +
-  scoped totals). Render lags the doc one round; THE DOC IS AUTHORITATIVE. NEXT: Frank grades
-  against D8.
+  scoped totals). Render lags the doc one round; THE DOC IS AUTHORITATIVE. ROUND-6 GRADE 7/10 ("much better flow and visual") + detail
+  section graded 3/10 + "Don't forget the Home Screen" + two contract catches. **PR-V6 SHIPPED
+  (detail adoption + the gate chain):** EventDetailHero rebuilt on the rail anatomy (24px
+  team-color rail, D3 word-grammar breakdown incl. no-reply, anatomy-matched skeleton);
+  EventDetailHeader's legacy full-bleed team wash → white + 6px stripe (V1 rule); parent detail
+  RSVP → tri-state D4 BUTTONS w/ per-kid labels; academy sentence on detail driven by REAL
+  activation state (activatedSet threaded page→hero→actions — Home's same bug is B2, queued in
+  V7); B1 THE ONE GATE CHAIN ruled into D6 + enforced: rides surface anywhere ⟺ org toggle AND
+  events.enable_rides (card now respects it; 11 seeded future events had enable_rides flipped ON
+  so evaluation data is consistent with detail). **PR-V7 SHIPPED (Home adoption + B2):** Needs-You RSVP rows
+  adopt the D4 tri-state segmented control (was the legacy 3-pill picker); B2 closed at the
+  source — usePendingRsvps applies the ONE eligibility contract (isGameType from
+  lib/rsvpEligibility + one batched activations read): an unactivated academy kid's GAME pair is
+  INELIGIBLE (never prompted), practices stay pending, activated kids prompt normally —
+  hook-level gate test locks all three. NEXT: Frank re-grades detail + home on device.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player

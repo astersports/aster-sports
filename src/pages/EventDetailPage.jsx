@@ -106,7 +106,7 @@ export default function EventDetailPage() {
   return (
     <div style={{ backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' }}>
       <EventDetailHeader event={event} team={team} isStaff={isStaff} onEdit={openEdit} onDelete={requestDelete} onCheckin={() => setShowCheckin(true)} onCancel={() => setEventStatus('cancelled')} onReinstate={() => setEventStatus('scheduled')} />
-      <EventDetailHero event={event} isStaff={isStaff} isPast={isPast} rsvps={rsvps} roster={eligible} onEnterScore={() => setShowScoreSheet(true)} onLockRoster={() => document.querySelector('[data-section="lock-roster"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} onNotify={() => navigate(composeFromEvent(event, isPast, { intent: 'notify' }))} onRsvpChange={refetchRsvps} />
+      <EventDetailHero event={event} isStaff={isStaff} isPast={isPast} rsvps={rsvps} roster={eligible} activatedSet={activatedSet} onEnterScore={() => setShowScoreSheet(true)} onLockRoster={() => document.querySelector('[data-section="lock-roster"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} onNotify={() => navigate(composeFromEvent(event, isPast, { intent: 'notify' }))} onRsvpChange={refetchRsvps} />
       {isStaff && <GameDayMode event={event} isStaff={isStaff} isGameType={isGameType} />}
       {isGameType && <Suspense fallback={null}><FinalizedGameView event={event} /></Suspense>}
       {isStaff && !isPast && <div data-section="lock-roster"><EventRosterLockSection event={event} isStaff={isStaff} rsvps={rsvps} roster={eligible} onChange={refetchAll} /></div>}
