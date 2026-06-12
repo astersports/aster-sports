@@ -765,7 +765,22 @@ arc bodies.
   source — usePendingRsvps applies the ONE eligibility contract (isGameType from
   lib/rsvpEligibility + one batched activations read): an unactivated academy kid's GAME pair is
   INELIGIBLE (never prompted), practices stay pending, activated kids prompt normally —
-  hook-level gate test locks all three. NEXT: Frank re-grades detail + home on device.
+  hook-level gate test locks all three.
+  **BUILDS PAUSED — FULL-SURFACE AUDIT (2026-06-12, operator-directed):** Frank caught contract
+  breach #3 (Home "Charlie: Ride needed" vs that game's detail "Ride coordination is off") and
+  ordered: "Pause the build here and run as many agents as possible across the schedule on every
+  role and screen." 8 parallel read-only lanes ran; CC spot-verified every P0/P1 at file:line +
+  ground-truthed 2 claims in production (AP#60). Synthesis SHIPPED:
+  `docs/SCHEDULE_FULL_AUDIT_2026-06-12.txt` — 21 findings (4 P0: useRideNeeded + useVolunteerSlots
+  hook-gate bypass, EventDetailPage:121 half-gated Rides section, rsvpNudge resolver emailing
+  unactivated-academy game families; 4 P1 incl. the render-only-gating architecture F-5 and two
+  SD-6 denominator stragglers EventDetailPage:124 + TeamDetailHero; 7 P2; 6 P3) + 6 agent claims
+  DISCARDED as false positives with evidence (incl. the standings season-mixing re-flag — teams
+  are per-season rows, DB-verified). Fix-wave plan staged: W1 featureGates.js ONE-chain helper +
+  hook-entry gates + AP#43 static gate; W1b nudge eligibility; W2 number parity + TeamDetailHero
+  D4 adoption + pills-variant retirement (AP#51); W3 typography/perf sweep. THREE RATIFICATION
+  ASKS open (W1+1b GO; F-10 D3 amber amendment; W2 scope). NEXT: Frank ratifies the fix waves —
+  no code ships until then.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player

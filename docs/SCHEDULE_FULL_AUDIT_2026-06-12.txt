@@ -1,0 +1,284 @@
+==============================================================================
+SCHEDULE FULL AUDIT — ALL ROLES x ALL SCREENS — 2026-06-12
+Trigger: operator-caught cross-surface contract breach #3 (Home "Charlie:
+Ride needed - 11U Girls - Sun 9:00 AM" while that game's detail says "Ride
+coordination is off") + directive: "Pause the build here and run as many
+agents as possible across the schedule on every role and screen."
+BUILDS PAUSED. 8 parallel read-only audit lanes ran; CC spot-verified every
+P0/P1 claim at file:line and ground-truthed two claims against production
+data before this synthesis (AP#60). Acting architect: CC. Ratifier: Frank.
+==============================================================================
+
+METHOD
+Eight lanes, line-by-line within lane (post-AP#50 standing rule), findings
+deduped + cross-checked per AP#58: (1) parent schedule list, (2) parent home
+signals, (3) event detail, (4) staff schedule + Games tab, (5) gate-chain
+blast radius (every reader of event_ride_* / event_duties / event_rsvps),
+(6) design-system D0-D9 conformance, (7) secondary card consumers
+(TeamDetailHero, UpcomingEvents, public page, tournament tabs, feeds),
+(8) data layer + performance. Contracts audited against:
+  - docs/SCHEDULE_CARD_DESIGN_SYSTEM_2026-06-12.txt (D0-D9)
+  - lib/rsvpEligibility.js (SD-6: games = rostered + ACTIVATED academy;
+    practices = rostered + ALL academy)
+  - D3 gate chain: rides ANYWHERE <=> org feature_settings.rides_enabled
+    AND events.enable_rides; volunteers <=> org duties_enabled only
+  - lib/eventWindows.js (time-state spine; RSVP closes at start_at)
+  - §10.1(2) hidden-roster suppression
+
+HEADLINE
+The class Frank caught three times is real, and it is structural: ride and
+volunteer data has ZERO hook-level gate enforcement anywhere in src/. Every
+gate that exists lives at an individual render site, so every NEW consumer
+of those tables re-creates the contradiction by default. That is why fixing
+the card (round 6) did not fix Home. Four user-visible P0s: the two Home
+signal hooks (the screenshots), the detail page's own Rides section gating
+on only HALF the chain, and the rsvp-nudge resolver emailing families whose
+kids cannot RSVP. Beyond the P0 class: 7 fix-now P1/P2 findings, 9
+catalogued P2/P3, and 6 agent claims DISCARDED as false positives after
+CC verification (listed — they are not silently dropped).
+
+==============================================================================
+FINDINGS (severity-ordered; every P0/P1 verified by CC at the cited line)
+==============================================================================
+
+---- P0 — user-visible contract breaches (the contradiction class) ----
+
+F-1  P0 | src/hooks/useRideNeeded.js (entire hook)
+     Home "Ride needed" card surfaces ride signals with NO gate check —
+     neither org feature_settings.rides_enabled nor event.enable_rides.
+     THE screenshot breach (Charlie / 11U Girls Sun 9:00 AM). Sub-finding:
+     also no academy-eligibility filter on its (event x kid) candidates.
+     Contract: D3 gate chain. Fix: gate at hook entry via the shared
+     helper (below); zero new queries — the activities rows it receives
+     already carry enable_rides.
+
+F-2  P0 | src/hooks/useVolunteerSlots.js (entire hook)
+     Home "Volunteer slots" card ignores org duties_enabled. Same class.
+     Contract: D3 gate chain (volunteers = org toggle only).
+     Fix: hook-entry gate via the shared helper.
+
+F-3  P0 | src/pages/EventDetailPage.jsx:121
+     The Rides section gates on the org toggle ONLY:
+       org?.feature_settings?.rides_enabled !== false && <CollapsibleSection
+     Missing: event?.enable_rides === true. This is the DETAIL half of the
+     screenshot: the section renders (org toggle on), opens, and the tab
+     inside reports "Ride coordination is off for this event"
+     (EventRidesTab:23 reads the per-event flag). A section whose only
+     content is "this section is off" should not render.
+     Contract: D3 — "rides surface ANYWHERE <=> org AND event."
+     Fix: full chain at the section gate (one line) via the shared helper.
+
+F-4  P0 | src/lib/engine/resolvers/rsvpNudge.js:33-46
+     fetchUnrespondedSlices builds the nudge recipient set from ALL active
+     team_players with no eligibility filter: for a GAME, unactivated
+     academy kids land in `unresponded`, so their guardians receive nudge
+     EMAILS asking them to RSVP for a game where the app (correctly)
+     renders them no control. totalRoster is inflated by the same rows, so
+     the nudge copy's denominator diverges from every card. This is the
+     email-lane sibling of B2 (usePendingRsvps), which was already fixed.
+     Contract: SD-6 eligibility. Fix: read player_activations for the
+     event when event_type is game/tournament and drop unactivated academy
+     rows from `active` before computing unresponded/totalRoster. Resolver
+     is web-side only (the edge-function tick computes only the going-count
+     threshold, which unactivated kids cannot affect) — no AP#30 mirror
+     change needed; verified.
+
+---- P1 — structural fix + cross-surface number divergence ----
+
+F-5  P1 | (architecture, all ride/duty readers)
+     Gate enforcement is render-layer-only platform-wide. Blast-radius lane
+     enumerated every reader: useRideNeeded, useEventRideCounts,
+     useRideOffers, useRideRequests, useRideClaims, useEventRidesView,
+     useScheduleData (rides); useVolunteerSlots, useEventDutyCounts,
+     useDuties (duties). Hook-level gates: ZERO. Where users don't see
+     contradictions today it is because individual consumers (EventCard:118,
+     EventCardFacts:22-24, EventDetailPage:121/128) re-derive the gate
+     locally. PATTERN A factory: next consumer re-creates the bug.
+     Fix: NEW src/lib/featureGates.js —
+       ridesEnabledFor(org, event)  => rides_enabled !== false && event?.enable_rides === true
+       dutiesEnabledFor(org)        => duties_enabled !== false
+     ONE chain, one module. Hook-entry gates on the signal hooks (F-1/F-2),
+     re-point the three render sites to the helper, AP#43 invariant test:
+     helper unit cases + a static gate asserting no raw
+     `feature_settings.rides_enabled` / `enable_rides` reads outside the
+     helper (allowlist: the helper itself, the settings form, the wizard).
+
+F-6  P1 | src/pages/EventDetailPage.jsx:124
+     RSVPs section header count renders `${going}/${roster.length}` — the
+     FULL roster — while the hero two cards above renders the SD-6 eligible
+     denominator (line 109 passes roster={eligible}). Same screen, same
+     concept, two denominators: header "3/14" vs hero "3 of 12 going".
+     Contract: SD-6 / PR-V1 ("count surfaces get the ELIGIBLE roster"; the
+     line-79 comment in the file says exactly this).
+     Fix: eligible.length in the count string.
+
+F-7  P1 | src/components/roster/TeamDetailHero.jsx:29 + :77-78
+     The team-page next-event RsvpProgressBar derives total from
+     useEventRsvpCounts — roster_members size — not the SD-6 denominator.
+     The schedule card for the SAME event shows "X of 10"; the team hero
+     can show X of 11/14. PATTERN A (same concept, divergent source).
+     Fix: derive the denominator through rsvpEligibility (counts hook
+     stays §11.5-canonical for its historical-window use; the hero applies
+     denominatorFor on top, or consumes the schedule batch).
+
+F-8  P1 | src/components/roster/TeamDetailHero.jsx:84
+     ChildRsvp still called with the legacy `compact={false}` prop and no
+     `variant` — silently renders the OLD pills row, not the D4 tri-state
+     buttons ("Options everywhere"). Also passes no isRsvpOpen disable.
+     TeamDetailHero is the LAST pills-variant consumer.
+     Contract: D4. Fix: variant="buttons" + disabled={!isRsvpOpen(...)} +
+     the D5 academy sentence (pills carried the academy pill; buttons
+     variant returns null for unactivated — the hero needs the sentence,
+     same as EventHeroActions:60-64). Then RETIRE the pills variant
+     (AP#51 — zero consumers after this).
+
+---- P2 — correctness/conformance, bounded exposure ----
+
+F-9  P2 | src/hooks/useEventRsvpCounts.js:52
+     Partial-failure guard is `if (rsvpRes.error && rosterRes.error)` —
+     AND. If only event_rsvps errors, counts compute against empty RSVP
+     data: cards show "0 going - N no reply" until the next refetch.
+     Errors ARE console.warned (not fully silent), display still corrupts.
+     Contract: AP#36 spirit. Fix: return on EITHER error.
+
+F-10 P2 | src/components/schedule/EventCardFacts.jsx:66 vs D3 (DOC CONFLICT)
+     D3's detailed spec parenthetical says the RSVP breakdown row goes
+     "amber 600 when a need exists anywhere"; code keeps it tertiary and
+     renders the NEEDS row amber. CC architect position: the CODE is right
+     and the DOC should be amended — double-amber (breakdown + needs rows
+     both amber) contradicts D3's own compact principle ("any need renders
+     ONLY its own icon-pair amber, not the whole line") and reads as noise.
+     ASK #2 below: amend D3 to needs-row-only amber. If Frank prefers the
+     doc as written, the fix is one line of color logic instead.
+
+F-11 P2 | src/components/home/ActionRow.jsx:72
+     Home RSVP rows pass no `disabled={!isRsvpOpen(item.start_at)}`. The
+     7-day filter (useParentNeedsYou:22, start_at >= nowMs) drops items on
+     the next minute tick after start, so the exposure is a <=60s boundary
+     race — but inside it a parent can WRITE a post-start RSVP that the
+     detail surface blocks (SD-11), with no audit row (audit is staff-only).
+     Contract: D4 render rules / SD-11. Fix: one prop (start_at is on the
+     item). Rides along with Wave 1.
+
+F-12 P2 | src/hooks/useScheduleData.js:46-51
+     Batch queries key off event/team ids from org-scoped activities but
+     never re-assert org scope themselves. AP#37 defense-in-depth: safe
+     today, fragile under refactor. Fix: add the org-scoped join/eq where
+     the table shape allows; document FK-scoped exceptions inline.
+
+F-13 P2 | useScheduleData dual-instance mounts
+     During route transitions (Schedule -> TeamDetail) two instances can
+     run the full 6-query batch each (+ count hooks: ~14 .from() calls per
+     instance, ~28 peak). No cross-instance dedupe (module cache covers
+     useActivities only). Bounded, not user-visible. Fix shape (later):
+     module-level batch cache keyed by stableKey, or a provider.
+
+F-14 P2 | src/hooks/useScheduleData.js:51 + :103
+     If activeSeason resolves after activities, the first batch runs
+     without the program row, so countSuppressedByTeam can briefly be
+     false on tryout/eval programs — counts flash before the suppression
+     note. Agent-reported, mechanism plausible; verify + fix by holding
+     the suppression-dependent render until the program row resolves (or
+     gating the batch on activeSeason?.id).
+
+F-15 P2 | Typography off-scale sweep (10 sites; locked scale 24/20/17/15/13/11)
+     EventCard.jsx:73 (10px), :128 (12px), :139 (12px);
+     EventHeroActions.jsx:26 (14px), :56 (12px);
+     ActionRow.jsx:21 (12px), :22 (9px), :39 (9px), :81 (10px + weight 800,
+     cap is 700). One sweep PR, snap each to 11 or 13 / weight 700.
+     Conformance lane verdict otherwise: D0-D8 core matrix 100%.
+
+---- P3 — catalogued (no operator-visible effect today) ----
+
+F-16 P3 | src/hooks/useOrgTeamRecords.js:29-33 — fetches ALL seasons'
+     published results org-wide (91 rows) when the Games tab renders only
+     active-season teams (67). Correctness intact (see FP-1). Optional
+     seasonId param when next touched.
+F-17 P3 | useNow 60s tick re-renders schedule list parents (memo'd cards,
+     but full list re-walk each minute). Lift `now` / scope countdowns.
+F-18 P3 | EventCard.jsx:24,59 — dead `stagger` prop (no caller passes it).
+F-19 P3 | Orphans for one AP#51 sweep: RsvpCountRow.jsx (zero consumers)
+     + the ChildRsvp pills variant after F-8 lands.
+F-20 P3 | No coverage test that every module-level cache registers with
+     cacheBuster (cross-account bleed guard on signOut).
+F-21 P3 | useScheduleData depends on activeSeason object identity; extract
+     seasonId to avoid no-op batch refires on SeasonContext re-renders.
+
+==============================================================================
+FALSE POSITIVES — agent claims CC discarded after verification (AP#58)
+==============================================================================
+FP-1 "Standings W-L can mix seasons" (staff lane, rated P0). Teams are
+     per-season ROWS — DB-verified: Spring 2026 has its own 5 team rows /
+     67 published results, Winter 2025-26 its own 2 / 24. A team_id belongs
+     to exactly one season; per-team records cannot mix. Residual = F-16.
+FP-2 "useActivities cache key busts navigating Team A -> Team B" (data
+     lane). myTeamIds is the user's full team set — constant across team
+     pages; the key does not change on navigation.
+FP-3 "Hidden-roster suppression missing on Home" (parent-home lane, P1).
+     §10.1(2) suppresses COUNTS; Home action cards render no counts, and
+     RSVP prompts are own-kid. No breach.
+FP-4 "onRsvpSaved doesn't refetch the batch" (data lane, rated P0).
+     Optimistic local state + the shared responseCache + the counts
+     version bump cover every visible path; remounts re-run the batch.
+     Residual perf nuance folded into F-13.
+FP-5 "Home RSVP shown after start" (parent-home lane, rated P0) — real but
+     bounded to the <=60s tick race by the next7days filter; recorded
+     honestly as F-11 P2, not P0.
+FP-6 "NextEventCard arrival line should gate on the game-day window"
+     (parent-home lane). Contradicts D1 — the arrival call is an always-on
+     detailed-card row. Doc governs.
+
+==============================================================================
+FIX-WAVE PLAN (builds stay PAUSED until Frank ratifies)
+==============================================================================
+WAVE 1 — kill the contradiction class (one PR):
+  featureGates.js (F-5) + hook-entry gates in useRideNeeded/useVolunteerSlots
+  (F-1, F-2) + EventDetailPage:121 full chain (F-3) + ActionRow disabled
+  wiring (F-11) + re-point EventCard/EventCardFacts/EventDetailPage render
+  gates to the helper + AP#43 invariant test (units + static no-raw-reads
+  gate). Zero new queries; behavior change only where the contract was
+  already being violated.
+WAVE 1b — nudge eligibility (one PR, engine lane): F-4 with fixture tests
+  (unactivated-academy excluded on games, included on practices, activated
+  included everywhere; totalRoster matches denominatorFor).
+WAVE 2 — number parity + detail polish (one PR): F-6 eligible.length;
+  F-7/F-8 TeamDetailHero (denominator + buttons variant + academy sentence
+  + isRsvpOpen + pills retirement); F-9 error guard.
+  + DOC ACTION: D3 amendment per F-10 (needs Frank's call — ASK #2).
+WAVE 3 — catalogued sweep (1-2 low-risk PRs): F-15 typography; F-12, F-14;
+  F-16..F-21 as a cleanup batch. Can trail the re-grade.
+
+RATIFICATION ASKS
+  1. GO on Wave 1 + 1b (the P0 class — fixes both screenshot halves and
+     the nudge-email breach).
+  2. F-10 ruling: amend D3 to needs-row-only amber (CC recommendation),
+     or keep the doc text and turn the breakdown row amber when needs
+     exist. One or the other — doc first, then code.
+  3. Wave 2 scope confirm, incl. retiring the ChildRsvp pills variant.
+
+==============================================================================
+LANE VERDICTS (one line each)
+==============================================================================
+parent schedule list ... 98% conformant; F-10 (doc conflict) + F-18.
+parent home signals .... 3 gate-class breaches (F-1/F-2 + F-11); prompts
+                         eligibility (B2) verified CORRECT post-PR-V7.
+event detail ........... 2 findings (F-3 P0, F-6 P1); everything else —
+                         SD-11 readOnly, override audit, academy sentence,
+                         anchors, per-role gates — verified correct.
+staff schedule/Games ... clean except FP-1 (discarded); D8 staff cells all
+                         pass (no suppression, no RSVP controls, draft tags).
+gate-chain blast radius. the class enumeration behind F-1..F-5; compliant
+                         readers confirmed: usePendingRsvps, rsvpShortfall,
+                         EventCard/EventCardFacts/EventDetailPage renders.
+design conformance ..... D0-D8 matrix 100%; 10 typography sites (F-15).
+secondary consumers .... TeamDetailHero is the one hot spot (F-7/F-8); feeds,
+                         public page, tournament tabs, batch-fed props clean.
+data layer/perf ........ F-9 real; F-12/F-13/F-14 catalogued; 2 claims
+                         discarded (FP-2, FP-4).
+
+PATTERN A LEDGER UPDATE (AP#63): this audit adds F-3-class (half-gate),
+F-6, F-7 to the platform tally. The wave-1 helper + AP#43 static gate is
+the structural counter for the rides/duties instance of the class; the
+SD-6 eligibility module already plays that role for denominators — F-6/F-7
+are the two readers that never adopted it.
+==============================================================================
