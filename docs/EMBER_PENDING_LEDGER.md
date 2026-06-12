@@ -700,7 +700,18 @@ arc bodies.
   surfaces (hero / roster lock / RSVP summary) now receive the ELIGIBLE roster (the "14 no reply"
   divergence dead), RSVP tab keeps the full roster for activation management; useScheduleData
   re-derives through the same function — cross-surface agreement BY CONSTRUCTION + AP#43
-  invariant test. NEXT: PR-V2 (time-rail card pair to the round-2 render).
+  invariant test. **PR-V2 SHIPPED:** the time-rail card built
+  to the ratified round-2 render — rail (team-colored 20/17px numerals + meridian + weather,
+  hairline divider) as the card's axis; ONE status slot (cancelled / W-L / Live / countdown /
+  Today — one pill max); meta line w/ team dot + kid + folded venue at compact; R2-2 facts line
+  via NEW `EventCardFacts` ("X of Y going · 2 rides needed" — amber only on needs, lock note for
+  Hidden rosters, violet academy sentence, accent commitment note) replacing the retired
+  EventCardChips; R2-3 RSVP primacy (`ChildRsvp` variant="buttons" filled-Going at comfortable,
+  segmented at compact — variants extracted to `ChildRsvpVariants.jsx` for the cap; academy
+  no-control state owned by the facts line); R2-4 TODAY header (accent dot) in DateGroupedList;
+  cobalt wash dead. Tests rewritten to the new contract (facts line, Live label per density).
+  NEXT: Frank re-grades the deployed pair on device → PR-V3 (home chip-vocabulary coherence)
+  on his number.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
