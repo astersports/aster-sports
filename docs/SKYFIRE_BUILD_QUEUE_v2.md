@@ -40,3 +40,12 @@ UTC date, files+LOC, version/SHA, verification evidence, next unlock.
   Verified live: Kenny owed $12,240 / paid $2,820 (102 sess); Darien owed $2,100 / paid
   $2,780 (35 sess); 0 negative. Also lands A/B migration mirrors (parity).
   Next unlock: PR-2 (PayCoachSheet + pay_coach() wiring).
+
+2026-06-13 · Migration D 20260613213906_pay_coach_paid_only_guard applied via Supabase MCP
+  pay_coach() now RAISEs if p_status <> 'paid' (guard after the auth check, before any write).
+  Closes the inconsistency where a non-paid payout would flip sessions out of owed
+  (session pay_status has no intermediate state). Paid path unchanged; signature unchanged;
+  EXECUTE grant to authenticated intact. Post-flight clean. Mirror committed same turn.
+  CC pre-flight (live): guard present, signature unchanged, authenticated EXECUTE intact; all
+  owed sessions (Kenny 102, Darien 35) map to ONE season (Spring 2026) → one pay_coach call
+  per coach today. PR-2 contract ready.

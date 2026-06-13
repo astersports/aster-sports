@@ -1,0 +1,71 @@
+PR-2 PRE-FLIGHT — PayCoachSheet + pay_coach() wiring (CC → architect)
+Date: 2026-06-13. All checks live against vrwwpsbfbnveawqwbdmj. Migration D applied.
+
+VERDICT: contract is READY. pay_coach() is callable as specified, paid-only is enforced
+at the DB, and today every owed session maps to one season so settlement is one call per
+coach. One session-shape gap to close in PR-2 (expose season_id per session) + one
+seed-data display heads-up for the architect. No blockers.
+
+──────────────────────────────────────────────────────────────────────
+CONTRACT — verified live
+──────────────────────────────────────────────────────────────────────
+- pay_coach signature (unchanged, no PR-2 break):
+    (p_org uuid, p_coach uuid, p_season uuid, p_session_ids uuid[], p_amount_cents int,
+     p_status text, p_method text, p_paid_at timestamptz, p_notes text) RETURNS uuid
+- paid-only guard LIVE: p_status <> 'paid' RAISEs before any write (Migration D). So the
+  sheet calls with status='paid' and surfaces NO status choice for settlement.
+- EXECUTE granted to authenticated. SECURITY DEFINER, admin-gated inside (user_has_role_in_org).
+- Server-side validation the sheet relies on: pay_coach aborts if ANY selected session is
+  not the coach's, not in p_org, or pay_status <> 'owed'. So the sheet must only offer OWED
+  sessions; re-settling a paid/excluded session hard-errors (good — fail-loud).
+- On success: inserts one coach_payouts row (status='paid', source_assignments=p_session_ids)
+  AND flips those sessions to pay_status='paid' + settled_by_payout_id, atomically.
+
+──────────────────────────────────────────────────────────────────────
+SEASON GROUPING — one call per coach today
+──────────────────────────────────────────────────────────────────────
+p_season is NOT NULL. event_coach_assignments has no season; it derives via
+event→team→teams.season_id. LIVE today:
+    Coach Kenny  → Spring 2026 (b8a83563)  102 owed sessions  $12,240
+    Coach Darien → Spring 2026 (b8a83563)   35 owed sessions  $2,100
+ALL owed sessions for both coaches are in ONE season → one pay_coach call settles a coach.
+PR-2 must still GROUP selected sessions by season and call once per season (future-proof for
+when a coach has owed sessions across two seasons), but the pilot path is a single call.
+
+──────────────────────────────────────────────────────────────────────
+IMPLEMENTATION SHAPE (CC plan, for the architect's PR-2 prompt to confirm/adjust)
+──────────────────────────────────────────────────────────────────────
+1. useCoachDetail already returns sessions {id, pay_cents, pay_status, settled_by_payout_id,
+   title, startAt, teamName}. GAP: no season_id per session. PR-2 adds it — extend the teams
+   query to select season_id and stamp each session.seasonId (small, ≤150 LOC kept).
+2. PayCoachSheet (new, FullScreenForm per AP#15 — it's a multi-control settle flow): lists the
+   coach's OWED sessions (filter sessions to pay_status='owed'), checkbox select + "select all",
+   a sticky settle bar summing Σ selected pay_cents (read-only amount — the RPC trusts
+   p_amount_cents; we pass the computed sum), method (default from staff_profiles), paid_at.
+3. On settle: group selected by seasonId; for each group call
+   pay_coach(orgId, userId, seasonId, ids, sumCents, 'paid', method, paidAtIso, notes).
+   Pessimistic (money out): await, surface §16.3 error on failure, refetch on success.
+   Double-submit guard (a saving ref) — money mutation, no double-fire.
+4. Wire from FinancialCoachDetailPage (the render's "Pay coach" settle bar / action).
+
+──────────────────────────────────────────────────────────────────────
+SEED-DATA HEADS-UP FOR THE ARCHITECT (not a blocker; a display call)
+──────────────────────────────────────────────────────────────────────
+Darien has a $1,680 prior payout that carries source_assignments but whose sessions are
+still pay_status='owed' (the seed inconsistency you flagged). When PR-2 runs the first real
+settlement of his 35 owed sessions, it creates a NEW paid payout (+$2,100) and flips those
+sessions to paid. His owed → $0, but his PAID (Σ coach_payouts status='paid') becomes
+$2,780 (prior) + $2,100 (new) = $4,880 — the $1,680 prior double-counts the same work.
+Under leave-history-forward (DR-F2/F3) this is expected and we do NOT net. But the coach's
+"paid $4,880" will look inflated until PR-3's prior-vs-settled split lands. CALL: land PR-3
+(prior-payouts split) before any real pay_coach runs in production, OR retire the one $1,680
+seed row at PR-2. CC lean: retire that single seed row when PR-2 ships (cleanest; the rest of
+the seed payouts can stay per DR-F3) — but it's your call since it touches the leave-history
+discipline.
+
+──────────────────────────────────────────────────────────────────────
+GATE
+──────────────────────────────────────────────────────────────────────
+PR-2 moves real money out, so it keeps the explicit gate: hand the PR-2 build prompt + GO and
+CC builds it to this contract (targeted, FullScreenForm, pessimistic + double-submit guard,
+tested, live-verified that a settlement flips sessions + nets owed→$0 for the settled set).
