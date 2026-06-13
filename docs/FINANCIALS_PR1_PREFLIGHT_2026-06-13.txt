@@ -1,0 +1,79 @@
+PR-1 PRE-FLIGHT — CURRENT MATH OF THE 3 COACH HOOKS (CC → architect)
+Date: 2026-06-13. Per the PR-1 instruction: "report current math back first, do not
+guess" when a hook does not already group event_coach_assignments by pay_status.
+NONE of the three do. Reporting before any edit. One decision needed (PAID source).
+
+──────────────────────────────────────────────────────────────────────
+CURRENT MATH (exact, file:line)
+──────────────────────────────────────────────────────────────────────
+useCoachComp.js (coach's OWN home card)
+  owed = Σ coach_payouts WHERE status='pending'        (:24)   ← NOT sessions
+  paid = Σ coach_payouts WHERE status='paid'           (:25)
+  no balance/subtraction. Source: coach_payouts only. No season filter (audit A2).
+
+useCoachDetail.js (admin coach detail page)
+  owed = Σ sessions WHERE pay_status <> 'excluded'      (:37)   ← counts 'owed' AND
+         (future) 'paid' sessions as owed; not canonical
+  paid = Σ coach_payouts WHERE status='paid'            (:38)   ← coach_payouts
+  balanceCents = owedCents − paidCents                 (:44)   ← SUBTRACTS (the −$680 source)
+
+useCoachPayouts.js (admin coaches list)
+  owed = Σ rate × scope-aware session count             (:53)  ← rate×count, not Σ pay_cents
+  paid = Σ coach_payouts WHERE status='paid'            (:61)  ← coach_payouts
+  balanceCents = owed − paidCents                       (:72)  ← SUBTRACTS
+
+So: none compute owed as "Σ sessions WHERE pay_status='owed'"; all three take PAID from
+coach_payouts (not from sessions); two of three SUBTRACT paid from owed.
+
+──────────────────────────────────────────────────────────────────────
+THE CONTRADICTION IN THE PR-1 SPEC (needs your one-word call)
+──────────────────────────────────────────────────────────────────────
+The PR-1 canonical says:
+    owed = Σ event_coach_assignments.pay_cents WHERE pay_status='owed'
+    paid = Σ event_coach_assignments.pay_cents WHERE pay_status='paid'
+…but the PR-1 verification target says:
+    "Darien paid $2,780, Kenny paid $2,820"
+
+These cannot both hold. LIVE today: all 137 sessions are pay_status='owed', 0 'paid'.
+  → Σ sessions WHERE pay_status='paid' = $0 for EVERY coach.
+  → $2,780 / $2,820 are the Σ coach_payouts (all-seasons recorded payouts).
+So the canonical PAID formula yields $0, but the verification PAID number is the
+coach_payouts total. The OWED side is consistent (Σ sessions pay_status='owed' =
+Darien $2,100 / Kenny $12,240, matching the target). Only PAID is ambiguous.
+
+──────────────────────────────────────────────────────────────────────
+CC LEAN (AP#39 — committing to it)
+──────────────────────────────────────────────────────────────────────
+PR-1 converges OWED only, and removes the subtraction:
+  owedCents = Σ sessions WHERE pay_status='owed'   (all 3 hooks, scoped event→team→org)
+  REMOVE balanceCents = owed − paid everywhere (this is the −$680 artifact; "never subtract").
+For PAID, surface the coach_payouts total as a SEPARATE "paid to date / prior payouts"
+figure (= $2,780 / $2,820, matching the verification number AND the render's "Paid
+(prior)"), explicitly NOT netted against owed. The session-settled paid
+(Σ sessions pay_status='paid') is $0 today and only grows once pay_coach() settles
+sessions — that's PR-2/PR-3 territory (the prior-payouts split is literally PR-3).
+
+Rationale: the render shows "Owed now $2,100" (sessions) and "Paid (prior) $2,780"
+(payouts) as two separate, never-netted figures. The verification "$2,780/$2,820" is
+the payouts figure. The canonical "paid = Σ sessions paid" is the post-settlement
+figure ($0 now). Treating PR-1's "paid" as the coach_payouts prior-payouts total
+satisfies the verification, matches the render, and keeps owed pure.
+
+CONFIRM NEEDED (one word):
+  (a) PR-1 paid = Σ coach_payouts (prior payouts, $2,780/$2,820)  ← CC lean
+  (b) PR-1 paid = Σ sessions pay_status='paid' ($0 today; coach_payouts shown only in PR-3)
+Either way OWED converges to Σ sessions pay_status='owed' and the subtraction is removed.
+
+──────────────────────────────────────────────────────────────────────
+SEPARATE FLAG — migration-mirror + spec-doc parity gap
+──────────────────────────────────────────────────────────────────────
+A/B/C are registered live (schema_migrations confirms all three versions+names). But in
+the repo: only the C mirror existed to commit (this PR adds it). The A mirror
+(20260613203959_financials_invoices_settlement.sql) and B mirror
+(20260613204237_financials_elite_layer.sql) are NOT in supabase/migrations/. The
+addendum's "Mirror files for all three are in supabase/migrations/" is not yet true.
+Per AP#21 CC does not author migration mirrors for MCP-applied schema — please hand the
+A and B mirror .sql bodies (or approve CC reconstructing them from
+schema_migrations.statements) so `supabase db reset` can reproduce A/B/C. Also: the
+master spec (v1 + v2) and this addendum live only as chat uploads; this PR commits the
+v2 addendum + build queue; the master spec bodies should land too for a coherent doc set.
