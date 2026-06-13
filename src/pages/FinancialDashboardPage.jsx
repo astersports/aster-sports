@@ -4,6 +4,7 @@ import { ChevronLeft, Upload } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useSeasonFinancials } from '../hooks/useSeasonFinancials';
+import { useFamilyTeams } from '../hooks/useFamilyTeams';
 import { useFunnelRevenue } from '../hooks/useFunnelRevenue';
 import { formatCurrency } from '../lib/formatters';
 import { useGoBack } from '../hooks/useGoBack';
@@ -57,6 +58,7 @@ export default function FinancialDashboardPage() {
   // state across this page and admin-home's payment-overdue lane.
   // Previously inline at :57-69 here; extracted PR #303.
   const { accounts, balances, byAccount, stats, loading, refetch } = useSeasonFinancials(orgId, seasonId);
+  const { teamsByGuardian, teams: familyTeams } = useFamilyTeams(orgId, seasonId);
   const funnel = useFunnelRevenue(orgId);
 
   const fmt = formatCurrency;  // shared helper (style:currency) — identical $X,XXX.00 output
@@ -103,7 +105,7 @@ export default function FinancialDashboardPage() {
           </div>
 
           {segment === 'families' ? (
-            <FamilyBalanceList accounts={accounts} balances={balances} byAccount={byAccount} fmt={fmt} onRecordPayment={setPayingAccount}
+            <FamilyBalanceList accounts={accounts} balances={balances} byAccount={byAccount} fmt={fmt} teamsByGuardian={teamsByGuardian} teams={familyTeams} onRecordPayment={setPayingAccount}
               onNudge={(family) => {
                 const uid = family.guardians?.user_id;
                 navigate(uid ? `/messages?dm=${uid}` : '/messages');
