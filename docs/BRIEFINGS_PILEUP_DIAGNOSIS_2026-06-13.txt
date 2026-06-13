@@ -1,0 +1,122 @@
+==============================================================================
+BRIEFINGS AUTO-DRAFT / SEND PILE-UP — DIAGNOSIS — 2026-06-13
+Operator-flagged (session-2 handoff): "Auto-retry exhausted on 7+ DUPLICATED
+copies of one RSVP nudge + 47 drafts stacked." Read-only diagnosis (no code
+or data changed). Production state via MCP + send-path code read (AP#60).
+Acting architect: CC. Ratifier: Frank. Fix-wave + asks at the bottom.
+==============================================================================
+
+SUMMARY
+Three distinct phenomena, NONE an active data leak. Two are one incident
+(the duplicate nudge), one is ongoing-by-design (the draft flood):
+  A. DRAFT FLOOD — 59 open drafts, dominated by 36 game_recap (one per
+     completed game) + 12 rsvp_nudge. By design; self-expiring.
+  B. DUPLICATE NUDGE MESSAGES — 7 identical rsvp_nudge messages minted in a
+     23-min burst (no send-dedup). The "7+ copies."
+  C. SEND FAILURE — those same 7 messages' recipient rows are terminal
+     failed (redrive exhausted). TRANSIENT — the address is healthy.
+
+------------------------------------------------------------------------------
+A. DRAFT FLOOD (the "47 stacked", now 59)
+------------------------------------------------------------------------------
+comms_messages status=draft for LH = 59 rows:
+  game_recap 36 · rsvp_nudge 12 · tournament_prelim 4 · games_recap 4 ·
+  tournament_recap 2 · announcement 1.
+ALL 36 game_recap are auto-drafted (created_by_trigger set). Source = the
+ACTIVE briefing_trigger `game_completed → game_recap` (lead_time_hours 0):
+every completed game auto-drafts a recap. 36 completed games since ~May 31
+⇒ 36 unsent drafts. Frank rarely SENDS recaps, so they accumulate in the
+Radar.
+NOT a leak: every draft carries expires_at; ZERO past-expiry rows remain
+(the cleanup runs). game_recap expiry ≈ 14 days (oldest expire today);
+rsvp_nudge expiry ≈ 1-2 days (self-clears fast). The pile is real but
+self-draining; it just looks alarming because per-game recap drafting
+out-paces sending.
+ARCHITECTURAL NOTE (feeds B): sending does NOT consume the draft.
+`sendRsvpNudge` resolves+composes FRESH and INSERTs a new row; the auto-draft
+it was "sending" stays status=draft. So drafts are never retired by sending —
+only by expiry. Same shape for the other registry kinds.
+
+------------------------------------------------------------------------------
+B. DUPLICATE NUDGE MESSAGES (the "7+ copies of one nudge")
+------------------------------------------------------------------------------
+7 separate comms_messages rows, IDENTICAL subject "RSVP needed for Hudson:
+10U Black Game 1: Atlantic Sharks Black", same anchor event, all minted
+2026-06-11 18:05–18:28 (≈6/0:09/0:23/2/3/11-min gaps — human retry cadence),
+all status=sent, each fanned to the pilot redirect olivejuiceinc1@gmail.com.
+ROOT CAUSE (code, src/lib/rsvpNudgeSend.js:76): the send path
+UNCONDITIONALLY `INSERT`s a new comms_messages on every call — no guard
+against an existing sent/draft nudge for the same (org, kind, anchor_id).
+Combined with the throw-on-failure at :101, a transient dispatch failure
+surfaces an error → operator retries → a NEW duplicate message is minted →
+repeat. 7 attempts ⇒ 7 rows. (The current 12 DRAFT nudges are distinct
+anchors — the dedup gap only manifests on repeated SENDs, and the older
+dupes are already archived: 77 archived rsvp_nudge.)
+
+------------------------------------------------------------------------------
+C. SEND FAILURE (the "auto-retry exhausted")
+------------------------------------------------------------------------------
+comms_message_recipients for LH: 37 delivered · 16 opened · 16 sent · 1
+clicked · 7 FAILED (redrive_count=3, terminal). The 7 failed = the 7 dup
+nudge rows from B.
+The address is HEALTHY: olivejuiceinc1@gmail.com has 28 delivered (Jun 3-9)
++ 2 sent (Jun 11-12) + the 7 failed (Jun 11 burst only). So the failure was
+TRANSIENT — almost certainly a rate-limit/throttle from 7 near-identical
+sends in 23 min, or a brief Resend hiccup — NOT a broken address or ongoing
+outage. The _redrive retried each 3× and gave up (terminal failed). No error
+string is stored on the row (the recipients table has no bounce_reason
+column — phantom, per the §FORK-E E3+E4 audit), so the precise provider
+error isn't in the DB; the delivered-before-and-after pattern is the
+evidence.
+
+------------------------------------------------------------------------------
+WHY IT LOOKED WORSE THAN IT IS
+------------------------------------------------------------------------------
+- The duplicate + failure are ONE incident (Jun 11, one nudge, 7 manual
+  retries through a transient throttle). Not a recurring fault.
+- The draft flood is by-design auto-drafting that self-expires; the alarming
+  count is per-game recap drafts nobody sends.
+- No families were spammed: the dupes all went to the PILOT inbox (redirect
+  mode), and all 7 FAILED anyway.
+
+==============================================================================
+FIX-WAVE PLAN (nothing applied — awaiting ratification per the lane's
+"diagnose first, then decide" framing)
+==============================================================================
+F-1  SEND-DEDUP / DRAFT-CONSUMPTION (code, the real fix for B). Two shapes:
+     (a) MINIMAL: in sendRsvpNudge, before INSERT, check for a sent
+         rsvp_nudge with the same anchor_id within a window (e.g. 6h); if
+         present, short-circuit with a friendly "already sent ~Xm ago"
+         instead of minting a dup. Lowest risk.
+     (b) PROPER: wire send to CONSUME the draft — sending transitions the
+         existing draft row to status=sent (idempotent per draft) instead
+         of inserting a new row. Fixes B AND drains A (sent drafts leave the
+         pile immediately). Bigger change across the registry send paths.
+     CC lean: (a) now (unblocks the dup class fast, low risk), (b) as a
+     follow-up registry-wide refactor. AP#39: (b) is the truer fix — flagged.
+F-2  TRANSIENT-FAILURE UX (code, supports B/C): on dispatch failure, the
+     send path should surface "couldn't send, we'll keep the draft — try
+     again" WITHOUT having already minted a row, so a retry can't duplicate.
+     Falls out of F-1(b) naturally; with F-1(a) it's a separate guard.
+F-3  DATA CLEANUP (safe, reversible): archive the 7 dead failed duplicate
+     nudge messages (past event, Jun 11) so the Radar/history stops showing
+     them. One UPDATE … SET status='archived'. SAFE — they're terminal
+     failures for a past event.
+F-4  GAME_RECAP AUTO-DRAFT POLICY (PRODUCT CALL, no code until ruled):
+     the game_completed→game_recap trigger drafts one recap per game and
+     Frank rarely sends them. Options:
+       (i)  keep as-is (self-expiring; accept the Radar volume);
+       (ii) DISABLE the trigger (set briefing_triggers.active=false) — Frank
+            composes a recap manually when he wants one;
+       (iii) shorten game_recap draft expiry (faster Radar drain);
+       (iv) switch game_recap to a WEEKLY games_recap digest (one draft/week
+            instead of one/game) — games_recap kind already exists.
+     CC lean: (iv) or (ii) — per-game recap auto-draft is the only trigger
+     whose output volume out-paces sending; the weekly digest already covers
+     "what happened this week."
+
+RATIFICATION ASKS
+  1. F-1 shape: (a) minimal dedup now, or (b) proper draft-consumption?
+  2. F-3 cleanup: archive the 7 dead failed dup messages? (safe)
+  3. F-4 ruling: game_recap auto-draft — keep / disable / shorten / weekly?
+==============================================================================

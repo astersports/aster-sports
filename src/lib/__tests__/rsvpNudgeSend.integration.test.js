@@ -23,18 +23,24 @@ vi.mock('../engine/resolvers/registry', async () => {
   };
 });
 
-const { sendRsvpNudge } = await import('../rsvpNudgeSend');
+const { sendRsvpNudge, AlreadySentError } = await import('../rsvpNudgeSend');
 const { queueComposedMessages } = await import('../briefings/queueComposedMessages');
 const { NoRecipientsError, RESOLVER_REGISTRY } = await import('../engine/resolvers/registry');
 
-function mockSupabase({ mintError = false } = {}) {
+function mockSupabase({ mintError = false, priorSent = null } = {}) {
   const tableChain = (table) => {
     const chain = {
       insert: vi.fn(() => chain),
       select: vi.fn(() => chain),
       single: vi.fn(() => Promise.resolve({ data: { id: `${table}-row-1` }, error: null })),
       update: vi.fn(() => chain),
-      eq: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      // F-1(a) dedup query is a chain ending in maybeSingle; priorSent
+      // controls whether a prior sent nudge is "found".
+      eq: vi.fn(() => chain),
+      gte: vi.fn(() => chain),
+      order: vi.fn(() => chain),
+      limit: vi.fn(() => chain),
+      maybeSingle: vi.fn(() => Promise.resolve({ data: priorSent, error: null })),
     };
     return chain;
   };
@@ -111,5 +117,17 @@ describe('sendRsvpNudge — integration', () => {
     await expect(sendRsvpNudge({ state: baseState(), supabase: mockSupabase({ mintError: true }), now: new Date('2026-05-10T14:00:00Z') }))
       .rejects.toThrow(/mint_rsvp_token failed: rpc-failed/);
     expect(queueComposedMessages).not.toHaveBeenCalled();
+  });
+
+  it('5. F-1(a) send-dedup: a prior sent nudge for the event short-circuits before mint/queue', async () => {
+    RESOLVER_REGISTRY.rsvp_nudge.resolve.mockResolvedValueOnce({
+      context: baseContext,
+      slices: [sliceWithKids('g1', 'g1@x', [{ player_id: 'p1', first_name: 'Hudson' }])],
+    });
+    const supa = mockSupabase({ priorSent: { id: 'prior-msg', sent_at: '2026-05-10T13:00:00Z' } });
+    await expect(sendRsvpNudge({ state: baseState(), supabase: supa, now: new Date('2026-05-10T14:00:00Z') }))
+      .rejects.toBeInstanceOf(AlreadySentError);
+    expect(supa.rpc).not.toHaveBeenCalled();          // no token mint
+    expect(queueComposedMessages).not.toHaveBeenCalled(); // no queue, no dup row
   });
 });
