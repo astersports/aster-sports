@@ -25,6 +25,25 @@ import { EMAIL_WRAPPER_CLOSE, EMAIL_WRAPPER_OPEN } from './emailWrapper';
 
 const RSVP_HANDLER_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rsvp-token-handler`;
 
+// F-1(a) send-dedup window (briefings pile-up diagnosis 2026-06-13). A
+// transient dispatch hiccup surfaced as an error → the operator retried →
+// each retry minted a fresh comms_messages (the Jun-11 7-dupe burst to the
+// pilot inbox). Guard: if a nudge for this event was already SENT within
+// the window, the existing message owns it — short-circuit, don't mint a
+// dup. (The proper fix — sending CONSUMES the auto-draft — is the queued
+// F-1(b) registry-wide refactor.)
+const SEND_DEDUP_WINDOW_MS = 6 * 60 * 60 * 1000;
+
+export class AlreadySentError extends Error {
+  constructor(eventId, existingMessageId) {
+    super('A nudge for this event was already sent in the last few hours.');
+    this.name = 'AlreadySentError';
+    this.code = 'ALREADY_SENT';
+    this.eventId = eventId;
+    this.existingMessageId = existingMessageId;
+  }
+}
+
 async function mintRsvpToken(supabase, eventId, playerId, guardianId, response) {
   const { data, error } = await supabase.rpc('mint_rsvp_token', {
     p_event_id: eventId, p_player_id: playerId, p_guardian_id: guardianId, p_response: response,
@@ -58,6 +77,21 @@ export async function sendRsvpNudge({ state, supabase, now = new Date() }) {
   const { context, slices } = await entry.resolve(anchor, { supabase, now });
   if (!slices.length) throw new NoRecipientsError('rsvp_nudge', anchor);
 
+  // F-1(a): block a duplicate send for the same event within the window.
+  const orgId = context.org?.id;
+  if (orgId) {
+    const since = new Date(now.getTime() - SEND_DEDUP_WINDOW_MS).toISOString();
+    const { data: priorSent, error: dedupErr } = await supabase
+      .from('comms_messages')
+      .select('id, sent_at')
+      .eq('org_id', orgId).eq('kind', 'rsvp_nudge')
+      .eq('anchor_id', anchor.eventId).eq('status', 'sent')
+      .gte('sent_at', since)
+      .order('sent_at', { ascending: false }).limit(1).maybeSingle();
+    if (dedupErr) throw dedupErr;
+    if (priorSent) throw new AlreadySentError(anchor.eventId, priorSent.id);
+  }
+
   const sampleComposed = entry.compose(context, slices[0], overrides);
 
   const messages = [];
@@ -68,7 +102,6 @@ export async function sendRsvpNudge({ state, supabase, now = new Date() }) {
     messages.push({ slice, subject, content_sections: substituted });
   }
 
-  const orgId = context.org?.id;
   const teamId = context.team?.id || context.event?.team_id || null;
   const sampleHtml = EMAIL_WRAPPER_OPEN + renderSections(sampleComposed.content_sections) + EMAIL_WRAPPER_CLOSE;
   const samplePlain = renderSectionsPlainText(sampleComposed.content_sections);

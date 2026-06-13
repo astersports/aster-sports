@@ -852,8 +852,14 @@ arc bodies.
   redirect, all failed). Fix-wave proposed (none applied): F-1 send-dedup/draft-consumption
   (lean: minimal anchor-window guard now, draft-consumption refactor follow-up), F-2 transient
   UX, F-3 archive the 7 dead dup messages (safe), F-4 game_recap auto-draft policy (PRODUCT CALL:
-  keep/disable/shorten/weekly; CC lean weekly-or-disable). THREE ASKS open. NEXT: Frank rules the
-  fix-wave; nothing changes until ratified.
+  keep/disable/shorten/weekly; CC lean weekly-or-disable). THREE ASKS open.
+  **RULED + EXECUTED (Frank 2026-06-13: "Follow your lead and weekly recaps. Archive the dead
+  dupes."):** F-1(a) send-dedup SHIPPED in rsvpNudgeSend (6h anchor-window guard + AlreadySentError
+  + integration test; PR #1020 carries the fix). F-3 EXECUTED (MCP): 7 dead dup nudges archived.
+  F-4 EXECUTED (MCP): game_completed→game_recap trigger DISABLED (weekly recaps via the existing
+  Sunday weekly_digest) + 36 obsolete per-game game_recap drafts archived (Radar 59→23). F-1(b)
+  proper draft-consumption refactor + F-2 transient UX = queued (TIER 3, session handoff). Session
+  wrap: `docs/CC_SESSION_HANDOFF_2026-06-13.txt`.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player

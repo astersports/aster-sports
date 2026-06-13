@@ -1,0 +1,95 @@
+==============================================================================
+CC SESSION HANDOFF — 2026-06-13 (schedule audit → locations → briefings)
+Relay artifact (§11.8 r5). What shipped, what's live-via-data, what's open,
+and the recommendation set to WRAP this session. Acting architect: CC.
+Ratifier: Frank.
+==============================================================================
+
+SHIPPED (merged to main, deploying/deployed)
+  #1012  schedule full-audit synthesis doc (8-lane).
+  #1013  Wave 1+1b — THE gate-chain helper (lib/featureGates) enforced at
+         hook entry; rsvp-nudge eligibility (unactivated academy excluded
+         from game nudges).
+  #1014  Wave 2 — detail/team RSVP denominator parity (SD-6); TeamDetailHero
+         D4 buttons; ChildRsvp pills variant retired; either-error guard.
+  #1015  RSVP-TAB eligibility hotfix (operator-caught) — unactivated academy
+         on a game gets no control on the detail RSVP tab.
+  #1016  Locations/directions — wizard writes location_id FK; §15 name-only
+         = Google-only; prelim draft venue guard; Games density+weather.
+  #1017  Event KIND pill (program-aware) on schedule cards.
+  #1018  Aster Sports wordmark on the login front door.
+  #1019  Wave 3 — type-scale conformance + dead-code (stagger, RsvpCountRow).
+  #1020  briefings pile-up diagnosis (this PR also carries the F-1(a) fix +
+         this handoff — see below).
+
+LIVE VIA DATA (MCP, operator-approved; not in any diff)
+  - 11 events FK-backfilled to venue rows; Harry S. Truman HS row created.
+  - East Coast Sports & Fitness verified coords written (41.276815,
+    -73.776863) from Frank's Waze pin; the other 10 address-bearing venues
+    had unverified coords NULLED (Apple/Waze build from street address).
+  - Briefings cleanup THIS TURN: 7 dead duplicate rsvp_nudge messages
+    archived; game_completed→game_recap trigger DISABLED (weekly recaps
+    per operator ruling); 36 obsolete per-game game_recap drafts archived.
+    Radar drafts 59 → 23.
+
+OPEN — RECOMMENDATIONS TO FINISH (everything identified, triaged)
+
+  TIER 1 — verify-then-done (operator, ~3 min; no code):
+  V1. Re-tap Waze on the Atlantic Sharks game → should route to 201
+      Veterans Rd, Yorktown Heights (coords now correct).
+  V2. Confirm Harry S. Truman HS address (750 Baychester Ave, Bronx) —
+      CC-entered, not a verified pin. Fix at /admin/locations if wrong.
+  V3. (optional) For the other tournament venues, if any still mis-route,
+      send the Waze share link and CC writes verified coords (the only
+      durable fix until a verified-pin paste flow exists — see C-2).
+
+  TIER 2 — schedule perf (PARKED; CC-buildable on GO; riskier hot-hook
+  refactors, that's why they're not auto-run):
+  P-F12. Org-scope defense-in-depth on useScheduleData batch queries (AP#37).
+  P-F13. Dedup the dual useScheduleData instance on route transitions
+         (Schedule→TeamDetail double-fires the batch).
+  P-F14. Hold the suppression-dependent render until the program row resolves
+         (brief count flash on tryout/eval programs).
+  P-F17. Trim the useNow 60s tick re-renders on the schedule list.
+  Recommendation: bundle as one "schedule perf" PR with before/after
+  request-count + render evidence. Low user-visible payoff; do when the
+  build queue is quiet.
+
+  TIER 3 — briefings follow-ups (from today's diagnosis):
+  B-F1b. PROPER send-dedup: make sending CONSUME the auto-draft (transition
+         the draft row to sent) instead of inserting a new row — fixes the
+         dup class registry-wide AND drains the draft pile on send. Today's
+         #1020 shipped F-1(a) (the minimal anchor-window guard on
+         rsvp_nudge only); F-1(b) is the truer fix (AP#39) and should cover
+         all registry kinds. CC-buildable on GO.
+  B-F2.  Transient-failure UX: on dispatch failure, surface "kept the draft,
+         try again" WITHOUT a minted row, so retries can't dup. Falls out of
+         F-1(b).
+  B-3.   recipients table has no error column (phantom bounce_reason) — a
+         real provider-error column would have made today's transient-vs-
+         outage call instant instead of inferred. Small migration when
+         briefings get their next pass.
+
+  TIER 4 — capability arcs (architect-laned, not started; from the ledger):
+  C-1 per-venue weather (DB-10) · C-2 admin verified-pin paste→decode flow
+  (closes the coords-trust gap for all venues) · C-9 family-hub ph2 · C-10
+  AI · C-11 push. These are roadmap, not session-blockers.
+
+  CARRIED (unchanged): FORK E legal/CAN-SPAM (pilot stays ON until a footer
+  address or per-kind send gate) · the FU-1..FU-3 / D-b / D-d carried
+  triggers in ledger §4.
+
+WHAT "WRAP THIS SESSION" MEANS (CC recommendation)
+  The operator-visible problems from tonight are all CLOSED or self-draining:
+  RSVP eligibility, directions, type labels, login brand, the draft pile,
+  and the duplicate-nudge class (guarded). Nothing left is user-blocking.
+  Recommended stop point: HERE, after V1/V2 verifies. Everything in Tier
+  2-4 is improvement, not repair — each is a clean "Go" when you want it.
+  Suggested next session opener: Tier 3 B-F1b (the proper send-dedup
+  refactor) if briefings stay in focus, else Tier 2 perf, else a capability
+  arc.
+
+ASKS CARRIED INTO NEXT SESSION (none blocking tonight)
+  - GO target for next build (B-F1b / perf / capability arc)?
+  - V2 Truman address confirmation.
+==============================================================================
