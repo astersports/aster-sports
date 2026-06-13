@@ -124,3 +124,27 @@ then the address IS the Apple/Waze source. Re-verify ask #3 stands: the
 Waze button should now open a search for "201 Veterans Rd, Yorktown
 Heights, NY 10598".
 ==============================================================================
+
+------------------------------------------------------------------------------
+ADDENDUM 2 — VERIFIED-COORD FIX (Frank Waze link, 02:02 UTC)
+------------------------------------------------------------------------------
+Address-fallback was NOT enough for East Coast: Waze's ?q=<address>
+search still mis-routed (Apple/Google were fine). Frank supplied the
+authoritative Waze share link (waze.com/ul/hdr7dc4jqf); the `h`-prefix
+encodes a 9-char geohash (dr7dc4jqf, dr7 = Westchester cell). Decoded
+(programmatically, ±2m): lat 41.276815, lon -73.776863. This EXPOSED the
+original backfill bug — the bad longitude (-73.7856) was 734m too far
+WEST; latitude (41.2764) was only 46m off. Wrote the verified coords to
+the East Coast row → Waze/Apple now build ll=41.276815,-73.776863
+(deterministic, no search); Google keeps the pin.
+
+DOCTRINE (refines Addendum 1): coords on a venue row are trustworthy
+when they come from a VERIFIED PIN flow (operator's Google/Waze pin) —
+those BEAT address-search and are the Apple/Waze source. Null coords
+only when NO verified source exists (address-search is the weaker
+fallback, fine for Apple, unreliable for Waze). The admin geocode-on-
+save path uses Nominatim — same weak class — so do NOT trust auto-
+geocoded coords as "verified." A future verified-pin paste flow (admin
+pastes a Waze/Google link, we decode → coords) would close this for all
+venues; until then it's a per-venue operator paste.
+==============================================================================

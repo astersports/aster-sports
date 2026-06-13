@@ -824,8 +824,16 @@ arc bodies.
   never migrated; CC's "plausible" read was inference — device test = ground truth, AP#60).
   Executed live: lat/lon NULLED on all 11 address-bearing venue rows — Apple/Waze build from the
   Frank-curated street address; Google keeps the verified pin; the 4 region placeholder rows
-  keep coords (no address, by design). Doc addendum in same PR. NEXT: Frank re-taps Waze on the
-  Atlantic Sharks game (should search 201 Veterans Rd) + Truman address verify + W3 on signal.
+  keep coords (no address, by design). Doc addendum in same PR. **ADDENDUM 2 (Frank Waze link
+  02:02 UTC):** address-fallback STILL mis-routed East Coast in Waze (Apple/Google fine). Frank
+  sent the authoritative Waze share link (waze.com/ul/hdr7dc4jqf); decoded the `h`-prefix geohash
+  (dr7dc4jqf → 41.276815/-73.776863, ±2m) — exposing the original backfill bug: longitude was
+  734m too far WEST. Wrote verified coords to the East Coast row (live MCP) → Waze/Apple now
+  ll-route deterministically. DOCTRINE refined: verified-PIN coords (operator Google/Waze link)
+  BEAT address-search and are trustworthy; auto-geocoded (Nominatim) coords are NOT "verified";
+  null coords only when no verified source. Future: an admin verified-pin paste→decode flow would
+  close this for all venues. NEXT: Frank re-taps East Coast Waze (now coord-routed) + offer to
+  write verified coords for the other tournament venues if he sends their Waze links + W3 on signal.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
