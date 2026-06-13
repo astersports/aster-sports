@@ -22,7 +22,7 @@ const railTime = (iso) => new Date(iso).toLocaleTimeString('en-US', { hour: 'num
 // the schedule's axis: team-colored time numerals + weather; content =
 // title row (ONE status pill max) · meta line · facts line · RSVP.
 // Compact is the same bones at 17px rail + folded venue (R2-1/R2-2).
-export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount, stagger, isNext, density = 'minimal', gameResult, weather, childRsvpMap, activatedMap, commitment, suppressCount, onRsvpChange }) {
+export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount, isNext, density = 'minimal', gameResult, weather, childRsvpMap, activatedMap, commitment, suppressCount, onRsvpChange }) {
   const navigate = useNavigate();
   const { role, myChildren, org } = useAuth();
   const now = useNow();
@@ -56,7 +56,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
     <div
       role="link" tabIndex={0}
       aria-label={`${team?.name || ''} ${prefix}${body}, ${hm} ${mer}${live ? ', happening now' : ''}`}
-      className={`as-press ${(isCancelled || completed) ? '' : (stagger || '')}`}
+      className="as-press"
       onClick={(e) => { if (e.target.closest('a, button')) return; open(); }}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } }}
       style={{
@@ -70,7 +70,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
     >
       {/* V2.1: the tag ABSORBS the countdown — one element, no collision
           with the status slot (the deployed tag half-covered the pill). */}
-      {nowSlot && <div style={{ position: 'absolute', top: 0, right: 14, backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', padding: '3px 9px', borderRadius: '0 0 7px 7px', textTransform: 'uppercase', zIndex: 1 }}>Next up · {formatCountdown(event.start_at)}</div>}
+      {nowSlot && <div style={{ position: 'absolute', top: 0, right: 14, backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', padding: '3px 9px', borderRadius: '0 0 7px 7px', textTransform: 'uppercase', zIndex: 1 }}>Next up · {formatCountdown(event.start_at)}</div>}
 
       {/* R2-1 rail — V2.1: detailed hour to 24px (scale top) so the pair
           separates at arm's length; compact stays 17. */}
@@ -128,7 +128,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
           <div onClick={(e) => e.stopPropagation()}>
             {rsvpKids.map((child) => (
               <div key={child.playerId}>
-                {rsvpKids.length > 1 && <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--as-text-secondary)', marginTop: 8 }}>{child.firstName}</div>}
+                {rsvpKids.length > 1 && <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--as-text-secondary)', marginTop: 8 }}>{child.firstName}</div>}
                 <ChildRsvp child={child} eventId={event.id} eventType={event.event_type} variant={compact ? 'segmented' : 'buttons'}
                   disabled={!isRsvpOpen(event.start_at, now)}
                   initialResponse={childRsvpMap ? (childRsvpMap[cacheKey(event.id, child.playerId)] ?? null) : undefined}
@@ -139,7 +139,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
           </div>
         )}
         {role === 'parent' && kids.length > 0 && live && (
-          <div style={{ marginTop: compact ? 6 : 8, fontSize: 12, color: 'var(--as-text-tertiary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ marginTop: compact ? 6 : 8, fontSize: 13, color: 'var(--as-text-tertiary)', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Lock size={12} strokeWidth={1.75} aria-hidden="true" />RSVP closed
           </div>
         )}

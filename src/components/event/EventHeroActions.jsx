@@ -23,7 +23,7 @@ import { isRsvpOpen, PARENT_ARRIVAL_WINDOW_AFTER_MS, PARENT_ARRIVAL_WINDOW_BEFOR
 import { composeFromEvent } from '../../lib/briefings/composeFromEvent';
 
 const ROW = { display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' };
-const BTN = { flex: '1 1 140px', minHeight: 44, padding: '0 14px', borderRadius: 10, border: 'none', backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 };
+const BTN = { flex: '1 1 140px', minHeight: 44, padding: '0 14px', borderRadius: 10, border: 'none', backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 15, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 };
 const BTN_SEC = { ...BTN, backgroundColor: 'transparent', color: 'var(--as-accent)', border: '1px solid var(--as-accent)' };
 
 export default function EventHeroActions({
@@ -53,7 +53,7 @@ export default function EventHeroActions({
       <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
         {kids.map((c) => (
           <div key={c.playerId}>
-            {kids.length > 1 && <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--as-text-secondary)' }}>{c.firstName}</div>}
+            {kids.length > 1 && <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--as-text-secondary)' }}>{c.firstName}</div>}
             <ChildRsvp child={c} eventId={event.id} eventType={event.event_type} variant="buttons" disabled={!isRsvpOpen(event.start_at, now)} onSave={onRsvpChange} />
           </div>
         ))}
