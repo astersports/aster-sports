@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -20,24 +20,33 @@ export default function FinancialFamilyDetailPage() {
   const { accountId } = useParams();
   const { orgId, user } = useAuth();
   const goBack = useGoBack('/admin/financials');
-  const { account, balances, transactions, loading, refetch } = useFamilyLedger(orgId, accountId);
+  const { account, balances, transactions, loading, error, refetch } = useFamilyLedger(orgId, accountId);
   const [recording, setRecording] = useState(false);
   const [charging, setCharging] = useState(false);
   const [voidTxn, setVoidTxn] = useState(null);
+  const [voidErr, setVoidErr] = useState(null);
+  const voidingRef = useRef(false);
 
   const reversedIds = useMemo(() => new Set(transactions.filter((t) => t.reverses_transaction_id).map((t) => t.reverses_transaction_id)), [transactions]);
 
+  // Append-only: void = a reversing insert. Surface failure (don't report
+  // success): keep the dialog open + show the error, refetch only on success.
+  // voidingRef blocks a double-tap (the unique index on reverses_transaction_id
+  // would reject the 2nd, but we shouldn't fire it).
   const doVoid = async (t) => {
-    setVoidTxn(null);
+    if (voidingRef.current) return;
+    voidingRef.current = true; setVoidErr(null);
     const { error } = await supabase.from('financial_transactions').insert({
       account_id: accountId, org_id: orgId, transaction_type: t.transaction_type, amount_cents: t.amount_cents,
       reverses_transaction_id: t.id, occurred_at: new Date().toISOString(), recorded_by: user.id, notes: 'Void',
     });
-    if (error) console.error('void transaction:', error.message);
-    refetch();
+    voidingRef.current = false;
+    if (error) { console.error('void transaction:', error.message); setVoidErr('Looks like that didn’t go through — it may already be voided. Try again?'); return; }
+    setVoidTxn(null); refetch();
   };
 
   if (loading) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Loading…</div>;
+  if (error) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Couldn&rsquo;t load this family&rsquo;s balance. Try again in a moment.</div>;
   if (!account) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Family not found.</div>;
 
   const name = account.guardians ? `${account.guardians.first_name} ${account.guardians.last_name}` : 'Unknown';
@@ -94,8 +103,8 @@ export default function FinancialFamilyDetailPage() {
       </Suspense>
       {voidTxn && (
         <ConfirmDialog title="Void this transaction?" destructive confirmLabel="Void"
-          message={`Posts a reversing entry for ${TYPE[voidTxn.transaction_type]?.label || 'this'} · ${formatCurrency(voidTxn.amount_cents)}. The original stays on the ledger, struck through.`}
-          onConfirm={() => doVoid(voidTxn)} onCancel={() => setVoidTxn(null)} />
+          message={`Posts a reversing entry for ${TYPE[voidTxn.transaction_type]?.label || 'this'} · ${formatCurrency(voidTxn.amount_cents)}. The original stays on the ledger, struck through.${voidErr ? `\n\n${voidErr}` : ''}`}
+          onConfirm={() => doVoid(voidTxn)} onCancel={() => { setVoidTxn(null); setVoidErr(null); }} />
       )}
     </div>
   );

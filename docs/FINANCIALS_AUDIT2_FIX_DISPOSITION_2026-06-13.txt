@@ -1,0 +1,124 @@
+FINANCIALS — 11-AGENT AUDIT #2 FIX DISPOSITION (CC → architect / Frank)
+Date: 2026-06-13. Audit ran on the post-Migration-A-E + PR-1/PR-2 state.
+All findings verified live (vrwwpsbfbnveawqwbdmj, org e3e95e21…).
+
+══════════════════════════════════════════════════════════════════════
+SHIPPED BY CC (auto-executed per Frank's "auto execute the fixes")
+══════════════════════════════════════════════════════════════════════
+PR #1059 (fix/coach-settlement-edit-safety) — settlement-edit desync cluster:
+  • P0 settled-session edit: paid sessions no longer open CoachSessionSheet
+    (page guard) + the sheet is read-only for a settled session (defense-in-depth).
+  • P0/P1 payout edit/delete: CoachPayoutEditSheet locks amount+status for
+    source-bearing (settlement) payouts; error-checks the un-settle UPDATE and
+    aborts the delete on failure; confirm step names the impact (un-settle N).
+  • P1 PayCoachSheet multi-season partial failure: tracks committed seasons,
+    refetches on partial so none are stranded stale-selectable.
+  • F1 seasonId from events.season_id (rollover-correct). F2 Select-all 44px.
+  • Double-submit savingRef guards on CoachSessionSheet/CoachPayoutEditSheet/
+    RecordCoachPayoutForm (last = real-money duplicate-insert).
+
+Migration 20260613233000_financial_function_grants_and_fk_indexes (applied + mirrored):
+  • REVOKE EXECUTE on pay_coach + next_invoice_number FROM PUBLIC + anon (AP#23/#57).
+  • next_invoice_number: added the missing admin auth check (was anon-callable
+    cross-tenant info leak); dropped the no-op FOR UPDATE-on-aggregate (UNIQUE +
+    retry-on-23505 is the PR-5 concurrency contract).
+  • 6 FK covering indexes on invoices/payment_plans/ppi/financial_transactions.
+  Verified live: anon revoked on both, authenticated retained, auth check present.
+
+This PR (chore/financial-audit-hardening) — family-side:
+  • P0 doVoid reports-success-on-failure: surfaces the error + keeps the dialog
+    open, refetches only on success, voidingRef double-tap guard.
+  • P2 useFamilyLedger error state: a load failure now renders "Couldn't load…"
+    instead of masquerading as "Family not found."
+  • Migration 20260613233000 mirror.
+
+══════════════════════════════════════════════════════════════════════
+DEFERRED TO ARCHITECT — two fixes that warrant your verification/lane
+(exact SQL ready below; both are LATENT today, not live-corrupting)
+══════════════════════════════════════════════════════════════════════
+
+[1] pay_coach TOCTOU + blind p_amount_cents (HIGH, latent — needs concurrent
+    admins; LH has 1-2). You own pay_coach and just verified it in PR-2 review,
+    so this rewrite is yours to apply + verify. The bug: pay_coach INSERTs the
+    payout (with the caller's p_amount_cents) BEFORE the UPDATE, and the UPDATE
+    is `WHERE id = ANY(p_session_ids) AND pay_status='owed'`. A race where the
+    sessions were settled between validate and update flips 0 rows but still
+    commits a full-amount paid payout → phantom double-pay. Also the amount is
+    trusted blindly (never recomputed from the flipped sessions).
+    FIX (UPDATE→RETURNING first, abort if short, INSERT amount from flipped rows):
+
+    CREATE OR REPLACE FUNCTION public.pay_coach(
+      p_org uuid, p_coach uuid, p_season uuid, p_session_ids uuid[],
+      p_amount_cents int, p_status text, p_method text, p_paid_at timestamptz, p_notes text
+    ) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth AS $fn$
+    DECLARE v_payout uuid; v_flipped uuid[]; v_sum int;
+    BEGIN
+      IF NOT user_has_role_in_org(p_org, ARRAY['admin']) THEN RAISE EXCEPTION 'not authorized'; END IF;
+      IF p_status <> 'paid' THEN RAISE EXCEPTION 'pay_coach settles paid sessions only'; END IF;
+      -- Flip first; only the coach's owed, in-org sessions flip. RETURNING gives
+      -- us exactly what settled.
+      WITH flipped AS (
+        UPDATE event_coach_assignments ea SET pay_status='paid'
+        FROM events e JOIN teams t ON t.id=e.team_id
+        WHERE ea.id = ANY(p_session_ids) AND ea.event_id=e.id
+          AND ea.coach_user_id=p_coach AND ea.pay_status='owed' AND t.org_id=p_org
+        RETURNING ea.id, ea.pay_cents
+      )
+      SELECT array_agg(id), COALESCE(sum(pay_cents),0) INTO v_flipped, v_sum FROM flipped;
+      IF v_flipped IS NULL OR array_length(v_flipped,1) <> array_length(p_session_ids,1) THEN
+        RAISE EXCEPTION 'settlement aborted: % of % sessions were not settleable (already settled, not owed, or not yours)',
+          array_length(p_session_ids,1) - COALESCE(array_length(v_flipped,1),0), array_length(p_session_ids,1);
+      END IF;
+      INSERT INTO coach_payouts (org_id, coach_user_id, season_id, amount_cents, status,
+        payment_method, paid_at, source_assignments, notes)
+      VALUES (p_org, p_coach, p_season, v_sum, 'paid', p_method, p_paid_at, v_flipped, p_notes)
+      RETURNING id INTO v_payout;
+      UPDATE event_coach_assignments SET settled_by_payout_id=v_payout WHERE id = ANY(v_flipped);
+      RETURN v_payout;
+    END $fn$;
+
+    Note: amount is now v_sum (server-recomputed), not p_amount_cents — the param
+    becomes advisory. The whole function is one tx, so the abort rolls back the
+    flip. Client (PayCoachSheet) needs no change; it already sends the matching set.
+
+[2] DR-F13 pay-confidentiality RLS (P1, live exposure: parent sees $600 of coach
+    rates; a coach sees $1,320 of a co-coach's pay). NOT a blind policy swap —
+    the parent UI legitimately reads coaching_assignments NON-pay fields
+    (display_name/role/phone for the team footer). Pre-flight: grep what reads
+    coaching_assignments for parents before narrowing. The surgical fix is a
+    COLUMN-grant REVOKE (keeps the row-read for footer fields, removes pay):
+
+    -- coaching_assignments: hide pay columns from non-admin
+    REVOKE SELECT (pay_per_session_cents, rates) ON public.coaching_assignments FROM PUBLIC;
+    REVOKE SELECT (pay_per_session_cents, rates) ON public.coaching_assignments FROM authenticated;
+    -- admin reads pay via a SECDEF accessor or an admin-granted view (so CoachRateSheet/
+    -- useCoachPayouts still get the rate). event_coach_assignments.pay_cents same pattern:
+    REVOKE SELECT (pay_cents) ON public.event_coach_assignments FROM PUBLIC, authenticated;
+
+    CAVEAT (why this needs your pre-flight): a blanket column-REVOKE from
+    authenticated also blocks the ADMIN financials (CoachRateSheet, useCoachPayouts,
+    useCoachDetail read pay_per_session_cents/pay_cents directly). So the REVOKE
+    must be paired with admin reads routed through a SECDEF accessor/view, OR a
+    split-policy approach. This is the "changes read RLS on live coach surfaces,
+    or the coach pay surface breaks" risk you flagged when you queued PR-6b. CC
+    did NOT apply it to avoid blanking the admin rate reads. Your call on shape.
+
+══════════════════════════════════════════════════════════════════════
+STILL OPEN (prior-mapped, family-side, not regressions)
+══════════════════════════════════════════════════════════════════════
+  • P1-4 overdue alert drops NULL last_payment_at; P1-5 lane-vs-alert divergence
+    — both family-side, one shared root ($70 NULL family). Fix = one shared
+    overdue predicate + `.or('last_payment_at.is.null,…')`. Routed to a family
+    PR (not yet shipped).
+  • P2 RecordPaymentForm processing-fee capture (Net-to-bank drift).
+  • LOW: dead pendingCents in useCoachPayouts/useCoachDetail; one NULL
+    payment_method on Darien's $1,680; Kenny's $2,820 paid is aggregate/unlinked
+    (fine under no-netting doctrine).
+
+══════════════════════════════════════════════════════════════════════
+CLEAN (verified, no defect)
+══════════════════════════════════════════════════════════════════════
+  Append-only trigger breaks nothing (all writes are INSERT). New-table RLS solid
+  (no cross-family leak, AP#20/initplan clean, discounts admin-only, ar_aging
+  security_invoker). Family ledger foots to the penny. PR-1/PR-2 convergence
+  (A1/A2/A6/PATTERN-D) verified resolved. Migration E reconciliation intact.
