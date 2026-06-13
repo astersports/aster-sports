@@ -24,3 +24,19 @@ export function sumPaidCents(payouts) {
 export function countOwedSessions(sessions) {
   return (sessions || []).reduce((n, s) => (s.pay_status === 'owed' ? n + 1 : n), 0);
 }
+
+// Group selected owed sessions by season into pay_coach() payloads (PR-2, DR-F1).
+// ONE payload per season (the RPC's p_season is NOT NULL); amount = Σ pay_cents of
+// that season's selected sessions; status is ALWAYS 'paid' (Migration D rejects
+// anything else). Pure — the sheet calls supabase.rpc with each payload.
+export function buildSettlements(sessions, { orgId, coachId, method, paidAt, notes } = {}) {
+  const bySeason = {};
+  for (const s of sessions || []) (bySeason[s.seasonId] ||= []).push(s);
+  return Object.entries(bySeason).map(([seasonId, rows]) => ({
+    p_org: orgId, p_coach: coachId, p_season: seasonId,
+    p_session_ids: rows.map((r) => r.id),
+    p_amount_cents: rows.reduce((n, r) => n + (r.pay_cents || 0), 0),
+    p_status: 'paid', p_method: method, p_paid_at: paidAt,
+    p_notes: notes || `Settled ${rows.length} session${rows.length === 1 ? '' : 's'} via app`,
+  }));
+}

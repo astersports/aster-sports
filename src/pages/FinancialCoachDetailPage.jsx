@@ -12,6 +12,7 @@ const CoachRateSheet = lazy(() => import('../components/admin/CoachRateSheet'));
 const RecordCoachPayoutForm = lazy(() => import('../components/admin/RecordCoachPayoutForm'));
 const CoachSessionSheet = lazy(() => import('../components/admin/CoachSessionSheet'));
 const CoachPayoutEditSheet = lazy(() => import('../components/admin/CoachPayoutEditSheet'));
+const PayCoachSheet = lazy(() => import('../components/admin/PayCoachSheet'));
 
 const NY = 'America/New_York';
 const METHOD = { venmo: 'Venmo', zelle: 'Zelle', cash: 'Cash', check: 'Check', stripe: 'Card/Stripe', other: 'Other' };
@@ -53,9 +54,12 @@ export default function FinancialCoachDetailPage() {
         <Stat label="Sessions" value={String(data.sessions.length)} />
         <Stat label="Paid" value={formatCurrency(data.paidCents)} color="var(--as-success)" />
       </div>
+      {data.owedCents > 0 && (
+        <button type="button" onClick={() => setSheet('paycoach')} className="as-press" style={{ width: '100%', minHeight: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--as-success)', color: 'var(--as-text-inverse)', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginBottom: 8 }}>Pay coach · {formatCurrency(data.owedCents)} owed</button>
+      )}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <button type="button" onClick={() => setSheet('rate')} className="as-press" style={{ flex: 1, minHeight: 40, borderRadius: 10, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-secondary)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>Pay settings</button>
-        <button type="button" onClick={() => setSheet('payout')} className="as-press" style={{ flex: 1, minHeight: 40, borderRadius: 10, border: 'none', backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Record payout</button>
+        <button type="button" onClick={() => setSheet('payout')} className="as-press" style={{ flex: 1, minHeight: 40, borderRadius: 10, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-secondary)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>Record payout</button>
       </div>
 
       <Label>Sessions ({data.sessions.length})</Label>
@@ -93,6 +97,7 @@ export default function FinancialCoachDetailPage() {
       <Suspense fallback={null}>
         {sheet === 'rate' && <CoachRateSheet coach={data} orgId={orgId} seasonId={seasonId} onClose={() => setSheet(null)} onSaved={() => { setSheet(null); refetch(); }} />}
         {sheet === 'payout' && <RecordCoachPayoutForm coach={data} orgId={orgId} seasonId={seasonId} onClose={() => setSheet(null)} onSaved={() => { setSheet(null); refetch(); }} />}
+        {sheet === 'paycoach' && <PayCoachSheet coach={data} orgId={orgId} onClose={() => setSheet(null)} onSaved={() => { setSheet(null); refetch(); }} />}
         {editSession && <CoachSessionSheet session={editSession} onClose={() => setEditSession(null)} onSaved={() => { setEditSession(null); refetch(); }} />}
         {editPayout && <CoachPayoutEditSheet payout={editPayout} onClose={() => setEditPayout(null)} onSaved={() => { setEditPayout(null); refetch(); }} />}
       </Suspense>
