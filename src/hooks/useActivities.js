@@ -36,7 +36,7 @@ export function useActivities() {
     try {
       let query = supabase
         .from('events')
-        .select('*, teams!inner(id, name, team_color, age_group, circuit, org_id, season_id, sort_order, roster_visibility_override), locations(name, google_maps_url, lat, lon, address)')
+        .select('*, teams!inner(id, name, team_color, age_group, circuit, org_id, season_id, sort_order, roster_visibility_override, program:programs!teams_season_id_fkey(program_type)), locations(name, google_maps_url, lat, lon, address)')
         .eq('teams.org_id', orgId)
         .order('start_at', { ascending: true });
       if (seasonId) query = query.eq('teams.season_id', seasonId);
