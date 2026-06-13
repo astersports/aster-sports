@@ -4,12 +4,14 @@ import Label from '../shared/Label';
 import CollapsibleSection from '../shared/CollapsibleSection';
 import FamilyBalanceRow from './FamilyBalanceRow';
 
-// Financials → Families. Accordion grouped by status (Owing open by default
-// with its count + total; Paid collapsed) so a season's long flat list
-// collapses into two scannable groups (2026-06-13 redesign). Search overrides
+// Financials → Families. Grouped by TEAM (derived from the roster via
+// useFamilyTeams — financial_accounts carry no team_id; billing is per family
+// per season). A family with kids on >1 team appears under each; families with
+// no rostered team fall to "Unassigned". Each team group header shows its
+// count + owing total; groups with any owing open by default. Search overrides
 // the grouping with a flat filtered list. `balances`/`byAccount` are the
 // canonical per-account maps from useSeasonFinancials (anti-pattern #42).
-export default function FamilyBalanceList({ accounts, balances, byAccount, fmt, onRecordPayment, onNudge }) {
+export default function FamilyBalanceList({ accounts, balances, byAccount, fmt, onRecordPayment, onNudge, teamsByGuardian, teams }) {
   const [search, setSearch] = useState('');
 
   const families = useMemo(() => accounts.map((a) => {
@@ -21,9 +23,20 @@ export default function FamilyBalanceList({ accounts, balances, byAccount, fmt, 
 
   const q = search.trim().toLowerCase();
   const searchResults = useMemo(() => (q ? families.filter((f) => f.name.toLowerCase().includes(q)) : null), [families, q]);
-  const owing = useMemo(() => families.filter((f) => f.balance > 0).sort((a, b) => b.balance - a.balance), [families]);
-  const paid = useMemo(() => families.filter((f) => f.balance <= 0), [families]);
-  const owingTotal = useMemo(() => owing.reduce((s, f) => s + f.balance, 0), [owing]);
+
+  const groups = useMemo(() => {
+    const byTeam = {};
+    const unassigned = [];
+    families.forEach((f) => {
+      const tids = teamsByGuardian?.[f.guardian_id] || [];
+      if (tids.length === 0) unassigned.push(f);
+      else tids.forEach((tid) => { (byTeam[tid] ||= []).push(f); });
+    });
+    const sortRows = (rows) => [...rows].sort((a, b) => b.balance - a.balance);
+    const out = (teams || []).filter((t) => byTeam[t.id]?.length).map((t) => ({ key: t.id, name: t.name, rows: sortRows(byTeam[t.id]) }));
+    if (unassigned.length) out.push({ key: 'unassigned', name: 'Unassigned', rows: sortRows(unassigned) });
+    return out;
+  }, [families, teamsByGuardian, teams]);
 
   const card = (rows) => (
     <div style={CARD}>
@@ -33,6 +46,11 @@ export default function FamilyBalanceList({ accounts, balances, byAccount, fmt, 
     </div>
   );
 
+  const summary = (rows) => {
+    const total = rows.reduce((s, f) => s + (f.balance > 0 ? f.balance : 0), 0);
+    return total > 0 ? `${rows.length} · ${fmt(total)} owing` : `${rows.length} · all paid`;
+  };
+
   return (
     <>
       <Label>Families</Label>
@@ -41,16 +59,11 @@ export default function FamilyBalanceList({ accounts, balances, byAccount, fmt, 
         <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search families..." aria-label="Search families"
           style={{ width: '100%', height: 44, paddingLeft: 36, paddingRight: 12, backgroundColor: 'var(--as-bg-tertiary)', border: '1.5px solid var(--as-border-default)', borderRadius: 10, fontSize: 15, color: 'var(--as-text-primary)', outline: 'none', boxSizing: 'border-box' }} />
       </div>
-      {searchResults ? card(searchResults) : (
-        <>
-          <CollapsibleSection title="Owing" sectionKey="fam-owing" defaultOpen count={`${owing.length} · ${fmt(owingTotal)}`}>
-            {card(owing)}
-          </CollapsibleSection>
-          <CollapsibleSection title="Paid" sectionKey="fam-paid" defaultOpen={false} count={`${paid.length}`}>
-            {card(paid)}
-          </CollapsibleSection>
-        </>
-      )}
+      {searchResults ? card(searchResults) : groups.length === 0 ? card([]) : groups.map((g) => (
+        <CollapsibleSection key={g.key} title={g.name} sectionKey={`fam-${g.key}`} defaultOpen={g.rows.some((f) => f.balance > 0)} count={summary(g.rows)}>
+          {card(g.rows)}
+        </CollapsibleSection>
+      ))}
     </>
   );
 }
