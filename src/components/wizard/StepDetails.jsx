@@ -3,6 +3,7 @@ import DutyEditor from './DutyEditor';
 import { HOME_AWAY } from '../../lib/constants';
 import { supabase } from '../../lib/supabase';
 import { dutiesEnabledFor, ridesCapableOrg } from '../../lib/featureGates';
+import { chipStyle, controlStyle, fieldLabelStyle, textareaStyle } from './wizardStyles';
 import Input from '../shared/Input';
 import Toggle from '../shared/Toggle';
 
@@ -44,12 +45,9 @@ export default function StepDetails({ eventType, data, onChange, orgId, org }) {
 
       {isGame && (
         <div>
-          <span style={{ ...labelStyle, marginBottom: 6, display: 'block' }}>
-            Opponent <span style={{ color: 'var(--as-danger)' }} aria-hidden="true">*</span>
-          </span>
-          <input list="opponent-list" value={data.opponent || ''} onChange={(e) => set('opponent', e.target.value)}
-            placeholder="Search or type opponent name" aria-label="Opponent" aria-required="true" required
-            style={{ width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)', fontSize: 15, fontFamily: 'inherit' }} />
+          <Input label="Opponent" required type="text" list="opponent-list"
+            value={data.opponent || ''} onChange={(e) => set('opponent', e.target.value)}
+            placeholder="Search or type opponent name" aria-label="Opponent" />
           <datalist id="opponent-list">
             {opponents.map((o) => <option key={o.id} value={o.name} />)}
           </datalist>
@@ -63,14 +61,14 @@ export default function StepDetails({ eventType, data, onChange, orgId, org }) {
 
       {isGame && tournaments.length > 0 && (
         <div>
-          <span style={{ ...labelStyle, marginBottom: 6, display: 'block' }}>Tournament</span>
+          <span style={{ ...fieldLabelStyle, marginBottom: 6, display: 'block' }}>Tournament</span>
           <select value={data.tournamentId || ''} onChange={(e) => {
             const tid = e.target.value || null;
             const t = tournaments.find((x) => x.id === tid);
             set('tournamentId', tid);
             if (t) onChange({ ...data, tournamentId: tid, tournamentName: t.name, eventType: 'tournament' });
             else onChange({ ...data, tournamentId: null, tournamentName: '', eventType: 'game' });
-          }} style={{ width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 10, border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)', fontSize: 15, fontFamily: 'inherit' }}>
+          }} style={controlStyle}>
             <option value="">No tournament</option>
             {tournaments.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
@@ -79,11 +77,11 @@ export default function StepDetails({ eventType, data, onChange, orgId, org }) {
 
       {isGame && (
         <div>
-          <span style={{ ...labelStyle, marginBottom: 6, display: 'block' }}>Home / Away</span>
+          <span style={{ ...fieldLabelStyle, marginBottom: 6, display: 'block' }}>Home / Away</span>
           <div style={{ display: 'flex', gap: 8 }}>
             {HOME_AWAY.map((v) => (
               <button key={v} type="button" onClick={() => setHomeAway(v)}
-                className="as-press" style={chipStyle(data.homeAway === v)}>
+                className="as-press" style={chipStyle(data.homeAway === v, { flex: 1 })}>
                 {v === 'tbd' ? 'TBD' : v.charAt(0).toUpperCase() + v.slice(1)}
               </button>
             ))}
@@ -97,18 +95,16 @@ export default function StepDetails({ eventType, data, onChange, orgId, org }) {
       )}
 
       <label style={fieldStyle}>
-        <span style={labelStyle}>Parent instructions</span>
+        <span style={fieldLabelStyle}>Parent instructions</span>
         <textarea value={data.notes || ''} onChange={(e) => set('notes', e.target.value)}
-          placeholder="Visible to parents" rows={3}
-          style={{ width: '100%', minHeight: 80, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)', fontSize: 15, resize: 'vertical' }} />
+          placeholder="Visible to parents" rows={3} style={textareaStyle(80)} />
       </label>
 
       <label style={fieldStyle}>
-        <span style={labelStyle}>Coach notes</span>
+        <span style={fieldLabelStyle}>Coach notes</span>
         <span style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginTop: -4 }}>Not visible to parents</span>
         <textarea value={data.coachNotes || ''} onChange={(e) => set('coachNotes', e.target.value)}
-          placeholder="Internal notes" rows={2}
-          style={{ width: '100%', minHeight: 60, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)', fontSize: 15, resize: 'vertical' }} />
+          placeholder="Internal notes" rows={2} style={textareaStyle(60)} />
       </label>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -126,11 +122,3 @@ export default function StepDetails({ eventType, data, onChange, orgId, org }) {
 }
 
 const fieldStyle = { display: 'flex', flexDirection: 'column', gap: 6 };
-const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--as-text-secondary)' };
-const chipStyle = (sel) => ({
-  flex: 1, minHeight: 40, borderRadius: 10,
-  border: sel ? '2px solid var(--as-accent)' : '1px solid var(--as-border-default)',
-  backgroundColor: sel ? 'var(--as-accent)' : 'var(--as-bg-card)',
-  color: sel ? 'var(--as-text-inverse)' : 'var(--as-text-primary)',
-  fontSize: 13, fontWeight: 500,
-});

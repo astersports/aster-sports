@@ -4,6 +4,7 @@ import { useActiveSeasonEnd } from '../../hooks/useActiveSeasonEnd';
 import { useSeason } from '../../context/SeasonContext';
 import { useSeasonScopedLocations } from '../../hooks/useSeasonScopedLocations';
 import { computeDefaultUntil } from '../../lib/recurrenceHelpers';
+import { chipStyle, controlStyle, fieldLabelStyle } from './wizardStyles';
 import Input from '../shared/Input';
 
 const DURATIONS = [
@@ -75,16 +76,16 @@ export default function StepWhen({ data, onChange, orgId }) {
       </div>
 
       <div>
-        <span style={{ ...labelStyle, marginBottom: 6, display: 'block' }}>Duration</span>
+        <span style={{ ...fieldLabelStyle, marginBottom: 6, display: 'block' }}>Duration</span>
         <div style={{ display: 'flex', gap: 8 }}>
           {DURATIONS.map((d) => (
             <button key={d.minutes} type="button" onClick={() => setDuration(d.minutes)}
-              className="as-press" style={chipStyle(!customMode && data.durationMinutes === d.minutes)}>
+              className="as-press" style={chipStyle(!customMode && data.durationMinutes === d.minutes, { minWidth: 56, fontSize: 15, padding: '0 12px' })}>
               {d.label}
             </button>
           ))}
           <button type="button" onClick={enterCustomMode}
-            className="as-press" style={chipStyle(customMode)}>
+            className="as-press" style={chipStyle(customMode, { minWidth: 56, fontSize: 15, padding: '0 12px' })}>
             Custom
           </button>
         </div>
@@ -98,13 +99,19 @@ export default function StepWhen({ data, onChange, orgId }) {
       </div>
 
       <label style={fieldStyle}>
-        <span style={labelStyle}>Location</span>
+        <span style={fieldLabelStyle}>Location</span>
         {/* ONE onChange carrying both keys — `set` spreads stale `data`,
             so two sequential set() calls would clobber each other. The id
             rides along so events carry the location_id FK (2026-06-13). */}
-        <select value={data.location || ''} style={selectStyle}
+        <select value={data.location || ''} style={controlStyle}
           onChange={(e) => { const row = locations.find((l) => l.name === e.target.value); onChange({ ...data, location: e.target.value, locationId: row?.id ?? null }); }}>
           <option value="">Select location</option>
+          {/* A4 (L99 audit): an EDIT whose saved venue is off the current
+              season-scoped list keeps showing its value instead of going
+              blank (which read as "location cleared"). */}
+          {data.location && !locations.some((l) => l.name === data.location) && (
+            <option value={data.location}>{data.location}</option>
+          )}
           {locations.map((loc) => <option key={loc.id} value={loc.name}>{loc.name}</option>)}
         </select>
       </label>
@@ -115,7 +122,7 @@ export default function StepWhen({ data, onChange, orgId }) {
       </div>
 
       <div>
-        <span style={{ ...labelStyle, marginBottom: 6, display: 'block' }}>Arrive early</span>
+        <span style={{ ...fieldLabelStyle, marginBottom: 6, display: 'block' }}>Arrive early</span>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {ARRIVAL.map((m) => (
             <button key={m} type="button" onClick={() => set('arrivalMinutes', m)}
@@ -130,16 +137,3 @@ export default function StepWhen({ data, onChange, orgId }) {
 }
 
 const fieldStyle = { display: 'flex', flexDirection: 'column', gap: 6 };
-const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--as-text-secondary)' };
-const selectStyle = {
-  minHeight: 44, borderRadius: 10, border: '1.5px solid var(--as-border-default)',
-  backgroundColor: 'var(--as-bg-tertiary)', padding: '0 12px', fontSize: 15,
-  color: 'var(--as-text-primary)', width: '100%',
-};
-const chipStyle = (sel) => ({
-  minHeight: 40, minWidth: 56, borderRadius: 10,
-  border: sel ? '2px solid var(--as-accent)' : '1px solid var(--as-border-default)',
-  backgroundColor: sel ? 'var(--as-accent)' : 'var(--as-bg-card)',
-  color: sel ? 'var(--as-text-inverse)' : 'var(--as-text-primary)',
-  fontSize: 15, fontWeight: 500, padding: '0 12px',
-});
