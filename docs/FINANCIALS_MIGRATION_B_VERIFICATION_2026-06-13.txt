@@ -1,0 +1,102 @@
+FINANCIALS — MIGRATION B PRE-FLIGHT VERIFICATION (CC → architect)
+Date: 2026-06-13 · Org: Legacy Hoopers (e3e95e21-3571-4e9a-985a-d5d01480d4a6)
+Supabase: vrwwpsbfbnveawqwbdmj · all checks below run LIVE this session.
+Re: FINANCIALS_REDESIGN_MASTER_SPEC_v2.md §4 Migration B, before the GO.
+
+VERDICT: Migration A is live and clean. Migration B as written has ONE HARD BLOCKER
+(will fail to apply + roll back) + ONE live-proven correctness bug + one advisory. Do
+not GO on B until B-1 is fixed. Details + exact patches below.
+
+──────────────────────────────────────────────────────────────────────
+MIGRATION A — VERIFIED CLEAN (already applied)
+──────────────────────────────────────────────────────────────────────
+Live checks all TRUE: invoices table exists; financial_transactions.invoice_id exists;
+pay_coach() exists; next_invoice_number() exists. division_fees + event_reminder_log
+exist (spec's price-schedule + dunning-mirror assumptions hold). Spine is good.
+
+──────────────────────────────────────────────────────────────────────
+B-1 [P0 — HARD BLOCKER, Migration B will NOT apply] org_members does not exist
+──────────────────────────────────────────────────────────────────────
+Spec §4B.3, discounts_read policy:
+    CREATE POLICY discounts_read ON public.discounts FOR SELECT
+      USING (org_id IN (SELECT org_id FROM org_members WHERE user_id=auth.uid()));
+LIVE: org_members_exists = FALSE. There is no org_members table (CLAUDE.md AP#1: membership
+is user_roles; there is NO org_members table — this is a named anti-pattern). The CREATE
+POLICY will raise 42P01 (relation does not exist) and, because Migration B is one
+transaction, roll back ALL of B (tables, discount_id column, ar_aging view).
+Compounding: user_roles' membership column is organization_id, NOT org_id (live:
+user_roles_has_org_id=FALSE, user_roles_has_organization_id=TRUE).
+PATCH (match the existing fin_accounts pattern + the codebase helper):
+    CREATE POLICY discounts_read ON public.discounts FOR SELECT
+      USING (user_has_role_in_org(org_id, ARRAY['admin','coach','parent']));
+  -- or, if discounts should be admin-only-readable, reuse user_has_role_in_org(org_id, ARRAY['admin']).
+  -- Do NOT hand-roll a user_roles subselect; user_has_role_in_org() is the SECDEF helper
+  -- every other financial policy uses and it is anon-revoked (audit-confirmed).
+
+──────────────────────────────────────────────────────────────────────
+B-2 [P1 — applies but WRONG, live-proven] ar_aging mis-buckets never-paid debt
+──────────────────────────────────────────────────────────────────────
+Spec §4B.5:
+    WHEN now() - COALESCE(fb.last_payment_at, now()) < interval '31 days' THEN 'd0_30'
+For a family that was billed and has made ZERO payments, last_payment_at IS NULL →
+COALESCE substitutes now() → now()-now()=0 → buckets as 'd0_30' (freshly current). The
+worst debtor class (never paid a cent) renders as the NEWEST bucket.
+LIVE PROOF (simulated the exact CASE against family_balances today):
+    Jon Zinman   $1,275  last_payment 2025-09-15  → d60_plus     (correct; he paid once)
+    Frank S.     $70     last_payment NULL          → d0_30  ← WRONG, never paid
+This is the SAME blind-spot class as the just-merged audit's P1-4 (the overdue ALERT's
+.lt('last_payment_at') silently drops NULLs). The elite layer re-introduces it in the AR view.
+PATCH: age never-paid debt from when it was billed, not from now(). Once invoices exist
+(Migration A), use the invoice issued_at; until then, financial_accounts.created_at:
+    -- replace COALESCE(fb.last_payment_at, now()) with COALESCE(fb.last_payment_at, fa.created_at)
+    -- joining financial_accounts fa ON fa.id = fb.account_id
+  so a never-paid balance ages from the billing date and lands in the correct bucket.
+  (Equivalently: NULL last_payment_at → oldest bucket.) Lock with a test row.
+
+──────────────────────────────────────────────────────────────────────
+B-3 [P2 — advisory] all Migration B policies use bare auth.uid() (not initplan)
+──────────────────────────────────────────────────────────────────────
+pp_parent_read, ppi_parent_read, discounts_read all write `auth.uid()` bare. Every EXISTING
+financial policy uses `(SELECT auth.uid())` (security audit confirmed 0 auth_rls_initplan
+advisories on the financial tables). Migration B would introduce the first ones on the new
+tables. PATCH: wrap every auth.uid() as (SELECT auth.uid()) in the parent-read policies.
+(The admin policies use user_has_role_in_org so they're fine.)
+
+NOTE (no change needed): all four cmd=ALL policies in B (pp_admin, ppi_admin, discounts_admin,
+irl_admin) DO carry explicit WITH CHECK — AP#20 satisfied. Good.
+
+──────────────────────────────────────────────────────────────────────
+SPEC ↔ AUDIT RECONCILIATION (the v2 spec was written before the 10-agent audit merged)
+──────────────────────────────────────────────────────────────────────
+ALIGNED (spec rulings = audit leans): DR-F1 event-sourced settlement = D1(b); DR-F4 rate-
+per-assignment + rates deprecated = D2; DR-F5 fee-txns stamped registration_id +
+registration_fees deprecated = D4. The render's prior/unlinked-payouts split correctly
+dissolves the −$680 artifact. (Minor stale citation: spec §0 says Darien "paid $2,780" =
+all-seasons; season-scoped is $1,980, balance +$120 — design already separates them, so
+cosmetic only.)
+
+NOT YET ABSORBED — 6 audit ship-now fixes the 17-PR order doesn't cover. Fold these in or
+they'll be lost:
+  • P0-1 doVoid reports-success-on-failure → fold into PR-6 (verb set) or PR-5.
+  • P1-1 double-void / no UNIQUE on reverses_transaction_id → add a partial-unique index
+    `(reverses_transaction_id) WHERE reverses_transaction_id IS NOT NULL` to Migration B
+    (cheap, additive) + the in-flight guard in PR-6.
+  • P1-7 append-only has no trigger → add a BEFORE UPDATE OR DELETE RAISE trigger on
+    financial_transactions to Migration B (defense-in-depth beyond RLS-absence).
+  • P1-8 void-pair integrity → a void RPC (mirror pay_coach's server-reads-the-original
+    shape) so the reversal's account/type/amount can't be app-supplied wrong. New PR.
+  • P1-2/P1-3 pay-confidentiality RLS leaks (parent reads coach rate; coach reads co-staff
+    pay) → needs the Q2 confidentiality ruling; a one-line role-gate PR. Independent of B.
+  • P1-4 overdue NULL blind spot → fix the existing alert query in the same PR as B-2.
+
+──────────────────────────────────────────────────────────────────────
+RECOMMENDED NEXT STEP
+──────────────────────────────────────────────────────────────────────
+1. Patch B-1 (blocker) + B-2 (aging) + B-3 (initplan) in the Migration B body.
+2. Optionally fold P1-1 partial-unique index + P1-7 append-only trigger into B (both are
+   small, additive, money-safety — natural fit while the migration is open).
+3. Re-run B pre-flight, GO, post-flight.
+4. Then hand PR-1 to CC. CC will sequence the 6 unabsorbed audit fixes into the build order
+   (proposed mapping above) so nothing from the audit is dropped.
+
+— CC verification, evidence-grounded (live queries), per §11.8 —
