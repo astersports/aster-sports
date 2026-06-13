@@ -17,7 +17,7 @@ const STATUS_LABELS = {
 
 export default function RsvpPlayerRow({
   player, response, existingNote, teamColor, onSetRsvp, onSaveNote, forceReadOnly = false,
-  canActivateAcademy = false, isActivated = false, onToggleActivation,
+  canActivateAcademy = false, isActivated = false, onToggleActivation, rsvpEligible = true,
 }) {
   const { role, myChildren } = useAuth();
   const [showNote, setShowNote] = useState(false);
@@ -73,10 +73,12 @@ export default function RsvpPlayerRow({
           )}
         </div>
 
-        {/* RSVP buttons or read-only status */}
-        {readOnly ? (
-          <div style={{ fontSize: 13, fontWeight: 500, color: STATUS_LABELS[response]?.color || 'var(--as-text-tertiary)' }}>
-            {STATUS_LABELS[response]?.label || 'No response'}
+        {/* Buttons, read-only status, or the D4 ineligible state — unactivated
+            academy on a game gets NO control here either (operator-caught
+            2026-06-13: this row accepted what every other surface blocks). */}
+        {readOnly || !rsvpEligible ? (
+          <div style={{ fontSize: 13, fontWeight: 500, color: !rsvpEligible ? 'var(--as-academy)' : (STATUS_LABELS[response]?.color || 'var(--as-text-tertiary)') }}>
+            {!rsvpEligible ? 'Not activated' : (STATUS_LABELS[response]?.label || 'No response')}
           </div>
         ) : (
           <div style={{ display: 'flex', gap: 6 }}>
@@ -105,7 +107,7 @@ export default function RsvpPlayerRow({
           </div>
         )}
       </div>
-      {!readOnly && (
+      {!readOnly && rsvpEligible && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 2 }}>
           {!showNote && (
             <button type="button" onClick={() => setShowNote(true)}
@@ -115,7 +117,7 @@ export default function RsvpPlayerRow({
           )}
         </div>
       )}
-      {!readOnly && showNote && (
+      {!readOnly && rsvpEligible && showNote && (
         <div style={{ display: 'flex', gap: 6, marginTop: 4, alignItems: 'flex-end' }}>
           <div style={{ flex: 1 }}>
             <Input

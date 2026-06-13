@@ -792,8 +792,18 @@ arc bodies.
   zero consumers; default variant now 'buttons'); useEventRsvpCounts either-error guard (F-9);
   D3 AMENDED per F-10 ruling (needs-row-only amber — doc edit in same PR). Invariant tests:
   featureGates static gate, nudge eligibility trio, hero F-7 width-parity + academy-sentence
-  cases. W3 (typography/perf sweep F-12..F-21) PARKED to trail the device re-grade. NEXT:
-  Frank re-grades Home + Schedule + detail on device against the fixed gates.
+  cases. W3 (typography/perf sweep F-12..F-21) PARKED to trail the device re-grade.
+  **RE-GRADE 8/10 BOTH (Frank, 2026-06-13 00:22 UTC) + W2.1 HOTFIX (F-22, operator-caught):**
+  the detail RSVP TAB rendered tri-state controls for EVERY roster row — Frank RSVP'd
+  unactivated-academy Milo "going" on a tournament while card/hero/Home all suppressed the
+  control ("1/10" with the going kid not in the 10). Fix: RsvpPlayerRow gains rsvpEligible
+  (violet "Not activated" replaces the control + note affordances; staff Activate button
+  stays — activate first, then RSVP); EventRsvpTab derives the gate from lib/rsvpEligibility
+  per row (rows still render the FULL roster for activation management); EventDetailPage
+  threads eventType. AP#43 test: EventRsvpTabEligibilityGate (tournament-unactivated /
+  tournament-activated / practice). DATA CLEANUP: the bug-produced event_rsvps row (Milo →
+  going, 8U Boys Game 1: Atlantic Sharks, responded 00:19 UTC) DELETED via MCP — counts
+  restored to 0/10. NEXT: W3 sweep on Frank's signal; 10/10 gap items welcome.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
