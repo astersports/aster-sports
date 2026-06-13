@@ -1236,11 +1236,11 @@ When constructing map deep links across the app, priority order is:
 
 If none of the above are present, render a "Location TBD" non-link.
 
-**Name-text-only fallback (no location row, no street address): GOOGLE search link ONLY.** Never emit Apple/Waze deep links from a bare venue NAME — their name-search mis-resolves (Waze sent "East Coast Sports & Fitness" to Rippowam; operator-caught 2026-06-13, locations audit). Apple/Waze require coords or a street address. The wizard writes `events.location_id` (FK) since the same audit, so the name-only path is legacy/import-residue only.
+**Name-text-only fallback (no location row, no street address): GOOGLE search link ONLY.** Never emit an Apple deep link from a bare venue NAME — Apple name-search mis-resolves. Apple requires coords or a street address. The wizard writes `events.location_id` (FK) since the 2026-06-13 locations audit, so the name-only path is legacy/import-residue only.
 
 For tournament events with `tournament.schedule_status='draft'` or null, hide the map UI entirely and render a "Schedule releases Wednesday" placeholder instead. Map appears only after schedule_status advances to preliminary/final/live/complete. This guard applies to EMAIL surfaces too — `composeTournamentPrelim` skips the venue sections for draft/null tournaments (2026-06-13 audit).
 
-Apple Maps + Waze deep links are LIVE (un-deferred in PR-D', 2026-06-12): the event detail Location tab renders the 3-way Apple/Google/Waze stack from `getDirectionUrls`, subject to the name-text-only rule above.
+**Waze removed entirely 2026-06-13 (operator-directed).** Waze name/address search mis-routed even with verified coords on Frank's device (it sent "East Coast Sports & Fitness" to Rippowam; the verified-coord fix didn't resolve it on-device either), so `getDirectionUrls` was cut to `{ google, apple }` and the Waze button dropped from the event detail Location tab. The event detail Location tab now renders an Apple/Google two-way stack from `getDirectionUrls`, subject to the name-text-only rule above.
 
 ---
 

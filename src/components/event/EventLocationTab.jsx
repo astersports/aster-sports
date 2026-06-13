@@ -82,9 +82,10 @@ export default function EventLocationTab({ event }) {
   const resolvedAddress = event.location_address || locationData?.address || event.location || null;
   const urls = getDirectionUrls(resolvedAddress, locationData?.lat, locationData?.lon, locationData?.google_maps_url);
   // §15 amendment (2026-06-13 audit): venue-NAME text is a GOOGLE-ONLY
-  // input — Apple/Waze name-search mis-resolves (Waze sent East Coast
-  // Sports & Fitness to Rippowam; operator-caught). Their buttons render
-  // only from a resolved venue row or a real street address.
+  // input — Apple name-search mis-resolves. The Apple button renders only
+  // from a resolved venue row or a real street address. (Waze removed
+  // entirely 2026-06-13, operator-directed — it mis-routed even on
+  // verified coords on Frank's device.)
   const nameOnly = !event.location_address && !locationData;
 
   return (
@@ -125,8 +126,9 @@ export default function EventLocationTab({ event }) {
           {locationData.entry_instructions}
         </div>
       )}
-      {/* SD-14 3-way (D6: real ANCHORS — window.open from the standalone
-          PWA left a blank pseudo-page on return; operator-caught). */}
+      {/* SD-14 Apple/Google (D6: real ANCHORS — window.open from the
+          standalone PWA left a blank pseudo-page on return; operator-caught.
+          Waze removed 2026-06-13, operator-directed). */}
       {urls && (() => {
         const A = ({ href, label, children }) => (
           <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className="as-press"
@@ -138,7 +140,6 @@ export default function EventLocationTab({ event }) {
           <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
             {!nameOnly && urls.apple && <A href={urls.apple} label="Directions in Apple Maps">Apple</A>}
             <A href={urls.google} label="Directions in Google Maps"><Navigation size={15} strokeWidth={1.75} />Google</A>
-            {!nameOnly && urls.waze && <A href={urls.waze} label="Directions in Waze">Waze</A>}
           </div>
         );
       })()}

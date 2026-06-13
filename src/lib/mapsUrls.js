@@ -1,6 +1,8 @@
-// Pure URL builder for Apple/Google/Waze deep links.
+// Pure URL builder for Apple/Google deep links.
 // Priority: googleMapsUrl (Frank-verified) > coords > address text.
-// Returns { google, apple, waze } when navigable, else null.
+// Returns { google, apple } when navigable, else null.
+// Waze removed 2026-06-13 (operator-directed): its name/address search
+// mis-routed even with verified coords on Frank's device; complete removal.
 
 export function getDirectionUrls(address, lat, lng, googleMapsUrl) {
   const trimmedAddr = address && address.trim ? address.trim() : null;
@@ -16,9 +18,5 @@ export function getDirectionUrls(address, lat, lng, googleMapsUrl) {
     ? `https://maps.apple.com/?daddr=${lat},${lng}`
     : trimmedAddr ? `https://maps.apple.com/?daddr=${encodeURIComponent(trimmedAddr)}` : null;
 
-  const waze = hasCoords
-    ? `https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes`
-    : trimmedAddr ? `https://www.waze.com/ul?q=${encodeURIComponent(trimmedAddr)}&navigate=yes` : null;
-
-  return { google, apple, waze };
+  return { google, apple };
 }
