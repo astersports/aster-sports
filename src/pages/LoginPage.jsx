@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { resolveLoginRedirect } from '../lib/loginRedirectAllowlist';
 import LoginForm from '../components/auth/LoginForm';
+import PoweredByFooter from '../components/shared/PoweredByFooter';
 
 // Aster Sports brand landing + sign-in. Email auto-trims on submit. Inline field
 // errors (not toasts) so the user sees exactly which field failed.
@@ -104,6 +105,7 @@ export default function LoginPage() {
           showPw={showPw} setShowPw={setShowPw}
           errors={errors} submitting={submitting} onSubmit={onSubmit}
         />
+        <PoweredByFooter />
       </div>
     </div>
   );

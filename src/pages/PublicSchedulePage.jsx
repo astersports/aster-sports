@@ -6,6 +6,7 @@ import { formatTime } from '../lib/formatters';
 import { formatEventTitleString } from '../lib/eventTitle';
 import { downloadTeamIcs } from '../lib/icalHelpers';
 import SubscribeSheet from '../components/shared/SubscribeSheet';
+import PoweredByFooter from '../components/shared/PoweredByFooter';
 import ShareScheduleButton from '../components/shared/ShareScheduleButton';
 
 function formatDate(iso) {
@@ -121,9 +122,7 @@ export default function PublicSchedulePage() {
 
       <SubscribeSheet open={showSubscribe} onClose={() => setShowSubscribe(false)} team={team} />
 
-      <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--as-text-tertiary)' }}>
-        Powered by Aster Sports · <a href="/privacy" style={{ color: 'inherit', textDecoration: 'underline' }}>Privacy</a> · <a href="/terms" style={{ color: 'inherit', textDecoration: 'underline' }}>Terms</a>
-      </div>
+      <PoweredByFooter links />
     </div>
   );
 }
