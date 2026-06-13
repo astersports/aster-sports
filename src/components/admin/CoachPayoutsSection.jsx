@@ -53,7 +53,7 @@ export default function CoachPayoutsSection({ orgId }) {
                 <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)', marginTop: 2 }}>{p.payment_method || 'Not specified'}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)' }}>{formatCurrency(p.amount_cents / 100)}</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)' }}>{formatCurrency(p.amount_cents)}</div>
                 <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: STATUS_COLORS[p.status] || 'var(--as-text-tertiary)' }}>{p.status}</div>
               </div>
             </div>

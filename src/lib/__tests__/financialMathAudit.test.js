@@ -75,4 +75,23 @@ describe('financial-math drift-hedge audit', () => {
     }
     expect(offenders, `Inline financial-math re-implementation found — route through useSeasonFinancials:\n${offenders.join('\n')}`).toEqual([]);
   });
+
+  // Unit-safety guard (Sections L99 audit 2026-06-13, P0-1): formatCurrency
+  // ALREADY divides cents by 100 (formatters.js). A caller that pre-divides
+  // — formatCurrency(x / 100) — renders money 100x too small. This is exactly
+  // how the CoachPayoutsSection payout bug shipped; the accumulation grep
+  // above did not cover it. Any formatCurrency(<expr> / 100) is a bug.
+  it('no formatCurrency call pre-divides by 100 (double-divide / 100x bug)', () => {
+    const files = walk(SRC_ROOT);
+    const offenders = [];
+    const MIS_UNIT = /formatCurrency\s*\([^)]*\/\s*100\b/;
+    for (const f of files) {
+      const rel = relative(SRC_ROOT, f).replace(/\\/g, '/');
+      if (ALLOWLIST.has(rel)) continue;
+      const src = readFileSync(f, 'utf-8');
+      const m = src.match(MIS_UNIT);
+      if (m) offenders.push(`${rel}: ${m[0]}`);
+    }
+    expect(offenders, `formatCurrency(x / 100) found — it already divides by 100; pass integer cents:\n${offenders.join('\n')}`).toEqual([]);
+  });
 });
