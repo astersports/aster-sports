@@ -79,8 +79,12 @@ export default function LoginPage() {
         }}
       >
         <div className="flex flex-col items-center mb-6">
-          <img src="/aster-mark.svg" alt="Aster Sports"
+          <img src="/aster-mark.svg" alt=""
             style={{ width: 120, height: 120, objectFit: 'contain', borderRadius: 16 }} />
+          {/* App wordmark — the login page is Aster Sports' front door
+              (pre-tenant); the platform names itself here. Tenant brand
+              takes over post-auth (operator 2026-06-13). */}
+          <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--as-text-primary)', marginTop: 12 }}>Aster Sports</h1>
         </div>
 
         {teamContext && (
