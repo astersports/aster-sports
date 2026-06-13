@@ -30,6 +30,7 @@ export default function StepTeam({ orgId, value, onSelect }) {
               key={t.id}
               type="button"
               onClick={() => onSelect(t.id)}
+              aria-pressed={sel}
               className="as-press"
               style={{
                 minHeight: 56, borderRadius: 10,

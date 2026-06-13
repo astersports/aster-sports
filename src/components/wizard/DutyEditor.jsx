@@ -22,19 +22,20 @@ export default function DutyEditor({ value, onChange }) {
               placeholder="e.g. Scorekeeper" style={{ flex: 1 }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <button type="button" disabled={(d.slots_needed || 1) <= 1}
+                aria-label="Decrease slots"
                 onClick={() => update(i, { slots_needed: Math.max(1, (d.slots_needed || 1) - 1) })}
                 style={stepBtn}>−</button>
               <span style={{ minWidth: 20, textAlign: 'center', fontSize: 15, fontWeight: 500 }}>
                 {d.slots_needed || 1}
               </span>
-              <button type="button"
+              <button type="button" aria-label="Increase slots"
                 onClick={() => update(i, { slots_needed: Math.min(10, (d.slots_needed || 1) + 1) })}
                 style={stepBtn}>+</button>
             </div>
             <button type="button" onClick={() => remove(i)} className="as-press"
               aria-label="Remove volunteer"
               style={{
-                width: 40, height: 40, borderRadius: 10,
+                width: 44, height: 44, borderRadius: 10, flexShrink: 0,
                 border: '1px solid var(--as-border-default)',
                 backgroundColor: 'var(--as-bg-card)', display: 'flex',
                 alignItems: 'center', justifyContent: 'center',
@@ -61,7 +62,7 @@ export default function DutyEditor({ value, onChange }) {
 const labelStyle = { fontSize: 13, fontWeight: 500, color: 'var(--as-text-secondary)', display: 'block' };
 
 const stepBtn = {
-  width: 32, height: 32, borderRadius: 8,
+  width: 44, height: 44, borderRadius: 8, flexShrink: 0,
   border: '1px solid var(--as-border-default)',
   backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)',
   fontSize: 17, fontWeight: 500, cursor: 'pointer',

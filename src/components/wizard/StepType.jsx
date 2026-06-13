@@ -24,6 +24,7 @@ export default function StepType({ value, onSelect }) {
               key={t.key}
               type="button"
               onClick={() => onSelect(t.key)}
+              aria-pressed={sel}
               className="as-press"
               style={{
                 minHeight: t.large ? 88 : 64,
