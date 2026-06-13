@@ -15,21 +15,22 @@ import { formatCurrency } from '../../../lib/formatters';
 afterEach(cleanup);
 
 const coach = {
-  userId: 'u1', name: 'Coach Kenny', paidCents: 72000, pendingCents: 54000, owedCents: 0, rateCents: 0, balanceCents: -72000,
+  userId: 'u1', name: 'Coach Kenny', paidCents: 72000, pendingCents: 54000, owedCents: 0, rateCents: 0,
   rows: [{ id: 'p1', amount_cents: 72000, status: 'paid', payment_method: 'venmo', paid_at: '2026-04-10', created_at: '2026-04-10' }],
 };
 
 const ratedCoach = {
-  userId: 'u2', name: 'Coach Darien', paidCents: 198000, pendingCents: 0, owedCents: 210000, rateCents: 6000, balanceCents: 12000,
+  userId: 'u2', name: 'Coach Darien', paidCents: 198000, pendingCents: 0, owedCents: 210000, rateCents: 6000,
   rows: [{ id: 'p2', amount_cents: 198000, status: 'paid', payment_method: 'cash', paid_at: '2026-05-01', created_at: '2026-05-01' }],
 };
 
 describe('CoachPayoutCard (summary → detail)', () => {
-  it('unrated coach shows recorded total + payout count, taps through', () => {
+  it('coach with nothing owed shows lifetime paid + payout count, taps through', () => {
     const onOpen = vi.fn();
     const { getByText } = render(<CoachPayoutCard coach={coach} onOpen={onOpen} />);
     expect(getByText('Coach Kenny')).toBeTruthy();
-    expect(getByText(formatCurrency(126000))).toBeTruthy(); // 72000 paid + 54000 pending
+    expect(getByText(formatCurrency(72000))).toBeTruthy(); // lifetime paid, never netted (not 126000)
+    expect(getByText('paid')).toBeTruthy();
     expect(getByText('1 payout')).toBeTruthy();
     fireEvent.click(getByText('Coach Kenny'));
     expect(onOpen).toHaveBeenCalledWith(coach);
@@ -40,10 +41,10 @@ describe('CoachPayoutCard (summary → detail)', () => {
     expect(getByText(formatCurrency(6000) + '/session · Venmo')).toBeTruthy();
   });
 
-  it('rated coach headlines the balance (owed − paid)', () => {
+  it('coach with owed sessions headlines owed now (never netted against paid)', () => {
     const { getByText } = render(<CoachPayoutCard coach={ratedCoach} onOpen={() => {}} />);
-    expect(getByText(formatCurrency(12000))).toBeTruthy(); // |balance| = $120
-    expect(getByText('still owed')).toBeTruthy();
+    expect(getByText(formatCurrency(210000))).toBeTruthy(); // owed now $2,100 (not a $120 balance)
+    expect(getByText('owed now')).toBeTruthy();
   });
 });
 

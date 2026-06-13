@@ -4,11 +4,11 @@ import { formatCurrency } from '../../lib/formatters';
 import CoachPayoutCard from './CoachPayoutCard';
 import LoadingSkeleton from '../shared/LoadingSkeleton';
 
-// Financials → Coaches segment. Owed/Paid/Balance totals + a per-coach summary
-// card; tap a coach → the coach detail route (sessions behind owed + payouts +
-// Pay-settings/Record-payout actions).
+// Financials → Coaches segment. Owed + Paid totals (never netted, PR-1/DR-F1) +
+// a per-coach summary card; tap a coach → the coach detail route (sessions behind
+// owed + payouts + Pay-settings/Record-payout actions).
 export default function CoachPayoutsSection({ orgId, seasonId }) {
-  const { coaches, loading } = useCoachPayouts(orgId, seasonId);
+  const { coaches, loading } = useCoachPayouts(orgId);
   const navigate = useNavigate();
 
   if (loading) return <LoadingSkeleton variant="card" count={2} />;
@@ -23,18 +23,14 @@ export default function CoachPayoutsSection({ orgId, seasonId }) {
 
   const totalOwed = coaches.reduce((s, c) => s + c.owedCents, 0);
   const totalPaid = coaches.reduce((s, c) => s + c.paidCents, 0);
-  const balance = totalOwed - totalPaid;
 
   return (
     <>
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
         {totalOwed > 0 && (
-          <div style={STAT}><div style={STAT_LABEL}>Owed</div><div style={{ ...STAT_NUM, color: 'var(--as-text-primary)' }}>{formatCurrency(totalOwed)}</div></div>
+          <div style={STAT}><div style={STAT_LABEL}>Owed now</div><div style={{ ...STAT_NUM, color: 'var(--as-warning)' }}>{formatCurrency(totalOwed)}</div></div>
         )}
         <div style={STAT}><div style={STAT_LABEL}>Paid</div><div style={{ ...STAT_NUM, color: 'var(--as-success)' }}>{formatCurrency(totalPaid)}</div></div>
-        {totalOwed > 0 && (
-          <div style={STAT}><div style={STAT_LABEL}>Balance</div><div style={{ ...STAT_NUM, color: balance > 0 ? 'var(--as-danger)' : 'var(--as-success)' }}>{formatCurrency(Math.abs(balance))}</div></div>
-        )}
       </div>
       {coaches.map((c) => (
         <CoachPayoutCard key={c.userId} coach={c} onOpen={() => navigate(`/admin/financials/coach/${c.userId}?season=${seasonId}`)} />

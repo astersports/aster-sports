@@ -49,9 +49,9 @@ export default function FinancialCoachDetailPage() {
         {rated ? `${formatCurrency(data.rateCents)}/session` : 'No rate set'}{data.defaultMethod ? ` · ${METHOD[data.defaultMethod] || data.defaultMethod}` : ''}
       </div>
       <div style={{ display: 'flex', gap: 8, margin: '12px 0 12px' }}>
-        <Stat label="Owed" value={formatCurrency(data.owedCents)} />
+        <Stat label="Owed now" value={formatCurrency(data.owedCents)} color={data.owedCents > 0 ? 'var(--as-warning)' : 'var(--as-text-primary)'} />
+        <Stat label="Sessions" value={String(data.sessions.length)} />
         <Stat label="Paid" value={formatCurrency(data.paidCents)} color="var(--as-success)" />
-        <Stat label="Balance" value={formatCurrency(data.balanceCents)} color={data.balanceCents > 0 ? 'var(--as-danger)' : 'var(--as-success)'} />
       </div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <button type="button" onClick={() => setSheet('rate')} className="as-press" style={{ flex: 1, minHeight: 40, borderRadius: 10, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-secondary)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>Pay settings</button>

@@ -24,3 +24,19 @@ UTC date, files+LOC, version/SHA, verification evidence, next unlock.
   P1-7: fin_tx_no_mutate BEFORE UPDATE/DELETE trigger; behaviorally proven to block a real UPDATE.
   Post-flight clean. Mirror committed same turn. Rulings: DR-F8 refined, DR-F13 new.
   Next unlock: PR-1 (unify coach owed across 3 hooks).
+
+2026-06-13 · PR-1 — unify coach owed/paid across the 3 hooks (canonical, DR-F1)
+  New src/lib/coachComp.js (26): sumOwedCents / sumPaidCents / countOwedSessions — ONE
+  definition all three hooks call. owed = Σ event_coach_assignments.pay_cents WHERE
+  pay_status='owed'; paid = Σ coach_payouts.amount_cents WHERE status='paid'. Both
+  org-scoped; NEVER netted (removed every balance = owed − paid → the −$680 artifact).
+  Hooks: useCoachComp (40, sessions+payouts, season filter dropped → org), useCoachDetail
+  (53, owed via helper, season filter dropped, balanceCents removed), useCoachPayouts (70,
+  rate×count owed REPLACED with Σ owed pay_cents, season param dropped, balance removed).
+  Consumers: CoachCompCard (formatCurrency not whole-dollar round [audit A6]; "paid" not
+  "this season" [A2]; owedSessions), CoachPayoutCard + CoachPayoutsSection + FinancialCoach
+  DetailPage (Balance stat → Owed now / Sessions / Paid). Tests: coachComp.test.js
+  (cross-surface invariant, AP#43) + updated CoachCompCard + financialsCards.
+  Verified live: Kenny owed $12,240 / paid $2,820 (102 sess); Darien owed $2,100 / paid
+  $2,780 (35 sess); 0 negative. Also lands A/B migration mirrors (parity).
+  Next unlock: PR-2 (PayCoachSheet + pay_coach() wiring).
