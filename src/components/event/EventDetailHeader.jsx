@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Ban, MoreHorizontal, Pencil, Trash2, UserCheck } from 'lucide-react';
+import { useGoBack } from '../../hooks/useGoBack';
 import { TYPE_LABELS } from '../../lib/constants';
 import { eventTimeState } from '../../lib/eventWindows';
 import SendBriefingButton from '../briefings/SendBriefingButton';
@@ -33,7 +33,7 @@ function buildSummary({ event, team, typeLabel }) {
 const sheetItemBtn = { display: 'flex', alignItems: 'center', gap: 12, width: '100%', minHeight: 56, padding: '0 16px', borderRadius: 10, border: 'none', backgroundColor: 'transparent', fontSize: 15, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' };
 
 export default function EventDetailHeader({ event, team, isStaff, onEdit, onDelete, onCheckin, onCancel, onReinstate }) {
-  const navigate = useNavigate();
+  const goBack = useGoBack('/schedule');
   const [overflowOpen, setOverflowOpen] = useState(false);
   const teamColor = team?.team_color || 'var(--as-text-tertiary)';
   const typeLabel = TYPE_LABELS[event.event_type] || event.event_type;
@@ -54,7 +54,7 @@ export default function EventDetailHeader({ event, team, isStaff, onEdit, onDele
       <div style={{ height: 6, backgroundColor: teamColor }} />
       <div style={{ padding: '0 8px 12px 4px', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <button type="button" onClick={() => navigate(-1)} className="as-press" aria-label="Go back" style={iconBtn}>
+        <button type="button" onClick={goBack} className="as-press" aria-label="Go back" style={iconBtn}>
           <ArrowLeft size={20} strokeWidth={1.75} color="var(--as-text-secondary)" />
         </button>
         <div style={{ display: 'flex', gap: 4 }}>

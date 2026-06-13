@@ -1,5 +1,5 @@
-import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Users } from 'lucide-react';
+import { useGoBack } from '../hooks/useGoBack';
 import { useFamilyPrograms } from '../hooks/useFamilyPrograms';
 import ChildProgramCard from '../components/family/ChildProgramCard';
 import FamilyBalanceCard from '../components/family/FamilyBalanceCard';
@@ -12,7 +12,7 @@ import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 // Parent-scoped reads; negative contract — no org rollup, no other families, no
 // admin controls.
 export default function FamilyProgramsPage() {
-  const navigate = useNavigate();
+  const goBack = useGoBack();
   const { data, loading, error } = useFamilyPrograms();
   const children = data?.children || [];
   const balances = data?.familyBalances || [];
@@ -21,7 +21,7 @@ export default function FamilyProgramsPage() {
 
   return (
     <div style={wrap}>
-      <button type="button" onClick={() => navigate(-1)} className="as-press" aria-label="Go back" style={back}>
+      <button type="button" onClick={goBack} className="as-press" aria-label="Go back" style={back}>
         <ChevronLeft size={20} strokeWidth={1.75} /> Back
       </button>
       <h1 style={h1}>My Family</h1>

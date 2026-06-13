@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 const NOW = Date.now();
 import { ChevronLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { usePlayerSeasonStats } from '../hooks/usePlayerSeasonStats';
+import { useGoBack } from '../hooks/useGoBack';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import Label from '../components/shared/Label';
 
 export default function PlayerProfilePage() {
   const { teamId, playerId } = useParams();
-  const navigate = useNavigate();
+  const goBack = useGoBack(`/teams/${teamId}`);
   const [player, setPlayer] = useState(null);
   const [team, setTeam] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -44,7 +45,7 @@ export default function PlayerProfilePage() {
 
   return (
     <div style={{ padding: 16, minHeight: '100%' }}>
-      <button type="button" onClick={() => navigate(-1)} className="flex items-center as-press mb-3" style={{ minHeight: 44, background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 15, fontWeight: 500 }}>
+      <button type="button" onClick={goBack} className="flex items-center as-press mb-3" style={{ minHeight: 44, background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 15, fontWeight: 500 }}>
         <ChevronLeft size={20} strokeWidth={1.75} /> Back
       </button>
 
