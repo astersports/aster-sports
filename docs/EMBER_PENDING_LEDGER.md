@@ -909,6 +909,26 @@ arc bodies.
   venue), PATTERN GAMMA (write-side lags read-side, Events). Proposed remediation PR-1..PR-7; CC lean
   = ship PR-1 (CoachPayouts) + PR-2 (dup duties) immediately, get §16.12 ruling, then ALPHA sweep.
   Awaiting Frank go.
+  **SECTIONS AUDIT REMEDIATION + FINANCIALS BUILD-OUT SHIPPED (2026-06-13):** audit fully closed —
+  PR-1 CoachPayouts 100× (#1030), PR-2 dup-duties (#1031), §16.12 game-stats page REMOVED (#1033,
+  Frank ruled "remove entirely"; GameBoxScore per-player stats DEFERRED to future buildout per
+  operator), PATTERN ALPHA error-sweep (#1034), PATTERN BETA both consolidations (#1041 — rsvpBreakdown
+  helper replacing 4 copies + PlayerRow academy from team_players.roster_type, ROSTER-3 closed).
+  GAMMA write-path items remain queued (tz-pin writes, atomic series delete, activation toast — single-
+  tz pilot, low urgency). FINANCIALS REDESIGN ARC: Families/Coaches segments + accordion (#1032),
+  Families grouped by team w/ per-team summary cards (#1035, #1038), COACH COMP (#1036 owed=rate×sessions
+  vs paid→balance + Set-rate/Record-payout) + default payout method (#1042, migration
+  20260613181039_coach_default_payout_method), import back-loop fix (#1037), LeagueApps import RETIRED
+  (#1039, AP#51; lib parked). Schedule polish #1040 (double-Today, ShareScheduleButton dedup).
+  **FINANCIALS FULL-MANAGEMENT L99 DESIGN (2026-06-13):** `docs/FINANCIALS_MANAGEMENT_L99_DESIGN_2026-06-13.txt`
+  — architect write-up to make Financials the one money-management spot: FAMILY detail (invoice
+  fee/discount edit + full ledger view + void-via-reversal) and COACH detail (session breakdown behind
+  owed + payout edit/delete). Key spine: financial_transactions is APPEND-ONLY (INSERT/SELECT RLS only);
+  accounts/coach_payouts/event_coach_assignments are ALL-RLS (mutable). 3 FORKS for Frank: (1) family
+  ledger append-only+void [CC lean] vs editable-w-RLS; (2) coach session = remove-assignment [CC lean]
+  vs paid_for-linkage; (3) detail overlay [CC lean] vs route. Proposed PR-1..PR-5; CC lean = build the
+  READ drill-ins (PR-1 family detail + PR-3 coach detail) first, then edits after fork rulings.
+  AWAITING FRANK fork rulings + go.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player

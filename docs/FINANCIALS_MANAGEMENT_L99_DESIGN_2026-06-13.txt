@@ -1,0 +1,172 @@
+==============================================================================
+FINANCIALS — FULL-MANAGEMENT L99 DESIGN — 2026-06-13
+Architect write-up (operator-directed: "see the details and edit each of the
+sessions [coaches] / edit the invoices [families] … manage the finances in one
+spot"). §16.15 methodology. Acting architect: CC. Ratifier: Frank.
+Builds on today's Financials arc (#1029-#1042). Doc only — no code.
+==============================================================================
+
+GOAL (operator, verbatim intent)
+  Financials becomes the ONE place to manage money end to end:
+   - COACHES: see the session-level detail behind "owed", and edit each
+     session + each payout (correct amounts, status, delete mistakes).
+   - FAMILIES: see the invoice + full ledger, and edit the invoice
+     (fee/discount) + correct payments.
+  Today the section is read-mostly (drill-in is shallow: a family opens the
+  record-payment form; a coach expands to a flat payout list). This spec turns
+  each segment into a full detail + edit surface.
+
+------------------------------------------------------------------------------
+(a) CURRENT STATE (post-#1042, what exists today)
+------------------------------------------------------------------------------
+  Page: /admin/financials (admin-only). Season tabs → FinancialSummaryCard
+  (billed/collected/outstanding, season-scoped) → SegmentedControl
+  (Families · Coaches).
+  FAMILIES: TeamBalanceCard per team (families/players count, outstanding,
+    expand → billed/collected/outstanding + FamilyBalanceRow list). Tapping an
+    OWING family opens RecordPaymentForm (payment/refund/adjustment, one txn).
+    NO family detail, NO invoice edit, NO ledger view, NO per-txn actions.
+  COACHES: CoachPayoutCard per coach (owed = rate×sessions scope-aware, paid,
+    balance; rate + default method; expand → flat payout rows). Actions: Pay
+    settings (rate+method), Record payout. Payout rows are READ-ONLY; NO
+    session-level breakdown, NO edit/delete of a payout.
+
+------------------------------------------------------------------------------
+(b) DATA MODEL + RLS (the spine — drives every decision below)
+------------------------------------------------------------------------------
+  financial_accounts (per guardian × season): season_fee_cents, discount_cents,
+    discount_reason, notes. RLS = ALL (admin can edit). → THE invoice lives here.
+  financial_transactions (the ledger): account_id, transaction_type
+    (payment|refund|adjustment|fee), amount_cents, payment_method, reference,
+    receipt_url, occurred_at, recorded_by, applied_to_player_id, notes,
+    processing_fee_cents, registration_id. **RLS = INSERT + SELECT ONLY — no
+    UPDATE, no DELETE.** The ledger is APPEND-ONLY by design.
+  family_balances (view): billed/net_paid/total_fees/balance per account — the
+    canonical money source (#63). Recomputes from the ledger + account.
+  coach_payouts: amount_cents, status, payment_method, paid_at, reference,
+    notes, season_id, coach_user_id. **RLS = ALL** (admin can edit/delete).
+  event_coach_assignments: event_id, coach_user_id, status, assigned_by.
+    **RLS = ALL** (admin can add/remove). These × coaching_assignments.rate =
+    owed.
+  coaching_assignments: pay_per_session_cents, scope (all_events|games_only),
+    per coach × team. RLS = ALL.
+
+  KEY CONSEQUENCE: families and coaches edit DIFFERENTLY because of the ledger
+  asymmetry — payouts/sessions/accounts are mutable; the family TRANSACTION
+  ledger is not. This is correct accounting hygiene (an immutable ledger is
+  auditable; "editing" a posted payment silently rewrites history). The design
+  leans INTO it rather than fighting it.
+
+------------------------------------------------------------------------------
+(c) RECOMMENDED DESIGN — two detail drill-ins + the hub
+------------------------------------------------------------------------------
+HUB (unchanged shell): summary card + season tabs + Families/Coaches segments.
+Each ROW/CARD gains a tap-through to a DETAIL surface (FullScreenForm-class
+overlay per §6 — these are multi-field management views, not 1-2 button sheets).
+
+FAMILY DETAIL  (tap a family → overlay)
+  Header: family name · billed / collected / balance (from family_balances).
+  INVOICE block (editable — financial_accounts):
+    - Season fee, Discount (+ reason), Notes. "Edit invoice" writes
+      season_fee_cents / discount_cents / discount_reason. family_balances
+      recomputes billed on next read (one source, #63).
+    - Per-player fee context if applicable (applied_to_player_id on the funnel
+      path) — read-only attribution.
+  LEDGER block (the full transaction history — today nothing shows this):
+    - Every txn: date · type (Payment/Refund/Adjustment/Fee) · method · amount ·
+      reference/notes. Running balance optional.
+    - Actions per txn: **VOID** (posts a reversing entry — does NOT edit/delete,
+      preserving the audit trail) + "duplicate as correction". Add payment/
+      refund/adjustment via the existing RecordPaymentForm (already wired).
+  → "Edit the invoice" = edit the account fee/discount; "fix a payment" = void +
+    re-post. No destructive ledger edits.
+
+COACH DETAIL  (tap a coach → overlay)
+  Header: owed / paid / balance · rate · default method (Pay settings here).
+  SESSIONS block (the detail behind "owed" — today invisible):
+    - List the coach's event_coach_assignments for the season: date · event ·
+      team · counts-toward-pay? (scope-aware). Rate × counted sessions = owed,
+      shown reconciled.
+    - Edit each session: remove an assignment (admin mis-assigned), or toggle
+      "exclude from pay" (needs a new column OR delete-the-assignment semantics —
+      see FORK 2). This is "edit each of the sessions."
+  PAYOUTS block (mutable — coach_payouts ALL RLS):
+    - Each payout: editable amount / status / method / date; **delete** a
+      mistaken entry. (Today read-only.)
+    - Record payout (existing form, method pre-filled from default).
+  → owed/paid/balance recompute live from the two mutable sources.
+
+------------------------------------------------------------------------------
+ARCHITECTURAL FORKS (operator/architect ruling needed — §11.8 r6)
+------------------------------------------------------------------------------
+FORK 1 — Family ledger: append-only (void/reverse) vs truly editable.
+  Option A (CC LEAN): keep financial_transactions append-only. "Edit" = edit the
+    INVOICE (account fee/discount) + VOID-and-repost for payment corrections.
+    No schema/RLS change. Audit-clean; matches how real books work.
+  Option B: add UPDATE/DELETE RLS (admin-scoped) on financial_transactions and
+    allow in-place edit/delete. Simpler mental model for Frank ("just fix the
+    number"), but loses the immutable audit trail and risks family_balances
+    drift if an edit is partial. Requires migration + careful family_balances
+    re-test.
+  CC LEAN: A. It gives Frank everything he asked ("edit the invoice", "fix a
+    payment") without sacrificing ledger integrity. If he insists on literal
+    edit/delete, B is a one-migration add — but flag the audit tradeoff.
+
+FORK 2 — Coach "edit each session": delete-assignment vs exclude-flag.
+  Option A (CC LEAN): editing a session = add/remove the event_coach_assignment
+    row (ALL RLS today, zero schema). Removing it drops the session from owed.
+  Option B: add coach_payouts/assignment-level "paid_for" linkage so a payout
+    consumes specific sessions (true reconciliation). Bigger model; only worth
+    it if Frank wants per-session paid/unpaid tracking, not just a total.
+  CC LEAN: A for v1 (manage the set of paid sessions); B is a phase-2 if
+    session-level settlement is wanted.
+
+FORK 3 — Surface shape: detail OVERLAY vs dedicated ROUTE.
+  Option A (CC LEAN): FullScreenForm-class overlays opened from the cards (no
+    route; back closes). Matches the wizard/record-payment pattern; no deep-link
+    needed for an internal admin tool.
+  Option B: routes (/admin/financials/family/:id, /coach/:id) — deep-linkable,
+    but adds the cold-open/back-button surface (the loop class we just fixed).
+  CC LEAN: A. Fewer moving parts, no new back-button edges.
+
+------------------------------------------------------------------------------
+(d) PER-ROLE
+------------------------------------------------------------------------------
+  Admin-only surface throughout (Financials is /admin). Coaches see their OWN
+  pay via CoachCompCard (home) — unchanged; this spec does not expose other
+  coaches' or families' money to non-admins. No parent-facing change.
+
+------------------------------------------------------------------------------
+(e) OUT OF SCOPE (this redesign does NOT touch)
+------------------------------------------------------------------------------
+  - The family_balances billing model + the funnel/import billing reconcile
+    (#1029 era) — stable, leave it.
+  - Parent-facing balance surfaces (FamilyBalanceCard) — unchanged.
+  - Multi-currency / tax / invoicing-PDF / external accounting export — future.
+  - Coach payroll tax / 1099 generation — future (Darien is per-session cash-
+    basis today).
+  - The retired LeagueApps import (#1039) — stays retired.
+
+------------------------------------------------------------------------------
+PROPOSED PR SEQUENCE (after Frank rules the forks)
+------------------------------------------------------------------------------
+  PR-1  Family detail overlay — invoice edit (account fee/discount) + read-only
+        ledger view (the highest-value gap: see the full history + fix the bill).
+  PR-2  Family ledger actions — VOID-via-reversal + record from the detail
+        (Fork 1A). (Or, if Fork 1B: the UPDATE/DELETE RLS migration + edit.)
+  PR-3  Coach detail overlay — sessions breakdown (read) + payout edit/delete
+        (coach_payouts ALL RLS). Reconciles owed live.
+  PR-4  Coach session management — add/remove event_coach_assignment from the
+        detail (Fork 2A).
+  PR-5  Polish — running balances, receipt_url upload (financial_transactions
+        already has the column), CSV export of a season's ledger.
+  Each PR ships with the AP#43 invariant test (money totals reconcile across
+  the detail view and the family_balances/owed source) + the Card/Row guard
+  test where touched.
+
+CC OVERALL LEAN (AP#39): build PR-1 + PR-3 first (the "see the details" half —
+read drill-ins for both families and coaches), grade, then add the edit actions
+(PR-2/PR-4) once Frank confirms Fork 1 + Fork 2. The read surfaces are
+zero-risk and immediately answer "see the details"; the edits carry the ledger-
+integrity decision.
+==============================================================================
