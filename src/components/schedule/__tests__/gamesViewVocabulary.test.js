@@ -19,6 +19,12 @@ describe('Games tab — rail/facts vocabulary adoption', () => {
     expect(src).toContain('data?.gameResults?.[e.id]');
   });
 
+  it('Games mode carries the density control + per-row weather (operator-caught 2026-06-13)', () => {
+    const src = readFileSync('src/components/schedule/GamesView.jsx', 'utf8');
+    expect(src).toContain('<DensityToggle sectionKey="default" />');
+    expect(src).toContain('getWeatherForTime(data?.weather, e.start_at)');
+  });
+
   it('tournament anchors title as the tournament name, not a bare type label (MatchupCard treatment preserved)', () => {
     const anchor = { event_type: 'tournament', opponent: null, tournament_name: 'Bergen County Tournament' };
     expect(formatEventTitle(anchor)).toEqual({ prefix: '', body: 'Bergen County Tournament' });

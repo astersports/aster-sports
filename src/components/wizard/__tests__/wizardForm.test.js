@@ -4,7 +4,7 @@
 // because opponent wasn't tracked in before/after.
 
 import { describe, expect, it } from 'vitest';
-import { buildSaveDiff } from '../wizardForm';
+import { buildSaveDiff, EMPTY_FORM, eventToForm } from '../wizardForm';
 
 const baseForm = {
   date: '2026-05-30', startTime: '08:00', endTime: '09:30',
@@ -47,5 +47,24 @@ describe('buildSaveDiff', () => {
   it('opponent whitespace-only treated as null (no diff)', () => {
     const form = { ...baseForm, opponent: '   ' };
     expect(buildSaveDiff({ editEvent: baseEvent, form, editMode: 'single' })).toBeNull();
+  });
+});
+
+// 2026-06-13 locations audit: the wizard form carries the venue FK so
+// events stop shipping text-only (name-search directions mis-resolved
+// in Waze — ECS&F → Rippowam, operator-caught).
+describe('wizard form — location_id FK', () => {
+  it('EMPTY_FORM carries locationId (null)', () => {
+    expect(EMPTY_FORM).toHaveProperty('locationId', null);
+  });
+
+  it('eventToForm maps event.location_id into the form', () => {
+    const form = eventToForm({ ...baseEvent, event_type: 'game', location_id: 'loc-9' });
+    expect(form.locationId).toBe('loc-9');
+    expect(form.location).toBe('House of Sports');
+  });
+
+  it('eventToForm defaults locationId to null for legacy text-only events', () => {
+    expect(eventToForm({ ...baseEvent, event_type: 'game' }).locationId).toBeNull();
   });
 });

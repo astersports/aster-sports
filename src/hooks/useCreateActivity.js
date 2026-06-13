@@ -16,6 +16,7 @@ export function useCreateActivity() {
         event_type: formData.eventType,
         title: formData.title || buildTitle(formData.eventType, formData.opponent),
         location: formData.location || null,
+        location_id: formData.locationId || null,
         location_address: formData.locationAddress || null,
         sub_location: formData.subLocation || null,
         opponent: formData.opponent || null,

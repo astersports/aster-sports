@@ -18,7 +18,9 @@ D1 ANATOMY (both densities): RAIL + CONTENT
 ------------------------------------------------------------------------------
 RAIL (left, hairline divider): time hour:minute in TEAM COLOR (Detailed
 24px/700, Compact 17px/700; completed = tertiary gray), meridian 11px under,
-weather under that (Detailed "☀️ 74°", Compact "74°"). Width 68px/54px.
+weather under that — "☀️ 74°" at BOTH densities (amended 2026-06-13,
+operator ruling: the conditions icon renders everywhere, not detailed-only).
+Width 68px/54px.
 CONTENT rows by density:
   COMPACT (3 rows + control):           DETAILED (up to 7 rows + control):
    1 title + status slot                 1 title + status slot

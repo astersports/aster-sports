@@ -12,18 +12,6 @@
     "text": "RSVP in the LeagueApps app so Coach Frank can set rosters."
   },
   {
-    "kind": "venue_list",
-    "venues": [
-      {
-        "name": "Tournament - Fairfield County, CT",
-        "city": null,
-        "map_url": null,
-        "address": null
-      }
-    ],
-    "single_with_address": true
-  },
-  {
     "kind": "day_header",
     "label": "SAT · MAY 16",
     "venue_suffix": "Tournament - Fairfield County, CT"

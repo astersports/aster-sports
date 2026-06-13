@@ -56,6 +56,16 @@ describe('EventCard — SD-15 coverage badges at every density', () => {
     expect(container.textContent).toContain('Snacks open · Carpool lead open');
   });
 
+  it('compact rail shows the conditions icon + temp (D1 amendment 2026-06-13)', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <EventCard event={upcoming()} density="minimal" weather={{ icon: '☀️', temp: 74 }}
+          rsvpCount={{ going: 8, denominator: 10 }} />
+      </MemoryRouter>
+    );
+    expect(container.textContent).toContain('☀️ 74°');
+  });
+
   it('zero-coverage cards stay quiet at compact (no amber noise)', () => {
     const { container } = render(
       <MemoryRouter>

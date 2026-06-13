@@ -78,9 +78,14 @@ export default function EventLocationTab({ event }) {
     );
   }
 
-  // Address > legacy name-text (the 19 pre-FK events keep a search link).
+  // Address > legacy name-text (pre-FK events keep a search link).
   const resolvedAddress = event.location_address || locationData?.address || event.location || null;
   const urls = getDirectionUrls(resolvedAddress, locationData?.lat, locationData?.lon, locationData?.google_maps_url);
+  // §15 amendment (2026-06-13 audit): venue-NAME text is a GOOGLE-ONLY
+  // input — Apple/Waze name-search mis-resolves (Waze sent East Coast
+  // Sports & Fitness to Rippowam; operator-caught). Their buttons render
+  // only from a resolved venue row or a real street address.
+  const nameOnly = !event.location_address && !locationData;
 
   return (
     <div style={{
@@ -131,9 +136,9 @@ export default function EventLocationTab({ event }) {
         );
         return (
           <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-            {urls.apple && <A href={urls.apple} label="Directions in Apple Maps">Apple</A>}
+            {!nameOnly && urls.apple && <A href={urls.apple} label="Directions in Apple Maps">Apple</A>}
             <A href={urls.google} label="Directions in Google Maps"><Navigation size={15} strokeWidth={1.75} />Google</A>
-            {urls.waze && <A href={urls.waze} label="Directions in Waze">Waze</A>}
+            {!nameOnly && urls.waze && <A href={urls.waze} label="Directions in Waze">Waze</A>}
           </div>
         );
       })()}

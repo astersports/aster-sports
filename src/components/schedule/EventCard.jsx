@@ -78,7 +78,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
         <span style={{ fontSize: compact ? 17 : 24, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1, color: completed ? 'var(--as-text-tertiary)' : teamColor }}>{hm}</span>
         <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--as-text-tertiary)' }}>{mer}</span>
         {weather && timeState === 'upcoming' && (
-          <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)', marginTop: 5 }}>{compact ? `${weather.temp}°` : `${weather.icon} ${weather.temp}°`}</span>
+          <span style={{ fontSize: 11, color: 'var(--as-text-tertiary)', marginTop: 5 }}>{`${weather.icon} ${weather.temp}°`}</span>
         )}
       </div>
 
