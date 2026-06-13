@@ -1,0 +1,521 @@
+FINANCIALS — ARCHITECT HANDOFF
+Author: Claude Code (implementation lane)
+Date: 2026-06-13
+Org under test: Legacy Hoopers (e3e95e21-3571-4e9a-985a-d5d01480d4a6)
+Supabase project: vrwwpsbfbnveawqwbdmj
+Branch of record: main (this doc written from a synced checkout at commit 6e85a07e)
+
+All schema in §2 was pulled live from Postgres. All line counts in §3 are
+`wc -l` on the current working tree. Live counts in §3/§5 are from
+execute_sql against production. Anything not verifiable is marked UNCERTAIN.
+
+
+══════════════════════════════════════════════════════════════════════
+1. SCOPE
+══════════════════════════════════════════════════════════════════════
+
+IN SCOPE for this build ("Financials" = the admin money surface + the
+parent/coach read-only reflections of it):
+
+  - Family billing & collection: per-family-per-season account, an
+    append-only transaction ledger (fee / payment / refund / adjustment),
+    and a derived balance. Admin can add a charge, record a payment, and
+    void a transaction.
+  - Coach compensation: per-session pay (rate × sessions coached), recorded
+    payouts (Venmo/Zelle/cash/check/etc.), and a derived "owed / paid /
+    balance" per coach.
+  - Three admin pages (dashboard + family detail + coach detail) plus
+    parent/coach home reflections.
+
+EXPLICITLY OUT OF SCOPE (today):
+  - Stripe **subscription billing** — NOT touched. No Stripe customer,
+    subscription, or invoice object is created or read anywhere in the
+    financials code.
+  - Stripe **Connect** (coach/org payouts via Stripe) — NOT touched.
+    Coach payouts are a manual log of money moved out-of-band (Venmo,
+    Zelle, cash, check). No money moves through the app.
+  - These are deferred to Phase 6 (subscription billing) and Phase 7
+    (Connect) per the build order. STATED CLEARLY: nothing in the current
+    financials build initiates, syncs, or depends on Stripe. The string
+    'stripe' appears only as one allowed value in two payment_method CHECK
+    constraints (a manual label for "they paid by card"), NOT an
+    integration. The Stripe MCP is available to this session but is not
+    wired into any app code path.
+  - The historical LeagueApps CSV importer (src/lib/leagueAppsImport.js,
+    150 LOC) is RETIRED from the UI — no route, no caller (grep-confirmed;
+    only a test references it as a legitimate one-shot-script exception).
+    The 165 accounts / 410 transactions it produced remain as live data.
+
+
+══════════════════════════════════════════════════════════════════════
+2. SCHEMA REALITY (pulled live)
+══════════════════════════════════════════════════════════════════════
+
+All tables are in schema `public`. RLS enabled on every base table below.
+"org scoping path" = how a row is tied to an org for RLS.
+
+──────────────────────────────────────────────────────────────────────
+financial_accounts  (base table, RLS on, org_id column present)
+  One row per (guardian, season) = a family's account for a season.
+  Columns: id uuid PK, org_id uuid NOT NULL, guardian_id uuid NULL,
+    season_id uuid NOT NULL, season_fee_cents int NOT NULL,
+    discount_cents int NOT NULL, discount_reason text, notes text,
+    created_at, updated_at.
+  IMPORTANT: season_fee_cents / discount_cents are LEGACY. Billing is NOT
+    read from these — it is read from 'fee' transactions (see
+    family_balances view). Verified: these columns are 0 / unused for the
+    current billing model. Do not build an "edit the invoice" UI on
+    season_fee_cents.
+  RLS: fin_accounts_admin (ALL) USING+WITH CHECK user_has_role_in_org(
+    org_id, ['admin']); fin_accounts_parent_read (SELECT) USING
+    guardian_id IN (guardians of auth.uid()).
+  Org path: direct org_id.
+
+financial_transactions  (base table, RLS on, org_id present)
+  The append-only ledger. One row per money event.
+  Columns: id, account_id uuid NOT NULL, org_id uuid NOT NULL,
+    transaction_type text NOT NULL, amount_cents int NOT NULL,
+    payment_method text, reference text, receipt_url text,
+    occurred_at timestamptz NOT NULL, recorded_by uuid,
+    applied_to_player_id uuid, notes text, created_at,
+    processing_fee_cents int NOT NULL (default 0),
+    registration_id uuid, reverses_transaction_id uuid.
+  CHECKs: transaction_type ∈ {payment, refund, adjustment, fee};
+    payment_method ∈ {zelle, venmo, cash, check, stripe, other};
+    fee/payment/refund amounts must be > 0; processing_fee_cents >= 0.
+  APPEND-ONLY BY RLS: there is NO UPDATE and NO DELETE policy on this
+    table — only fin_tx_admin_insert (INSERT, WITH CHECK admin),
+    fin_tx_admin_select (SELECT admin), fin_tx_parent_read (SELECT, own
+    family via account→guardian). So a transaction can never be edited or
+    deleted by anyone through the API. "Void" = insert a reversing row
+    with reverses_transaction_id pointing at the original (the view nets
+    the pair out). This is deliberate audit integrity.
+  Org path: direct org_id.
+
+family_balances  (VIEW, relrowsecurity=false — inherits from base tables;
+    do NOT flag as "RLS off", per AP#24)
+  THE canonical money source (AP#63 / §11.5). Definition (live):
+    SELECT per account_id, org_id, guardian_id, season_id:
+      billed_cents   = Σ amount where type='fee'
+      net_paid_cents = Σ (payment) − (refund) + (adjustment)
+      total_fees_cents = Σ processing_fee_cents where type='payment'
+      balance_cents  = billed − net_paid
+      last_payment_at = max(occurred_at) where type='payment'
+    JOIN excludes reversed pairs:
+      ft.reverses_transaction_id IS NULL          (don't count reversals)
+      AND NOT EXISTS (a row that reverses ft.id)  (don't count the voided)
+  Org path: carries org_id (from financial_accounts); queries filter
+    .eq('org_id', …).eq('season_id', …) and optionally .eq('guardian_id', …).
+
+──────────────────────────────────────────────────────────────────────
+coaching_assignments  (base table, RLS on, org_id present)
+  A coach's standing assignment to a team (+ their pay rate). One row per
+  (coach, team). Used by Financials for the RATE.
+  Columns incl: id, org_id, team_id, user_id, display_name, role,
+    phone, display_in_footer, pay_per_session_cents int NULL,
+    active bool, scope text NOT NULL, org_title, effective_start_date,
+    effective_end_date, rates jsonb NOT NULL.
+  CHECKs: role ∈ {head_coach, assistant, team_manager, program_director};
+    scope ∈ {all_events, games_only, practices_only};
+    rates must be a jsonb object.
+  RATE MODEL — TWO COLUMNS, ONE USED:
+    * pay_per_session_cents (scalar int) — THIS is what the UI reads and
+      writes (CoachRateSheet writes it; useCoachPayouts/useCoachDetail
+      read it).
+    * rates (jsonb, NOT NULL, default object) — DORMANT. No financials UI
+      reads or writes it. Live sample: every row's rates = '{}' (empty
+      object). The architect asked about coaching_assignments.rates
+      specifically: it exists as a forward-looking column but is unused;
+      the live pay rate lives in pay_per_session_cents. FLAG: decide
+      whether to collapse to one or formalize rates jsonb (see §6/§8).
+  SCOPE drives owed math: scope='games_only' counts only
+    event_type∈{game,tournament}; 'all_events' counts everything;
+    'practices_only' is in the CHECK but UNCERTAIN if any owed-math path
+    honors it (the hooks branch only games_only vs else-all).
+  RLS: coaching_assignments_read (SELECT) USING org_id ∈ user's orgs;
+    coaching_assignments_write (ALL) USING+WITH CHECK admin-in-org.
+  Org path: direct org_id.
+
+event_coach_assignments  (base table, RLS on, NO org_id column)
+  Per-event record that a coach worked a specific event = the per-session
+  settlement substrate behind "owed".
+  Columns: id, event_id uuid NOT NULL, coach_user_id uuid NOT NULL,
+    status text NOT NULL, assigned_by uuid, created_at,
+    pay_cents int NULL, pay_status text NOT NULL,
+    settled_by_payout_id uuid NULL.
+  CHECKs: status ∈ {assigned, attended, absent};
+    pay_status ∈ {owed, paid, excluded}.
+  Org path: FK-scoped via event_id → events.team_id → teams.org_id (NO
+    org_id column — correct per AP#37 exception; do not "add org_id").
+  RLS: "admins manage own-org event coach assignments" (ALL) via
+    events→teams→user_roles admin/super_admin; "coaches read relevant…"
+    (SELECT) own assignments or team_staff of the event's team.
+
+coach_payouts  (base table, RLS on, org_id present)
+  A recorded payout = money the org paid a coach out-of-band.
+  Columns: id, org_id NOT NULL, coach_user_id NOT NULL, season_id NOT NULL,
+    amount_cents int NOT NULL, status text NOT NULL, payment_method text,
+    reference text, source_assignments uuid[] NULL, paid_at timestamptz,
+    notes text, created_at, updated_at.
+  CHECKs: amount_cents >= 0; status ∈ {pending, paid, disputed};
+    payment_method ∈ {zelle, venmo, cash, check, stripe, other}.
+  source_assignments is a uuid[] meant to hold the event_coach_assignments
+    settled by this payout — but the write path does NOT populate it
+    (see §5).
+  RLS: coach_payouts_admin (ALL) admin-in-org; coach_payouts_self_read
+    (SELECT) coach_user_id = auth.uid().
+  Org path: direct org_id.
+
+staff_profiles  (base table) — relevant column only:
+  default_payout_method text (CHECK via app to the 6 methods) — the
+  coach-level default that pre-fills the Record-payout form. 2 of the
+  org's staff have one set.
+
+──────────────────────────────────────────────────────────────────────
+registrations / registration_fees  (base tables, RLS on, org_id present)
+  registrations: the signup row (program_id, player_id, team_id NULL,
+    registration_tier enum, waitlist_state enum, status enum, contacts,
+    medical, custom_responses jsonb, …). No money column.
+  registration_fees: id, org_id, registration_id NOT NULL, fee_id NULL,
+    fee_type (enum USER-DEFINED), amount_cents int NOT NULL. Only 2 rows
+    live for this org — the registration→fee path is essentially unused
+    in production today (the LeagueApps import wrote fees directly as
+    'fee' financial_transactions, not via registration_fees). UNCERTAIN
+    whether registration_fees is meant to become the billing entry point
+    in Phase 6; today it is not the billing source.
+
+LIVE COUNTS (org e3e95e21, pulled today):
+  financial_accounts ................ 165
+  financial_transactions ............ 410   (reversals: 0)
+  coach_payouts ..................... 10    (8 look like seed/test by
+                                            notes/reference; 2 carry
+                                            source_assignments)
+  event_coach_assignments (org) ..... 137   (ALL pay_status='owed';
+                                            settled_by_payout_id: 0 set;
+                                            pay_cents NULL: 0)
+  coaching_assignments (active) ..... 11
+  registration_fees ................. 2
+  staff w/ default_payout_method .... 2
+
+
+══════════════════════════════════════════════════════════════════════
+3. WHAT IS BUILT TODAY  (path · current LOC · what renders)
+══════════════════════════════════════════════════════════════════════
+
+ROUTES (src/App.jsx, all admin-only via <Protected allowedRoles={['admin']}>):
+  /admin/financials                      → FinancialDashboardPage
+  /admin/financials/family/:accountId    → FinancialFamilyDetailPage
+  /admin/financials/coach/:userId        → FinancialCoachDetailPage
+
+ADMIN PAGES
+  src/pages/FinancialDashboardPage.jsx ............ 114
+    Season pill strip (only seasons that have accounts) → summary card →
+    SegmentedControl {Families | Coaches}. Families = grouped team list;
+    Coaches = CoachPayoutsSection. Owing deep-link (?owing=1) preselects
+    the season with balances.
+  src/pages/FinancialFamilyDetailPage.jsx ......... 114
+    Billed / Collected / Balance stat row + the family's ledger
+    (transactions). Actions: Add charge, Record payment, and per-row Void
+    (posts a reversing entry; original shown struck-through).
+  src/pages/FinancialCoachDetailPage.jsx .......... 112
+    Owed / Paid / Balance stats + "Pay settings" + "Record payout" +
+    per-session list (tap → edit pay/exclude) + payouts list (tap → edit).
+
+HOOKS
+  src/hooks/useSeasonFinancials.js ................ 155  (canonical season
+    money: accounts + family_balances view → per-account map + aggregate
+    stats; stale-key gate; AP#36/#37 clean)
+  src/hooks/useFamilyLedger.js .................... 42   (one family: account
+    + family_balances row + transactions list, for the detail page)
+  src/hooks/useFamilyTeams.js ..................... 62   (guardian→team
+    grouping for the Families-by-team view; accounts carry no team_id)
+  src/hooks/useFunnelRevenue.js ................... 39   (registration-funnel
+    revenue line on the summary card)
+  src/hooks/useFamiliesOwingCount.js .............. 56   (admin-home lane)
+  src/hooks/useCoachPayouts.js .................... 81   (Coaches LIST: owed =
+    rate × scope-aware session count; paid/pending from coach_payouts)
+  src/hooks/useCoachDetail.js ..................... 51   (one coach: owed = Σ
+    event_coach_assignments.pay_cents non-excluded; payouts; rate; method)
+  src/hooks/useCoachComp.js ....................... 33   (coach's OWN card:
+    owed = Σ coach_payouts where status='pending')
+
+ADMIN COMPONENTS
+  src/components/admin/FinancialSummaryCard.jsx ... 40   (billed/collected/
+    net/outstanding + funnel)
+  src/components/admin/FamilyBalanceList.jsx ...... 64   (search + team groups)
+  src/components/admin/TeamBalanceCard.jsx ........ 60   (per-team: families/
+    players count + outstanding headline, expandable)
+  src/components/admin/FamilyBalanceRow.jsx ....... 34   (one family row;
+    open + nudge)
+  src/components/admin/RecordPaymentForm.jsx ...... 131  (record a 'payment'
+    txn; method, processing fee, date)
+  src/components/admin/AddChargeSheet.jsx ......... 52   (record a 'fee' txn;
+    amount + reason — this is "edit the invoice")
+  src/components/admin/CoachPayoutsSection.jsx .... 48   (Coaches list wrapper)
+  src/components/admin/CoachPayoutCard.jsx ........ 43   (one coach card →
+    coach detail)
+  src/components/admin/CoachRateSheet.jsx ......... 64   (rate +
+    default_payout_method; writes pay_per_session_cents across the coach's
+    season teams)
+  src/components/admin/RecordCoachPayoutForm.jsx .. 73   (log a payout —
+    free amount, status, method, date)
+  src/components/admin/CoachSessionSheet.jsx ...... 49   (edit ONE session's
+    pay_cents + exclude toggle)
+  src/components/admin/CoachPayoutEditSheet.jsx ... 69   (edit/adjust a
+    recorded payout)
+
+PARENT / COACH REFLECTIONS
+  src/components/family/FamilyBalanceCard.jsx ..... 47   (parent home: own
+    program balance from family_balances; co-guardian "managed by" case)
+  src/hooks/useFamilyPrograms.js .................. 68   (parent's programs +
+    own balances)
+  src/components/home/CoachCompCard.jsx ........... 37   (coach home: own
+    owed/paid via useCoachComp; hides if hasComp=false)
+
+HALF-BUILT / STUBBED / DORMANT
+  - Per-session SETTLEMENT loop is half-built: schema has
+    event_coach_assignments.pay_status {owed,paid,excluded} +
+    settled_by_payout_id + coach_payouts.source_assignments[], but NO
+    write path closes it (see §5). 0 of 137 sessions are linked/paid.
+  - coaching_assignments.rates jsonb: schema only, no reader/writer.
+  - registration_fees: schema + 2 rows, not the live billing source.
+  - financial_transactions.receipt_url: column exists; no upload UI.
+  - leagueAppsImport.js: dormant (retired from UI, data kept).
+  - CSV / season-ledger EXPORT: not built (was the last planned item).
+
+
+══════════════════════════════════════════════════════════════════════
+4. THREE ROLE LENSES
+══════════════════════════════════════════════════════════════════════
+
+PARENT
+  Sees today: on their home, a FamilyBalanceCard per program — billed /
+    paid / due, sourced from family_balances scoped to their own guardian
+    (RLS fin_accounts_parent_read + fin_tx_parent_read). Co-guardian whose
+    account is held by the other parent sees a leak-free "Managed by the
+    registering parent" note, no number.
+  Can do today: nothing — read-only. No pay-now, no receipt, no history
+    drill-down beyond the card.
+  10/10 target: a real "Balance & payments" surface — full ledger history
+    (what was charged, what they paid, when), downloadable/"email me a
+    receipt," and (Phase 6) Pay Now via Stripe. Clear "you owe $X, due
+    DATE" with a single tap to settle.
+
+COACH
+  Sees today: on their home, a CoachCompCard — their own owed (pending
+    payouts) + paid, hidden if they have no comp. coach_payouts_self_read
+    lets them read their own payout rows.
+  Can do today: nothing — read-only, and the number shown (pending
+    payouts) is NOT the same "owed" the admin sees (see §5).
+  10/10 target: "My pay" — per-session list (date, team, $), running
+    owed, payout history with method, and a trustworthy single "owed"
+    number that matches what the admin will pay. (Phase 7) direct deposit
+    via Connect.
+
+ADMIN
+  Sees today: the three pages in §3. Families-by-team with billed/
+    collected/outstanding; per-family ledger with add-charge / record-
+    payment / void; Coaches list with owed/paid/balance; per-coach detail
+    with per-session pay editing + payout logging + rate/method settings.
+  Can do today: charge, collect, void, set coach rate + default method,
+    edit a session's pay, exclude a session, log a payout, edit a payout.
+  10/10 target: one reconciled money cockpit — paying a coach DECREMENTS
+    owed (settlement linkage), one coherent "owed" everywhere, season
+    export for bookkeeping/taxes, receipts, and an at-a-glance "who owes
+    me / who do I owe" that always foots. Benchmarked to Stripe Dashboard
+    clarity (§7).
+
+
+══════════════════════════════════════════════════════════════════════
+5. THE FRICTION  (where a 10/10 stalled — verified live, not asserted)
+══════════════════════════════════════════════════════════════════════
+
+THE WALL: coach "owed" is computed three different ways from three
+different sources, and paying a coach never reduces it. The family side is
+clean (one source: family_balances); the coach side is not, and it cannot
+reach 10/10 across all three roles until the settlement model is unified.
+
+The three sources for ONE concept ("what is this coach owed") — a textbook
+AP#63 divergence:
+
+  (1) useCoachPayouts (admin Coaches LIST):
+        owed = Σ over active coaching_assignments of
+               pay_per_session_cents × (scope-aware session count from
+               event_coach_assignments)
+  (2) useCoachDetail (admin coach DETAIL page):
+        owed = Σ event_coach_assignments.pay_cents where
+               pay_status <> 'excluded'
+  (3) useCoachComp (coach's OWN home card):
+        owed = Σ coach_payouts where status='pending'
+
+These agree only by coincidence. LIVE PROOF — Coach Darien
+(af40a751-1db2-4690-98ad-8b630d354c66), pulled today:
+  - detail "owed" (Σ pay_cents, 35 sessions) ......... $2,100.00
+  - own-card "owed" (pending payouts) ................ $1,140.00
+  - recorded PAID payouts ............................ $2,780.00
+  - => detail balance (owed − paid) = 2,100 − 2,780 = −$680.00 (negative)
+  Three surfaces, three "owed" numbers, and the admin balance is
+  nonsensically negative.
+
+ROOT CAUSE (verified):
+  - settled_by_payout_id is set on 0 of 137 sessions.
+  - coach_payouts.source_assignments is populated on only 2 of 10 rows
+    (8 are seed/test).
+  - RecordCoachPayoutForm.jsx (the only payout write path) inserts a
+    free-typed amount and does NOT: set source_assignments, flip any
+    session's pay_status to 'paid', or write settled_by_payout_id.
+  - CoachSessionSheet.jsx can edit pay_cents and exclude, but only
+    PRESERVES an existing 'paid' status — there is no UI that ever SETS a
+    session to 'paid'. So "owed" (from sessions) and "paid" (from payout
+    rows) are two disconnected ledgers that never reconcile.
+  Net: owed is a live recompute that ignores payments; paid is a free
+  sum that ignores sessions; balance = owed − paid is therefore
+  meaningless, and the coach's own card shows a third unrelated number.
+
+WHAT I TRIED / WHY IT FELL SHORT:
+  - Rebuilt useCoachPayouts (the list query referenced non-existent
+    period_start/period_end columns and always errored to empty) so the
+    list at least computes owed from rate × sessions. That fixed the
+    crash but ADDED a third "owed" definition rather than unifying.
+  - Wired per-session editing (CoachSessionSheet) and payout editing so
+    the substrate is now editable. But without a settlement ACTION that
+    links a payout to the sessions it pays, editing does not make the
+    three numbers converge.
+  - The family side was unified onto family_balances (one source) and is
+    correct; I could not do the equivalent on the coach side without an
+    architectural ruling on the settlement model, because the choice
+    (recompute-only vs. event-sourced settlement vs. ledger-per-coach)
+    changes the schema contract, not just the UI. That is the ruling I'm
+    handing back (see §6/§8).
+
+Secondary friction (smaller):
+  - Darien has two active coaching_assignments (all_events @ $60 and
+    games_only @ $60) on different teams; CoachRateSheet sets ONE rate
+    across all the coach's teams and exposes no scope control, so
+    per-team/per-scope rate nuance isn't editable in financials.
+  - 8 seed/test coach_payouts inflate "paid" against real owed (Frank
+    asked to keep them for now; they distort any balance until removed).
+
+
+══════════════════════════════════════════════════════════════════════
+6. DECISIONS
+══════════════════════════════════════════════════════════════════════
+
+LOCKED during this work:
+  - Family billing reads from ONE source: the family_balances view
+    (AP#63). season_fee_cents/discount_cents are legacy and not read.
+  - The ledger is append-only (enforced by RLS: no UPDATE/DELETE on
+    financial_transactions). "Edit a charge/payment" = void (reversing
+    entry) + re-add. "Add charge" / "Record payment" / "Void" are the
+    family-side verbs.
+  - Coach pay rate lives in pay_per_session_cents (scalar). The rates
+    jsonb is dormant.
+  - Coach default payout method lives on staff_profiles.default_payout_method.
+  - LeagueApps financial import is retired from the UI; its data stays.
+  - Detail pages use back-button via useGoBack with an explicit fallback
+    route (fixed the "back does nothing / loops into import" bug).
+
+OPEN — need an architect ruling before coach-side build continues:
+  D1. The settlement model (the §5 wall). Pick one:
+      (a) Recompute-only: owed = rate × sessions, ALWAYS; "paid" =
+          Σ payouts; balance = owed − paid; accept that you reconcile in
+          your head; drop pay_status/settled_by_payout_id/source_assignments
+          as unused. Simplest; balance can still look odd if you overpay.
+      (b) Event-sourced settlement: a "Pay coach" action selects unpaid
+          sessions, creates a payout, stamps those sessions paid +
+          settled_by_payout_id + source_assignments atomically. owed = Σ
+          pay_cents where status='owed'. One source, fully reconciled.
+          More build (an RPC + a selection UI).
+      (c) Mirror the family model: a coach "transactions" ledger
+          (owed-accrual rows + payout rows) with a coach_balances view,
+          exactly like family_balances. Most consistent platform-wide;
+          most schema work.
+      CC lean: (b). It matches the schema that already exists
+      (pay_status/settled_by_payout_id/source_assignments are clearly
+      built for it), gives one reconciled "owed" for all three roles, and
+      is less invasive than (c). (a) is the effort-minimizing hedge and I
+      don't think it's the right call for a money surface.
+  D2. coaching_assignments.rates jsonb — collapse it (drop) or formalize
+      it (per-scope/per-role rate map) and migrate pay_per_session_cents
+      into it? CC lean: keep pay_per_session_cents, COMMENT-deprecate
+      rates (§16.16 relic discipline) unless multi-rate-per-coach is a
+      near-term need.
+  D3. Seed/test coach_payouts (8 rows) — delete now so balances foot, or
+      keep through pilot? Frank said keep; flagging that they make every
+      coach balance wrong until removed.
+  D4. registration_fees — is this the intended Phase-6 billing entry
+      point, or is direct 'fee' financial_transactions the contract? Need
+      the ruling so the funnel writes to the right place.
+
+
+══════════════════════════════════════════════════════════════════════
+7. BENCHMARK GAP
+══════════════════════════════════════════════════════════════════════
+
+vs STRIPE DASHBOARD (UI):
+  Close on: clean stat headers, single-source balance, list→detail drill,
+    void-as-reversing-entry (matches Stripe's refund-not-delete model).
+  Gap: no "balance always foots" guarantee on the coach side; no
+    transaction search/filter; no export; no receipt artifact; no
+    timeline/activity per account; money formatting is consistent but
+    there's no payout-vs-charge color/iconography system as rich as
+    Stripe's. Stripe never shows two different numbers for one balance —
+    we currently do (coach side).
+
+vs GAMECHANGER (features):
+  GC is scores/stats-first; financials are thin. We are AHEAD on org
+  billing + coach pay. Not a meaningful financial benchmark.
+
+vs PLAYMETRICS (features):
+  PM is the real bar for club/league billing: per-family invoices,
+  payment plans/installments, autopay, online card payment, refunds,
+  account statements, financial reports/exports.
+  Gap: we have the ledger + manual collection, but NO payment plans /
+    installments, NO autopay, NO online payment (Phase 6 Stripe), NO
+    account statement/export, NO aging/AR report. Coach payroll is
+    something PM largely lacks — we're ahead there IF we fix settlement.
+
+vs SPORTSENGINE (features):
+  SE: registration→invoice→online payment→payouts, plus discounts and
+    financial reporting.
+  Gap: same as PM — online payment, plans, statements, reporting/export
+    are the missing tier. Our registration→billing link (registration_fees)
+    is also thinner than SE's.
+
+ONE-LINE TAKE: UI is near Stripe-grade on the family side and would reach
+it on the coach side once "owed" is single-sourced; FEATURE gap to
+PlayMetrics/SportsEngine is the online-payment + plans + statements/export
+tier, which is mostly the deferred Phase 6/7 Stripe work — except
+season-ledger EXPORT, which needs no Stripe and is the cheapest real
+bookkeeping win available now.
+
+
+══════════════════════════════════════════════════════════════════════
+8. OPEN QUESTIONS FOR ARCHITECT  (priority order)
+══════════════════════════════════════════════════════════════════════
+
+Q1 (blocking coach 10/10): Rule on D1 — the coach settlement model
+    (a/b/c). CC lean (b) event-sourced settlement. Everything coach-side
+    downstream (the single "owed", the coach's own card, the admin
+    balance) depends on this one call.
+
+Q2: Rule on D3 — pull the 8 seed/test coach_payouts now? Until they're
+    gone (or settlement reconciles them) every coach balance is wrong.
+    CC recommends deleting them the moment D1 lands.
+
+Q3: Rule on D2 — drop vs formalize coaching_assignments.rates jsonb, and
+    whether per-coach multi-rate (per scope/team) is in near-term scope.
+
+Q4: Rule on D4 — billing entry point for the registration funnel:
+    registration_fees vs direct 'fee' transactions. Affects Phase-6 wiring.
+
+Q5: Approve the cheap near-term win independent of the above: a
+    season-ledger CSV export (families + transactions, and coaches +
+    payouts) for bookkeeping/taxes. No Stripe, no schema change. CC will
+    build on approval.
+
+Q6: Confirm the Phase boundary: should ANY Stripe surface (Pay Now,
+    Connect) be stubbed/visible now, or stay fully dark until Phase 6/7?
+    Current build keeps it fully dark; confirming that's the intent.
+
+— end of handoff —
