@@ -921,14 +921,17 @@ arc bodies.
   20260613181039_coach_default_payout_method), import back-loop fix (#1037), LeagueApps import RETIRED
   (#1039, AP#51; lib parked). Schedule polish #1040 (double-Today, ShareScheduleButton dedup).
   **FINANCIALS FULL-MANAGEMENT L99 DESIGN (2026-06-13):** `docs/FINANCIALS_MANAGEMENT_L99_DESIGN_2026-06-13.txt`
-  — architect write-up to make Financials the one money-management spot: FAMILY detail (invoice
-  fee/discount edit + full ledger view + void-via-reversal) and COACH detail (session breakdown behind
-  owed + payout edit/delete). Key spine: financial_transactions is APPEND-ONLY (INSERT/SELECT RLS only);
-  accounts/coach_payouts/event_coach_assignments are ALL-RLS (mutable). 3 FORKS for Frank: (1) family
-  ledger append-only+void [CC lean] vs editable-w-RLS; (2) coach session = remove-assignment [CC lean]
-  vs paid_for-linkage; (3) detail overlay [CC lean] vs route. Proposed PR-1..PR-5; CC lean = build the
-  READ drill-ins (PR-1 family detail + PR-3 coach detail) first, then edits after fork rulings.
-  AWAITING FRANK fork rulings + go.
+  — architect write-up to make Financials the one money-management spot. **v2 REGEN (operator: "if it's
+  the correct call that's the plan; don't shy from complex")** — leans corrected off the effort-
+  minimizing hedges (AP#39/#40): (1) family ledger APPEND-ONLY + LINKED reversals (new
+  financial_transactions.reverses_transaction_id; voids reference the original — immutable + traceable;
+  invoice fee/discount directly editable on the account); (2) coach sessions = PER-SESSION SETTLEMENT
+  (new event_coach_assignments.pay_cents/pay_status/settled_by_payout_id — each session an editable,
+  settleable line item; owed/paid derive from the session ledger, replacing rate×count) — the literal
+  "edit each session"; (3) DEDICATED ROUTES /admin/financials/family/:id + /coach/:id (deep-linkable
+  hub; back hardened via useGoBack). Sequence: PR-0 migrations → PR-1 family-detail-read + PR-3
+  coach-detail-read (see the details on the correct model) → PR-2/PR-4 edits → PR-5 hub wiring (alert
+  deep-links, receipt upload, CSV). AWAITING FRANK ratify the 3 v2 leans + go.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
