@@ -16,10 +16,11 @@ export function useCoachDetail(orgId, seasonId, userId) {
     if (!orgId || !seasonId || !userId) { setLoading(false); return; }
     setLoading(true);
     const id = ++fetchIdRef.current;
-    const teamsRes = await supabase.from('teams').select('id, name').eq('org_id', orgId);
+    const teamsRes = await supabase.from('teams').select('id, name, season_id').eq('org_id', orgId);
     if (id !== fetchIdRef.current) return;
     if (teamsRes.error) { console.error('useCoachDetail teams:', teamsRes.error.message); setLoading(false); return; }
-    const teamName = {}; (teamsRes.data || []).forEach((t) => { teamName[t.id] = t.name; });
+    const teamName = {}; const teamSeason = {};
+    (teamsRes.data || []).forEach((t) => { teamName[t.id] = t.name; teamSeason[t.id] = t.season_id; });
     const teamIds = (teamsRes.data || []).map((t) => t.id);
 
     const [profRes, rateRes, payRes, sessRes] = await Promise.all([
@@ -34,6 +35,7 @@ export function useCoachDetail(orgId, seasonId, userId) {
     const sessions = (sessRes.data || []).map((s) => ({
       id: s.id, pay_cents: s.pay_cents || 0, pay_status: s.pay_status, settled_by_payout_id: s.settled_by_payout_id,
       title: s.events?.title || '—', startAt: s.events?.start_at, teamName: teamName[s.events?.team_id] || '',
+      seasonId: teamSeason[s.events?.team_id] || null,
     })).sort((a, b) => new Date(b.startAt) - new Date(a.startAt));
     const payouts = payRes.data || [];
     const owedCents = sumOwedCents(sessions);

@@ -49,3 +49,26 @@ UTC date, files+LOC, version/SHA, verification evidence, next unlock.
   CC pre-flight (live): guard present, signature unchanged, authenticated EXECUTE intact; all
   owed sessions (Kenny 102, Darien 35) map to ONE season (Spring 2026) → one pay_coach call
   per coach today. PR-2 contract ready.
+
+2026-06-13 · Migration E 20260613221111_reconcile_coach_payout_source_assignments applied via Supabase MCP
+  Seed fixture correction. Honored Darien's PAID $1,680 payout (28 sessions x $60, exact) by
+  flipping those 28 owed->paid and linking settled_by_payout_id; cleared source_assignments on
+  his PENDING $540 payout (a non-paid payout must not claim sessions under Migration D).
+  Invariant restored: every session referenced by a PAID payout is itself paid, so pay_coach
+  can never re-settle it. Paid totals unchanged ($2,780). Darien owed 35/$2,100 -> 7/$420.
+  Org owed 137/$14,340 -> 109/$12,660 (delta exactly the 28 Darien sessions). Kenny untouched
+  (102/$12,240). Post-flight clean. Idempotent. Mirror committed same turn (sourced from the
+  registered schema_migrations.statements — body not re-attached; byte-faithful to applied SQL).
+
+2026-06-13 · PR-2 — PayCoachSheet + pay_coach() wiring (settlement, DR-F1)
+  New src/components/admin/PayCoachSheet.jsx (108, FullScreenForm/AP#15): select a coach's
+  OWED sessions (default all, select-all) → settle bar sums Σ selected pay_cents → "Pay $X"
+  calls pay_coach() once per season with status='paid'. Pessimistic (money out) + double-submit
+  ref guard; §16.3 error microcopy on failure; refetch on success. New lib helper
+  buildSettlements (coachComp.js 42) groups selected sessions by season into pay_coach payloads
+  (pure, tested). useCoachDetail (55) now stamps seasonId per session. FinancialCoachDetailPage
+  (117) gets a "Pay coach · $X owed" button (shown when owed>0) opening the sheet.
+  Tests: coachComp.test.js extended (buildSettlements: one-season/two-season grouping, always
+  status='paid', amount=Σ, empty→[]). Live data shape verified: Darien 7 owed all Spring 2026
+  → one call, $420. Did NOT run pay_coach live (settles out-of-band + can't auth admin via MCP);
+  architect verifies Darien end-to-end post-merge. Next unlock: PR-3 (prior-payouts split).
