@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { formatCurrency } from '../../lib/formatters';
 
-const METHOD = { venmo: 'Venmo', zelle: 'Zelle', cash: 'Cash', check: 'Check', stripe: 'Stripe', other: 'Other' };
+const METHOD = { venmo: 'Venmo', zelle: 'Zelle', cash: 'Cash', check: 'Check', stripe: 'Card/Stripe', other: 'Other' };
 const STATUS_COLOR = { pending: 'var(--as-warning)', paid: 'var(--as-success)', disputed: 'var(--as-danger)' };
 
 const initials = (name) => (name || '?').split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
@@ -28,6 +28,7 @@ export default function CoachPayoutCard({ coach, onSetRate, onRecordPayout }) {
           <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)' }}>{coach.name}</div>
           <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)' }}>
             {rated ? `${formatCurrency(coach.rateCents)}/session` : `${coach.rows.length} payout${coach.rows.length === 1 ? '' : 's'}`}
+            {coach.defaultMethod ? ` · ${METHOD[coach.defaultMethod] || coach.defaultMethod}` : ''}
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
@@ -50,7 +51,7 @@ export default function CoachPayoutCard({ coach, onSetRate, onRecordPayout }) {
           <div style={{ display: 'flex', gap: 8, padding: '10px 14px', borderTop: '1px solid var(--as-border-subtle)' }}>
             <button type="button" onClick={() => onSetRate?.(coach)} className="as-press"
               style={{ flex: 1, minHeight: 40, borderRadius: 10, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-secondary)', fontSize: 13, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer' }}>
-              {rated ? 'Edit rate' : 'Set rate'}
+              Pay settings
             </button>
             <button type="button" onClick={() => onRecordPayout?.(coach)} className="as-press"
               style={{ flex: 1, minHeight: 40, borderRadius: 10, border: 'none', backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>

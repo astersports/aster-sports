@@ -13,7 +13,7 @@ const fieldStyle = { width: '100%', minHeight: 44, padding: '0 12px', borderRadi
 
 export default function RecordCoachPayoutForm({ coach, orgId, seasonId, onClose, onSaved }) {
   const [amount, setAmount] = useState('');
-  const [method, setMethod] = useState('venmo');
+  const [method, setMethod] = useState(coach.defaultMethod || 'venmo');
   const [status, setStatus] = useState('paid');
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);

@@ -34,6 +34,11 @@ describe('CoachPayoutCard', () => {
     expect(queryByText('Venmo')).not.toBeNull(); // expanded: row method shows
   });
 
+  it('shows the default payout method on the card when set', () => {
+    const { getByText } = render(<CoachPayoutCard coach={{ ...ratedCoach, defaultMethod: 'venmo' }} />);
+    expect(getByText(formatCurrency(6000) + '/session · Venmo')).toBeTruthy();
+  });
+
   it('rated coach shows balance (owed − paid), rate, and an owed breakdown on expand', () => {
     const { getByText, queryByText, getAllByRole } = render(<CoachPayoutCard coach={ratedCoach} />);
     expect(getByText(formatCurrency(12000))).toBeTruthy(); // |balance| = $120
