@@ -1,17 +1,15 @@
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCoachPayouts } from '../../hooks/useCoachPayouts';
 import { formatCurrency } from '../../lib/formatters';
 import CoachPayoutCard from './CoachPayoutCard';
-import CoachRateSheet from './CoachRateSheet';
-import RecordCoachPayoutForm from './RecordCoachPayoutForm';
 import LoadingSkeleton from '../shared/LoadingSkeleton';
 
-// Financials → Coaches segment. Per coach: owed (rate × sessions) vs paid →
-// balance, expandable to payout rows, with Set-rate + Record-payout actions.
+// Financials → Coaches segment. Owed/Paid/Balance totals + a per-coach summary
+// card; tap a coach → the coach detail route (sessions behind owed + payouts +
+// Pay-settings/Record-payout actions).
 export default function CoachPayoutsSection({ orgId, seasonId }) {
-  const { coaches, loading, refetch } = useCoachPayouts(orgId, seasonId);
-  const [rateCoach, setRateCoach] = useState(null);
-  const [payoutCoach, setPayoutCoach] = useState(null);
+  const { coaches, loading } = useCoachPayouts(orgId, seasonId);
+  const navigate = useNavigate();
 
   if (loading) return <LoadingSkeleton variant="card" count={2} />;
 
@@ -38,16 +36,9 @@ export default function CoachPayoutsSection({ orgId, seasonId }) {
           <div style={STAT}><div style={STAT_LABEL}>Balance</div><div style={{ ...STAT_NUM, color: balance > 0 ? 'var(--as-danger)' : 'var(--as-success)' }}>{formatCurrency(Math.abs(balance))}</div></div>
         )}
       </div>
-      {coaches.map((c) => <CoachPayoutCard key={c.userId} coach={c} onSetRate={setRateCoach} onRecordPayout={setPayoutCoach} />)}
-
-      {rateCoach && (
-        <CoachRateSheet coach={rateCoach} orgId={orgId} seasonId={seasonId}
-          onClose={() => setRateCoach(null)} onSaved={() => { setRateCoach(null); refetch(); }} />
-      )}
-      {payoutCoach && (
-        <RecordCoachPayoutForm coach={payoutCoach} orgId={orgId} seasonId={seasonId}
-          onClose={() => setPayoutCoach(null)} onSaved={() => { setPayoutCoach(null); refetch(); }} />
-      )}
+      {coaches.map((c) => (
+        <CoachPayoutCard key={c.userId} coach={c} onOpen={() => navigate(`/admin/financials/coach/${c.userId}?season=${seasonId}`)} />
+      ))}
     </>
   );
 }

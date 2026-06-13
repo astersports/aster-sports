@@ -24,29 +24,26 @@ const ratedCoach = {
   rows: [{ id: 'p2', amount_cents: 198000, status: 'paid', payment_method: 'cash', paid_at: '2026-05-01', created_at: '2026-05-01' }],
 };
 
-describe('CoachPayoutCard', () => {
-  it('unrated coach shows recorded total, rows hidden until expanded', () => {
-    const { getByText, queryByText, getAllByRole } = render(<CoachPayoutCard coach={coach} />);
+describe('CoachPayoutCard (summary → detail)', () => {
+  it('unrated coach shows recorded total + payout count, taps through', () => {
+    const onOpen = vi.fn();
+    const { getByText } = render(<CoachPayoutCard coach={coach} onOpen={onOpen} />);
     expect(getByText('Coach Kenny')).toBeTruthy();
     expect(getByText(formatCurrency(126000))).toBeTruthy(); // 72000 paid + 54000 pending
-    expect(queryByText('Venmo')).toBeNull(); // collapsed: row detail not rendered
-    fireEvent.click(getAllByRole('button')[0]);
-    expect(queryByText('Venmo')).not.toBeNull(); // expanded: row method shows
+    expect(getByText('1 payout')).toBeTruthy();
+    fireEvent.click(getByText('Coach Kenny'));
+    expect(onOpen).toHaveBeenCalledWith(coach);
   });
 
-  it('shows the default payout method on the card when set', () => {
-    const { getByText } = render(<CoachPayoutCard coach={{ ...ratedCoach, defaultMethod: 'venmo' }} />);
+  it('shows the rate + default payout method on the sub-line', () => {
+    const { getByText } = render(<CoachPayoutCard coach={{ ...ratedCoach, defaultMethod: 'venmo' }} onOpen={() => {}} />);
     expect(getByText(formatCurrency(6000) + '/session · Venmo')).toBeTruthy();
   });
 
-  it('rated coach shows balance (owed − paid), rate, and an owed breakdown on expand', () => {
-    const { getByText, queryByText, getAllByRole } = render(<CoachPayoutCard coach={ratedCoach} />);
+  it('rated coach headlines the balance (owed − paid)', () => {
+    const { getByText } = render(<CoachPayoutCard coach={ratedCoach} onOpen={() => {}} />);
     expect(getByText(formatCurrency(12000))).toBeTruthy(); // |balance| = $120
-    expect(getByText('still owed · ' + formatCurrency(198000) + ' paid')).toBeTruthy();
-    expect(getByText(formatCurrency(6000) + '/session')).toBeTruthy();
-    expect(queryByText('Owed ' + formatCurrency(210000))).toBeNull(); // collapsed
-    fireEvent.click(getAllByRole('button')[0]);
-    expect(getByText('Owed ' + formatCurrency(210000))).toBeTruthy(); // expanded breakdown
+    expect(getByText('still owed')).toBeTruthy();
   });
 });
 
