@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, Upload } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useSeasonFinancials } from '../hooks/useSeasonFinancials';
@@ -71,12 +71,7 @@ export default function FinancialDashboardPage() {
       <button type="button" onClick={goBack} className="as-press" style={{ display: 'flex', alignItems: 'center', minHeight: 44, background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12, padding: 0 }}>
         <ChevronLeft size={20} strokeWidth={1.75} /> Back
       </button>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--as-text-primary)' }}>Financials</h1>
-        <Link to="/admin/financials/import" className="as-press" style={{ display: 'flex', alignItems: 'center', gap: 4, minHeight: 36, padding: '0 12px', borderRadius: 10, fontSize: 13, fontWeight: 500, color: 'var(--as-accent)', border: '1.5px solid var(--as-accent)', textDecoration: 'none' }}>
-          <Upload size={14} strokeWidth={1.75} /> Import
-        </Link>
-      </div>
+      <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--as-text-primary)', marginBottom: 16 }}>Financials</h1>
 
       {seasons.length > 1 && (
         <div style={{ display: 'flex', gap: 6, marginBottom: 16, overflowX: 'auto' }}>
