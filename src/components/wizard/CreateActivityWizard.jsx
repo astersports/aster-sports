@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/useToast';
+import { useAuth } from '../../context/AuthContext';
 import StepType from './StepType';
 import StepTeam from './StepTeam';
 import StepWhen from './StepWhen';
@@ -15,6 +16,7 @@ import { useConflictCheck } from '../../hooks/useConflictCheck';
 const STEPS = ['Type', 'Team', 'When', 'Details']; const EDIT_STEPS = ['When', 'Details'];
 export default function CreateActivityWizard({ orgId, editEvent, editMode = 'single', onClose, onCreated }) {
   const isEdit = !!editEvent; const { showToast } = useToast();
+  const { org } = useAuth(); // feature-gate the rides/duties offers (L99 B1)
   const [step, setStep] = useState(isEdit ? 2 : 0);
   const [form, setForm] = useState(isEdit ? eventToForm(editEvent) : EMPTY_FORM);
   const conflicts = useConflictCheck(step, form, isEdit ? editEvent.id : null);
@@ -99,7 +101,7 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
         {step === 0 && <StepType value={form.eventType} onSelect={selectType} />}
         {step === 1 && <StepTeam orgId={orgId} value={form.teamId} onSelect={selectTeam} />}
         {step === 2 && <StepWhen data={form} onChange={setForm} isEdit={isEdit} orgId={orgId} />}
-        {step === 3 && <StepDetails eventType={form.eventType} data={form} onChange={setForm} orgId={orgId} />}
+        {step === 3 && <StepDetails eventType={form.eventType} data={form} onChange={setForm} orgId={orgId} org={org} />}
       </div>
 
       {step === 2 && conflicts.length > 0 && (

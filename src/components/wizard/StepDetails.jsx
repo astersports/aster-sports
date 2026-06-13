@@ -2,11 +2,19 @@ import { useEffect, useState } from 'react';
 import DutyEditor from './DutyEditor';
 import { HOME_AWAY } from '../../lib/constants';
 import { supabase } from '../../lib/supabase';
+import { dutiesEnabledFor, ridesCapableOrg } from '../../lib/featureGates';
 import Input from '../shared/Input';
 import Toggle from '../shared/Toggle';
 
-export default function StepDetails({ eventType, data, onChange, orgId }) {
+export default function StepDetails({ eventType, data, onChange, orgId, org }) {
   const set = (key, val) => onChange({ ...data, [key]: val });
+  // L99 audit 2026-06-13 B1: the wizard is the only writer of enable_rides +
+  // duty slots, so it must honor the same gate every reader does — otherwise
+  // an org with the feature off still gets offered it, then it dark-ships off
+  // everywhere else. Offer rides only when the org capability is on; offer the
+  // Volunteers editor only when duties are on for the org.
+  const ridesOffered = ridesCapableOrg(org);
+  const dutiesOffered = dutiesEnabledFor(org);
   const [tournaments, setTournaments] = useState([]);
   const [opponents, setOpponents] = useState([]);
   useEffect(() => {
@@ -105,14 +113,14 @@ export default function StepDetails({ eventType, data, onChange, orgId }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <Toggle label="Indoor" checked={data.indoor ?? true} onChange={(v) => set('indoor', v)} />
-        <Toggle label="Enable rides" checked={data.enableRides || false} onChange={(v) => set('enableRides', v)} />
+        {ridesOffered && <Toggle label="Enable rides" checked={data.enableRides || false} onChange={(v) => set('enableRides', v)} />}
         {isGame && <Toggle label="Scrimmage" checked={data.isScrimmage || false} onChange={(v) => set('isScrimmage', v)} />}
         {isGame && data.tournamentId && <Toggle label="Playoff / bracket game" checked={data.isBracketGame || false} onChange={(v) => set('isBracketGame', v)} />}
         {isGame && data.tournamentId && <Toggle label="Championship final" checked={data.isChampionshipFinal || false} onChange={(v) => set('isChampionshipFinal', v)} />}
         {isGame && data.tournamentId && <Toggle label="Bonus game (doesn't affect seeding)" checked={data.isBonusGame || false} onChange={(v) => set('isBonusGame', v)} />}
       </div>
 
-      <DutyEditor value={data.duties} onChange={(duties) => set('duties', duties)} />
+      {dutiesOffered && <DutyEditor value={data.duties} onChange={(duties) => set('duties', duties)} />}
     </div>
   );
 }

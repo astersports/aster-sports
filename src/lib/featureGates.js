@@ -16,3 +16,13 @@ export function ridesEnabledFor(org, event) {
 export function dutiesEnabledFor(org) {
   return org?.feature_settings?.duties_enabled !== false;
 }
+
+// The org-capability HALF of the rides chain. The create/edit wizard offers
+// its "Enable rides" toggle (which SETS the per-event flag) only when the org
+// capability is on — otherwise the admin would flip a flag that every reader's
+// ridesEnabledFor() still resolves OFF (the silent "I turned it on and nothing
+// happened" bug, events-wizard L99 audit 2026-06-13 B1/D2). Mirrors the org
+// half of ridesEnabledFor; keeps the raw flag read inside this allowlisted file.
+export function ridesCapableOrg(org) {
+  return org?.feature_settings?.rides_enabled !== false;
+}

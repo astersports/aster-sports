@@ -70,8 +70,15 @@ export function buildSaveDiff({ editEvent, form, editMode }) {
   const oldEnd = editEvent.end_at;
   const oldLoc = editEvent.location || null;
   const oldOpp = editEvent.opponent || null;
-  const newStart = new Date(`${form.date}T${form.startTime}`).toISOString();
-  const newEnd = new Date(`${form.date}T${form.endTime}`).toISOString();
+  const newStartDate = new Date(`${form.date}T${form.startTime}`);
+  const newEndDate = new Date(`${form.date}T${form.endTime}`);
+  // Late-night events cross midnight (start 22:00 → end 01:00); bump the end
+  // forward a day so end_at > start_at. Mirrors useCreateActivity.withTime —
+  // without it the schedule-change diff wrote after.end_at ~24h wrong
+  // (events-wizard L99 audit 2026-06-13 F1).
+  if (newEndDate <= newStartDate) newEndDate.setDate(newEndDate.getDate() + 1);
+  const newStart = newStartDate.toISOString();
+  const newEnd = newEndDate.toISOString();
   const newLoc = form.location || null;
   const newOpp = (form.opponent || '').trim() || null;
   const timeChanged = newStart !== oldStart || newEnd !== oldEnd;

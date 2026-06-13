@@ -48,6 +48,16 @@ describe('buildSaveDiff', () => {
     const form = { ...baseForm, opponent: '   ' };
     expect(buildSaveDiff({ editEvent: baseEvent, form, editMode: 'single' })).toBeNull();
   });
+
+  // F1 (events-wizard L99 audit 2026-06-13): a late-night edit crosses
+  // midnight; without the +1-day bump the after.end_at landed ~24h before
+  // after.start_at. Mirrors useCreateActivity.withTime.
+  it('cross-midnight edit bumps after.end_at to the next day (end > start)', () => {
+    const form = { ...baseForm, startTime: '22:00', endTime: '01:00' };
+    const diff = buildSaveDiff({ editEvent: baseEvent, form, editMode: 'single' });
+    expect(diff.changeKind).toBe('time');
+    expect(new Date(diff.after.end_at).getTime()).toBeGreaterThan(new Date(diff.after.start_at).getTime());
+  });
 });
 
 // 2026-06-13 locations audit: the wizard form carries the venue FK so
