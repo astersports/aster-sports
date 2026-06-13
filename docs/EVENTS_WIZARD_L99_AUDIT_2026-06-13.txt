@@ -1,0 +1,244 @@
+==============================================================================
+EVENTS CREATE/EDIT WIZARD — L99 REDESIGN AUDIT — 2026-06-13
+§16.15 template (all 5 elements before any PR A code). Acting architect: CC.
+Ratifier: Frank. Target: CreateActivityWizard + the 4 step components +
+WizardHeader + RecurrenceSelector + DutyEditor + wizardForm.js.
+This is the last daily-admin surface that has not had the L99 pass
+(event DETAIL + schedule list/cards/Games are done).
+==============================================================================
+
+SURFACE MAP (what mounts, where, for whom)
+  Launch points:
+    - CREATE: QuickActions (admin home) + SchedulePage "+" → wizard at
+      step 0 (Type → Team → When → Details), 4 steps.
+    - EDIT: EventDetailPage pencil → wizard at step 2 (When → Details),
+      2 steps. Recurring events first hit ScopeChoiceDialog
+      (instance / following / series) → editMode, THEN the wizard.
+  Audience: STAFF only (admin + coach), one identical UI per role. Parents
+    never see it. (Per-role wireframes §(d) are therefore near-trivial —
+    the only branch is create-vs-edit step count, not role.)
+  Container: full-screen fixed portal (position:fixed; inset:0) — correct
+    per §6 (FullScreenForm for 3+ field forms; never BottomSheet). ✓
+  Files + LOC (all ≤150, no split pressure):
+    CreateActivityWizard.jsx 139 · StepWhen.jsx 145 · StepDetails.jsx 128 ·
+    wizardForm.js 88 · DutyEditor.jsx 68 · StepTeam.jsx 56 ·
+    RecurrenceSelector.jsx 53 · StepType.jsx 46 · WizardHeader.jsx 34.
+
+------------------------------------------------------------------------------
+(a) INITIAL AUDIT PASS — file-by-file, severity P0..P3
+------------------------------------------------------------------------------
+
+CreateActivityWizard.jsx (orchestrator)
+  A1 [P2] Feature-gate blindness. The wizard never receives `org`, so it
+     cannot honor featureGates.js. See StepDetails D1/D2 — the bug lives
+     in the child but the prop wiring (pass `org` down) is fixed here.
+  A2 [P3] Dead prop: <StepWhen ... isEdit={isEdit} /> (line 101) — StepWhen
+     destructures only { data, onChange, orgId }. `isEdit` is unused.
+  A3 [P3] `canNext` step-2 gate requires date+startTime+endTime but gives
+     NO inline reason when Next is disabled (step 3 opponent DOES show a
+     hint). Asymmetric feedback; a stuck admin sees a dead grey button.
+  A4 [P2] Edit never re-loads location_id-derived fields into the picker
+     scope: if the event's saved location is NOT in the current
+     season-scoped list, StepWhen's <select value={data.location}> renders
+     BLANK (the name has no matching <option>). form.location still holds
+     the name so save preserves it, but the admin sees an empty Location
+     field and may "fix" it, silently relocating the event. (Cross-ref D4.)
+  A5 [P3] Save fires straight from step 3 — no review/summary of the
+     assembled event before commit. Fine for speed; flag only as a
+     redesign option (a compact "review chip" row), not a defect.
+
+WizardHeader.jsx
+  A6 [OK] Clean. Back/close swap on backStop, progress dots, 44px tap
+     target, safe-area top inset. No findings.
+
+StepType.jsx
+  A7 [P2] Selection state not exposed to AT: the type buttons set a visual
+     2px accent border but no aria-pressed. §16.4 requires state on every
+     interactive control. Same class in StepTeam (A9) + the chip rows.
+  A8 [P3] Type grid uses raw 17px/600 h2 with no tracking-tight /
+     line-height 1.2 (§7 typography). Cosmetic conformance.
+
+StepTeam.jsx
+  A9 [P2] aria-pressed missing on team buttons (see A7). The ✓ glyph is the
+     only selection signal and it is not announced.
+  A10 [P3] Empty-state: if a team list comes back [] (new org / RLS), the
+     step renders just the heading and an empty column — no "No teams yet"
+     brand-voice empty state (§16.3 / §16.11).
+
+StepWhen.jsx
+  A11 [P2] chipStyle is redefined here AND in StepDetails AND in
+     RecurrenceSelector — three near-identical copies (AP#7 spirit:
+     constants in multiple files). Centralize into one wizard chip helper.
+  A12 [P2] The Location <select> is a raw inline-styled native select, not
+     the shared Input/select pattern; its <label> is associated (good) but
+     the styling block is hand-rolled (selectStyle) and duplicated from
+     RecurrenceSelector.selectStyle. Conformance + dup.
+  A13 [P3] `locationAddress` is in EMPTY_FORM but the Location picker never
+     sets it — useCreateActivity writes location_address:null for every
+     wizard-created event. Harmless today (EventLocationTab resolves the
+     address via the location_id JOIN) but it is a dead form field; either
+     populate it from the picked row or drop it from the shape.
+  A14 [P3] Custom end-time can be < start time with no inline validation;
+     useCreateActivity.withTime bumps +1 day (cross-midnight) but the
+     wizard gives no signal that it interpreted 01:00 as next-day.
+
+StepDetails.jsx
+  D1 [P2] Volunteers (DutyEditor) renders UNCONDITIONALLY. featureGates
+     `dutiesEnabledFor(org)` gates this everywhere else. An org with
+     duties disabled in Settings → Events still gets the editor; slots get
+     written to event_duties but no surface shows them. Gate it.
+  D2 [P2] "Enable rides" toggle renders UNCONDITIONALLY. `ridesEnabledFor`
+     = org toggle AND event flag. With the org toggle OFF, the admin flips
+     enable_rides=true here, the row stores true, and EVERY other surface
+     still hides rides (org gate wins). Silent "I turned it on but nothing
+     happened." Gate the toggle on org.feature_settings.rides_enabled.
+  D3 [P2] Three raw inline-styled controls (opponent <input list>,
+     tournament <select>, two <textarea>s) duplicate the shared-Input style
+     block instead of using <Input>/a shared field. The opponent field
+     even re-implements the required-asterisk that <Input required> exists
+     to provide (Input.jsx was built FOR this exact pattern, L99 v6 §5.2).
+  D4 [P2] Tournament <select> auto-mutates eventType game↔tournament as a
+     side effect of selection (lines 59-64). Works, but the coupling is
+     invisible and order-dependent (set('tournamentId') THEN a full
+     onChange spread). One combined onChange like StepWhen's Location fix
+     would be safer.
+  D5 [P3] The bracket/championship/bonus toggles only show when
+     data.tournamentId is set — correct — but there is no visual grouping
+     (no sub-header "Tournament options"); they read as loose switches.
+
+RecurrenceSelector.jsx
+  A15 [P3] chipStyle + selectStyle duplicated (see A11/A12). Otherwise OK.
+
+DutyEditor.jsx
+  E1 [P2] Edit path loses claim safety. CreateActivityWizard groups loaded
+     duties with a `claimed` count, but DutyEditor never receives it — an
+     admin can decrement slots_needed below claimed, or X-remove a duty a
+     parent already claimed, with no warning. updateSeries/update then
+     reconcile event_duties and a claimed slot can vanish silently
+     (parent-facing data loss). Surface claimed count + block destructive
+     decrements.
+  E2 [P3] Stepper −/+ buttons are 32px (stepBtn) — below the 44px tap
+     minimum (§7). The remove button is 40px, also under 44.
+
+wizardForm.js
+  F1 [P2] buildSaveDiff lacks the cross-midnight end bump that
+     useCreateActivity.withTime has. A late-night edit (start 22:00, end
+     01:00) yields newEnd ISO on the SAME date → newEnd < newStart. The
+     diff still flags timeChanged so notify works, but the `after.end_at`
+     written into the schedule-change payload is wrong by ~24h. Mirror the
+     withTime bump.
+  F2 [P3] eventToForm always resets recurrence to {once,null}; the actual
+     pattern is re-derived by a sibling-date query in the orchestrator.
+     Works, but the two-source recurrence load is fragile under refactor
+     (AP#63 same-concept-two-sources smell). Note only.
+
+------------------------------------------------------------------------------
+(b) DEEP-READ ADDENDUM — second pass (catches what (a) missed; §16.15
+    cites ~40% miss without it)
+------------------------------------------------------------------------------
+  B1 [P1] FEATURE-GATE is the headline. D1+D2+A1 are one finding: the
+     wizard is the ONLY writer of enable_rides and duty slots, and it is
+     blind to the gate chain that every READER honors. This is a textbook
+     AP#63 "same concept, divergent source" — the write surface and the
+     read surfaces disagree about whether a feature exists. Promote to P1.
+     Fix = thread `org` into the wizard; gate DutyEditor on
+     dutiesEnabledFor(org); gate the rides Toggle on
+     org.feature_settings.rides_enabled !== false. Lock with a wizard
+     gate test (AP#43 cross-surface invariant against featureGates).
+  B2 [P2] Optimistic-UI / §16.1: the wizard is correctly PESSIMISTIC
+     (cascading create+duty fan-out, confirm-after-validate) — no change
+     needed, but the Save button has NO spinner distinct from the disabled
+     state; `loading` only dims opacity. A 26-instance recurring create can
+     take seconds; add a clearer in-flight state (§16.11 loading).
+  B3 [P2] Microcopy / §16.3: the only error path is showToast("Couldn't
+     save. Try again?") — good. But the duty-insert failure throws a RAW
+     "Volunteers failed to save: <pg msg>" (useCreateActivity:102) that can
+     surface to the admin. Wrap in kindness microcopy.
+  B4 [P3] Conflict banner (step 2) says "Conflicts with: X. You can save
+     anyway." — good non-blocking pattern. But it renders BELOW the scroll
+     region, above the Next bar; on a long When step it can sit off-screen.
+     Consider pinning a count into the Next bar.
+  B5 [P3] No prefers-reduced-motion concern (only as-press/as-bounce-tap,
+     already gated). ✓ accessibility motion fine.
+  B6 [P3] Translation/§16.6: all step labels + chips are hard-coded EN
+     string literals (not extraction-routed). Platform-wide debt, not
+     wizard-specific; note for the i18n phase, out of scope here.
+
+------------------------------------------------------------------------------
+(c) ANTI-PATTERN CATALOG CROSS-REFERENCE
+------------------------------------------------------------------------------
+  Existing rules this surface trips:
+    - AP#63 (same concept, divergent source/scope): B1 feature-gate
+      write-vs-read divergence. PRIMARY finding.
+    - AP#7 (constants in multiple files): A11/A12/A15 chipStyle+selectStyle
+      triplicated across StepWhen/StepDetails/RecurrenceSelector.
+    - AP#43 (cross-surface invariant test): the gate fix + the buildSaveDiff
+      fix each need a locking test.
+    - §16.4 accessibility: A7/A9 missing aria-pressed; E2 sub-44px targets.
+    - §7 design system: D3/A12 raw inline controls vs shared <Input>;
+      E2 tap targets; A8 type scale.
+  New pattern surfacing (candidate, do NOT register yet — 1 instance):
+    "WRITE surface blind to the gate its READERS honor." B1 is the events
+    instance. If a second write surface (e.g. a settings form that writes a
+    flag nothing reads, the §16.16 trap inverted) appears, consider
+    registering. For now §16.16 (consumption is the gate) covers the
+    inverse; B1 is the mirror and is handled by the AP#43 lock.
+
+------------------------------------------------------------------------------
+(d) PER-ROLE WIREFRAMES
+------------------------------------------------------------------------------
+  Only ONE role variant exists (staff). The branches are by FLOW, not role:
+    CREATE (admin or coach, 4 steps):
+      [Type grid 2-col] → [Team list] → [When: date·repeat·time·duration·
+      location·court·arrive] → [Details: title·(game: opponent*·tournament·
+      home/away·jersey)·parent notes·coach notes·toggles·volunteers] → Save
+    EDIT single (2 steps): [When] → [Details] → Save Changes
+    EDIT recurring: ScopeChoiceDialog (instance/following/series) → 2 steps
+  Redesign keeps the step skeleton. The L99 deltas inside the skeleton:
+    - When step: collapse the 3 duplicated chip rows to one shared chip
+      component; Location picker shows the saved value even when off-scope
+      (A4 fix) + a "+ Add new location" affordance is OUT of scope (defer).
+    - Details step: gate Volunteers + rides on the org feature settings
+      (B1); group tournament-only toggles under a sub-header (D5); replace
+      the 3 raw controls with shared <Input> (D3).
+    - Save bar: distinct in-flight spinner (B2); opponent-missing reason
+      already present, add the symmetric When-step reason (A3).
+  No new screens; no role fork. The wireframe IS the current skeleton with
+  the gate + conformance deltas applied.
+
+------------------------------------------------------------------------------
+(e) EXPLICIT OUT-OF-SCOPE (this redesign does NOT touch)
+------------------------------------------------------------------------------
+  - ScopeChoiceDialog (the recurring instance/following/series picker) —
+    its own component; behavior is correct, leave it.
+  - useCreateActivity / useUpdateActivity SAVE logic, EXCEPT the F1
+    buildSaveDiff cross-midnight bump (a wizardForm.js pure-helper fix).
+  - The recurrence model (sibling-date detection) — F2 is noted, not fixed.
+  - A "+ Add new location" inline create from the wizard — defer to the
+    locations capability arc (C-2 family).
+  - i18n string extraction (B6) — platform-wide phase, not here.
+  - Per-player anything (game stats forbidden §16.12) — N/A.
+  - The directions/Waze surface — closed separately today (PR #1023,
+    Waze removed; Apple+Google only).
+
+------------------------------------------------------------------------------
+PROPOSED PR SEQUENCE (locked decisions implement after Frank grades)
+------------------------------------------------------------------------------
+  PR A  (P1, behavior): thread `org` into the wizard; gate DutyEditor on
+        dutiesEnabledFor(org) + rides Toggle on rides_enabled; AP#43 wizard
+        gate test. + F1 buildSaveDiff cross-midnight bump (pure, same PR).
+  PR B  (P2, conformance): one shared chip component + shared select;
+        replace StepDetails raw controls with <Input>; A4 off-scope
+        location value fix.
+  PR C  (P2, a11y): aria-pressed on Type/Team/chips; bump E2 stepper +
+        remove targets to 44px; D5 tournament-options grouping; A3
+        symmetric When-step disabled reason; B2 save spinner; B3 duty-error
+        kindness microcopy.
+  (P3 items ride along where cheap; A5 review-chip + B4 conflict-pin are
+   redesign options Frank can green-light or drop.)
+
+RECOMMENDATION (AP#39 lean): ship PR A first and standalone — it is the
+only behavior/data-correctness item (a parent-visible silent feature
+mismatch + a wrong schedule-change payload). B and C are polish and can
+batch. Await Frank's grade on this audit before PR A code.
+==============================================================================

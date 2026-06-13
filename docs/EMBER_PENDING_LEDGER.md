@@ -873,6 +873,22 @@ arc bodies.
   teams (#408), members (AdminManagerLayout). GENUINE candidates = events create/edit WIZARD
   (lead), player profile, records, messages/inbox.** STEP 3 drain parked queue (briefings F-1b,
   schedule perf, capability arcs).
+  **WAZE FULLY REMOVED (2026-06-13, operator-directed "take Waze out, complete removal"):** PR
+  #1023 — `getDirectionUrls` cut to `{ google, apple }`; EventLocationTab renders an Apple/Google
+  two-way stack (Waze button dropped); mapsUrls + EventLocationTabNameOnlyGate tests assert no
+  Waze slot/button; CLAUDE.md §15 doctrine updated. Closes the Waze arc (the 1a coords-paste / 1b
+  geohash-format options in NEXT_SESSION_FOCUS are now MOOT — operator chose removal over the
+  per-venue coord-trust chase). The C-2 admin verified-pin paste→decode capability arc is likewise
+  no longer needed for Waze (Apple still benefits if it ever recurs, but no open item).
+  **EVENTS CREATE/EDIT WIZARD L99 AUDIT WRITTEN (2026-06-13):**
+  `docs/EVENTS_WIZARD_L99_AUDIT_2026-06-13.txt` — §16.15 template, all 5 elements, awaiting Frank's
+  grade before PR A code. Headline finding (P1, AP#63): the wizard is the ONLY writer of
+  `enable_rides` + duty slots yet is BLIND to the featureGates chain every reader honors — an org
+  with rides/duties disabled in Settings → Events still gets offered them, then they dark-ship off
+  everywhere else. Plus F1 (buildSaveDiff missing the cross-midnight end bump useCreateActivity has)
+  and a conformance/a11y batch (triplicated chipStyle, raw inline controls vs shared <Input>,
+  missing aria-pressed, sub-44px duty steppers). Proposed: PR A (gate fix + F1, behavior/data,
+  standalone) → PR B (conformance) → PR C (a11y/polish). Lead = PR A.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
