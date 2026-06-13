@@ -11,6 +11,7 @@ import FamilyBalanceList from '../components/admin/FamilyBalanceList';
 import FinancialSummaryCard from '../components/admin/FinancialSummaryCard';
 import RecordPaymentForm from '../components/admin/RecordPaymentForm';
 import CoachPayoutsSection from '../components/admin/CoachPayoutsSection';
+import SegmentedControl from '../components/shared/SegmentedControl';
 
 export default function FinancialDashboardPage() {
   const { orgId } = useAuth();
@@ -24,6 +25,7 @@ export default function FinancialDashboardPage() {
   const [owingSeasonIds, setOwingSeasonIds] = useState(() => new Set());
   const [selectedSeasonId, setSelectedSeasonId] = useState(null);
   const [payingAccount, setPayingAccount] = useState(null);
+  const [segment, setSegment] = useState('families');
 
   useEffect(() => {
     if (!orgId) return;
@@ -93,15 +95,22 @@ export default function FinancialDashboardPage() {
         <>
           <FinancialSummaryCard stats={stats} seasonName={currentSeason?.name} funnel={funnel} fmt={fmt} />
 
-          <FamilyBalanceList accounts={accounts} balances={balances} byAccount={byAccount} fmt={fmt} initialOwing={owingParam} onRecordPayment={setPayingAccount}
-            onNudge={(family) => {
-              const uid = family.guardians?.user_id;
-              navigate(uid ? `/messages?dm=${uid}` : '/messages');
-            }} />
+          <div style={{ margin: '16px 0 12px' }}>
+            <SegmentedControl label="Financials view" value={segment} onChange={setSegment}
+              options={[{ value: 'families', label: 'Families' }, { value: 'coaches', label: 'Coaches' }]} />
+          </div>
+
+          {segment === 'families' ? (
+            <FamilyBalanceList accounts={accounts} balances={balances} byAccount={byAccount} fmt={fmt} onRecordPayment={setPayingAccount}
+              onNudge={(family) => {
+                const uid = family.guardians?.user_id;
+                navigate(uid ? `/messages?dm=${uid}` : '/messages');
+              }} />
+          ) : (
+            <CoachPayoutsSection orgId={orgId} seasonId={seasonId} />
+          )}
         </>
       )}
-
-      <CoachPayoutsSection orgId={orgId} />
 
       {payingAccount && (
         <RecordPaymentForm account={payingAccount} onClose={() => setPayingAccount(null)} onSaved={() => { setPayingAccount(null); refetch(); }} />
