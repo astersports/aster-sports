@@ -87,22 +87,31 @@ Acting architect: CC. Ratifier: Frank.
 ────────────────────────────────────────────────────────────────────────────
 3. REDESIGN LANE — candidate targets (pick ONE to open the new chat)
 ────────────────────────────────────────────────────────────────────────────
-  Schedule L99 is COMPLETE (this session: cards, detail, Games, gates,
-  type pills, directions). Next redesign candidate surfaces, by likely
-  operator-visible payoff:
-    - HOME (parent / coach / admin) — the daily landing; ActionRow + zones
-      got touched piecemeal tonight but no full L99 pass. Highest daily use.
-    - RECORDS / standings — broadcast surface; last redesigned pre-Schedule.
-    - FINANCIAL dashboard — operator-facing; dense, not L99'd recently.
-    - MESSAGES / INBOX — briefings inbox + team chat; adjacency to the
-      briefings work above.
-    - ROSTER / PLAYER detail — Teams got an L99 pass (PR #408); player
-      detail did not.
-  RECOMMENDATION: let Frank name the target (operator-visible friction is
-  the selector). Then run §16.15 (audit doc: file-by-file read + deep-read
-  addendum + anti-pattern cross-ref + per-role wireframes + out-of-scope)
-  BEFORE any PR A. The Schedule sequence (audit → graded rounds → design
-  system doc → conformance PRs) is the proven template.
+  CORRECTION (2026-06-13, operator-flagged): the earlier candidate list
+  was STALE. ALREADY REDESIGNED — do NOT re-open without a specific gap:
+    - HOME (parent/coach/admin) — redesigned + closed 2026-06-11 (#959-962).
+    - SCHEDULE incl. Games — this session (cards/detail/Games/gates/type
+      pills/directions). Games got density-toggle + conditions-icon + type
+      pills tonight; no open Games bug on the list (operator grade pending).
+    - BRIEFINGS — redesigned; pile-up diagnosed + cleaned tonight.
+    - FINANCIALS — redesigned 2026-06-11 (#967-979, F-1..F-5). Fresh.
+    - SETTINGS — session audit #980-981. PROGRAMS — #956-957/#971.
+    - TEAMS — L99 PR #408. MEMBERS — on the shared AdminManagerLayout
+      (search + GuardianFormSheet); functional/design-system, not legacy.
+  GENUINE remaining un-L99'd candidates (by likely payoff):
+    - EVENTS CREATE/EDIT WIZARD (CreateActivityWizard + StepWhen/StepDetails)
+      — event DETAIL + schedule are done; the create/edit flow is the
+      remaining events surface and a daily admin action. LEAD CANDIDATE.
+    - PLAYER PROFILE (PlayerProfilePage, ~92 lines) — light; never L99'd.
+    - RECORDS / standings — broadcast surface; pre-Schedule styling.
+    - MESSAGES / INBOX — team chat + briefings inbox.
+  RECOMMENDATION: Frank names the target (operator-visible friction is the
+  selector); my lean = the EVENTS WIZARD. Then run §16.15 (audit doc:
+  file-by-file read + deep-read addendum + anti-pattern cross-ref +
+  per-role wireframes + out-of-scope) BEFORE any PR A. Proven template =
+  the Schedule sequence (audit → graded rounds → design-system doc →
+  conformance PRs). Per-surface audit doc gets written WHEN the target is
+  picked — not preemptively.
 
 ────────────────────────────────────────────────────────────────────────────
 4. OPERATING NOTES for the new chat
