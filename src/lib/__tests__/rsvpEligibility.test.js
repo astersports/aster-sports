@@ -5,7 +5,29 @@
 // this test locks the contract and the cross-surface agreement.
 
 import { describe, expect, it } from 'vitest';
-import { denominatorFor, eligibleRoster, isGameType } from '../rsvpEligibility';
+import { denominatorFor, eligibleRoster, isGameType, rsvpBreakdown } from '../rsvpEligibility';
+
+// BETA consolidation (2026-06-13): rsvpBreakdown replaced 4 copy-pasted
+// going/maybe/out/no-reply derivations (EventDetailHero + EventRosterLockCard
+// byte-identical, RsvpSummary + EventDetailPage inline). Lock the one contract.
+describe('rsvpBreakdown — one going/maybe/out/no-reply source (AP#63)', () => {
+  const roster = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }, { id: 'e' }];
+  it('counts each response and derives no-reply from the eligible roster size', () => {
+    const rsvps = [
+      { player_id: 'a', response: 'going' }, { player_id: 'b', response: 'going' },
+      { player_id: 'c', response: 'maybe' }, { player_id: 'd', response: 'not_going' },
+    ];
+    expect(rsvpBreakdown(rsvps, roster)).toEqual({ going: 2, maybe: 1, out: 1, noReply: 1 });
+  });
+  it('handles null/empty inputs without throwing', () => {
+    expect(rsvpBreakdown(null, null)).toEqual({ going: 0, maybe: 0, out: 0, noReply: 0 });
+    expect(rsvpBreakdown([], roster)).toEqual({ going: 0, maybe: 0, out: 0, noReply: 5 });
+  });
+  it('never goes negative when responses exceed the roster', () => {
+    const rsvps = [{ response: 'going' }, { response: 'going' }];
+    expect(rsvpBreakdown(rsvps, [{ id: 'a' }]).noReply).toBe(0);
+  });
+});
 
 // The production fixture: 10 rostered + 4 academy, 1 activated.
 const ROSTER = [

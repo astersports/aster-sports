@@ -33,6 +33,17 @@ export function useRoster(teamId) {
       // Sizes (canonical on player_equipment, scoped to this team's season).
       const sizeByPlayer = {};
       const playerIds = (data || []).filter((rm) => rm.players).map((rm) => rm.players.id);
+      // Academy status is per-team (§11.5: team_players.roster_type), NOT the
+      // global players.member_type — a kid can be futures_academy org-wide but
+      // 'rostered' on THIS team. Reading member_type mislabeled such rows
+      // (Cat#30 ROSTER-3). Map player_id -> roster_type for this team.
+      const rosterTypeByPlayer = {};
+      if (playerIds.length) {
+        const { data: tp, error: tpErr } = await supabase
+          .from('team_players').select('player_id, roster_type').eq('team_id', teamId);
+        if (tpErr) throw tpErr;
+        for (const r of tp || []) rosterTypeByPlayer[r.player_id] = r.roster_type;
+      }
       if (seasonId && playerIds.length) {
         const { data: eq, error: eqErr } = await supabase
           .from('player_equipment')
@@ -49,6 +60,7 @@ export function useRoster(teamId) {
         grade: rm.players.grade,
         dob: rm.players.dob || null,
         member_type: rm.players.member_type,
+        roster_type: rosterTypeByPlayer[rm.players.id] ?? null,
         jersey_number: rm.jersey_number,
         jersey_size: sizeByPlayer[rm.players.id]?.jersey_size ?? null,
         shorts_size: sizeByPlayer[rm.players.id]?.shorts_size ?? null,

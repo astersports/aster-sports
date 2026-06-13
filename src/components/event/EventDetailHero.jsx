@@ -8,6 +8,7 @@
 import { Ban } from 'lucide-react';
 import EventHeroActions from './EventHeroActions';
 import { formatEventTitle } from '../../lib/eventTitle';
+import { rsvpBreakdown } from '../../lib/rsvpEligibility';
 
 const CARD = (cancelled) => ({
   margin: '12px 16px', borderRadius: 10, backgroundColor: 'var(--as-bg-card)',
@@ -20,15 +21,6 @@ const NY = 'America/New_York';
 function fmtDate(iso) { return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: NY }); }
 const railTime = (iso) => new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: NY }).split(' ');
 
-function rsvpCounts(rsvps, roster) {
-  const r = rsvps || [];
-  const going = r.filter((x) => x.response === 'going').length;
-  const maybe = r.filter((x) => x.response === 'maybe').length;
-  const out = r.filter((x) => x.response === 'not_going').length;
-  const replied = r.filter((x) => x.response).length;
-  return { going, maybe, out, noReply: Math.max(0, (roster || []).length - replied) };
-}
-
 export default function EventDetailHero({
   event, isStaff, isPast, rsvps, roster, activatedSet,
   onEnterScore, onLockRoster, onNotify, onRsvpChange,
@@ -36,7 +28,7 @@ export default function EventDetailHero({
   const isGameType = event.event_type === 'game' || event.event_type === 'tournament';
   const isCancelled = event.status === 'cancelled';
   const { prefix, body } = formatEventTitle(event);
-  const counts = rsvpCounts(rsvps, roster);
+  const counts = rsvpBreakdown(rsvps, roster);
   const total = (roster || []).length;
   const goingPct = total > 0 ? Math.round((counts.going / total) * 100) : 0;
   const maybePct = total > 0 ? Math.round((counts.maybe / total) * 100) : 0;

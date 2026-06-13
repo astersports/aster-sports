@@ -27,3 +27,17 @@ export function denominatorFor(eventType, rosteredCount, academyCount, activated
     ? rosteredCount + activatedCount
     : rosteredCount + academyCount;
 }
+
+// THE one going/maybe/out/no-reply breakdown for an event's RSVPs against an
+// eligible roster. This exact arithmetic was copy-pasted identically into
+// EventDetailHero + EventRosterLockCard and re-derived inline in RsvpSummary +
+// EventDetailPage — the AP#63 same-concept-divergent-source pattern. One
+// source so the four surfaces can't drift. (L99 BETA consolidation 2026-06-13.)
+export function rsvpBreakdown(rsvps, roster) {
+  const r = rsvps || [];
+  const going = r.filter((x) => x.response === 'going').length;
+  const maybe = r.filter((x) => x.response === 'maybe').length;
+  const out = r.filter((x) => x.response === 'not_going').length;
+  const replied = r.filter((x) => x.response).length;
+  return { going, maybe, out, noReply: Math.max(0, (roster || []).length - replied) };
+}

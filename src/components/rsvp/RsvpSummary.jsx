@@ -1,11 +1,10 @@
+import { rsvpBreakdown } from '../../lib/rsvpEligibility';
+
 export default function RsvpSummary({ roster, rsvps }) {
   const total = roster.length;
   if (total === 0) return null;
 
-  const going = rsvps.filter((r) => r.response === 'going').length;
-  const notGoing = rsvps.filter((r) => r.response === 'not_going').length;
-  const maybe = rsvps.filter((r) => r.response === 'maybe').length;
-  const noResponse = total - going - notGoing - maybe;
+  const { going, maybe, out: notGoing, noReply: noResponse } = rsvpBreakdown(rsvps, roster);
 
   const pct = (n) => Math.round((n / total) * 100);
 
