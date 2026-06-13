@@ -12,7 +12,7 @@ import FamilyBalanceRow from './FamilyBalanceRow';
 // families with no rostered team fall to "Unassigned". Search overrides the
 // grouping with a flat filtered list. `balances`/`byAccount` are the canonical
 // per-account maps from useSeasonFinancials (anti-pattern #42).
-export default function FamilyBalanceList({ accounts, balances, byAccount, fmt, onRecordPayment, onNudge, teamsByGuardian, teams, playersByTeam }) {
+export default function FamilyBalanceList({ accounts, balances, byAccount, fmt, onOpen, onNudge, teamsByGuardian, teams, playersByTeam }) {
   const [search, setSearch] = useState('');
 
   const families = useMemo(() => accounts.map((a) => {
@@ -50,14 +50,14 @@ export default function FamilyBalanceList({ accounts, balances, byAccount, fmt, 
         <div style={{ backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)', overflow: 'hidden' }}>
           {searchResults.length === 0
             ? <div style={{ padding: 16, textAlign: 'center', color: 'var(--as-text-tertiary)', fontSize: 13 }}>No families match your search.</div>
-            : searchResults.map((f, i) => <FamilyBalanceRow key={f.id} family={f} topBorder={i > 0} fmt={fmt} onRecordPayment={onRecordPayment} onNudge={onNudge} />)}
+            : searchResults.map((f, i) => <FamilyBalanceRow key={f.id} family={f} topBorder={i > 0} fmt={fmt} onOpen={onOpen} onNudge={onNudge} />)}
         </div>
       ) : groups.length === 0 ? (
         <div style={{ padding: 16, textAlign: 'center', color: 'var(--as-text-tertiary)', fontSize: 13, backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)' }}>
           No accounts for this season yet.
         </div>
       ) : groups.map((g) => (
-        <TeamBalanceCard key={g.team.id} team={g.team} families={g.rows} playerCount={g.players} fmt={fmt} onRecordPayment={onRecordPayment} onNudge={onNudge} />
+        <TeamBalanceCard key={g.team.id} team={g.team} families={g.rows} playerCount={g.players} fmt={fmt} onOpen={onOpen} onNudge={onNudge} />
       ))}
     </>
   );
