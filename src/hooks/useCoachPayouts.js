@@ -27,7 +27,7 @@ export function useCoachPayouts(orgId, seasonId) {
 
     const [payRes, staffRes, caRes, ecaRes] = await Promise.all([
       supabase.from('coach_payouts').select('id, coach_user_id, amount_cents, status, payment_method, paid_at, created_at').eq('org_id', orgId).eq('season_id', seasonId).order('created_at', { ascending: false }),
-      supabase.from('staff_profiles').select('user_id, display_name').eq('org_id', orgId),
+      supabase.from('staff_profiles').select('user_id, display_name, default_payout_method').eq('org_id', orgId),
       supabase.from('coaching_assignments').select('user_id, team_id, pay_per_session_cents, scope').eq('org_id', orgId).eq('active', true),
       teamIds.length ? supabase.from('event_coach_assignments').select('coach_user_id, events!inner(team_id, event_type)').in('events.team_id', teamIds) : Promise.resolve({ data: [] }),
     ]);
@@ -35,7 +35,8 @@ export function useCoachPayouts(orgId, seasonId) {
     [payRes, staffRes, caRes, ecaRes].forEach((r, i) => { if (r?.error) console.error(`useCoachPayouts q${i}:`, r.error.message); });
 
     const names = {};
-    (staffRes.data || []).forEach((s) => { names[s.user_id] = s.display_name; });
+    const methods = {};
+    (staffRes.data || []).forEach((s) => { names[s.user_id] = s.display_name; methods[s.user_id] = s.default_payout_method || null; });
 
     const sessions = {}; // sessions[coach][team] = { all, games }
     (ecaRes.data || []).forEach((r) => {
@@ -55,13 +56,13 @@ export function useCoachPayouts(orgId, seasonId) {
 
     const byCoach = {};
     (payRes.data || []).forEach((p) => {
-      const g = (byCoach[p.coach_user_id] ||= { userId: p.coach_user_id, name: names[p.coach_user_id] || 'Coach', rows: [], paidCents: 0, pendingCents: 0 });
+      const g = (byCoach[p.coach_user_id] ||= { userId: p.coach_user_id, name: names[p.coach_user_id] || 'Coach', defaultMethod: methods[p.coach_user_id] || null, rows: [], paidCents: 0, pendingCents: 0 });
       g.rows.push(p);
       if (p.status === 'paid') g.paidCents += p.amount_cents;
       else if (p.status === 'pending') g.pendingCents += p.amount_cents;
     });
     Object.keys(owedByCoach).forEach((uid) => {
-      if (!byCoach[uid]) byCoach[uid] = { userId: uid, name: names[uid] || 'Coach', rows: [], paidCents: 0, pendingCents: 0 };
+      if (!byCoach[uid]) byCoach[uid] = { userId: uid, name: names[uid] || 'Coach', defaultMethod: methods[uid] || null, rows: [], paidCents: 0, pendingCents: 0 };
     });
 
     const list = Object.values(byCoach).map((c) => ({
