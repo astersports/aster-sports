@@ -10,7 +10,6 @@ import { formatCurrency } from '../lib/formatters';
 import { useGoBack } from '../hooks/useGoBack';
 import FamilyBalanceList from '../components/admin/FamilyBalanceList';
 import FinancialSummaryCard from '../components/admin/FinancialSummaryCard';
-import RecordPaymentForm from '../components/admin/RecordPaymentForm';
 import CoachPayoutsSection from '../components/admin/CoachPayoutsSection';
 import SegmentedControl from '../components/shared/SegmentedControl';
 
@@ -25,7 +24,6 @@ export default function FinancialDashboardPage() {
   const [seasons, setSeasons] = useState([]);
   const [owingSeasonIds, setOwingSeasonIds] = useState(() => new Set());
   const [selectedSeasonId, setSelectedSeasonId] = useState(null);
-  const [payingAccount, setPayingAccount] = useState(null);
   const [segment, setSegment] = useState('families');
 
   useEffect(() => {
@@ -57,7 +55,7 @@ export default function FinancialDashboardPage() {
   // Per anti-pattern #42 — single source of truth for financial
   // state across this page and admin-home's payment-overdue lane.
   // Previously inline at :57-69 here; extracted PR #303.
-  const { accounts, balances, byAccount, stats, loading, refetch } = useSeasonFinancials(orgId, seasonId);
+  const { accounts, balances, byAccount, stats, loading } = useSeasonFinancials(orgId, seasonId);
   const { teamsByGuardian, teams: familyTeams, playersByTeam } = useFamilyTeams(orgId, seasonId);
   const funnel = useFunnelRevenue(orgId);
 
@@ -100,7 +98,8 @@ export default function FinancialDashboardPage() {
           </div>
 
           {segment === 'families' ? (
-            <FamilyBalanceList accounts={accounts} balances={balances} byAccount={byAccount} fmt={fmt} teamsByGuardian={teamsByGuardian} teams={familyTeams} playersByTeam={playersByTeam} onRecordPayment={setPayingAccount}
+            <FamilyBalanceList accounts={accounts} balances={balances} byAccount={byAccount} fmt={fmt} teamsByGuardian={teamsByGuardian} teams={familyTeams} playersByTeam={playersByTeam}
+              onOpen={(family) => navigate(`/admin/financials/family/${family.id}`)}
               onNudge={(family) => {
                 const uid = family.guardians?.user_id;
                 navigate(uid ? `/messages?dm=${uid}` : '/messages');
@@ -109,10 +108,6 @@ export default function FinancialDashboardPage() {
             <CoachPayoutsSection orgId={orgId} seasonId={seasonId} />
           )}
         </>
-      )}
-
-      {payingAccount && (
-        <RecordPaymentForm account={payingAccount} onClose={() => setPayingAccount(null)} onSaved={() => { setPayingAccount(null); refetch(); }} />
       )}
     </div>
   );

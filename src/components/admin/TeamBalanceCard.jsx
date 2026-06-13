@@ -8,7 +8,7 @@ import FamilyBalanceRow from './FamilyBalanceRow';
 // stat row + the family rows (owing-first). NOTE: billing is per family per
 // season (no team split), so a multi-team family counts in each of its teams —
 // team subtotals can sum slightly above the season total. Labeled, not a bug.
-export default function TeamBalanceCard({ team, families, playerCount, fmt, onRecordPayment, onNudge }) {
+export default function TeamBalanceCard({ team, families, playerCount, fmt, onOpen, onNudge }) {
   const [open, setOpen] = useState(false);
   const billed = families.reduce((s, f) => s + f.billed, 0);
   const paid = families.reduce((s, f) => s + f.netPaid, 0);
@@ -50,7 +50,7 @@ export default function TeamBalanceCard({ team, families, playerCount, fmt, onRe
           </div>
           {[...families].sort((a, b) => b.balance - a.balance).map((f) => (
             <div key={f.id} style={{ borderTop: '1px solid var(--as-border-subtle)' }}>
-              <FamilyBalanceRow family={f} fmt={fmt} onRecordPayment={onRecordPayment} onNudge={onNudge} topBorder={false} />
+              <FamilyBalanceRow family={f} fmt={fmt} onOpen={onOpen} onNudge={onNudge} topBorder={false} />
             </div>
           ))}
         </>

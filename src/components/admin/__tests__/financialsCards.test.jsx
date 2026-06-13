@@ -59,7 +59,7 @@ describe('TeamBalanceCard', () => {
 
   it('header shows family/player counts + outstanding; breakdown on expand', () => {
     const { getByText, queryByText, getAllByRole } = render(
-      <TeamBalanceCard team={team} families={fams} playerCount={3} fmt={formatCurrency} onRecordPayment={() => {}} onNudge={() => {}} />
+      <TeamBalanceCard team={team} families={fams} playerCount={3} fmt={formatCurrency} onOpen={() => {}} onNudge={() => {}} />
     );
     expect(getByText('11U Girls')).toBeTruthy();
     expect(getByText('2 families · 3 players')).toBeTruthy();
@@ -72,7 +72,7 @@ describe('TeamBalanceCard', () => {
 
   it('all-paid team shows "All paid"', () => {
     const paidFams = [{ id: 'c', name: 'Lee', balance: 0, billed: 70000, netPaid: 70000 }];
-    const { getByText } = render(<TeamBalanceCard team={team} families={paidFams} playerCount={1} fmt={formatCurrency} onRecordPayment={() => {}} onNudge={() => {}} />);
+    const { getByText } = render(<TeamBalanceCard team={team} families={paidFams} playerCount={1} fmt={formatCurrency} onOpen={() => {}} onNudge={() => {}} />);
     expect(getByText('All paid')).toBeTruthy();
   });
 });
@@ -82,14 +82,14 @@ describe('FamilyBalanceRow', () => {
 
   it('owing family shows the balance + record affordance + Message', () => {
     const onNudge = vi.fn();
-    const { getByText } = render(<FamilyBalanceRow family={{ ...base, balance: 5000 }} fmt={formatCurrency} onRecordPayment={() => {}} onNudge={onNudge} topBorder={false} />);
+    const { getByText } = render(<FamilyBalanceRow family={{ ...base, balance: 5000 }} fmt={formatCurrency} onOpen={() => {}} onNudge={onNudge} topBorder={false} />);
     expect(getByText(formatCurrency(5000))).toBeTruthy();
-    expect(getByText('Tap to record')).toBeTruthy();
+    expect(getByText('Tap to view')).toBeTruthy();
     expect(getByText('Message')).toBeTruthy();
   });
 
   it('paid family shows "Paid" and no Message button', () => {
-    const { getByText, queryByText } = render(<FamilyBalanceRow family={{ ...base, balance: 0 }} fmt={formatCurrency} onRecordPayment={() => {}} onNudge={vi.fn()} topBorder />);
+    const { getByText, queryByText } = render(<FamilyBalanceRow family={{ ...base, balance: 0 }} fmt={formatCurrency} onOpen={() => {}} onNudge={vi.fn()} topBorder />);
     expect(getByText('Paid')).toBeTruthy();
     expect(queryByText('Message')).toBeNull();
   });

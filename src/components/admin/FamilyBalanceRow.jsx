@@ -1,15 +1,13 @@
-// One family row in the Financials → Families list. Extracted from
-// FamilyBalanceList for the accordion redesign (2026-06-13). Tapping an
-// owing family opens the record-payment form; the Message button nudges.
-export default function FamilyBalanceRow({ family, fmt, onRecordPayment, onNudge, topBorder }) {
+// One family row in the Financials → Families list. Tapping ANY family opens
+// its detail page (invoice + ledger); the Message button nudges an owing one.
+export default function FamilyBalanceRow({ family, fmt, onOpen, onNudge, topBorder }) {
   const owing = family.balance > 0;
   return (
-    <button type="button" onClick={() => owing && onRecordPayment(family)} className="as-press" style={{
+    <button type="button" onClick={() => onOpen?.(family)} className="as-press" style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '12px 14px', minHeight: 44, width: '100%', background: 'none',
       border: 'none', borderTopStyle: topBorder ? 'solid' : 'none', borderTopWidth: topBorder ? 1 : 0,
-      borderTopColor: 'var(--as-border-subtle)', textAlign: 'left',
-      cursor: owing ? 'pointer' : 'default',
+      borderTopColor: 'var(--as-border-subtle)', textAlign: 'left', cursor: 'pointer',
     }}>
       <div>
         <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--as-text-primary)' }}>{family.name}</div>
@@ -28,7 +26,7 @@ export default function FamilyBalanceRow({ family, fmt, onRecordPayment, onNudge
           <div style={{ fontSize: 15, fontWeight: 600, color: owing ? 'var(--as-danger)' : 'var(--as-success)' }}>
             {owing ? fmt(family.balance) : 'Paid'}
           </div>
-          {owing && <div style={{ fontSize: 11, color: 'var(--as-text-tertiary)' }}>Tap to record</div>}
+          <div style={{ fontSize: 11, color: 'var(--as-text-tertiary)' }}>Tap to view</div>
         </div>
       </div>
     </button>
