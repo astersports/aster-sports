@@ -38,4 +38,17 @@ describe('PlayerRow — academy avatar treatment (anti-pattern #46)', () => {
     const dashed = container.querySelector('[style*="dashed"]');
     expect(dashed).toBeNull();
   });
+
+  // ROSTER-3 fix: per-team roster_type is canonical and OVERRIDES the global
+  // member_type (a kid futures org-wide but rostered on THIS team is NOT academy
+  // here, and vice-versa).
+  it('roster_type=futures wins even when member_type=roster', () => {
+    const { container } = render(<PlayerRow player={{ ...BASE, member_type: 'roster', roster_type: 'futures' }} teamColor="#4a8fd4" isLast />);
+    expect(container.querySelector('[style*="dashed"]')).not.toBeNull();
+  });
+
+  it('roster_type=rostered wins even when member_type=futures_academy (the contradiction case)', () => {
+    const { container } = render(<PlayerRow player={{ ...BASE, member_type: 'futures_academy', roster_type: 'rostered' }} teamColor="#4a8fd4" isLast />);
+    expect(container.querySelector('[style*="dashed"]')).toBeNull();
+  });
 });

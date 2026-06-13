@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Lock } from 'lucide-react';
 import BottomSheet from '../shared/BottomSheet';
 import { formatRelativeTime } from '../../lib/formatters';
+import { rsvpBreakdown } from '../../lib/rsvpEligibility';
 
 const VISIBLE_TYPES = new Set(['game', 'tournament']);
 const HOLD_MS = 800;
@@ -13,16 +14,6 @@ function pickPlayerIdsForLock(rsvps, roster) {
       .map((r) => r.player_id),
   );
   return (roster || []).filter((p) => eligible.has(p.id)).map((p) => p.id);
-}
-
-function rsvpCounts(rsvps, roster) {
-  const r = rsvps || [];
-  const going = r.filter((x) => x.response === 'going').length;
-  const maybe = r.filter((x) => x.response === 'maybe').length;
-  const out = r.filter((x) => x.response === 'not_going').length;
-  const replied = r.filter((x) => x.response).length;
-  const noReply = Math.max(0, (roster || []).length - replied);
-  return { going, maybe, out, noReply };
 }
 
 const cardStyle = {
@@ -57,7 +48,7 @@ export default function EventRosterLockCard({ event, isStaff, rsvps, roster, loc
   if (!event || !VISIBLE_TYPES.has(event.event_type)) return null;
   if (lock.loading) return null;
 
-  const counts = rsvpCounts(rsvps, roster);
+  const counts = rsvpBreakdown(rsvps, roster);
   const goingMaybe = counts.going + counts.maybe;
   const lockableNow = goingMaybe > 0;
 

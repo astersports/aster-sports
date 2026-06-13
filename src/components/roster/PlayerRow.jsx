@@ -10,7 +10,9 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
   const [expanded, setExpanded] = useState(isMyChild);
   const { role } = useAuth();
   const initial = (player.last_name || player.first_name || '?').charAt(0).toUpperCase();
-  const isAcademy = player.member_type === 'futures_academy';
+  // §11.5: academy status is per-team (team_players.roster_type), falling back
+  // to the global members flag only when roster_type is absent (Cat#30 ROSTER-3).
+  const isAcademy = player.roster_type ? player.roster_type === 'futures' : player.member_type === 'futures_academy';
   const guardians = player.guardians || [];
   const age = useMemo(() => player.dob ? Math.floor((NOW - new Date(player.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null, [player.dob]);
   const PILL = { fontSize: 11, fontWeight: 500, padding: '1px 5px', borderRadius: 4, lineHeight: '16px' };
