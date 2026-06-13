@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import CoachPayoutCard from '../CoachPayoutCard';
 import FamilyBalanceRow from '../FamilyBalanceRow';
+import TeamBalanceCard from '../TeamBalanceCard';
 import { formatCurrency } from '../../../lib/formatters';
 
 afterEach(cleanup);
@@ -41,6 +42,33 @@ describe('CoachPayoutCard', () => {
     expect(queryByText('Owed ' + formatCurrency(210000))).toBeNull(); // collapsed
     fireEvent.click(getAllByRole('button')[0]);
     expect(getByText('Owed ' + formatCurrency(210000))).toBeTruthy(); // expanded breakdown
+  });
+});
+
+describe('TeamBalanceCard', () => {
+  const team = { id: 't1', name: '11U Girls', team_color: '#123456' };
+  const fams = [
+    { id: 'a', name: 'Smith', balance: 5000, billed: 70000, netPaid: 65000 },
+    { id: 'b', name: 'Jones', balance: 0, billed: 70000, netPaid: 70000 },
+  ];
+
+  it('header shows family/player counts + outstanding; breakdown on expand', () => {
+    const { getByText, queryByText, getAllByRole } = render(
+      <TeamBalanceCard team={team} families={fams} playerCount={3} fmt={formatCurrency} onRecordPayment={() => {}} onNudge={() => {}} />
+    );
+    expect(getByText('11U Girls')).toBeTruthy();
+    expect(getByText('2 families · 3 players')).toBeTruthy();
+    expect(getByText(formatCurrency(5000))).toBeTruthy(); // outstanding headline
+    expect(queryByText('Billed ' + formatCurrency(140000))).toBeNull(); // collapsed
+    fireEvent.click(getAllByRole('button')[0]);
+    expect(getByText('Billed ' + formatCurrency(140000))).toBeTruthy(); // 70000 + 70000
+    expect(getByText('Collected ' + formatCurrency(135000))).toBeTruthy(); // 65000 + 70000
+  });
+
+  it('all-paid team shows "All paid"', () => {
+    const paidFams = [{ id: 'c', name: 'Lee', balance: 0, billed: 70000, netPaid: 70000 }];
+    const { getByText } = render(<TeamBalanceCard team={team} families={paidFams} playerCount={1} fmt={formatCurrency} onRecordPayment={() => {}} onNudge={() => {}} />);
+    expect(getByText('All paid')).toBeTruthy();
   });
 });
 

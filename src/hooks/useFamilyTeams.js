@@ -9,25 +9,28 @@ import { supabase } from '../lib/supabase';
 export function useFamilyTeams(orgId, seasonId) {
   const [teamsByGuardian, setTeamsByGuardian] = useState({});
   const [teams, setTeams] = useState([]);
+  const [playersByTeam, setPlayersByTeam] = useState({});
   const [loading, setLoading] = useState(true);
   const fetchIdRef = useRef(0);
 
   const load = useCallback(async () => {
-    if (!orgId || !seasonId) { setTeamsByGuardian({}); setTeams([]); setLoading(false); return; }
+    if (!orgId || !seasonId) { setTeamsByGuardian({}); setTeams([]); setPlayersByTeam({}); setLoading(false); return; }
     setLoading(true);
     const id = ++fetchIdRef.current;
-    const teamsRes = await supabase.from('teams').select('id, name, sort_order').eq('org_id', orgId).eq('season_id', seasonId).order('sort_order');
+    const teamsRes = await supabase.from('teams').select('id, name, sort_order, team_color').eq('org_id', orgId).eq('season_id', seasonId).order('sort_order');
     if (id !== fetchIdRef.current) return;
     if (teamsRes.error) { console.error('useFamilyTeams teams:', teamsRes.error.message); setLoading(false); return; }
     const teamList = teamsRes.data || [];
     const teamIds = teamList.map((t) => t.id);
-    if (teamIds.length === 0) { setTeams([]); setTeamsByGuardian({}); setLoading(false); return; }
+    if (teamIds.length === 0) { setTeams([]); setTeamsByGuardian({}); setPlayersByTeam({}); setLoading(false); return; }
 
     const tpRes = await supabase.from('team_players').select('team_id, player_id').in('team_id', teamIds).eq('status', 'active');
     if (id !== fetchIdRef.current) return;
     if (tpRes.error) console.error('useFamilyTeams team_players:', tpRes.error.message);
     const tp = tpRes.data || [];
     const playerIds = [...new Set(tp.map((r) => r.player_id))];
+    const counts = {};
+    tp.forEach((r) => { counts[r.team_id] = (counts[r.team_id] || 0) + 1; });
 
     let pg = [];
     if (playerIds.length) {
@@ -49,10 +52,11 @@ export function useFamilyTeams(orgId, seasonId) {
 
     setTeams(teamList);
     setTeamsByGuardian(out);
+    setPlayersByTeam(counts);
     setLoading(false);
   }, [orgId, seasonId]);
 
   useEffect(() => { Promise.resolve().then(load); }, [load]);
 
-  return { teamsByGuardian, teams, loading };
+  return { teamsByGuardian, teams, playersByTeam, loading };
 }
