@@ -5,8 +5,8 @@
 // hardening). Mounted at /team-briefings, reachable from the coach home.
 
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { useGoBack } from '../hooks/useGoBack';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useRadarFeed } from '../hooks/useRadarFeed';
@@ -23,7 +23,7 @@ const note = { fontSize: 12, color: 'var(--as-text-tertiary)', lineHeight: 1.4 }
 
 export default function CoachTeamBriefingsPage() {
   const { user, orgId } = useAuth();
-  const navigate = useNavigate();
+  const goBack = useGoBack();
   const [teamIds, setTeamIds] = useState(null); // null = still resolving
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export default function CoachTeamBriefingsPage() {
   return (
     <div style={page}>
       <div style={headerRow}>
-        <button type="button" style={backBtn} onClick={() => navigate(-1)} aria-label="Back"><ArrowLeft size={20} strokeWidth={1.75} /></button>
+        <button type="button" style={backBtn} onClick={goBack} aria-label="Back"><ArrowLeft size={20} strokeWidth={1.75} /></button>
         <span style={title}>Team briefings</span>
       </div>
 

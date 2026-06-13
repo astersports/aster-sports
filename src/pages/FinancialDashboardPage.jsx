@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSeasonFinancials } from '../hooks/useSeasonFinancials';
 import { useFunnelRevenue } from '../hooks/useFunnelRevenue';
 import { formatCurrency } from '../lib/formatters';
+import { useGoBack } from '../hooks/useGoBack';
 import FamilyBalanceList from '../components/admin/FamilyBalanceList';
 import FinancialSummaryCard from '../components/admin/FinancialSummaryCard';
 import RecordPaymentForm from '../components/admin/RecordPaymentForm';
@@ -14,6 +15,7 @@ import CoachPayoutsSection from '../components/admin/CoachPayoutsSection';
 export default function FinancialDashboardPage() {
   const { orgId } = useAuth();
   const navigate = useNavigate();
+  const goBack = useGoBack();
   // ROSTER-2: arriving from the payment_overdue alert (?owing=1) lands on
   // the season that actually has owing families + pre-enables the filter.
   const [searchParams] = useSearchParams();
@@ -60,7 +62,7 @@ export default function FinancialDashboardPage() {
 
   return (
     <div style={{ padding: '16px 16px 80px' }}>
-      <button type="button" onClick={() => navigate(-1)} className="as-press" style={{ display: 'flex', alignItems: 'center', minHeight: 44, background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12, padding: 0 }}>
+      <button type="button" onClick={goBack} className="as-press" style={{ display: 'flex', alignItems: 'center', minHeight: 44, background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12, padding: 0 }}>
         <ChevronLeft size={20} strokeWidth={1.75} /> Back
       </button>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>

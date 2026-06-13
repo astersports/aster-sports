@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useSeasonRollover } from '../hooks/useSeasonRollover';
+import { useGoBack } from '../hooks/useGoBack';
 import Button from '../components/shared/Button';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
 import { StepArchive, StepCoaches, StepDetails, StepPlayers, StepPreview } from '../components/admin/RolloverSteps';
@@ -11,6 +12,7 @@ import { StepArchive, StepCoaches, StepDetails, StepPlayers, StepPreview } from 
 export default function SeasonRolloverPage() {
   const { orgId } = useAuth();
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const [step, setStep] = useState(1);
   const [season, setSeason] = useState(null);
   const [teams, setTeams] = useState([]);
@@ -61,7 +63,7 @@ export default function SeasonRolloverPage() {
   return createPortal(
     <div style={{ position: 'fixed', inset: 0, zIndex: 9990, backgroundColor: 'var(--as-bg-page)', display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--as-border-default)' }}>
-        <button type="button" onClick={() => navigate(-1)} style={{ fontSize: 15, color: 'var(--as-accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>Cancel</button>
+        <button type="button" onClick={goBack} style={{ fontSize: 15, color: 'var(--as-accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>Cancel</button>
         <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)' }}>Season Rollover</span>
         <span style={{ fontSize: 13, color: 'var(--as-text-tertiary)' }}>Step {step}/5</span>
       </div>

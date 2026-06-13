@@ -1,18 +1,20 @@
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
+import { useGoBack } from '../../hooks/useGoBack';
 
 // Frank-reported 2026-05-20 ("Most of the sections are missing a back
 // button"). One shared component so every admin sub-page gets the same
 // back affordance — placed above the existing page <h1>, no other
-// layout impact. Defaults to navigate(-1) which is "previous history
-// entry"; pages can pass a literal route via `to` if they want a fixed
-// destination (e.g., "/" to always return to admin home).
+// layout impact. Defaults to back-or-Home (useGoBack: pops history, or
+// falls back to Home when opened cold so the button is never a no-op);
+// pages can pass a literal route via `to` for a fixed destination.
 export default function AdminBackHeader({ to }) {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   return (
     <button
       type="button"
-      onClick={() => (to ? navigate(to) : navigate(-1))}
+      onClick={to ? () => navigate(to) : goBack}
       aria-label="Back"
       className="as-press"
       style={{

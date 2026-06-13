@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, ChevronLeft, Lock } from 'lucide-react';
+import { useGoBack } from '../hooks/useGoBack';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useActiveSeasonTeams } from '../hooks/useActiveSeasonTeams';
@@ -18,6 +19,7 @@ const VERSION = 'Aster Sports v2.0';
 
 export default function AccountPage() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const { user, role, orgName, orgId, myChildren, guardianFirstName, signOut } = useAuth();
   const { showToast } = useToast();
   const { teams } = useActiveSeasonTeams();
@@ -47,7 +49,7 @@ export default function AccountPage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--as-bg-page)', padding: '16px 16px 32px' }}>
-      <button type="button" onClick={() => navigate(-1)} className="as-press" aria-label="Go back"
+      <button type="button" onClick={goBack} className="as-press" aria-label="Go back"
         style={{ display: 'flex', alignItems: 'center', minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12 }}>
         <ChevronLeft size={20} strokeWidth={1.75} /> Back
       </button>
