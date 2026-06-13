@@ -834,6 +834,26 @@ arc bodies.
   null coords only when no verified source. Future: an admin verified-pin paste→decode flow would
   close this for all venues. NEXT: Frank re-taps East Coast Waze (now coord-routed) + offer to
   write verified coords for the other tournament venues if he sends their Waze links + W3 on signal.
+  **EVENT KIND PILL + LOGIN WORDMARK + W3 SWEEP SHIPPED (2026-06-13, rolling GO):** PR #1017
+  program-aware event KIND pill on schedule cards (lib/eventKind, useActivities program embed,
+  Badge pill both densities); PR #1018 Aster Sports wordmark on the login front door (brand model
+  ratified: Aster=app, tenant brands post-auth, "Powered by Aster Sports"); PR #1019 W3 audit
+  sweep (F-15 type-scale conformance on EventCard/EventHeroActions/ActionRow + typography guard,
+  F-18 dead stagger prop, F-19 orphan RsvpCountRow deleted). RSVP-tab eligibility hotfix #1015
+  also shipped. Schedule perf items F-12/F-13/F-14/F-17 remain PARKED (riskier hot-hook refactors).
+  **BRIEFINGS PILE-UP DIAGNOSED (2026-06-13, "Go" — read-only lane):**
+  `docs/BRIEFINGS_PILEUP_DIAGNOSIS_2026-06-13.txt`. Three phenomena, no active leak: (A) 59
+  drafts dominated by 36 game_recap auto-drafts (active game_completed→game_recap trigger, one
+  per game; self-expiring ~14d) + 12 rsvp_nudge (1-2d expiry); (B) 7 DUPLICATE rsvp_nudge
+  messages (Jun 11 23-min burst) — root cause rsvpNudgeSend.js:76 INSERTs a new row every call,
+  no anchor dedup + throw-on-failure → retry-mints-dupe loop; sending never consumes the draft;
+  (C) those 7 recipients terminal failed (redrive=3) — TRANSIENT (pilot address healthy: 28
+  delivered before, 2 after), likely rate-limit from the burst. No families spammed (pilot
+  redirect, all failed). Fix-wave proposed (none applied): F-1 send-dedup/draft-consumption
+  (lean: minimal anchor-window guard now, draft-consumption refactor follow-up), F-2 transient
+  UX, F-3 archive the 7 dead dup messages (safe), F-4 game_recap auto-draft policy (PRODUCT CALL:
+  keep/disable/shorten/weekly; CC lean weekly-or-disable). THREE ASKS open. NEXT: Frank rules the
+  fix-wave; nothing changes until ratified.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
