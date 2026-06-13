@@ -16,18 +16,17 @@ export function useCoachDetail(orgId, seasonId, userId) {
     if (!orgId || !seasonId || !userId) { setLoading(false); return; }
     setLoading(true);
     const id = ++fetchIdRef.current;
-    const teamsRes = await supabase.from('teams').select('id, name, season_id').eq('org_id', orgId);
+    const teamsRes = await supabase.from('teams').select('id, name').eq('org_id', orgId);
     if (id !== fetchIdRef.current) return;
     if (teamsRes.error) { console.error('useCoachDetail teams:', teamsRes.error.message); setLoading(false); return; }
-    const teamName = {}; const teamSeason = {};
-    (teamsRes.data || []).forEach((t) => { teamName[t.id] = t.name; teamSeason[t.id] = t.season_id; });
+    const teamName = {}; (teamsRes.data || []).forEach((t) => { teamName[t.id] = t.name; });
     const teamIds = (teamsRes.data || []).map((t) => t.id);
 
     const [profRes, rateRes, payRes, sessRes] = await Promise.all([
       supabase.from('staff_profiles').select('display_name, default_payout_method').eq('org_id', orgId).eq('user_id', userId).maybeSingle(),
       supabase.from('coaching_assignments').select('pay_per_session_cents').eq('org_id', orgId).eq('user_id', userId).eq('active', true).order('pay_per_session_cents', { ascending: false, nullsFirst: false }).limit(1).maybeSingle(),
-      supabase.from('coach_payouts').select('id, amount_cents, status, payment_method, paid_at, created_at').eq('org_id', orgId).eq('coach_user_id', userId).order('created_at', { ascending: false }),
-      teamIds.length ? supabase.from('event_coach_assignments').select('id, pay_cents, pay_status, settled_by_payout_id, events!inner(id, title, start_at, event_type, team_id)').eq('coach_user_id', userId).in('events.team_id', teamIds) : Promise.resolve({ data: [] }),
+      supabase.from('coach_payouts').select('id, amount_cents, status, payment_method, paid_at, created_at, source_assignments').eq('org_id', orgId).eq('coach_user_id', userId).order('created_at', { ascending: false }),
+      teamIds.length ? supabase.from('event_coach_assignments').select('id, pay_cents, pay_status, settled_by_payout_id, events!inner(id, title, start_at, event_type, team_id, season_id)').eq('coach_user_id', userId).in('events.team_id', teamIds) : Promise.resolve({ data: [] }),
     ]);
     if (id !== fetchIdRef.current) return;
     [profRes, rateRes, payRes, sessRes].forEach((r, i) => { if (r?.error) console.error(`useCoachDetail q${i}:`, r.error.message); });
@@ -35,7 +34,7 @@ export function useCoachDetail(orgId, seasonId, userId) {
     const sessions = (sessRes.data || []).map((s) => ({
       id: s.id, pay_cents: s.pay_cents || 0, pay_status: s.pay_status, settled_by_payout_id: s.settled_by_payout_id,
       title: s.events?.title || '—', startAt: s.events?.start_at, teamName: teamName[s.events?.team_id] || '',
-      seasonId: teamSeason[s.events?.team_id] || null,
+      seasonId: s.events?.season_id || null,
     })).sort((a, b) => new Date(b.startAt) - new Date(a.startAt));
     const payouts = payRes.data || [];
     const owedCents = sumOwedCents(sessions);

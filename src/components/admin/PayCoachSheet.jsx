@@ -41,16 +41,23 @@ export default function PayCoachSheet({ coach, orgId, onClose, onSaved }) {
     const payloads = buildSettlements(selected, {
       orgId, coachId: coach.userId, method, paidAt: new Date(`${date}T12:00:00`).toISOString(),
     });
+    // One pay_coach call per season; each is its own transaction. Track how many
+    // committed so a mid-loop failure doesn't strand the already-settled seasons
+    // as stale-selectable — on partial success we still onSaved() (refetch+close)
+    // so the page reflects what committed; the admin reopens to retry the rest.
+    let done = 0;
     try {
       for (const p of payloads) {
         const { error } = await supabase.rpc('pay_coach', p);
         if (error) throw error;
+        done += 1;
       }
       onSaved();
     } catch (e) {
       console.error('pay_coach:', e.message);
-      setErr('Looks like that didn’t go through. Try again?');
       savingRef.current = false; setSaving(false);
+      if (done > 0) onSaved();
+      else setErr('Looks like that didn’t go through. Try again?');
     }
   };
 
@@ -69,7 +76,7 @@ export default function PayCoachSheet({ coach, orgId, onClose, onSaved }) {
           <>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Label>Owed sessions ({owed.length})</Label>
-              <button type="button" onClick={toggleAll} className="as-press" style={{ minHeight: 32, background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>
+              <button type="button" onClick={toggleAll} className="as-press" style={{ minHeight: 44, padding: '0 4px', background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>
                 {allOn ? 'Clear all' : 'Select all'}
               </button>
             </div>

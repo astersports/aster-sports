@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import FullScreenForm from '../shared/FullScreenForm';
 import Label from '../shared/Label';
@@ -18,19 +18,19 @@ export default function RecordCoachPayoutForm({ coach, orgId, seasonId, onClose,
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
+  const savingRef = useRef(false);
 
   const cents = Math.max(0, Math.round(parseFloat(amount) * 100) || 0);
 
   const handleSave = async () => {
-    if (cents <= 0) return;
-    setSaving(true); setErr(null);
+    if (savingRef.current || cents <= 0) return;
+    savingRef.current = true; setSaving(true); setErr(null);
     const { error } = await supabase.from('coach_payouts').insert({
       org_id: orgId, coach_user_id: coach.userId, season_id: seasonId,
       amount_cents: cents, status, payment_method: method,
       paid_at: status === 'paid' ? new Date(`${date}T12:00:00`).toISOString() : null,
     });
-    setSaving(false);
-    if (error) { setErr('Looks like that didn’t go through. Try again?'); return; }
+    if (error) { savingRef.current = false; setSaving(false); setErr('Looks like that didn’t go through. Try again?'); return; }
     onSaved();
   };
 

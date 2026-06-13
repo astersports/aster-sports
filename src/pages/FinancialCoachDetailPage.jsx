@@ -65,7 +65,10 @@ export default function FinancialCoachDetailPage() {
       <Label>Sessions ({data.sessions.length})</Label>
       <div style={CARD}>
         {data.sessions.length === 0 ? <div style={EMPTY}>No sessions assigned this season.</div> : data.sessions.map((s, i) => (
-          <button type="button" key={s.id} onClick={() => setEditSession(s)} className="as-press" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '10px 14px', borderTop: i ? '1px solid var(--as-border-subtle)' : 'none', borderLeft: 'none', borderRight: 'none', borderBottom: 'none', background: 'none', cursor: 'pointer', textAlign: 'left' }}>
+          // Settled (paid) sessions are NOT editable — their pay is locked to the
+          // payout that settled them; editing would desync amount vs payout. Edit
+          // the payout (or delete it to un-settle) instead.
+          <button type="button" key={s.id} onClick={s.pay_status === 'paid' ? undefined : () => setEditSession(s)} disabled={s.pay_status === 'paid'} className="as-press" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '10px 14px', borderTop: i ? '1px solid var(--as-border-subtle)' : 'none', borderLeft: 'none', borderRight: 'none', borderBottom: 'none', background: 'none', cursor: s.pay_status === 'paid' ? 'default' : 'pointer', textAlign: 'left' }}>
             <div>
               <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--as-text-primary)' }}>{dateLabel(s.startAt)} · {s.teamName}</div>
               <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)' }}>{s.title}</div>
