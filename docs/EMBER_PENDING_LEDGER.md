@@ -868,8 +868,11 @@ arc bodies.
   `/ul/h<geohash>` format (mapsUrls.js:20); East Coast data is verified-correct (==Frank's link).
   Open disambiguation carried: was "Waze isn't fixed" East Coast (→1b) or an address-only venue
   (→1a)? Ask first. Durable: C-2 admin paste-pin→decode→coords flow. STEP 2 pick a REDESIGN target
-  (Schedule L99 done; candidates Home/Records/Financial/Inbox/Player-detail) + run §16.15. STEP 3
-  drain parked queue (briefings F-1b, schedule perf, capability arcs).
+  + run §16.15. **CANDIDATE LIST CORRECTED (operator-flagged 2026-06-13): DONE = home (#959-962),
+  schedule/Games (this session), briefings, financials (#967-979), settings (#980-981), programs,
+  teams (#408), members (AdminManagerLayout). GENUINE candidates = events create/edit WIZARD
+  (lead), player profile, records, messages/inbox.** STEP 3 drain parked queue (briefings F-1b,
+  schedule perf, capability arcs).
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
