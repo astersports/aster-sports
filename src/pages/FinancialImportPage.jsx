@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, ChevronLeft, Upload } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useGoBack } from '../hooks/useGoBack';
 import { importToFinancials, parseLeagueAppsData } from '../lib/leagueAppsImport';
 import { formatCurrency } from '../lib/formatters';
 import Button from '../components/shared/Button';
@@ -9,7 +9,10 @@ import Label from '../components/shared/Label';
 
 export default function FinancialImportPage() {
   const { orgId, user } = useAuth();
-  const navigate = useNavigate();
+  // Pop back to the Financials page we came from. Previously this pushed a
+  // NEW /admin/financials entry, so Financials' history-pop back button then
+  // popped right back INTO import — an infinite loop (operator-caught).
+  const goBack = useGoBack('/admin/financials');
   const [raw, setRaw] = useState('');
   const [parsed, setParsed] = useState(null);
   const [parseError, setParseError] = useState('');
@@ -42,13 +45,13 @@ export default function FinancialImportPage() {
 
   return (
     <div style={{ padding: '16px 16px 80px' }}>
-      <button type="button" onClick={() => navigate('/admin/financials')} className="as-press" style={{ display: 'flex', alignItems: 'center', minHeight: 44, background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12, padding: 0 }}>
+      <button type="button" onClick={goBack} className="as-press" style={{ display: 'flex', alignItems: 'center', minHeight: 44, background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12, padding: 0 }}>
         <ChevronLeft size={20} strokeWidth={1.75} /> Back to Financials
       </button>
       <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--as-text-primary)', marginBottom: 16 }}>Import LeagueApps Data</h1>
 
       {result ? (
-        <ResultView result={result} onDone={() => navigate('/admin/financials')} />
+        <ResultView result={result} onDone={goBack} />
       ) : parsed ? (
         <PreviewView families={parsed} fmt={fmt} importing={importing} onImport={handleImport} onBack={() => setParsed(null)} />
       ) : (
