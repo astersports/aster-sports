@@ -19,8 +19,10 @@ const KT = { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13,
 const dot = (c) => ({ width: 8, height: 8, borderRadius: '50%', backgroundColor: c, flexShrink: 0 });
 const EVLINE = { fontSize: 13, color: 'var(--as-text-secondary)', marginTop: 5 };
 const TAP = { display: 'flex', alignItems: 'center', gap: 9, width: '100%', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' };
-const CHIP = { fontSize: 12, fontWeight: 600, padding: '0 12px', minHeight: 44, borderRadius: 9999, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)', cursor: 'pointer', fontFamily: 'inherit' };
-const GROUPED = { fontSize: 9, fontWeight: 700, color: 'var(--as-text-secondary)', backgroundColor: 'var(--as-bg-secondary)', border: '1px solid var(--as-border-default)', borderRadius: 9999, padding: '1px 6px' };
+const CHIP = { fontSize: 13, fontWeight: 600, padding: '0 12px', minHeight: 44, borderRadius: 9999, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)', cursor: 'pointer', fontFamily: 'inherit' };
+// grouped/pinned labels go through the shared Badge (F-15: an on-scale
+// inline pill trips the Badge cross-surface audit — consolidate instead).
+const GROUPED = { color: 'var(--as-text-secondary)', backgroundColor: 'var(--as-bg-secondary)', border: '1px solid var(--as-border-default)', fontWeight: 700 };
 
 export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
   if (item.domain === 'comms') {
@@ -37,7 +39,7 @@ export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={KT}>
             {label}
-            {item.pinned && <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 700, color: 'var(--as-accent)', backgroundColor: 'var(--as-accent-soft)', borderRadius: 9999, padding: '1px 6px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>pinned</span>}
+            {item.pinned && <Badge pill variant="accent" compact style={{ marginLeft: 6, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>pinned</Badge>}
           </div>
           {sub && <div style={{ ...EVLINE, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</div>}
         </div>
@@ -82,7 +84,7 @@ export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
   if (item.domain === 'prep') {
     return (
       <div style={card(rail)}>
-        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--as-accent)' }}>Prep · {formatDayTime(item.start_at)}</div>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--as-accent)' }}>Prep · {formatDayTime(item.start_at)}</div>
         <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--as-text-primary)', marginTop: 3 }}>{item.title}</div>
         {item.subtitle && <div style={EVLINE}>{item.subtitle}</div>}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 9 }}>
@@ -123,7 +125,7 @@ export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
         <div style={KT}>
           {item.team_color && !sevColor && !item.queue && <span aria-hidden="true" style={dot(genRail)} />}
           {item.primary}
-          {item.grouped != null && <span style={GROUPED}>grouped · {item.grouped}</span>}
+          {item.grouped != null && <Badge pill compact style={GROUPED}>grouped · {item.grouped}</Badge>}
         </div>
         {(item.subtitle || item.start_at) && (
           <div style={EVLINE}>{item.subtitle || `${item.team_name} · ${formatDayTime(item.start_at)}`}</div>
