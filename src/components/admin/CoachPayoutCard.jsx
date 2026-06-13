@@ -5,11 +5,12 @@ const METHOD = { venmo: 'Venmo', zelle: 'Zelle', cash: 'Cash', check: 'Check', s
 const initials = (name) => (name || '?').split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
 // Per-coach SUMMARY row for Financials → Coaches. Tap → the coach detail
-// route (sessions behind owed + payouts + actions). Rated coaches headline
-// the balance (owed − paid); unrated coaches show recorded pay.
+// route (sessions behind owed + payouts + actions). Headlines what's owed now
+// (Σ owed sessions); falls back to lifetime paid once nothing is owed. Owed and
+// paid are never netted (PR-1/DR-F1).
 export default function CoachPayoutCard({ coach, onOpen }) {
   const rated = coach.rateCents > 0;
-  const balance = coach.balanceCents;
+  const owes = coach.owedCents > 0;
 
   return (
     <button type="button" onClick={() => onOpen?.(coach)} className="as-press"
@@ -25,15 +26,15 @@ export default function CoachPayoutCard({ coach, onOpen }) {
         </div>
       </div>
       <div style={{ textAlign: 'right' }}>
-        {rated ? (
+        {owes ? (
           <>
-            <div style={{ fontSize: 15, fontWeight: 700, color: balance > 0 ? 'var(--as-danger)' : 'var(--as-success)' }}>{formatCurrency(Math.abs(balance))}</div>
-            <div style={{ fontSize: 11, color: 'var(--as-text-tertiary)' }}>{balance > 0 ? 'still owed' : 'settled'}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--as-warning)' }}>{formatCurrency(coach.owedCents)}</div>
+            <div style={{ fontSize: 11, color: 'var(--as-text-tertiary)' }}>owed now</div>
           </>
         ) : (
           <>
-            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--as-text-primary)' }}>{formatCurrency(coach.paidCents + coach.pendingCents)}</div>
-            <div style={{ fontSize: 11, color: 'var(--as-text-tertiary)' }}>{formatCurrency(coach.paidCents)} paid</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--as-success)' }}>{formatCurrency(coach.paidCents)}</div>
+            <div style={{ fontSize: 11, color: 'var(--as-text-tertiary)' }}>paid</div>
           </>
         )}
       </div>

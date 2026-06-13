@@ -1,30 +1,37 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { countOwedSessions, sumOwedCents, sumPaidCents } from '../lib/coachComp';
 
-// useCoachComp — the coach's OWN pay summary from coach_payouts (the canonical
-// ledger): owed = sum(pending), paid = sum(paid), pendingSessions from the
-// source_assignments lengths. A coach with no rate/payouts (Kenny, Frank) gets
-// zeros + hasComp=false → the card hides. Org-scoped first (AP#37); error
-// surfaced, not swallowed (AP#36).
+// useCoachComp — the coach's OWN reconciled pay summary (PR-1 canonical, DR-F1).
+// Same numbers the admin sees: owed = Σ owed sessions, paid = Σ paid payouts,
+// never netted. Org-scoped (sessions via event→team→org; payouts via org_id) —
+// not season-scoped, so "paid" is the coach's lifetime paid, not one season.
+// A coach with no owed + no paid gets hasComp=false → the card hides (directors).
+// Errors surfaced, not swallowed (AP#36).
 export function useCoachComp(userId, orgId) {
-  const [comp, setComp] = useState({ owedCents: 0, paidCents: 0, pendingSessions: 0, hasComp: false });
+  const [comp, setComp] = useState({ owedCents: 0, paidCents: 0, owedSessions: 0, hasComp: false });
   const [loading, setLoading] = useState(true);
 
   const refetch = useCallback(async () => {
     if (!userId || !orgId) { setLoading(false); return; }
     setLoading(true);
-    const { data, error } = await supabase
-      .from('coach_payouts')
-      .select('amount_cents, status, source_assignments')
-      .eq('org_id', orgId)
-      .eq('coach_user_id', userId);
-    if (error) { console.error('useCoachComp:', error.message); setLoading(false); return; }
-    let owed = 0; let paid = 0; let sessions = 0;
-    for (const r of data || []) {
-      if (r.status === 'pending') { owed += r.amount_cents || 0; sessions += r.source_assignments?.length || 0; }
-      else if (r.status === 'paid') { paid += r.amount_cents || 0; }
+    const teamsRes = await supabase.from('teams').select('id').eq('org_id', orgId);
+    if (teamsRes.error) { console.error('useCoachComp teams:', teamsRes.error.message); setLoading(false); return; }
+    const teamIds = (teamsRes.data || []).map((t) => t.id);
+    const [sessRes, payRes] = await Promise.all([
+      teamIds.length
+        ? supabase.from('event_coach_assignments').select('pay_cents, pay_status, events!inner(team_id)')
+            .eq('coach_user_id', userId).in('events.team_id', teamIds)
+        : Promise.resolve({ data: [] }),
+      supabase.from('coach_payouts').select('amount_cents, status').eq('org_id', orgId).eq('coach_user_id', userId),
+    ]);
+    if (sessRes.error || payRes.error) {
+      console.error('useCoachComp:', (sessRes.error || payRes.error).message); setLoading(false); return;
     }
-    setComp({ owedCents: owed, paidCents: paid, pendingSessions: sessions, hasComp: (data || []).length > 0 });
+    const sessions = sessRes.data || [];
+    const owedCents = sumOwedCents(sessions);
+    const paidCents = sumPaidCents(payRes.data);
+    setComp({ owedCents, paidCents, owedSessions: countOwedSessions(sessions), hasComp: owedCents > 0 || paidCents > 0 });
     setLoading(false);
   }, [userId, orgId]);
 
