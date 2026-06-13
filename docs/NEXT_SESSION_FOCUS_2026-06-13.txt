@@ -1,0 +1,121 @@
+==============================================================================
+NEXT-SESSION FOCUS — recommended path forward — 2026-06-13
+Kickoff doc for the NEW chat (next issue + redesign). Carries the open
+Waze issue with everything already verified (don't re-derive), the parked
+build queue, and the redesign lane. Read this FIRST in the new chat.
+Acting architect: CC. Ratifier: Frank.
+==============================================================================
+
+────────────────────────────────────────────────────────────────────────────
+0. RECOMMENDED PATH (ordered — do these in the new chat)
+────────────────────────────────────────────────────────────────────────────
+  STEP 1 — WAZE, close it for real (TOP priority; tournament is live).
+    The diagnosis is DONE; the path is two moves:
+    (1a) DATA — every venue needs VERIFIED coords. Address-search is the
+         unreliable Waze path; the 4 weekend venues with NULL coords route
+         by address today. Frank pastes the Waze share link per venue →
+         decode the `/ul/h<geohash>` → write lat/lon. (Method proven on
+         East Coast: link dr7dc4jqf → 41.276815,-73.776863, round-trip
+         verified.) Venues needing coords: Harry S. Truman HS, Rippowam
+         Cisqua, Maria Regina HS, Msgr. Scanlon (Silverberg).
+    (1b) CODE — change the Waze builder to emit Frank's PROVEN format
+         `https://waze.com/ul/h<geohash>` (encode from coords) instead of
+         `?ll=lat,lon&navigate=yes`. The ?ll= format is unconfirmed on his
+         device; the geohash format is the one his working link uses.
+         (mapsUrls.js:20. A geohash encode fn is in the diagnosis history —
+         reuse it.) Apple stays `?daddr=lat,lon`.
+    OPEN DISAMBIGUATION carried in: when Frank re-tested "Waze isn't fixed,"
+    it was NOT clear whether East Coast (now coord-correct) still failed
+    (⇒ 1b is the fix) OR he tested an address-only venue (⇒ 1a). FIRST
+    QUESTION in the new chat: "which game did you test + where did Waze go?"
+    Then apply 1a/1b accordingly. Likely BOTH are needed.
+    DURABLE FIX (do after the weekend): C-2 admin "paste pin link → decode →
+    save coords" flow so any venue self-heals without a dev round-trip.
+
+  STEP 2 — the REDESIGN (Frank's "redesign"). Pick ONE target surface at
+    the top of the new chat (Schedule L99 is DONE). Run the §16.15 L99
+    template (audit doc with all 5 elements BEFORE any PR A). Candidate
+    targets + why, in §3 below.
+
+  STEP 3 — drain the parked build queue opportunistically (§2): briefings
+    F-1b (proper send-dedup), schedule perf, capability arcs.
+
+────────────────────────────────────────────────────────────────────────────
+1. WAZE — VERIFIED FACTS (so the new chat does NOT redo tonight's 3 rounds)
+────────────────────────────────────────────────────────────────────────────
+  - East Coast Sports & Fitness row (id f6055a32…): coords 41.276815,
+    -73.776863 ARE correct (== Frank's Waze link, round-trip verified) +
+    google_maps_url pin intact. All 6 ECS&F weekend games carry the FK.
+  - The other 4 weekend venues have NULL coords (I nulled the bad backfill
+    earlier; that was an overcorrection — it left them address-only):
+    Truman, Rippowam, Maria Regina, Scanlon(Silverberg). They route by
+    `?q=<address>` = the unreliable Waze path.
+  - App Waze format today (mapsUrls.js:20): `www.waze.com/ul?ll=lat,lon&
+    navigate=yes` for coords, `?q=address` for address-only. EventLocationTab
+    fetches coords fresh by location_id (no stale-cache path); the bundle's
+    Waze format predates tonight, so a stale PWA still uses correct coords.
+  - DOCTRINE (locked tonight, CLAUDE.md §15 + locations audit addenda):
+    verified-PIN coords (operator Google/Waze link) are trustworthy and
+    BEAT address-search; auto-geocoded (Nominatim) coords are NOT verified;
+    name-text-only fallback is GOOGLE-ONLY (never Apple/Waze).
+  - Reference docs: docs/LOCATIONS_DIRECTIONS_AUDIT_2026-06-13.txt
+    (+Addendum 1/2). Geohash decode/encode: base32 `0123456789bcdefghjkmnp
+    qrstuvwxyz`, the `/ul/h<geohash>` `h` is a prefix.
+
+────────────────────────────────────────────────────────────────────────────
+2. PARKED BUILD QUEUE (from tonight's wrap; each a clean "Go")
+────────────────────────────────────────────────────────────────────────────
+  BRIEFINGS (TIER 3): F-1b PROPER send-dedup — sending CONSUMES the
+    auto-draft (transition draft→sent) registry-wide, instead of inserting
+    a new row; fixes the dup class everywhere AND drains the draft pile on
+    send. F-2 transient-failure UX (keep draft, no minted row on failure).
+    B-3 add a real provider-error column to comms_message_recipients
+    (phantom bounce_reason today). Diagnosis:
+    docs/BRIEFINGS_PILEUP_DIAGNOSIS_2026-06-13.txt.
+  SCHEDULE PERF (TIER 2, riskier hot-hook refactors — bundle w/ evidence):
+    F-12 org-scope on useScheduleData batch (AP#37); F-13 dedup dual
+    useScheduleData instance on route transitions; F-14 hold suppression
+    render until program row resolves; F-17 trim useNow 60s re-renders.
+  CAPABILITY ARCS (TIER 4, architect-laned): C-1 per-venue weather (DB-10);
+    C-2 admin verified-pin paste→coords flow (closes the Waze gap for all
+    venues — see Step 1 durable fix); C-9 family-hub ph2; C-10 AI; C-11 push.
+  CARRIED: FORK E legal/CAN-SPAM (pilot ON until footer addr / per-kind
+    gate); FU-1..FU-3 / D-b / D-d triggers (ledger §4).
+  TIER-1 VERIFIES still open: Waze re-tap (Step 1); confirm Harry S. Truman
+    address 750 Baychester Ave Bronx (CC-entered, not a verified pin).
+
+────────────────────────────────────────────────────────────────────────────
+3. REDESIGN LANE — candidate targets (pick ONE to open the new chat)
+────────────────────────────────────────────────────────────────────────────
+  Schedule L99 is COMPLETE (this session: cards, detail, Games, gates,
+  type pills, directions). Next redesign candidate surfaces, by likely
+  operator-visible payoff:
+    - HOME (parent / coach / admin) — the daily landing; ActionRow + zones
+      got touched piecemeal tonight but no full L99 pass. Highest daily use.
+    - RECORDS / standings — broadcast surface; last redesigned pre-Schedule.
+    - FINANCIAL dashboard — operator-facing; dense, not L99'd recently.
+    - MESSAGES / INBOX — briefings inbox + team chat; adjacency to the
+      briefings work above.
+    - ROSTER / PLAYER detail — Teams got an L99 pass (PR #408); player
+      detail did not.
+  RECOMMENDATION: let Frank name the target (operator-visible friction is
+  the selector). Then run §16.15 (audit doc: file-by-file read + deep-read
+  addendum + anti-pattern cross-ref + per-role wireframes + out-of-scope)
+  BEFORE any PR A. The Schedule sequence (audit → graded rounds → design
+  system doc → conformance PRs) is the proven template.
+
+────────────────────────────────────────────────────────────────────────────
+4. OPERATING NOTES for the new chat
+────────────────────────────────────────────────────────────────────────────
+  - Branch: claude/dazzling-bardeen-oz4lri (synced to main @ the #1020
+    merge). Same single-branch flow: build → PR → ready+timer → merge on
+    green → reset to main.
+  - Test baseline: 7 failed files / 3 failed tests pre-existing (env-class
+    supabase-import + wave_4_1d_2). Deltas beyond = new breakage.
+  - CC acts as architect (operator-directed since the external design lane
+    went quiet); Frank ratifies. Loop: produce ruling/render → Frank grades
+    on device → build on GO. Design-system docs are authoritative over
+    renders.
+  - §11.8 discipline: every audit/spec/handoff = committed .txt + full chat
+    paste + delivered as a file. Ledger reconcile in the same commit (AP#45).
+==============================================================================

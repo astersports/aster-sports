@@ -860,6 +860,16 @@ arc bodies.
   Sunday weekly_digest) + 36 obsolete per-game game_recap drafts archived (Radar 59→23). F-1(b)
   proper draft-consumption refactor + F-2 transient UX = queued (TIER 3, session handoff). Session
   wrap: `docs/CC_SESSION_HANDOFF_2026-06-13.txt`.
+  **CHAT-CLOSE + NEXT-SESSION FOCUS (2026-06-13):** `docs/NEXT_SESSION_FOCUS_2026-06-13.txt` is the
+  kickoff for the next chat (operator: "wrap this chat, move to next issue + redesign"). Recommended
+  path: STEP 1 close Waze for real — (1a) write VERIFIED coords for the 4 null-coord weekend venues
+  (Truman/Rippowam/Maria Regina/Scanlon) from Frank's Waze share links (nulling their coords earlier
+  was an overcorrection → address-only routing), (1b) switch the Waze builder to the proven
+  `/ul/h<geohash>` format (mapsUrls.js:20); East Coast data is verified-correct (==Frank's link).
+  Open disambiguation carried: was "Waze isn't fixed" East Coast (→1b) or an address-only venue
+  (→1a)? Ask first. Durable: C-2 admin paste-pin→decode→coords flow. STEP 2 pick a REDESIGN target
+  (Schedule L99 done; candidates Home/Records/Financial/Inbox/Player-detail) + run §16.15. STEP 3
+  drain parked queue (briefings F-1b, schedule perf, capability arcs).
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
