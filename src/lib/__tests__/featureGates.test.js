@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import { dutiesEnabledFor, ridesEnabledFor } from '../featureGates';
+import { dutiesEnabledFor, ridesCapableOrg, ridesEnabledFor } from '../featureGates';
 
 // AP#43 cross-surface invariant for THE ONE GATE CHAIN (audit 2026-06-12
 // F-1..F-5): Home showed "Ride needed" while the same game's detail said
@@ -32,6 +32,16 @@ describe('featureGates — chain semantics', () => {
     expect(dutiesEnabledFor(orgOff)).toBe(false);
     expect(dutiesEnabledFor(null)).toBe(true);
     expect(dutiesEnabledFor({})).toBe(true);
+  });
+
+  // The wizard's "offer the rides toggle?" gate — the org half of the chain,
+  // default ON. The per-event flag is what the wizard SETS, so it is not part
+  // of the offer decision (events-wizard L99 audit 2026-06-13 B1).
+  it('ridesCapableOrg = org toggle only, default ON', () => {
+    expect(ridesCapableOrg(orgOn)).toBe(true);
+    expect(ridesCapableOrg(orgOff)).toBe(false);
+    expect(ridesCapableOrg(null)).toBe(true);
+    expect(ridesCapableOrg({})).toBe(true);
   });
 });
 
