@@ -104,4 +104,23 @@ VERIFY ASKS (Frank, ~1 minute total)
 3. Device re-check of the original repro: Atlantic Sharks game →
    Location → Waze should now route to 201 Veterans Rd, Yorktown
    Heights (coords-based, no name search).
+
+------------------------------------------------------------------------------
+ADDENDUM — POST-DOC DEVICE RESULT (Frank, 01:13 UTC, grade 9/10)
+------------------------------------------------------------------------------
+Waze STILL routed wrong with the FK in place — meaning the row's stored
+COORDS (41.2764/-73.7856) are not the gym. They came from an unrecorded
+out-of-repo backfill (the seeds lane proved coords were never migrated);
+CC's "plausible for Yorktown Heights" read was inference, and the device
+test is the ground truth (AP#60). RESPONSE (executed live): lat/lon
+NULLED on all 11 venue rows that carry a street address (ECS&F, Maria
+Regina, Rippowam, Hackley, Harvey, House of Sports, Leffell, Sarah
+Lawrence, St. Patrick's, WCC, Wheaton) — Apple/Waze now build from the
+Frank-curated STREET ADDRESS (deterministic), Google keeps the verified
+pin. The 4 region-level "Tournament - …" placeholder rows keep coords
+(no address exists; by design). DOCTRINE TAKEAWAY: coords on venue rows
+are trustworthy only when entered through a verified-pin flow; until
+then the address IS the Apple/Waze source. Re-verify ask #3 stands: the
+Waze button should now open a search for "201 Veterans Rd, Yorktown
+Heights, NY 10598".
 ==============================================================================

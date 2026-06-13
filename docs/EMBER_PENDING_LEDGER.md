@@ -819,8 +819,13 @@ arc bodies.
   fixtures updated); GAMES-TAB adjacencies (operator-caught mid-audit): DensityToggle now in
   Games mode + conditions icon at BOTH densities (D1 amended in the design doc). Tests: wizard
   locationId trio, EventLocationTabNameOnlyGate (AP#43), prelim draft guard, Games static gate,
-  compact icon case. 3 agent claims discarded with evidence (doc §AGENT CLAIMS). NEXT: Frank's
-  3 verify asks (Truman address / two pin taps / Waze re-repro) + W3 sweep on signal.
+  compact icon case. 3 agent claims discarded with evidence (doc §AGENT CLAIMS). DEVICE RESULT
+  9/10 — Waze STILL wrong with the FK live ⇒ the row's COORDS were bad (unrecorded backfill,
+  never migrated; CC's "plausible" read was inference — device test = ground truth, AP#60).
+  Executed live: lat/lon NULLED on all 11 address-bearing venue rows — Apple/Waze build from the
+  Frank-curated street address; Google keeps the verified pin; the 4 region placeholder rows
+  keep coords (no address, by design). Doc addendum in same PR. NEXT: Frank re-taps Waze on the
+  Atlantic Sharks game (should search 201 Veterans Rd) + Truman address verify + W3 on signal.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player
