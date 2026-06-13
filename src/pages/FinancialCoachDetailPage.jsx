@@ -10,6 +10,8 @@ import Label from '../components/shared/Label';
 
 const CoachRateSheet = lazy(() => import('../components/admin/CoachRateSheet'));
 const RecordCoachPayoutForm = lazy(() => import('../components/admin/RecordCoachPayoutForm'));
+const CoachSessionSheet = lazy(() => import('../components/admin/CoachSessionSheet'));
+const CoachPayoutEditSheet = lazy(() => import('../components/admin/CoachPayoutEditSheet'));
 
 const NY = 'America/New_York';
 const METHOD = { venmo: 'Venmo', zelle: 'Zelle', cash: 'Cash', check: 'Check', stripe: 'Card/Stripe', other: 'Other' };
@@ -29,6 +31,8 @@ export default function FinancialCoachDetailPage() {
 
   const { data, loading, refetch } = useCoachDetail(orgId, seasonId, userId);
   const [sheet, setSheet] = useState(null); // 'rate' | 'payout'
+  const [editSession, setEditSession] = useState(null);
+  const [editPayout, setEditPayout] = useState(null);
 
   if (loading || !seasonId) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Loading…</div>;
   if (!data) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Coach not found.</div>;
@@ -57,7 +61,7 @@ export default function FinancialCoachDetailPage() {
       <Label>Sessions ({data.sessions.length})</Label>
       <div style={CARD}>
         {data.sessions.length === 0 ? <div style={EMPTY}>No sessions assigned this season.</div> : data.sessions.map((s, i) => (
-          <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderTop: i ? '1px solid var(--as-border-subtle)' : 'none' }}>
+          <button type="button" key={s.id} onClick={() => setEditSession(s)} className="as-press" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '10px 14px', borderTop: i ? '1px solid var(--as-border-subtle)' : 'none', borderLeft: 'none', borderRight: 'none', borderBottom: 'none', background: 'none', cursor: 'pointer', textAlign: 'left' }}>
             <div>
               <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--as-text-primary)' }}>{dateLabel(s.startAt)} · {s.teamName}</div>
               <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)' }}>{s.title}</div>
@@ -66,14 +70,14 @@ export default function FinancialCoachDetailPage() {
               <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--as-text-primary)' }}>{formatCurrency(s.pay_cents)}</div>
               <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: STATUS_COLOR[s.pay_status] || 'var(--as-text-tertiary)' }}>{s.pay_status}</div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
       <div style={{ marginTop: 16 }}><Label>Payouts ({data.payouts.length})</Label></div>
       <div style={CARD}>
         {data.payouts.length === 0 ? <div style={EMPTY}>No payouts recorded.</div> : data.payouts.map((p, i) => (
-          <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderTop: i ? '1px solid var(--as-border-subtle)' : 'none' }}>
+          <button type="button" key={p.id} onClick={() => setEditPayout(p)} className="as-press" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '10px 14px', borderTop: i ? '1px solid var(--as-border-subtle)' : 'none', borderLeft: 'none', borderRight: 'none', borderBottom: 'none', background: 'none', cursor: 'pointer', textAlign: 'left' }}>
             <div>
               <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--as-text-primary)' }}>{dateLabel(p.paid_at || p.created_at)}</div>
               <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)' }}>{METHOD[p.payment_method] || 'Not specified'}</div>
@@ -82,13 +86,15 @@ export default function FinancialCoachDetailPage() {
               <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--as-text-primary)' }}>{formatCurrency(p.amount_cents)}</div>
               <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: STATUS_COLOR[p.status] || 'var(--as-text-tertiary)' }}>{p.status}</div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
       <Suspense fallback={null}>
         {sheet === 'rate' && <CoachRateSheet coach={data} orgId={orgId} seasonId={seasonId} onClose={() => setSheet(null)} onSaved={() => { setSheet(null); refetch(); }} />}
         {sheet === 'payout' && <RecordCoachPayoutForm coach={data} orgId={orgId} seasonId={seasonId} onClose={() => setSheet(null)} onSaved={() => { setSheet(null); refetch(); }} />}
+        {editSession && <CoachSessionSheet session={editSession} onClose={() => setEditSession(null)} onSaved={() => { setEditSession(null); refetch(); }} />}
+        {editPayout && <CoachPayoutEditSheet payout={editPayout} onClose={() => setEditPayout(null)} onSaved={() => { setEditPayout(null); refetch(); }} />}
       </Suspense>
     </div>
   );
