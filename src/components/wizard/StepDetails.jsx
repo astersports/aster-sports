@@ -81,6 +81,7 @@ export default function StepDetails({ eventType, data, onChange, orgId, org }) {
           <div style={{ display: 'flex', gap: 8 }}>
             {HOME_AWAY.map((v) => (
               <button key={v} type="button" onClick={() => setHomeAway(v)}
+                aria-pressed={data.homeAway === v}
                 className="as-press" style={chipStyle(data.homeAway === v, { flex: 1 })}>
                 {v === 'tbd' ? 'TBD' : v.charAt(0).toUpperCase() + v.slice(1)}
               </button>
@@ -111,10 +112,18 @@ export default function StepDetails({ eventType, data, onChange, orgId, org }) {
         <Toggle label="Indoor" checked={data.indoor ?? true} onChange={(v) => set('indoor', v)} />
         {ridesOffered && <Toggle label="Enable rides" checked={data.enableRides || false} onChange={(v) => set('enableRides', v)} />}
         {isGame && <Toggle label="Scrimmage" checked={data.isScrimmage || false} onChange={(v) => set('isScrimmage', v)} />}
-        {isGame && data.tournamentId && <Toggle label="Playoff / bracket game" checked={data.isBracketGame || false} onChange={(v) => set('isBracketGame', v)} />}
-        {isGame && data.tournamentId && <Toggle label="Championship final" checked={data.isChampionshipFinal || false} onChange={(v) => set('isChampionshipFinal', v)} />}
-        {isGame && data.tournamentId && <Toggle label="Bonus game (doesn't affect seeding)" checked={data.isBonusGame || false} onChange={(v) => set('isBonusGame', v)} />}
       </div>
+
+      {/* D5: the tournament-only flags group under a sub-header so they read
+          as a set, not loose switches (L99 audit 2026-06-13). */}
+      {isGame && data.tournamentId && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)' }}>Tournament options</span>
+          <Toggle label="Playoff / bracket game" checked={data.isBracketGame || false} onChange={(v) => set('isBracketGame', v)} />
+          <Toggle label="Championship final" checked={data.isChampionshipFinal || false} onChange={(v) => set('isChampionshipFinal', v)} />
+          <Toggle label="Bonus game (doesn't affect seeding)" checked={data.isBonusGame || false} onChange={(v) => set('isBonusGame', v)} />
+        </div>
+      )}
 
       {dutiesOffered && <DutyEditor value={data.duties} onChange={(duties) => set('duties', duties)} />}
     </div>

@@ -80,11 +80,12 @@ export default function StepWhen({ data, onChange, orgId }) {
         <div style={{ display: 'flex', gap: 8 }}>
           {DURATIONS.map((d) => (
             <button key={d.minutes} type="button" onClick={() => setDuration(d.minutes)}
+              aria-pressed={!customMode && data.durationMinutes === d.minutes}
               className="as-press" style={chipStyle(!customMode && data.durationMinutes === d.minutes, { minWidth: 56, fontSize: 15, padding: '0 12px' })}>
               {d.label}
             </button>
           ))}
-          <button type="button" onClick={enterCustomMode}
+          <button type="button" onClick={enterCustomMode} aria-pressed={customMode}
             className="as-press" style={chipStyle(customMode, { minWidth: 56, fontSize: 15, padding: '0 12px' })}>
             Custom
           </button>
@@ -126,6 +127,7 @@ export default function StepWhen({ data, onChange, orgId }) {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {ARRIVAL.map((m) => (
             <button key={m} type="button" onClick={() => set('arrivalMinutes', m)}
+              aria-pressed={data.arrivalMinutes === m}
               className="as-press" style={chipStyle(data.arrivalMinutes === m)}>
               {m === 0 ? 'On time' : `${m}m`}
             </button>

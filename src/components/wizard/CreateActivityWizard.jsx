@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/useToast';
 import { useAuth } from '../../context/AuthContext';
@@ -121,17 +122,24 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
           borderTop: '1px solid var(--as-border-default)',
           backgroundColor: 'var(--as-bg-card)', flexShrink: 0,
         }}>
+          {/* A3: disabled-reason for the When step (Details explains its own). */}
+          {step === 2 && !canNext && (
+            <div style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginBottom: 8, textAlign: 'center' }}>
+              Add a date, start, and end time to continue.
+            </div>
+          )}
           <button type="button"
             onClick={step === 3 ? handleSave : () => setStep(step + 1)}
             disabled={loading || !canNext}
             className="as-press as-bounce-tap"
             style={{
               width: '100%', minHeight: 48, borderRadius: 10, border: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               backgroundColor: canNext ? 'var(--as-accent)' : 'var(--as-bg-tertiary)',
               color: canNext ? 'var(--as-text-inverse)' : 'var(--as-text-tertiary)',
               fontSize: 17, fontWeight: 600, opacity: loading ? 0.6 : 1,
             }}>
-            {loading ? 'Saving...' : step === 3 ? (isEdit ? 'Save Changes' : 'Save Event') : 'Next'}
+            {loading ? <><Loader2 size={18} strokeWidth={1.75} className="as-spin" /> Saving…</> : step === 3 ? (isEdit ? 'Save Changes' : 'Save Event') : 'Next'}
           </button>
         </div>
       )}
