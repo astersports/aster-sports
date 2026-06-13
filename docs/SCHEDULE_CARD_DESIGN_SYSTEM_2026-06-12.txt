@@ -24,7 +24,7 @@ Width 68px/54px.
 CONTENT rows by density:
   COMPACT (3 rows + control):           DETAILED (up to 7 rows + control):
    1 title + status slot                 1 title + status slot
-   2 meta: dot team · kid · venue        2 meta: dot team · kid · TYPE tag
+   2 meta: KIND·dot team·kid·venue       2 meta: KIND·dot team·kid·venue
    3 facts (ICONS, D3)                   3 venue (accent when mapped, D6)
    [RSVP segmented 3-way, 44px]          4 arrival call ("Arrive 15 min early")
                                          5 facts (WORDS, D3)
@@ -32,6 +32,14 @@ CONTENT rows by density:
                                          7 notes (2-line clamp)
                                          [RSVP 3 buttons, 44px]
                                          + commitment note (accent chip)
+KIND PILL (amended 2026-06-13, operator: "identify if it's a practice,
+game, training, camp, etc. according to the program and the events"): the
+FIRST meta element at BOTH densities is a colored Badge pill naming the
+event KIND, derived from event_type + the team's programs.program_type
+(lib/eventKind): Game/Tournament=accent · Practice=neutral · Training
+(skills_lab)=academy · Tryout/Evaluation=warning · Camp/Clinic=info ·
+Scrimmage=neutral. A practice inherits its program's label (camp practice
+→ "Camp"). Replaces the old detailed-only "· Game" type suffix.
 
 ------------------------------------------------------------------------------
 D2 STATUS SLOT (title row right) — exactly ONE element, priority order:

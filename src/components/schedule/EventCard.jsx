@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatCountdown } from '../../lib/formatters';
-import { TYPE_LABELS } from '../../lib/constants';
+import { eventKindLabel, eventKindVariant } from '../../lib/eventKind';
 import { formatEventTitle } from '../../lib/eventTitle';
 import { useAuth } from '../../context/AuthContext';
 import { useNow } from '../../hooks/useNow';
@@ -94,11 +94,14 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: compact ? 12 : 13, color: 'var(--as-text-tertiary)', marginTop: compact ? 2 : 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {/* TYPE pill — every card, both densities (operator 2026-06-13):
+              the KIND, derived from event_type + the team's program_type
+              (Game / Practice / Tournament / Training / Camp / Tryout…). */}
+          <Badge variant={eventKindVariant(event)} pill compact style={{ flexShrink: 0 }}>{eventKindLabel(event)}</Badge>
           <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: 2.5, backgroundColor: teamColor, flexShrink: 0 }} />
           <span style={{ color: 'var(--as-text-secondary)', fontWeight: 500 }}>{team?.name}</span>
           {role === 'parent' && kids.length === 1 && <span>· {kids[0].firstName}</span>}
           {compact && event.location_name && <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>· {event.location_name}</span>}
-          {!compact && gameType && <span>· {TYPE_LABELS[event.event_type] || event.event_type}</span>}
           {event.event_type === 'tournament' && !event.opponent && isStaff(role) && <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--as-text-secondary)', textTransform: 'uppercase' }}>· Draft</span>}
         </div>
 

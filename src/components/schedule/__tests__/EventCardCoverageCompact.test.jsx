@@ -56,6 +56,16 @@ describe('EventCard — SD-15 coverage badges at every density', () => {
     expect(container.textContent).toContain('Snacks open · Carpool lead open');
   });
 
+  it('renders the KIND pill at BOTH densities (operator 2026-06-13)', () => {
+    const game = { ...upcoming(), event_type: 'game', teams: { ...TEAM, program: { program_type: 'season' } } };
+    const camp = { ...upcoming(), event_type: 'practice', teams: { ...TEAM, program: { program_type: 'camp' } } };
+    const r1 = render(<MemoryRouter><EventCard event={game} density="minimal" rsvpCount={{ going: 1, denominator: 10 }} /></MemoryRouter>);
+    expect(r1.container.textContent).toContain('Game');
+    cleanup();
+    const r2 = render(<MemoryRouter><EventCard event={camp} density="maximum" rsvpCount={{ going: 1, denominator: 10 }} /></MemoryRouter>);
+    expect(r2.container.textContent).toContain('Camp');
+  });
+
   it('compact rail shows the conditions icon + temp (D1 amendment 2026-06-13)', () => {
     const { container } = render(
       <MemoryRouter>
