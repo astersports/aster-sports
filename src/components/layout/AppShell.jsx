@@ -1,5 +1,6 @@
 import Header from './Header';
 import BottomNav from './BottomNav';
+import PoweredByFooter from '../shared/PoweredByFooter';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { useHomeRole } from '../../hooks/useHomeRole';
 
@@ -50,6 +51,7 @@ export default function AppShell({ children }) {
         }}
       >
         {children}
+        <PoweredByFooter />
       </main>
       <BottomNav />
     </div>
