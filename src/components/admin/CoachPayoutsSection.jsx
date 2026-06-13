@@ -18,22 +18,33 @@ export default function CoachPayoutsSection({ orgId, seasonId }) {
     );
   }
 
+  const totalOwed = coaches.reduce((s, c) => s + c.owedCents, 0);
   const totalPaid = coaches.reduce((s, c) => s + c.paidCents, 0);
-  const totalPending = coaches.reduce((s, c) => s + c.pendingCents, 0);
+  const balance = totalOwed - totalPaid;
 
   return (
     <>
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        {totalOwed > 0 && (
+          <div style={{ flex: 1, padding: '10px 12px', backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)' }}>
+            <div style={STAT_LABEL}>Owed</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--as-text-primary)' }}>{formatCurrency(totalOwed)}</div>
+          </div>
+        )}
         <div style={{ flex: 1, padding: '10px 12px', backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)' }}>
-          <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--as-text-tertiary)' }}>Paid</div>
+          <div style={STAT_LABEL}>Paid</div>
           <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--as-success)' }}>{formatCurrency(totalPaid)}</div>
         </div>
-        <div style={{ flex: 1, padding: '10px 12px', backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)' }}>
-          <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--as-text-tertiary)' }}>Pending</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: totalPending > 0 ? 'var(--as-warning)' : 'var(--as-text-primary)' }}>{formatCurrency(totalPending)}</div>
-        </div>
+        {totalOwed > 0 && (
+          <div style={{ flex: 1, padding: '10px 12px', backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)' }}>
+            <div style={STAT_LABEL}>Balance</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: balance > 0 ? 'var(--as-danger)' : 'var(--as-success)' }}>{formatCurrency(Math.abs(balance))}</div>
+          </div>
+        )}
       </div>
       {coaches.map((c) => <CoachPayoutCard key={c.userId} coach={c} />)}
     </>
   );
 }
+
+const STAT_LABEL = { fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--as-text-tertiary)' };
