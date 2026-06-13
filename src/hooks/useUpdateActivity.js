@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { convertToSeries, reconcileSeries } from './seriesReconcile';
+import { reconcileEventDuties } from './dutyReconcile';
 import { buildTitle } from '../lib/constants';
 
 export function useUpdateActivity() {
@@ -46,16 +47,9 @@ export function useUpdateActivity() {
       const { data, error: err } = await supabase
         .from('events').update(buildRow(formData)).eq('id', eventId).select().single();
       if (err) throw err;
-      const newDuties = (formData.duties || []).filter((d) => d.duty_name?.trim() || d.name?.trim());
-      if (newDuties.length > 0) {
-        const dutyRows = [];
-        newDuties.forEach((d) => {
-          const label = (d.duty_name || d.name).trim();
-          for (let i = 0; i < (d.slots_needed || 1); i++) dutyRows.push({ event_id: eventId, duty_name: label });
-        });
-        const { error: dErr } = await supabase.from('event_duties').insert(dutyRows);
-        if (dErr) throw new Error(`Volunteers failed to save: ${dErr.message}`);
-      }
+      // P0-2: reconcile duties by diff (never blind-insert — that doubled
+      // event_duties on every edit-save) and preserve claimed slots.
+      await reconcileEventDuties(eventId, formData.duties);
       const pattern = formData.recurrence?.pattern;
       if (pattern && pattern !== 'once' && !data.parent_event_id) {
         await convertToSeries({ eventId, formData, row: buildRow(formData) });
