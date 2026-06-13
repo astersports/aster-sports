@@ -12,7 +12,8 @@ export default function DateGroupedList({ events, data, nextEventId, density, on
     <div key={date} data-date-group={date}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: date === todayNY ? 'var(--as-accent)' : 'var(--as-text-tertiary)', marginTop: 8, marginBottom: 6, textTransform: 'uppercase' }}>
         {date === todayNY && <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: 'var(--as-accent)' }} />}
-        {date === todayNY ? `Today · ${formatDateHeader(date)}` : formatDateHeader(date)}
+        {/* formatDateHeader already appends "· TODAY" for today — don't double it. */}
+        {formatDateHeader(date)}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {evts.map((event) => (
