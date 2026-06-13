@@ -12,7 +12,7 @@ const dateLabel = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 's
 // their coaching_assignment) show OWED (rate × sessions) vs PAID → BALANCE as
 // the headline; unrated coaches (directors/volunteers) just show recorded pay.
 // Tap to expand the comp breakdown + individual payout rows.
-export default function CoachPayoutCard({ coach }) {
+export default function CoachPayoutCard({ coach, onSetRate, onRecordPayout }) {
   const [open, setOpen] = useState(false);
   const rated = coach.rateCents > 0;
   const balance = coach.balanceCents;
@@ -47,6 +47,16 @@ export default function CoachPayoutCard({ coach }) {
       </button>
       {open && (
         <>
+          <div style={{ display: 'flex', gap: 8, padding: '10px 14px', borderTop: '1px solid var(--as-border-subtle)' }}>
+            <button type="button" onClick={() => onSetRate?.(coach)} className="as-press"
+              style={{ flex: 1, minHeight: 40, borderRadius: 10, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-secondary)', fontSize: 13, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer' }}>
+              {rated ? 'Edit rate' : 'Set rate'}
+            </button>
+            <button type="button" onClick={() => onRecordPayout?.(coach)} className="as-press"
+              style={{ flex: 1, minHeight: 40, borderRadius: 10, border: 'none', backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>
+              Record payout
+            </button>
+          </div>
           {rated && (
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 14px', borderTop: '1px solid var(--as-border-subtle)', fontSize: 12, color: 'var(--as-text-secondary)' }}>
               <span>Owed {formatCurrency(coach.owedCents)}</span>

@@ -76,5 +76,5 @@ export function useCoachPayouts(orgId, seasonId) {
   }, [orgId, seasonId]);
 
   useEffect(() => { Promise.resolve().then(load); }, [load]);
-  return { coaches, loading };
+  return { coaches, loading, refetch: load };
 }
