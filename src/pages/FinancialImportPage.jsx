@@ -31,6 +31,7 @@ export default function FinancialImportPage() {
     setImporting(true);
     const seasonRes = await (await import('../lib/supabase')).supabase
       .from('seasons').select('id').eq('org_id', orgId).eq('status', 'active').maybeSingle();
+    if (seasonRes.error) { console.error('FinancialImportPage season lookup:', seasonRes.error.message); setResult({ errors: ["Couldn't reach the server. Try again in a moment."] }); setImporting(false); return; }
     if (!seasonRes.data) { setResult({ errors: ['No active season found.'] }); setImporting(false); return; }
     const r = await importToFinancials(parsed, orgId, seasonRes.data.id, user.id);
     setResult(r);

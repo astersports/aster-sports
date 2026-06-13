@@ -44,6 +44,7 @@ export function useTournamentAggregateRsvp({ tournamentId } = {}) {
     ]);
     Promise.resolve().then(() => {
       if (rsvpsRes.error) { setError(rsvpsRes.error); setLoading(false); return; }
+      if (teamsRes.error) console.error('useTournamentAggregateRsvp teams:', teamsRes.error.message);
       setRows(rsvpsRes.data || []);
       setTeams((teamsRes.data || []).map((t) => ({ id: t.team_id, name: t.teams?.name || '' })));
       setLoading(false);

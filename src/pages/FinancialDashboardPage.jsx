@@ -39,6 +39,8 @@ export default function FinancialDashboardPage() {
       supabase.from('financial_accounts').select('season_id').eq('org_id', orgId),
       supabase.from('family_balances').select('season_id, balance_cents').eq('org_id', orgId),
     ]).then(([seasonsRes, accountsRes, balancesRes]) => {
+      const err = seasonsRes.error || accountsRes.error || balancesRes.error;
+      if (err) console.error('FinancialDashboardPage seasons load:', err.message);
       const withAccounts = new Set((accountsRes.data || []).map((a) => a.season_id).filter(Boolean));
       setSeasons((seasonsRes.data || []).filter((s) => withAccounts.has(s.id)));
       setOwingSeasonIds(new Set((balancesRes.data || []).filter((r) => (Number(r.balance_cents) || 0) > 0).map((r) => r.season_id)));
