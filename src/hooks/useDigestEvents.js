@@ -54,20 +54,22 @@ export function useDigestEvents({ orgId, period }) {
       let tournaments = [];
       if (tournamentIds.length) {
         // Beta B1 audit defense-in-depth — anti-pattern #37.
-        const { data: trows } = await supabase
+        const { data: trows, error: tErr } = await supabase
           .from('tournaments')
           .select('id, name, start_date, end_date, rules')
           .eq('org_id', orgId)
           .in('id', tournamentIds);
+        if (tErr) console.error('useDigestEvents tournaments:', tErr.message);
         tournaments = trows || [];
       }
       const eventIds = (rows || []).map((r) => r.id);
       const rsvpCountsByEvent = new Map();
       if (eventIds.length) {
-        const { data: rsvps } = await supabase
+        const { data: rsvps, error: rErr } = await supabase
           .from('event_rsvps')
           .select('event_id, response')
           .in('event_id', eventIds);
+        if (rErr) console.error('useDigestEvents rsvps:', rErr.message);
         for (const ev of rows || []) {
           rsvpCountsByEvent.set(ev.id, { going: 0, maybe: 0, out: 0 });
         }

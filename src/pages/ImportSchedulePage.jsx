@@ -31,9 +31,10 @@ export default function ImportSchedulePage() {
     if (!orgId) return;
     let cancelled = false;
     Promise.resolve().then(async () => {
-      const { data } = await supabase.from('tournaments')
+      const { data, error } = await supabase.from('tournaments')
         .select('id, name, start_date, end_date').eq('org_id', orgId)
         .is('archived_at', null).order('start_date', { ascending: false }).limit(20);
+      if (error) console.error('ImportSchedulePage tournaments:', error.message);
       if (!cancelled) setTournaments(data || []);
     });
     return () => { cancelled = true; };

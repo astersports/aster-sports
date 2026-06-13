@@ -23,8 +23,12 @@ export function useConflictCheck(step, form, excludeEventId) {
       .eq('team_id', form.teamId)
       .gte('start_at', `${form.date}T00:00:00`)
       .lte('start_at', `${form.date}T23:59:59`)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (cancelled) return;
+        // AP#36: a swallowed error here silently returns zero conflicts and
+        // the wizard shows no warning → admin double-books. Log + keep the
+        // prior result instead of falsely clearing to "no conflicts".
+        if (error) { console.error('useConflictCheck:', error.message); return; }
         setConflicts((data || []).filter((e) => {
           if (excludeEventId && e.id === excludeEventId) return false;
           const es = new Date(e.start_at);
