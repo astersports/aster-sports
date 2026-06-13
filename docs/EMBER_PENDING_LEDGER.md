@@ -889,6 +889,26 @@ arc bodies.
   and a conformance/a11y batch (triplicated chipStyle, raw inline controls vs shared <Input>,
   missing aria-pressed, sub-44px duty steppers). Proposed: PR A (gate fix + F1, behavior/data,
   standalone) → PR B (conformance) → PR C (a11y/polish). Lead = PR A.
+  **WIZARD L99 ARC SHIPPED + BACK-BUTTON FIX (2026-06-13):** PR #1025 (PR A — featureGates
+  rides/duties offer-gate via new `ridesCapableOrg` + cross-midnight buildSaveDiff fix + AP#43 test),
+  #1026 (PR B — shared wizardStyles chip/control, `<Input>` opponent, off-scope location value),
+  #1028 (PR C — aria-pressed on all selectable buttons, 44px duty steppers/remove, Tournament-options
+  grouping, When-step disabled hint, save spinner). Arc COMPLETE; awaiting Frank device-grade. Also
+  #1027: `useGoBack` hook fixes the dead back button on cold-opened pages (navigate(-1) no-op when
+  first history entry) across 8 surfaces — operator-caught (stuck on an event detail). #1023 removed
+  Waze entirely (operator-directed; Apple+Google only).
+  **SECTIONS L99 MULTI-AGENT AUDIT (2026-06-13):** `docs/SECTIONS_L99_AUDIT_2026-06-13.txt` —
+  4 parallel L99 agents on Schedule/Events/Members/Financials + CC verification. 3 CONFIRMED P0s:
+  (P0-1) Financials CoachPayoutsSection.jsx:56 `formatCurrency(amount_cents/100)` double-divide →
+  payouts shown 100× too small; (P0-2) Events useUpdateActivity.js:49-58 re-inserts event_duties on
+  edit with no delete → volunteer slots DUPLICATE every save; (DOCTRINE-1) Members PlayerProfilePage
+  renders per-player GAME stats (PTS/REB/AST/+box) — a §16.12-forbidden / §8-BLOCKED build, live →
+  Frank ruling needed (CC lean: strip box score, keep engagement-only). Cross-cutting: PATTERN ALPHA
+  (AP#36 unchecked secondary-query error, ≥10 instances all 4 sections), PATTERN BETA (AP#63
+  same-concept divergent source — academy badge live contradiction, Events going-count ×4, public
+  venue), PATTERN GAMMA (write-side lags read-side, Events). Proposed remediation PR-1..PR-7; CC lean
+  = ship PR-1 (CoachPayouts) + PR-2 (dup duties) immediately, get §16.12 ruling, then ALPHA sweep.
+  Awaiting Frank go.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player

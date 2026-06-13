@@ -1,0 +1,201 @@
+==============================================================================
+SECTIONS L99 DEEP AUDIT — Schedule · Events · Members · Financials — 2026-06-13
+Multi-agent L99 audit (§16.15 methodology, 4 parallel grounded agents +
+CC verification of the P0/doctrine findings). Acting architect: CC.
+Ratifier: Frank. Goal: identify bugs + recommend design changes toward 10/10.
+==============================================================================
+
+METHOD
+  4 parallel read-only agents, one per section, each: full line-by-line read
+  + §16.15 deep-read 2nd pass + anti-pattern cross-ref (§11) + per-role notes,
+  every claim cited file:line. CC then re-read and VERIFIED the three P0s and
+  the doctrine finding against live source (and, for the academy-badge case,
+  the agent verified against the live DB vrwwpsbfbnveawqwbdmj). Unverified
+  agent claims are labelled below; everything in the "CONFIRMED" block CC read
+  directly.
+
+------------------------------------------------------------------------------
+CONFIRMED P0s (CC-verified against source — fix-ready)
+------------------------------------------------------------------------------
+P0-1  FINANCIALS — coach payouts shown 100× too small.
+      `CoachPayoutsSection.jsx:56` calls `formatCurrency(p.amount_cents / 100)`.
+      `formatCurrency` (formatters.js:67) ALREADY divides by 100. A $500 payout
+      (amount_cents=50000) renders "$5.00". Every payout on the admin
+      reconciliation ledger is understated 100×. AP#63 (unit divergence).
+      FIX: drop the `/100` → `formatCurrency(p.amount_cents)`. One line.
+      GUARD: the existing `financialMathAudit.test.js` greps for re-implemented
+      accumulation but NOT for `formatCurrency(x / 100)` mis-unit calls — add a
+      static-grep failing on that shape (closes the exact blind spot the bug
+      slipped through).
+
+P0-2  EVENTS — volunteer slots DUPLICATE on every edit-save.
+      `useUpdateActivity.js:49-58` (single-event `update()`) re-INSERTs
+      `event_duties` from `formData.duties` with NO prior DELETE. The edit
+      wizard re-hydrates the full existing duty set into `form.duties`
+      (CreateActivityWizard.jsx:51-64), so each save of an event that has
+      volunteer slots doubles them (Scorekeeper ×2 → ×4 → ×6). Silent,
+      compounding, data-level. (useCreateActivity inserts fresh — only the
+      EDIT path is broken.) AP#13 / write-correctness.
+      FIX: delete existing event_duties for the event, then insert (or
+      reconcile by diff). Mirror in updateSeries' reconcileSeries if it has
+      the same shape (verify). Add a test: edit-save twice → slot count stable.
+
+DOCTRINE-1  MEMBERS — per-player GAME STATS are live (decision, not a code call).
+      `PlayerProfilePage.jsx:65-90` (+ `usePlayerSeasonStats.js`) renders PTS,
+      REB, AST, GP, FG, 3PT, FT, STL, BLK, TO, PF for a single player at
+      `/teams/:teamId/player/:playerId`. §16.12 locks per-player GAME stats as
+      forbidden in 2026 (team-level only; engagement stats OK). §8 build order
+      states explicitly: "BLOCKED: 5-C player stats/box score — §16.12 forbids
+      per-player game stats in 2026 (do not build)." This is the forbidden
+      build, shipped + mounted. Likely orphaned (RosterSection.jsx:37 passes a
+      DEAD `teamId` prop to PlayerRow, suggesting the deep-link in was
+      half-removed — so the page may be URL-reachable but unlinked). This is a
+      DOCTRINE RULING for Frank/architect per §11.8 r6, NOT a unilateral fix.
+      OPTIONS: (a) strip the game-stat block, keep the page as identity +
+      ENGAGEMENT only (attendance/streak, §16.12-allowed); (b) remove the
+      page + route entirely (if orphaned); (c) ratify a §16.12 carve-out
+      (unlikely). CC LEAN: (a) — keep an engagement-only profile, strip the box
+      score; it's the smallest doctrine-compliant surface.
+
+------------------------------------------------------------------------------
+CROSS-CUTTING PATTERNS (AP#58 synthesis across all 4 sections)
+------------------------------------------------------------------------------
+PATTERN ALPHA — AP#36 unchecked-error on the SECONDARY/enrichment query.
+  The dominant cross-section defect. The PRIMARY query is always error-checked;
+  the enrichment query (counts, names, tournaments, balances) swallows its
+  error into an empty/zero state that reads as real data. ≥10 instances:
+    Schedule: useDigestEvents.js:57 + :67, ImportSchedulePage.jsx:34,
+              useTournamentAggregateRsvp.js:48, useScheduleData.js:54 (logged-
+              only, softer).
+    Events:   useConflictCheck.js:26 (SAFETY-CRITICAL — swallowed error → zero
+              conflicts → admin double-books with no warning).
+    Financials: CoachPayoutsSection.jsx:14-26 (error → empty "no payouts" reads
+              as "all coaches paid"), FinancialDashboardPage.jsx:35-43
+              (Promise.all, no .error on any leg → page hangs on "Loading…"),
+              FinancialImportPage.jsx:29-38 (misleading "no active season").
+    Members:  PlayerProfilePage.jsx:24-33 (Promise.all, no .error → false
+              "Player not found").
+  → SWEEP PR: destructure `error`, surface before using `data`. Extend the AP#36
+    audit grep to "second query in a multi-fetch / Promise.all". Prioritize the
+    safety/money callsites (useConflictCheck, CoachPayouts, FinancialDashboard).
+
+PATTERN BETA — AP#63 same concept, divergent source/scope (the platform's #1
+  bug class; present in ALL FOUR sections).
+    Members:  academy badge — RosterSection/PlayerRow read players.member_type
+              (global) vs PlayerProfilePage reads team_players.roster_type
+              (per-team). Agent VERIFIED a live contradiction on a real player
+              (member_type='futures_academy' but roster_type='rostered' →
+              roster shows Academy pill, profile shows none). This is the
+              documented ROSTER-3 instance, still open. §11.5 canonical:
+              team_players.roster_type for "Academy on THIS team".
+    Events:   going-count derived 4 independent times (EventDetailHero.jsx:23,
+              RsvpSummary.jsx:5, EventRosterLockCard.jsx:18, EventDetailPage.jsx
+              :124); past-event predicate 3 ways (one off the SD-2 spine,
+              EventBriefingHistory.jsx:48 uses start-based < now); check-in
+              denominator uses full roster vs hero uses `eligible` (B8). Agree
+              today (shared inputs) but no AP#43 invariant test locks them.
+    Financials: P0-1 unit divergence; plus format split — CoachPayouts full
+              cents vs CoachCompCard/AdminProgramHealth whole-dollar rounded
+              for the SAME "coach pay" concept.
+    Schedule: public venue line (PublicSchedulePage.jsx:36 raw `location`) vs
+              in-app (useActivities.js:50 `location || locations.name`) — public
+              rows show NO venue for imported/tournament events; in-app shows it.
+  → Per instance: collapse to one canonical source + an AP#43 cross-surface
+    invariant test. Highest structural ROI = the Events going-count helper
+    (extract rsvpBreakdown() next to eligibleRoster in rsvpEligibility.js).
+
+PATTERN GAMMA — write-side discipline lags read-side (concentrated in Events).
+  Reads are uniformly hardened (tz-pinned, error-checked, org-scoped). Writes
+  are not: P0-2 duplicate duties; tz-UNPINNED event-time writes
+  (useUpdateActivity.js:13, useCreateActivity.withTime, wizardForm.buildSaveDiff
+  — local-browser parse; a traveling admin corrupts start_at — note the pilot
+  is single-tz Eastern by DESIGN, so this is latent-risk not active-bug);
+  non-atomic series delete (useEventDelete.js:23-27, two statements, can orphan
+  the parent); missing failure toast on useEventActivations.toggle (§16.3
+  rollback-microcopy). → A write-path hardening PR.
+
+------------------------------------------------------------------------------
+PER-SECTION FINDINGS (condensed; full agent reports in chat)
+------------------------------------------------------------------------------
+SCHEDULE
+  P1  DateGroupedList.jsx:15 — double "Today": "Today · Friday, Jun 13 · TODAY"
+      (formatDateHeader already adds · TODAY). CC-VERIFIED. One-line fix.
+  P1  useConflictCheck.js:18-25 — mixed-timezone conflict detection (unzoned
+      Date vs UTC ISO; correct only on Eastern devices).
+  P2  ShareScheduleButton — TWO components same name (schedule/ = no QR,
+      shared/ = QR). Authenticated page gets the worse one; teamName="" hard-
+      coded (SchedulePage.jsx:93). AP#42. Collapse to the shared/ QR one.
+  P2  AP#36 cluster (ALPHA) — useDigestEvents ×2, ImportSchedulePage,
+      useTournamentAggregateRsvp.
+  P3  PublicSchedulePage.jsx:36 venue parity (BETA).
+  10/10: eventWindows.js spine, useActivities.js, useCoverageConflicts.js,
+      WeekStrip.jsx, StandingsTable.jsx, EventCard.jsx. Do not touch.
+
+EVENTS
+  P0  B1 duplicate duties on edit (above).
+  P1  EventNotes — parent on an event with ONLY coach_notes gets a "Notes"
+      section that expands to nothing (EventDetailPage.jsx:129 gate vs
+      EventNotes.jsx:13 role hide). §16.14 empty-section.
+  P1  useConflictCheck.js:26 swallows error (ALPHA, safety-critical).
+  P1  useEventActivations.toggle — rollback with no failure toast (§16.3).
+  P2  dutyCount fetched once, never refetched after edit adds duties →
+      Volunteers section stays hidden until reload (EventDetailPage.jsx:58-65,
+      AP#44).
+  P2  check-in denominator (full roster) vs hero (eligible) — BETA B8.
+  P3  series delete non-atomic (useEventDelete.js); expandDates cap comment
+      says "100", code is 26 (AP#9 comment drift).
+  10/10: featureGates one-chain (today's #1025 verified consistent), SD-6
+      eligibleRoster denominator, mapsUrls/Waze removal (#1023), GameDayMode
+      §16.14, useRsvps optimistic+toast+audit, EventDetailHeader overflow sheet.
+
+MEMBERS
+  P0/DOCTRINE  per-player game stats (above).
+  P1  academy badge member_type vs roster_type — live contradiction (BETA).
+  P2  PlayerProfilePage Promise.all no .error + setPlayer gated on tpRes.data →
+      false "Player not found" (ALPHA, AP#44).
+  P2  InviteButton.jsx:30 console.error fires on SUCCESS too (logs invite
+      response body, may contain email — §16.7).
+  P2  RosterSection.jsx:37 dead `teamId` prop (the orphan-link canary).
+  P3  GuardianFormSheet last-name has required `*` but canSubmit doesn't
+      require it (label/validation mismatch).
+  10/10: useRoster payment-status from family_balances (ROSTER-1 fix landed,
+      legacy column verified dropped), AP#37/#36 hygiene uniform, hidden-roster
+      privacy, §10 naming (League Play not CYO), GuardianFormSheet=FullScreenForm.
+
+FINANCIALS
+  P0  CoachPayouts /100 (above).
+  P1  CoachPayoutsSection error → false empty (ALPHA).
+  P2  coach-pay format split (BETA).
+  P3  FinancialDashboard Promise.all + FinancialImport season lookup no .error
+      (ALPHA); RecordPaymentForm.balance contract fragility (AP#44).
+  10/10: useSeasonFinancials + family_balances view + leagueAppsImport
+      (pessimistic, §16.1) + recordMoney + FinancialSummaryCard scope-labels.
+      The money spine is excellent; risk is concentrated in component fetch
+      error-handling + the one /100 mis-unit.
+
+------------------------------------------------------------------------------
+RECOMMENDED REMEDIATION SEQUENCE (await Frank's go; audit was the ask)
+------------------------------------------------------------------------------
+  PR-1  P0-1 CoachPayouts /100 + the formatCurrency(x/100) static guard test.
+        (Money correctness; smallest, highest-urgency.)
+  PR-2  P0-2 duplicate-duties-on-edit fix + reconcile + regression test.
+        (Compounding data corruption.)
+  DECISION  DOCTRINE-1 §16.12 game-stats — Frank ruling (CC lean: strip box
+        score, keep engagement-only profile). Routed as a decision, not a PR.
+  PR-3  PATTERN ALPHA sweep — error-check the ~10 secondary-query callsites
+        (prioritize useConflictCheck, CoachPayouts, FinancialDashboard) +
+        extend the AP#36 grep.
+  PR-4  PATTERN BETA-Members — academy badge to one canonical source
+        (team_players.roster_type) + AP#43 invariant test (ROSTER-3 close).
+  PR-5  PATTERN BETA-Events — rsvpBreakdown() helper consolidating the 4
+        going-count derivations + AP#43 test.
+  PR-6  Schedule polish — double-Today fix, ShareScheduleButton dedup,
+        public-venue parity, conflict-check tz-pin.
+  PR-7  PATTERN GAMMA write-path hardening (tz-pin decision, atomic series
+        delete, activation toast) — lower urgency given single-tz pilot.
+  (P3s ride along where cheap.)
+
+  CC lean (AP#39): ship PR-1 and PR-2 immediately (both are confirmed,
+  isolated, data/money-correctness, one-PR each), get the §16.12 ruling, then
+  batch the ALPHA sweep (PR-3) as the single highest-leverage structural pass.
+==============================================================================
