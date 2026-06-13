@@ -1,6 +1,7 @@
 import RsvpSummary from '../rsvp/RsvpSummary';
 import RsvpPlayerRow from '../rsvp/RsvpPlayerRow';
 import LoadingSkeleton from '../shared/LoadingSkeleton';
+import { isGameType } from '../../lib/rsvpEligibility';
 
 // RSVP tab — summary bar + one row per roster player with 3-button
 // going/maybe/not-going selector. Thin wrapper around the existing
@@ -19,8 +20,13 @@ import LoadingSkeleton from '../shared/LoadingSkeleton';
 export default function EventRsvpTab({
   roster, summaryRoster, rsvps, rsvpMap, teamColor, onSetRsvp, onSaveNote, loading,
   readOnly = false, overrideActive = false, auditMap = {},
-  canActivateAcademy = false, activatedSet, onToggleActivation,
+  canActivateAcademy = false, activatedSet, onToggleActivation, eventType,
 }) {
+  // D4 / SD-6 (operator-caught 2026-06-13): rows render for the FULL
+  // roster (activation management lives here), but the RSVP control is
+  // eligibility-gated — unactivated academy kids on game types get the
+  // violet "Not activated" state, same as every other surface.
+  const gameGated = isGameType(eventType);
   if (loading) {
     return <div style={{ padding: 16 }}><LoadingSkeleton variant="list" count={5} /></div>;
   }
@@ -76,6 +82,7 @@ export default function EventRsvpTab({
               canActivateAcademy={canActivateAcademy}
               isActivated={activatedSet?.has(player.id) || false}
               onToggleActivation={onToggleActivation}
+              rsvpEligible={player.member_type !== 'futures_academy' || !gameGated || (activatedSet?.has(player.id) || false)}
             />
             {overrideMarker(player.id) && (
               <div style={{ fontSize: 11, color: 'var(--as-text-tertiary)', padding: '0 0 6px 2px' }}>
