@@ -1,0 +1,337 @@
+FINANCIALS — MULTI-AGENT DEEP AUDIT (for architect review)
+Author: Claude Code (implementation lane) — synthesis of a 10-agent parallel audit
+Date: 2026-06-13
+Org under test: Legacy Hoopers (e3e95e21-3571-4e9a-985a-d5d01480d4a6)
+Supabase project: vrwwpsbfbnveawqwbdmj · active season Spring 2026 (b8a83563-6878-4ebb-8918-9d884050ab23)
+Companion doc: docs/FINANCIALS_ARCHITECT_HANDOFF.txt (the schema/scope baseline this audit verifies + extends)
+
+METHOD: 10 read-only agents ran in parallel, each on a distinct slice, each instructed to
+verify load-bearing claims against PRODUCTION via Supabase SQL (not memory) and mark UNCERTAIN
+otherwise. Every dollar figure below is a live query result. Scopes: (1) family-billing math,
+(2) coach-comp settlement, (3) RLS/security, (4) live data integrity, (5) cross-surface
+consistency AP#63, (6) parent lens + privacy, (7) design-system/a11y/LOC, (8) query perf +
+hygiene, (9) error handling + edge cases, (10) schema + migration hygiene.
+
+
+══════════════════════════════════════════════════════════════════════
+EXECUTIVE VERDICT
+══════════════════════════════════════════════════════════════════════
+
+The FAMILY side is genuinely strong: the ledger foots to the cent ($166,980.47 billed =
+$165,635.47 paid + $1,345.00 outstanding), is single-sourced on the family_balances view,
+append-only is real (no UPDATE/DELETE policy), and there are ZERO cross-family/cross-org/anon
+leaks (RLS verified by live impersonation). Family math, rounding, reversal arithmetic, perf,
+and a11y all passed.
+
+The COACH side is the hazard zone: "owed" is computed three different ways across three
+surfaces, the per-session settlement loop is 0/137 closed (paying a coach never reduces owed),
+and owed accrues on status='assigned' rather than 'attended'. This is the architectural wall —
+it needs the D1 ruling, not a patch.
+
+Net-new findings the handoff did NOT surface (highest value of this audit):
+  - TWO live-reproduced pay-confidentiality leaks (a parent reads every coach's rate; a coach
+    reads co-staff coaches' per-session pay).
+  - A P0 "reports success on failure" on the void path + a double-void that double-credits a
+    family (no DB uniqueness backstop).
+  - The overdue ALERT silently ignores never-paid debtors (NULL last_payment_at) — the worst
+    debtor class is invisible.
+  - Owed accrues on 'assigned', not 'attended'.
+  - Money immutability + void-pair integrity rest on app code only (no schema trigger/constraint).
+
+HANDOFF CORRECTIONS (my earlier handoff was wrong on two points — corrected here, live-verified
+by 3 independent agents):
+  1. LIST owed and DETAIL owed AGREE today ($2,100 Darien / $12,240 Kenny). I called them
+     actively divergent; they only diverge LATENTLY (see PATTERN A). The genuinely
+     irreconcilable surface is the coach's OWN card.
+  2. Darien's balance is +$120, NOT -$680. The negative figure was an artifact of comparing
+     ALL-SEASONS paid ($2,780) against SEASON-scoped owed ($2,100). Season-scoped: owed $2,100
+     - paid $1,980 = +$120. The scope-mixing is itself a real bug (PATTERN A), but the coach is
+     not overpaid.
+
+
+══════════════════════════════════════════════════════════════════════
+CROSS-BATCH PATTERNS (AP#58 synthesis — promoted at ≥3 surfaces)
+══════════════════════════════════════════════════════════════════════
+
+PATTERN A — SAME CONCEPT, DIVERGENT SOURCE *OR* SCOPE (AP#63). The dominant pattern; 9
+instances across 4 agents. The family VALUE is single-sourced, but it is read at different
+SCOPES on different surfaces, and the coach "owed" is read from different SOURCES. Instances:
+  A1. Coach "owed" — 3 sources: rate×sessions (list) / Σpay_cents (detail) / Σpending-payouts
+      (own card). [P0/architectural]
+  A2. Coach "paid" — 4th scope split: own card all-seasons ($2,780) vs admin season ($1,980).
+      useCoachComp has NO season_id filter at all. [P1]
+  A3. Admin "Payments overdue" lane (2 fams/$1,345, no age filter) vs payment_overdue alert
+      (1 fam/$1,275, 30-day + >$1 gate) — same concept, two predicates, same screen. [P1]
+  A4. Parent home balance ALL-seasons vs admin dashboard ACTIVE-season default — Zinman shows
+      $1,275 (Fall 2025) to the parent, $0 (Spring 2026) to the admin landing. [P2]
+  A5. "Outstanding" on admin home: shortDollars "$1.3k" (KPI) vs formatCurrency "$1,345.00"
+      (lane) — same hook value, two renders. [P2]
+  A6. Coach own-card formatter rounds to whole dollars; all admin coach surfaces show cents.
+      Latent (all payouts whole-dollar today). [P3]
+  A7. Family detail "Balance" Stat shows a raw signed credit ("-$50.00") while RecordPaymentForm
+      labels it "$50.00 credit". [P3]
+  A8. Coach detail balance shows bare signed "-$680.00" while the list card uses
+      Math.abs + "still owed"/"settled" label. [P3]
+  A9. (latent vectors) LIST vs DETAIL owed will split the instant a same-team multi-scope
+      assignment, an orphan session, an unhonored practices_only scope, or a non-flat pay_cents
+      appears — all 4 verified absent today, so the two agree only by data coincidence. [P1 latent]
+  FIX CLASS: one source + one scope per concept; where scope legitimately differs, label it;
+  lock each with an AP#43 cross-surface invariant test.
+
+PATTERN B — SILENT SUCCESS / SWALLOWED ERROR ON WRITE + SECONDARY-READ PATHS. 4 instances.
+  B1. doVoid: console.error then close+refetch as success. [P0]
+  B2. CoachPayoutEditSheet.handleDelete: non-atomic two-write, first error discarded. [P1]
+  B3. useFamilyLedger: logs error but has no `error` return → a failed fetch renders a family
+      as "Paid in full". [P2]
+  B4. useFamilyTeams / useCoachPayouts / useCoachDetail: secondary queries log-but-continue →
+      a dollar figure computed from a partially-failed fetch, no user signal. [P2]
+  NOTE: the AP#36 *hard* form (`{data=[]}` default, no error var) exists NOWHERE — every query
+  destructures and at least logs error. This is the SOFT form. Family forms (RecordPayment,
+  AddCharge, RecordCoachPayout) all do it correctly (surface warm microcopy, refetch only on
+  success); the gaps are the void path + the secondary reads.
+
+PATTERN C — DORMANT-BUT-UNWIRED SCHEMA SUBSTRATE (§16.16 trap). Shaped config/columns with
+zero consuming writer, none carrying a DEPRECATED comment or a DEPRECATIONS_REGISTRY row:
+  - Settlement substrate: event_coach_assignments.{pay_status='paid', settled_by_payout_id} +
+    coach_payouts.source_assignments — 0 writers, 0/137 live. [tied to D1]
+  - coaching_assignments.rates jsonb + get_coach_rate_cents() fn + GIN index — 0 readers/writers,
+    every row '{}'. [tied to D2]
+  - financial_transactions.{receipt_url, applied_to_player_id, registration_id} — 0 readers. [§16.16]
+  - financial_accounts.{season_fee_cents, discount_cents} — legacy, fetched-not-used. [§16.16]
+  FIX CLASS: per ruling, either wire the writer or COMMENT-deprecate + registry row + drop the
+  attached unused indexes. Do not leave shaped-but-unwired.
+
+PATTERN D — THE SETTLEMENT WALL (the architectural core; needs D1). owed is a live recompute
+that ignores payments; paid is a free sum that ignores sessions; nothing flips a session to
+'paid' or writes settled_by_payout_id. 0/137 sessions settled. CoachPayoutEditSheet even has
+dead un-settle-on-delete code (matches 0 rows) — proof the schema was built for D1-option-(b).
+
+PATTERN E — MONEY-SAFETY RESTS ON APP CODE ONLY (no schema guard). 2 instances, both money-
+integrity:
+  E1. Append-only is enforced by RLS-policy-ABSENCE only — there is NO trigger. Any BYPASSRLS
+      path (service_role, a future SECDEF RPC, the SQL editor) can silently UPDATE/DELETE a
+      posted transaction.
+  E2. Void-pair integrity: reverses_transaction_id has an FK but nothing guarantees the reversal
+      row's account_id/type/amount match the row it points at. The view nets pairs by the
+      pointer alone, so a mismatched reversal corrupts a balance. The only guard is doVoid
+      copying fields in JS.
+
+
+══════════════════════════════════════════════════════════════════════
+CONSOLIDATED FINDINGS (severity-ranked, de-duplicated across agents)
+══════════════════════════════════════════════════════════════════════
+
+────────────────── P0 ──────────────────
+
+[P0-1] doVoid reports success on failure — src/pages/FinancialFamilyDetailPage.jsx:30-38.
+  Closes the confirm dialog (setVoidTxn(null) BEFORE the await) and refetches regardless of the
+  insert's error; admin believes the void posted. The single most consequential family money
+  action skips the house error pattern. FIX: saving/err state, surface §16.3 microcopy, keep
+  dialog open on error, refetch only on success. SHIP NOW (no ruling needed).
+
+[P0-2] Coach "owed" is three numbers for one concept (PATTERN A1/D). Live: Darien own-card
+  $1,140 vs admin $2,100; Kenny own-card $540 vs admin $12,240. Cannot foot until settlement is
+  ruled. NEEDS D1. (Severity P0 as a trust defect on a money surface; the FIX is architectural.)
+
+────────────────── P1 ──────────────────
+
+[P1-1] Double-void double-credits a family — FinancialFamilyDetailPage.jsx:30-38,95-99 +
+  ConfirmDialog (Enter→confirm, autoFocus, no disabled). No saving guard; financial_transactions
+  has NO UNIQUE on reverses_transaction_id (verified). Two taps → two reversing rows; the view
+  nets the original out once but counts both reversals as standalone credits → a $450 void can
+  credit $900. FIX: in-flight guard + disable confirm while saving + partial-unique index on
+  reverses_transaction_id as DB backstop. SHIP NOW.
+
+[P1-2] Parent can read every coach's pay rate — coaching_assignments / coaching_assignments_read.
+  Policy is org-membership-scoped with NO role restriction. LIVE: impersonated a pure-parent
+  user → read all 11 assignments incl. pay_per_session_cents ($600 of rates). FIX: role-gate the
+  read to admin/coach (or split footer-display fields into a non-pay view). SHIP NOW (pending a
+  confidentiality confirm — see OPEN DECISIONS). P1 if coach rate is parent-confidential.
+
+[P1-3] Coach reads co-staff coaches' per-session pay — event_coach_assignments / "coaches read
+  relevant…". The read clause is `coach_user_id = auth.uid() OR team_staff(of event team)`; the
+  OR-branch exposes other coaches' pay_cents. LIVE: impersonated Darien → 11 other-coach rows,
+  $1,320 of others' pay. FIX: tighten to self-only, or expose assignment-without-pay via a
+  separate view. SHIP NOW.
+
+[P1-4] Overdue ALERT silently drops never-paid debtors — src/lib/alerts/queries.js:117
+  `.lt('last_payment_at', iso)` is never true for NULL → a billed family with ZERO payments is
+  invisible to the overdue alert (the worst debtor class). LIVE: one $70 NULL-last_payment family
+  excluded from the alert but counted by the lane. FIX:
+  `.or('last_payment_at.is.null,last_payment_at.lt.<iso>')`. SHIP NOW.
+
+[P1-5] "Overdue" measured two ways on admin home (PATTERN A3) — lane (useFamiliesOwingCount,
+  no age filter) = 2 fams/$1,345 vs payment_overdue alert (30-day + >$1) = 1 fam/$1,275, rendered
+  on the same screen. FIX: one shared overdue predicate feeding both; lock with AP#43 test.
+  SHIP NOW (decide which predicate — see OPEN DECISIONS).
+
+[P1-6] Owed accrues on status='assigned', never 'attended' — event_coach_assignments. All 137
+  rows are 'assigned'; 0 'attended'/'absent'. A coach is owed for sessions they may not have
+  worked; no UI sets attendance. NEEDS RULING (part of D1: does owed gate on attended?).
+
+[P1-7] Append-only has no schema-level guard (PATTERN E1) — financial_transactions has zero
+  triggers; immutability is RLS-absence only. FIX: BEFORE UPDATE OR DELETE trigger that RAISEs.
+  Additive, low-risk. SHIP NOW (recommended).
+
+[P1-8] Void-pair integrity is app-code-only (PATTERN E2) — no constraint binds a reversal's
+  account/type/amount to its target. FIX: route void through a SECDEF RPC that reads the original
+  server-side (app can't supply mismatched fields), or a constraint trigger. Pairs with P1-1's
+  unique index. SHIP NOW (recommended) — or fold into the D1 settlement RPC work.
+
+[P1-9] Dormant settlement substrate orphaned (PATTERN C, §16.16) — migration 20260613184915
+  shipped the columns with no writer. Resolve in-schema per D1 (wire or deprecate). NEEDS D1.
+
+[P1-10] Migration parity: version-string mismatch (AP#21) — DB registers 20260610110611
+  `deprecate_unwired_settings_columns`; repo file is 20260610114200_*. (Non-financials, pre-
+  existing.) FIX: rename mirror file to the registered version. SHIP NOW (mechanical).
+
+────────────────── P2 ──────────────────
+
+[P2-1] RecordPaymentForm cannot capture a processing fee — the only writer of
+  processing_fee_cents is the retired import; every admin-entered payment lands fee=0, so
+  "Net to bank" silently drifts toward "Collected" over time. FIX: add a fee field, or relabel
+  the summary until capture exists. SHIP NOW (small).
+[P2-2] useFamilyLedger has no error state (PATTERN B3) — a failed fetch shows a family as "Paid
+  in full". FIX: add error + render an error state. SHIP NOW.
+[P2-3] financial_accounts.season_id is an FK to programs(id), NOT seasons — misnomer masked
+  because 3 programs share ids with same-named seasons; "Fall 2026 Tryouts" has no seasons row,
+  so seasons-joins silently drop it. FIX: rename to program_id / document; make season-grouped
+  UIs program-aware. NEEDS RULING (naming + D4).
+[P2-4] useCoachComp not season-scoped (PATTERN A2) — own card mixes all seasons; copy says "this
+  season". FIX: add season_id (and pass it in) or change the copy. SHIP NOW (after D1 picks the
+  owed source).
+[P2-5] CoachPayoutEditSheet.handleDelete non-atomic, first error swallowed (PATTERN B2) — ships
+  pre-broken ahead of settlement. FIX: single SECDEF RPC for un-settle+delete. Fold into D1.
+[P2-6] Coach hooks log-but-continue on secondary errors (PATTERN B4) — dollar figures from
+  partial fetches. FIX: treat any sub-query error as fatal for money-bearing hooks. SHIP NOW.
+[P2-7] coaching_assignments.rates jsonb + GIN index fully dormant (PATTERN C) — COMMENT-deprecate
+  + drop GIN, or formalize. NEEDS D2.
+[P2-8] 3 orphaned ledger columns (receipt_url, applied_to_player_id, registration_id) + 2 unused
+  indexes (PATTERN C). Deprecate/drop; registration_id pends D4. NEEDS D4 (registration_id only).
+[P2-9] CoachRateSheet clobbers rate across ALL the coach's season teams, no per-team/scope control
+  — Darien has 2 assignments (games_only $60 + all_events $60); editing flattens both. NEEDS D2.
+[P2-10] AP#15: CoachPayoutEditSheet is a 3+-control form in a BottomSheet (amount/status/method
+  +Delete); its create-sibling RecordCoachPayoutForm correctly uses FullScreenForm. FIX: convert
+  to FullScreenForm. SHIP NOW (small).
+[P2-11] Invalid nested interactive — FamilyBalanceRow.jsx:6+20: a Message <button> nested inside
+  the row <button> (stopPropagation papers the click, not the a11y/hydration problem). FIX: row
+  as div role=button + sibling Message button. SHIP NOW (small).
+[P2-12] Parent has no ledger/receipt surface (product gap, not a bug) — RLS already permits
+  fin_tx_parent_read; only the UI is missing. Cheapest parent-side 10/10 win. SHIP NOW (build).
+[P2-13] Add covering indexes for 4 unindexed FKs (financial_accounts.season_id,
+  coach_payouts.season_id, coaching_assignments.user_id, event_coach_assignments.assigned_by);
+  only coaching_assignments(user_id) has a real uncovered hook query. SHIP NOW (mechanical).
+
+────────────────── P3 (selected; full list in agent appendix) ──────────────────
+
+[P3-1] Currency-format divergences (PATTERN A6/A7/A8): coach own-card whole-dollar rounding;
+  family credit shows "-$50.00" vs "$50.00 credit"; coach detail shows bare "-$680.00". FIX: a
+  shared formatBalance(cents) → "$X due"/"$X credit"/"Paid in full" + route CoachCompCard through
+  formatCurrency. SHIP NOW (small, AP#46 needs a test in the diff).
+[P3-2] Detail pages are flat always-on lists, not §16.14 hero+collapsible — defensible today
+  (short, list-bounded), revisit if export/receipts grow them. INFO.
+[P3-3] 5 active coaching_assignments with NULL pay_per_session_cents (Frank, program_director) —
+  rate×sessions would compute NULL×n. FIX: set 0 or exclude director role. SHIP NOW.
+[P3-4] recorded_by NULL on all 410 transactions (import artifact) — weakens append-only "who".
+  Backfill to the import admin if attribution matters. OPTIONAL.
+[P3-5] All 244 payments are method='other' (import artifact); ensure live RecordPaymentForm
+  captures real methods going forward (pairs with P2-1). INFO.
+[P3-6] staff_profiles.default_payout_method readable org-wide (parent can see "venmo" labels) —
+  low sensitivity, same role-unscoped pattern as P1-2/P1-3. OPTIONAL role-gate.
+[P3-7] 'adjustment' is the one unbounded money column (no sign check, by design) — untested
+  (0 live). Note only.
+[P3-8] Coach hooks lack the AP#44 isStale key-gate that useSeasonFinancials has — thin stale-
+  flash window on season switch-while-mounted. Port the gate if a flash is observed. LOW.
+
+────────────────── TEST-DATA / SEED (pilot hygiene, Frank elected to keep) ──────────────────
+  - 8 of 10 coach_payouts are SEED_TEST (Kenny's entire $2,820 "paid" + $540 pending are fake;
+    Darien $300 fake + real $1,680/$540). These drive the misleading coach balances. Delete the
+    moment D1 lands (Q2).
+  - Frank's "Fall 2026 Tryouts" account ($70, created 2026-06-12) is one of the 2 "families
+    owing" and the only multi-fee account. Delete before pilot, or scope reporting to exclude
+    tryout programs.
+
+
+══════════════════════════════════════════════════════════════════════
+ROUTING — SHIP-NOW vs NEEDS-A-RULING
+══════════════════════════════════════════════════════════════════════
+
+SHIP NOW (no architect ruling required; I can open these immediately, each with an AP#43/#46
+test in the diff). Grouped into coherent PRs:
+  PR-A (void safety, family money): P0-1 (success-on-failure) + P1-1 (double-void guard +
+        partial-unique index) + P1-8 (void-pair SECDEF or constraint) + P3-1 (formatBalance).
+  PR-B (overdue truth, admin home): P1-4 (NULL last_payment) + P1-5 (one overdue predicate) +
+        the AP#43 invariant test.
+  PR-C (pay confidentiality, RLS): P1-2 (parent→coach rate) + P1-3 (coach→co-staff pay) +
+        optionally P3-6. [pending the confidentiality confirm in OPEN DECISIONS]
+  PR-D (ledger robustness): P2-1 (processing-fee capture) + P2-2 (useFamilyLedger error state) +
+        P2-6 (coach hooks fatal-on-error).
+  PR-E (append-only hardening): P1-7 (immutability trigger).
+  PR-F (UI hygiene): P2-10 (FullScreenForm) + P2-11 (nested button) + P3-3 (director NULL rate).
+  PR-G (mechanical): P1-10 (mirror rename) + P2-13 (FK covering indexes).
+  PR-H (parent value): P2-12 (parent ledger/receipt surface) + the §8-Q5 CSV export.
+
+NEEDS A RULING FIRST (architectural / policy):
+  D1 settlement model (a/b/c) → unblocks P0-2, P1-6 (attended-gating), P1-9, P2-4, P2-5, and the
+     SEED_TEST/Q2 cleanup. CC lean: (b) event-sourced settlement — confirmed lowest-risk by the
+     security audit (event_coach_assignments + coach_payouts already carry admin ALL policies, so
+     a "Pay coach" RPC needs ZERO new RLS), and by the dead un-settle-on-delete code proving the
+     schema was built for it.
+  D2 rates jsonb (drop vs formalize) → P2-7, P2-9, the GIN-index drop.
+  D4 registration_fees / billing entry point → P2-3 (season_id naming), P2-8 (registration_id).
+
+
+══════════════════════════════════════════════════════════════════════
+OPEN DECISIONS FOR ARCHITECT (priority order)
+══════════════════════════════════════════════════════════════════════
+
+Q1 [BLOCKING coach 10/10] D1 settlement model — (a) recompute-only / (b) event-sourced
+   settlement / (c) coach_balances ledger mirror. CC lean (b). Sub-question: does owed gate on
+   status='attended' (P1-6)? If yes, an attendance write path is part of (b).
+Q2 Pay-confidentiality ruling (governs PR-C severity): is a coach's per-session rate (a)
+   admin-only, (b) admin+coaches, or (c) visible to parents? Today it's effectively (c) by
+   accident. CC recommendation: admin + the owning coach only.
+Q3 The ONE overdue predicate (P1-5): adopt the alert's age+floor (30-day, >$1) for the lane too,
+   or drop the age gate from the alert? CC lean: one config in alert_configurations.threshold_
+   config drives both; include NULL-last_payment debtors (P1-4) in whichever wins.
+Q4 D2 rates jsonb — drop (CC lean) or formalize per-scope/per-team multi-rate (which also fixes
+   P2-9 CoachRateSheet)?
+Q5 D4 — registration_fees vs direct 'fee' transactions as the billing entry point; and rename
+   financial_accounts.season_id → program_id (P2-3)?
+Q6 Approve the two independent value builds now: parent ledger/receipt surface (P2-12) + season-
+   ledger CSV export (handoff §8 Q5). No schema change, no Stripe.
+Q7 Test-data: delete the 8 SEED_TEST payouts + Frank's $70 tryout account before pilot, or keep?
+   (They make coach balances and "families owing" read wrong until removed.)
+
+
+══════════════════════════════════════════════════════════════════════
+PER-AGENT VERDICTS (appendix)
+══════════════════════════════════════════════════════════════════════
+
+1. Family billing: math correct + single-sourced; all 165 accounts reconcile exactly; 0 negative
+   billed/balance; void/refund/adjustment-sign sound. Real defects: P2-1 (fee capture), P2-2
+   (error state). AP#36/#37 clean.
+2. Coach comp: P0 settlement gap (0/137); 3-way owed; useCoachComp not season-scoped; latent
+   double-count/orphan/practices_only/disputed-drop vectors; CoachRateSheet clobber. LIST=DETAIL
+   today by coincidence.
+3. RLS/security: family-money core solid (append-only, security_invoker view, 0 cross-tenant);
+   TWO net-new pay-confidentiality leaks (P1-2, P1-3) reproduced live. AP#20/#23/#57/initplan all
+   clean.
+4. Data integrity: ledger foots to the cent; 0 orphans/cross-org/dupes; new finds: assigned-not-
+   attended, season_id→programs misnomer, test pollution, method='other', recorded_by NULL.
+5. Cross-surface (AP#63): family value single-sourced but 4 scopes + 2 formatters; coach owed
+   3-way + paid scope split; overdue lane vs alert; NULL-last_payment blind spot.
+6. Parent lens/privacy: NO P0 — cross-family + co-guardian "managed by" gap genuinely leak-free
+   (verified on the live co-guardian pair). Edges: camp/tryout co-guardian silent gap; all-
+   seasons vs season scope; product gap (no ledger/receipt).
+7. Design-system/a11y/LOC: 0 hardcoded hex, all files ≤150 LOC, tap targets/aria/microcopy
+   strong. Finds: P2-10 (BottomSheet), P2-11 (nested button), P3-1 (currency format).
+8. Query perf/hygiene: read layer Stripe-grade — 0 AP#36 hard-swallows, AP#37 clean, view well-
+   indexed (~1.2ms, reversal NOT-EXISTS hits a partial index), no AP#48/refetch loops. Finds:
+   B4 soft-swallow, 1 missing index, unused rates GIN.
+9. Error handling/edge: P0-1 (success-on-failure), P1-1 (double-void), P1 CoachPayoutEditSheet
+   non-atomic; money writes correctly pessimistic; empty states/microcopy good.
+10. Schema/migration: financials parity clean; P1-10 (one non-fin version mismatch); PATTERN C
+    dormant substrate; PATTERN E money-safety on app code only; CHECK coverage solid.
+
+— end of audit —
