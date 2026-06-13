@@ -125,3 +125,25 @@ describe('tournament_prelim resolver — contract', () => {
     expect(hotel.text).not.toContain('example.com');
   });
 });
+
+// §15 draft guard (2026-06-13 locations audit): no venue/map sections in
+// prelim emails before the schedule releases. The fixture tournament IS
+// draft — the behavioral smoke locks "no venue sections emitted"; the
+// static gate locks the schedulePublished condition in the compose source.
+describe('tournament_prelim — §15 draft venue guard', () => {
+  it('draft tournament composes ZERO venue_list / venue_notes sections', async () => {
+    const { context, slices } = await resolveTournamentPrelim({ tournamentId: TID, pilotOnly: false }, { supabase: mockClient(FIXTURES), now: NOW });
+    const { content_sections } = composeTournamentPrelim(context, slices[0], {});
+    const kinds = content_sections.map((s) => s.kind);
+    expect(kinds).not.toContain('venue_list');
+    expect(kinds).not.toContain('venue_notes');
+  });
+
+  it('compose source gates the venue sections on schedule_status (static)', async () => {
+    const fs = await import('fs');
+    const src = fs.readFileSync('src/lib/engine/resolvers/tournamentPrelim.js', 'utf8');
+    expect(src).toContain("schedule_status !== 'draft'");
+    expect(src).toContain('schedulePublished && buildVenueListSection');
+    expect(src).toContain('schedulePublished && buildVenueNotesSection');
+  });
+});

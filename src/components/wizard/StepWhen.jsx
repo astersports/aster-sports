@@ -99,9 +99,13 @@ export default function StepWhen({ data, onChange, orgId }) {
 
       <label style={fieldStyle}>
         <span style={labelStyle}>Location</span>
-        <select value={data.location || ''} onChange={(e) => set('location', e.target.value)} style={selectStyle}>
+        {/* ONE onChange carrying both keys — `set` spreads stale `data`,
+            so two sequential set() calls would clobber each other. The id
+            rides along so events carry the location_id FK (2026-06-13). */}
+        <select value={data.location || ''} style={selectStyle}
+          onChange={(e) => { const row = locations.find((l) => l.name === e.target.value); onChange({ ...data, location: e.target.value, locationId: row?.id ?? null }); }}>
           <option value="">Select location</option>
-          {locations.map((loc) => <option key={loc} value={loc}>{loc}</option>)}
+          {locations.map((loc) => <option key={loc.id} value={loc.name}>{loc.name}</option>)}
         </select>
       </label>
 

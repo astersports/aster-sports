@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-// Returns location names scoped to the season's active set.
+// Returns season-scoped venue rows ({ id, name }) for the wizard.
 // Falls back to all org locations if the season has no rows yet
 // (graceful migration — never show an empty dropdown).
+// 2026-06-13 locations audit: rows carry the id so the wizard writes
+// events.location_id — name-only events fell to name-search directions,
+// which Waze mis-resolved (ECS&F → Rippowam, operator-caught).
 export function useSeasonScopedLocations(orgId, seasonId) {
   const [locations, setLocations] = useState([]);
 
@@ -11,26 +14,27 @@ export function useSeasonScopedLocations(orgId, seasonId) {
     if (!orgId) return;
     let cancelled = false;
     (async () => {
-      let names = [];
+      let rows = [];
       if (seasonId) {
         const { data, error } = await supabase
           .from('season_locations')
-          .select('locations!inner(name, archived_at, org_id)')
+          .select('locations!inner(id, name, archived_at, org_id)')
           .eq('season_id', seasonId)
           .eq('locations.org_id', orgId)
           .is('locations.archived_at', null);
         if (error) console.error('useSeasonScopedLocations scoped:', error.message);
-        names = (data || []).map((r) => r.locations.name).sort();
+        rows = (data || []).map((r) => ({ id: r.locations.id, name: r.locations.name }))
+          .sort((a, b) => a.name.localeCompare(b.name));
       }
-      if (names.length === 0) {
+      if (rows.length === 0) {
         const { data, error } = await supabase
-          .from('locations').select('name')
+          .from('locations').select('id, name')
           .eq('org_id', orgId).is('archived_at', null).order('name');
         if (error) console.error('useSeasonScopedLocations all:', error.message);
-        names = (data || []).map((r) => r.name);
+        rows = (data || []).map((r) => ({ id: r.id, name: r.name }));
       }
       if (cancelled) return;
-      setLocations(names);
+      setLocations(rows);
     })();
     return () => { cancelled = true; };
   }, [orgId, seasonId]);

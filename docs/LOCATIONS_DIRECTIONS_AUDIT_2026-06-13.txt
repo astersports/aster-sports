@@ -1,0 +1,107 @@
+==============================================================================
+LOCATIONS + DIRECTIONS FULL AUDIT — 2026-06-13
+Trigger: operator-reported — Waze directions for "East Coast Sports &
+Fitness" navigated to "the Rippowam school." Directive: deep-dive ALL
+locations; every surface with an address (rides, games, events,
+tournaments); make Apple/Google/Waze all point at the right addresses.
+5 parallel read-only code lanes + CC production-data audit via MCP.
+Acting architect: CC. Ratifier: Frank. DATA FIXED LIVE; code PR attached.
+==============================================================================
+
+ROOT CAUSE (verified, two layers)
+1. DATA — the game Frank tested ("8U Boys Game 1: Atlantic Sharks") had
+   location_id = NULL: a TEXT-ONLY venue ("East Coast Sports & Fitness").
+   The detail tab then builds NAME-SEARCH urls for all three providers.
+   Google's POI index resolves the name correctly; Waze's weaker search
+   mis-resolved it to Rippowam. The ECS&F venue ROW itself is correct
+   (own verified pin, own coords 41.2764/-73.7856 Yorktown Heights —
+   distinct from Rippowam's 41.2258/-73.6872 Bedford; no row swap).
+   12 future events were text-only, incl. ALL of this weekend's
+   tournament games.
+2. CODE — the event WIZARD has never written events.location_id: its
+   venue dropdown was name-strings only (useSeasonScopedLocations
+   returned names; the form had no locationId; neither writer set the
+   FK). Import resolves FKs; wizard/placeholder paths leave text-only.
+   Plus: the name-only fallback emitted Apple/Waze deep links it cannot
+   stand behind — name-search is precisely the mis-resolution surface.
+
+DATA FIXES — EXECUTED LIVE VIA MCP (before this doc)
+- Backfilled location_id on 11 events whose text EXACTLY matches a venue
+  row (org+name match): ECS&F x6, Rippowam x3, Maria Regina x1, Scanlon
+  Silverberg x1 — every game this weekend now resolves through its real
+  venue row (verified pin for Google; street address/coords for
+  Apple/Waze).
+- Created venue row "Harry S. Truman High School" (750 Baychester Ave,
+  Bronx, NY 10475 + address-query maps url) and linked tomorrow's
+  "11U Girls Game 1: Level Up". *** ADDRESS FROM CC's KNOWLEDGE, NOT A
+  VERIFIED PIN (geocoders unreachable from this env) — VERIFY ASK #1
+  below. ***
+- Post-fix state: ZERO future text-only events. 7 past text-only remain
+  (MA tournament venues: Monty Tech, Game On, STACK, Open Gyms — no
+  rows, historical, no directions exposure; left as the record).
+
+CODE FIXES (this PR)
+W-A  Wizard writes the FK (the class kill):
+     useSeasonScopedLocations returns {id, name} rows; StepWhen's venue
+     select carries the id (ONE onChange writing location + locationId —
+     `set` spreads stale data, two calls would clobber); wizardForm
+     EMPTY_FORM/eventToForm carry locationId; useCreateActivity +
+     useUpdateActivity write location_id. Edit flow preserves the FK.
+W-B  §15 AMENDMENT (CLAUDE.md updated in this PR): name-text-only
+     fallback (no venue row, no street address) is GOOGLE-ONLY — never
+     Apple/Waze deep links from a bare venue name. EventLocationTab
+     gates the Apple/Waze anchors on a resolved row or street address.
+     (Also corrected §15's stale "Apple/Waze deferred" paragraph — the
+     3-way stack has been live since PR-D'.)
+W-C  Email lane (audit P0): composeTournamentPrelim now skips
+     venue_list/venue_notes for draft/null schedule_status — §15's
+     draft guard applied to the EMAIL surface (it only existed in-app).
+     Snapshot fixtures updated (draft prelim = no venue sections).
+W-D  Games tab adjacencies (operator-caught while this audit ran):
+     DensityToggle now renders in Games mode (it lived only in the list
+     branch — compact/detailed was unreachable there), and the rail
+     weather shows the CONDITIONS ICON at both densities (D1 amended in
+     the design doc: "☀️ 74°" everywhere; was temp-only at compact).
+Tests: wizardForm locationId trio; EventLocationTabNameOnlyGate (AP#43:
+name-only → Google only / resolved row → all three / street address →
+all three); prelim draft-guard behavioral + static; Games-mode
+toggle+weather static gate; compact conditions-icon render case.
+
+SURFACES VERIFIED CLEAN (no action)
+- mapsUrls.js builder: §15-ordered per provider; Waze ll=lat,lon order
+  correct; no swapped args at any call site.
+- EventCard card link (Google-only, joined loc), EventDetailHero (text
+  only), Home cards (text only), PublicSchedulePage (text only, no
+  links), rides lane (freeform pickup text, deliberately no venue
+  links), gameday (no venue), ShareScheduleButton/QR (team-level).
+- Email lane: weekly_digest / game_recap / rsvp_nudge / callup hrefs all
+  google_maps_url-sourced (§15 #1). ICS feeds carry LOCATION text (P3
+  catalog note: consider address-in-LOCATION when FK present — later).
+- Admin /admin/locations: lat/lon not hand-editable (geocode-on-address);
+  no swap-prone fields.
+- Events text↔FK parity org-wide: ONE benign variant ("Resurrection Doty
+  Gym" vs "Resurrection School - Doty Gym" — same venue).
+
+AGENT CLAIMS DISCARDED (AP#58 honesty)
+- "Apple/Waze should consume google_maps_url first" (builder lane):
+  rejected — a Google share-link can't be fed to Waze/Apple; the §15
+  name-only rule + FK backfill is the correct counter.
+- "Standings/seed row-shift in repo migrations" (seeds lane): live DB is
+  ground truth; rows verified distinct + plausible. The lane's "verify
+  the ECS&F pin" ask survives as VERIFY ASK #2.
+- "Wizard StepDetails needs a location_id confirmation UI" (linkage
+  lane): over-build; the select now binds id by construction.
+
+VERIFY ASKS (Frank, ~1 minute total)
+1. Harry S. Truman HS: open tomorrow's 11U Girls Game 1 → Location →
+   Google. Confirm 750 Baychester Ave Bronx is the right gym; if not,
+   correct the address at /admin/locations (row: Harry S. Truman High
+   School).
+2. One-tap pin checks (the two venues in the incident): open
+   maps.app.goo.gl/4mmdfPTpRdBp3kpJ6 (should open East Coast Sports &
+   Fitness) and maps.app.goo.gl/sKz13y4bh4Cv9zky7 (should open Rippowam
+   Cisqua School). If either lands wrong, say so — that's a row fix.
+3. Device re-check of the original repro: Atlantic Sharks game →
+   Location → Waze should now route to 201 Veterans Rd, Yorktown
+   Heights (coords-based, no name search).
+==============================================================================

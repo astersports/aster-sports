@@ -803,7 +803,24 @@ arc bodies.
   threads eventType. AP#43 test: EventRsvpTabEligibilityGate (tournament-unactivated /
   tournament-activated / practice). DATA CLEANUP: the bug-produced event_rsvps row (Milo →
   going, 8U Boys Game 1: Atlantic Sharks, responded 00:19 UTC) DELETED via MCP — counts
-  restored to 0/10. NEXT: W3 sweep on Frank's signal; 10/10 gap items welcome.
+  restored to 0/10.
+  **LOCATIONS/DIRECTIONS FULL AUDIT (2026-06-13, operator-directed "deep dive all locations"):**
+  Waze sent ECS&F to Rippowam. 5 read-only code lanes + CC MCP data audit —
+  `docs/LOCATIONS_DIRECTIONS_AUDIT_2026-06-13.txt`. ROOT CAUSE 2-layer: (1) DATA — the game was
+  TEXT-ONLY (location_id NULL → name-search URLs; Google's POI survives it, Waze mis-resolves);
+  venue rows themselves verified distinct+correct. (2) CODE — the WIZARD never wrote
+  events.location_id (names-only dropdown since the FK landed); name-only fallback emitted
+  Apple/Waze deep links. DATA FIXED LIVE: 11 events FK-backfilled (exact-name), Harry S. Truman HS
+  row created (CC-entered address — VERIFY ASK open) + linked; ZERO future text-only events. CODE
+  PR: wizard FK chain (useSeasonScopedLocations {id,name} + StepWhen single-onChange + wizardForm
+  locationId + both writers); §15 AMENDED (name-text fallback = GOOGLE-ONLY; Apple/Waze need
+  coords/street address; stale "Apple/Waze deferred" paragraph corrected); EventLocationTab
+  gates Apple/Waze anchors; composeTournamentPrelim draft guard (email-lane §15, snapshot
+  fixtures updated); GAMES-TAB adjacencies (operator-caught mid-audit): DensityToggle now in
+  Games mode + conditions icon at BOTH densities (D1 amended in the design doc). Tests: wizard
+  locationId trio, EventLocationTabNameOnlyGate (AP#43), prelim draft guard, Games static gate,
+  compact icon case. 3 agent claims discarded with evidence (doc §AGENT CLAIMS). NEXT: Frank's
+  3 verify asks (Truman address / two pin taps / Waze re-repro) + W3 sweep on signal.
 - FORK E (LEGAL/CAN-SPAM) unchanged below — pilot stays ON until a footer mailing address or a
   per-kind send gate lands.
 - Carried triggers: FU-1 gender smoke · FU-2 family_cap_policy → get_public_program · RV-6 per-player

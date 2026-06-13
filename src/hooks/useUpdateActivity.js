@@ -20,6 +20,7 @@ export function useUpdateActivity() {
       start_at: startAt.toISOString(),
       end_at: endAt.toISOString(),
       location: formData.location || null,
+      location_id: formData.locationId || null,
       location_address: formData.locationAddress || null,
       sub_location: formData.subLocation || null,
       opponent: formData.opponent || null,

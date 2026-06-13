@@ -1236,9 +1236,11 @@ When constructing map deep links across the app, priority order is:
 
 If none of the above are present, render a "Location TBD" non-link.
 
-For tournament events with `tournament.schedule_status='draft'` or null, hide the map UI entirely and render a "Schedule releases Wednesday" placeholder instead. Map appears only after schedule_status advances to preliminary/final/live/complete.
+**Name-text-only fallback (no location row, no street address): GOOGLE search link ONLY.** Never emit Apple/Waze deep links from a bare venue NAME — their name-search mis-resolves (Waze sent "East Coast Sports & Fitness" to Rippowam; operator-caught 2026-06-13, locations audit). Apple/Waze require coords or a street address. The wizard writes `events.location_id` (FK) since the same audit, so the name-only path is legacy/import-residue only.
 
-Apple Maps + Waze URL formats are deferred — currently only Google "Get Directions" button renders on event detail Location tab. Helper `src/lib/mapsUrls.js` still exports apple/waze URLs for the day they are re-added.
+For tournament events with `tournament.schedule_status='draft'` or null, hide the map UI entirely and render a "Schedule releases Wednesday" placeholder instead. Map appears only after schedule_status advances to preliminary/final/live/complete. This guard applies to EMAIL surfaces too — `composeTournamentPrelim` skips the venue sections for draft/null tournaments (2026-06-13 audit).
+
+Apple Maps + Waze deep links are LIVE (un-deferred in PR-D', 2026-06-12): the event detail Location tab renders the 3-way Apple/Google/Waze stack from `getDirectionUrls`, subject to the name-text-only rule above.
 
 ---
 

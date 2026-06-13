@@ -112,10 +112,10 @@ export function composeTournamentPrelim(context, slice, overrides = {}) {
 
   sections.push(buildHeaderSection(slice, tournament, overrides));
   sections.push(buildRsvpCalloutSection(overrides, defaultCoachFirstName(org.coaches)));
-  const venueList = buildVenueListSection(events, locations);
-  if (venueList) sections.push(venueList);
-  const venueNotes = buildVenueNotesSection(events, locations);
-  if (venueNotes) sections.push(venueNotes);
+  // §15 draft guard (2026-06-13 audit): no venue/map sections pre-release.
+  const schedulePublished = !!tournament.schedule_status && tournament.schedule_status !== 'draft';
+  const venueList = schedulePublished && buildVenueListSection(events, locations); if (venueList) sections.push(venueList);
+  const venueNotes = schedulePublished && buildVenueNotesSection(events, locations); if (venueNotes) sections.push(venueNotes);
 
   const sched = buildScheduleSections(events, locations);
   if (sched.schedule?.length) sections.push(...sched.schedule);

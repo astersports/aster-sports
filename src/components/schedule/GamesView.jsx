@@ -11,6 +11,7 @@ import StandingsTable from './StandingsTable';
 import EventCard from './EventCard';
 import FilterSelect from '../shared/FilterSelect';
 import Badge from '../shared/Badge';
+import DensityToggle from '../home/DensityToggle';
 
 // PR-V3 (visual pass, operator-directed at the 7/10 grade): the Games
 // tab adopts the rail/facts card vocabulary — MatchupCard retired,
@@ -95,16 +96,16 @@ export default function GamesView({ activities, orgId, data, density }) {
     <div style={{ marginTop: 12 }}>
       <StandingsTable teams={allTeams} recordsByTeamId={recordsByTeamId} totalGames={totalGames} />
 
-      {gameTeams.length > 1 && (
-        <div style={{ marginBottom: 8 }}>
-          <FilterSelect
-            value={selectedTeam}
-            onChange={setSelectedTeam}
+      {/* Games mode carries the SAME density control as the list (operator-
+          caught 2026-06-13: toggle lived only in the list branch). */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+        {gameTeams.length > 1 ? (
+          <FilterSelect value={selectedTeam} onChange={setSelectedTeam}
             options={[{ value: null, label: 'All Teams' }, ...gameTeams.map((t) => ({ value: t.id, label: t.name, color: t.team_color }))]}
-            ariaLabel="Filter by team"
-          />
-        </div>
-      )}
+            ariaLabel="Filter by team" />
+        ) : <span />}
+        <DensityToggle sectionKey="default" />
+      </div>
 
       {weekGroups.length === 0 && (
         <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--as-text-tertiary)' }}>
