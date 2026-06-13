@@ -15,7 +15,7 @@ import { usePreferences } from '../hooks/usePreferences';
 import { useWeather } from '../hooks/useWeather';
 import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
 import { isStaff } from '../lib/permissions';
-import ShareScheduleButton from '../components/schedule/ShareScheduleButton';
+import ShareScheduleButton from '../components/shared/ShareScheduleButton';
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
 
 export default function SchedulePage() {
@@ -90,7 +90,7 @@ export default function SchedulePage() {
           <h1 className="font-bold" style={{ color: 'var(--as-text-primary)', fontSize: 20 }}>Schedule</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <ViewToggle value={viewMode} onChange={setViewMode} />
-            {isStaff(role) && selectedTeam && <ShareScheduleButton teamId={selectedTeam} teamName="" />}
+            {isStaff(role) && selectedTeam && <ShareScheduleButton teamId={selectedTeam} style={{ minHeight: 44, padding: '0 12px', borderRadius: 999, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-accent)', fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }} />}
           </div>
         </div>
         <div style={{ width: 32, height: 3, backgroundColor: 'var(--as-accent)', borderRadius: 2, marginBottom: 8 }} />
