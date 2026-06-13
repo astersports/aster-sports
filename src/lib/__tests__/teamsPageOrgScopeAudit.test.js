@@ -26,7 +26,6 @@ import { readFileSync } from 'fs';
 const AUDIT_FILES = [
   'src/hooks/useAttendanceData.js',
   'src/hooks/useTeamRecords.js',
-  'src/hooks/usePlayerSeasonStats.js',
   'src/components/roster/TeamAchievements.jsx',
 ];
 

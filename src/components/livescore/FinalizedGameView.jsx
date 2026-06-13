@@ -105,7 +105,7 @@ export default function FinalizedGameView({ event }) {
         </div>
       )}
 
-      <GameBoxScore stats={stats} teamId={event.team_id} />
+      <GameBoxScore stats={stats} />
 
       {plays.length > 0 && (
         <>

@@ -1,7 +1,4 @@
-import { useNavigate } from 'react-router-dom';
-
-export default function GameBoxScore({ stats, teamId }) {
-  const navigate = useNavigate();
+export default function GameBoxScore({ stats }) {
   const isDnp = (s) => !s.pts && !s.fg_att && !s.ft_att;
   const active = stats.filter((s) => !isDnp(s));
   const dnps = stats.filter((s) => isDnp(s));
@@ -33,7 +30,7 @@ export default function GameBoxScore({ stats, teamId }) {
             {active.map((s) => {
               const name = s.players ? `${s.players.first_name} ${(s.players.last_name || '')[0]}.` : '—';
               return (
-                <tr key={s.player_id} onClick={() => teamId && navigate(`/teams/${teamId}/player/${s.player_id}`)} style={{ cursor: teamId ? 'pointer' : 'default' }}>
+                <tr key={s.player_id}>
                   <td style={{ ...nameStyle, color: 'var(--as-text-tertiary)', fontWeight: 700, width: 28 }}>{s.jersey_at_time || '—'}</td>
                   <td style={nameStyle}>{name}</td>
                   <td style={{ ...td, fontWeight: 700 }}>{s.pts}</td>
