@@ -113,3 +113,18 @@ UTC date, files+LOC, version/SHA, verification evidence, next unlock.
   Verified live by impersonation: parent now 0 rates / 0 co-coach pay (was $600 / $1,320);
   coach Darien own-only (0 co-staff); admin full read intact ($600 rates, $14,340 pay).
   Closes audit P1-2 + P1-3.
+
+2026-06-14 · PR-4a — create-time pay_cents stamping (migration 20260614234513, BEFORE-INSERT trigger)
+  Applied via Supabase MCP (architect-ruled, Frank money-path GO). stamp_event_coach_pay()
+  BEFORE INSERT on event_coach_assignments: stamps pay_cents from the coach's active
+  coaching_assignments.pay_per_session_cents for the event's team, honoring scope
+  (D1: all_events=any type; games_only=game/tournament incl. scrimmages; practices_only=
+  practice; edge types skills_lab/tryout/other paid only under all_events; tiebreak
+  highest-rate→created_at→id). Out-of-scope / NULL-rate / no assignment (D2) → pay_cents=0
+  + pay_status='excluded'. Only stamps the unset default (idempotent, never clobbers an
+  explicit amount or existing rows — go-forward only, no backfill: zero_pay_owed_today=0).
+  SECDEF + pinned search_path; REVOKE EXECUTE FROM PUBLIC/anon (AP#23/#57). Post-flight:
+  trigger+fn present, anon revoked, non-mutating scope sim PASS (Darien 8U tournament→$60
+  owed; Darien 8U practice→excluded $0; Kenny game→$120 owed). Also patches the PR-4a
+  pre-flight §3 (the "Darien 8U practices carry pay" inconsistency was false — his 8U is
+  15 tournaments, scope-consistent; corrected). Next: PR-4b (per-assignment rate-edit UI).

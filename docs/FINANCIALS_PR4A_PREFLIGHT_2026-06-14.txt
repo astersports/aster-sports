@@ -37,11 +37,16 @@ buildAssignmentRows / useImportSchedule do not read coaching_assignments.scope a
 (The word "scope" in those files is the IMPORTER's preview scope — unrelated.) Coach
 sessions are created by explicit per-event DELEGATION in the import, not by scope-based
 fan-out. So games_only vs all_events plays NO role at create today.
-WHY THIS MATTERS — a live inconsistency it exposes: Coach Darien is games_only/assistant
-on 8U Boys, yet his 8U *practice* sessions carry pay_cents=$60 (from the seed). If
-PR-4a's stamp is to be CORRECT, it must decide scope: a games_only coach's practice
-session should stamp $0/excluded, a game/tournament should stamp the rate. all_events
-stamps the rate for everything. (DECISION below.)
+WHY THIS MATTERS — purely PROSPECTIVE, NO live inconsistency (corrected post-ruling).
+An earlier draft of this section claimed Darien's games_only 8U assignment had paid
+*practice* sessions — that was WRONG (asserted without checking). Verified live: Darien's
+8U (games_only) sessions are 15 TOURNAMENTS, all paid, ZERO practices — i.e. scope-consistent.
+(The practices in the screenshots were his 9U all_events team.) So the seed is already
+scope-correct and there is nothing to fix in existing data; the scope rule (D1) is about
+CORRECTNESS FOR FUTURE imports only. The stamp must still decide scope so a games_only
+coach's future practice stamps $0/excluded while a game/tournament stamps the rate.
+(D1 ruled: all_events=any type; games_only=game/tournament; practices_only=practice;
+edge types paid only under all_events.)
 
 ══════════════════════════════════════════════════════════════════════
 4. RATE-LOOKUP KEY — (coach, team) is NOT schema-unique
