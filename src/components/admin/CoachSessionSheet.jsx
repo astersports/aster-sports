@@ -33,7 +33,7 @@ export default function CoachSessionSheet({ session, onClose, onSaved }) {
   };
 
   return (
-    <BottomSheet open onClose={onClose}>
+    <BottomSheet open onClose={onClose} initialHeight="60%">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 4 }}>
         <div>
           <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)' }}>Session pay</div>

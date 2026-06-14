@@ -57,7 +57,7 @@ export default function CoachPayoutEditSheet({ payout, onClose, onSaved }) {
   };
 
   return (
-    <BottomSheet open onClose={onClose}>
+    <BottomSheet open onClose={onClose} initialHeight="70%">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 4 }}>
         <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)' }}>Edit payout</div>
         {settled && (
