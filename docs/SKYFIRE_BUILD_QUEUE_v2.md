@@ -72,3 +72,20 @@ UTC date, files+LOC, version/SHA, verification evidence, next unlock.
   status='paid', amount=Σ, empty→[]). Live data shape verified: Darien 7 owed all Spring 2026
   → one call, $420. Did NOT run pay_coach live (settles out-of-band + can't auth admin via MCP);
   architect verifies Darien end-to-end post-merge. Next unlock: PR-3 (prior-payouts split).
+
+2026-06-13 · POST-CLOSE-OUT AUDIT (11-agent bug audit of the post-A-E + PR-1/PR-2 state)
+  Auto-fix batches (Frank-directed "auto execute"):
+  #1059 settlement-edit desync cluster — paid sessions read-only (page guard + CoachSession
+    Sheet); CoachPayoutEditSheet locks amount/status for source-bearing payouts, error-checks
+    un-settle + confirms impact; PayCoachSheet multi-season partial-failure no-strand; F1
+    (seasonId from events.season_id), F2 (Select-all 44px); savingRef double-submit guards.
+  Migration 20260613233000_financial_function_grants_and_fk_indexes (applied + mirrored):
+    REVOKE pay_coach + next_invoice_number FROM PUBLIC/anon (AP#23/#57); next_invoice_number
+    admin auth check added (was anon-callable cross-tenant leak); 6 FK covering indexes.
+  #1060 family-side: doVoid fail-loud (no report-success-on-failure) + voidingRef guard;
+    useFamilyLedger error state (load failure no longer masquerades as "Family not found").
+  DEFERRED TO ARCHITECT (exact SQL in docs/FINANCIALS_AUDIT2_FIX_DISPOSITION_2026-06-13.txt,
+    both latent today): pay_coach TOCTOU+blind-amount rewrite (their money RPC); DR-F13
+    confidentiality RLS / PR-6b (needs column-separation pre-flight — blind REVOKE blanks
+    admin rate reads + parent footer). STILL OPEN prior-mapped: overdue NULL-last-payment +
+    lane-vs-alert; RecordPaymentForm fee capture.
