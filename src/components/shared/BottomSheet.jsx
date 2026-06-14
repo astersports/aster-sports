@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useVisualVh } from '../../hooks/useVisualVh';
 
@@ -70,7 +71,13 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
   // handle is always visible even when the content scrolls.
   const contentMaxHeightPx = Math.max(0, maxHeightPx - HANDLE_PX);
 
-  return (
+  // Portal to document.body so the sheet escapes <main>'s stacking context.
+  // <main> is the iOS scroll container (-webkit-overflow-scrolling: touch), which
+  // makes it a stacking context with z-index:auto; the fixed BottomNav (z-50, a
+  // sibling of <main>) then paints ABOVE everything inside <main> — including this
+  // sheet's z-[60] — covering the Save button. Portaling lifts the sheet out of
+  // <main> into the root context, above the nav (same pattern as FullScreenForm).
+  return createPortal(
     <div
       ref={trapRef}
       className="fixed inset-0 z-[60] flex items-end justify-center"
@@ -123,6 +130,7 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
