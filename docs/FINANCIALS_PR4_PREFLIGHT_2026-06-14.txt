@@ -1,0 +1,85 @@
+PR-4 PRE-FLIGHT — rate per assignment (clobber fix) — CC → architect
+Date: 2026-06-14. Grounded live (vrwwpsbfbnveawqwbdmj) + repo grep. App-layer; no migration.
+
+══════════════════════════════════════════════════════════════════════
+1. CURRENT RATE-EDIT PATH (the clobber mechanism)
+══════════════════════════════════════════════════════════════════════
+src/components/admin/CoachRateSheet.jsx (64 LOC, BottomSheet) — admin-only, opened
+from the coach detail "Pay settings".
+  - WRITES the canonical column `pay_per_session_cents` — NOT the rates jsonb. Good.
+  - GRAIN: FANS across ALL the coach's season teams. handleSave (line 26-31):
+      teams ← teams WHERE org_id=org AND season_id=season   (all season teams)
+      UPDATE coaching_assignments SET pay_per_session_cents=cents
+        WHERE org_id=org AND user_id=coach AND team_id IN (all those teams)
+    So one rate input overwrites EVERY assignment row the coach has this season.
+    The on-screen copy confirms intent: "Applied to every team this coach is on this
+    season." → THIS IS THE CLOBBER. It also can't express a different rate per team.
+  - Also writes staff_profiles.default_payout_method (coach-level — fine, not the clobber).
+  - Reads coach.rateCents (the single MAX active rate from useCoachDetail) — so the UI
+    is inherently single-rate-per-coach today; there is no per-assignment surface.
+
+IMPLICATION FOR THE BUILD: fixing the clobber is NOT a one-line WHERE-narrowing — the
+sheet has no notion of "which assignment". PR-4 must change the UI from coach-level to
+PER-ASSIGNMENT: fetch the coach's coaching_assignments rows (team name + per-row rate),
+render an editable rate per row, write only the edited row's pay_per_session_cents.
+(CoachRateSheet is 64 LOC; a per-assignment list likely needs a small sub-component or a
+careful rewrite to stay ≤150. DR-F13: admin reads coaching_assignments fine, so the
+per-assignment rate read is allowed.)
+
+══════════════════════════════════════════════════════════════════════
+2. pay_cents STAMPING PATH — INVARIANT #2's PREMISE IS NOT IMPLEMENTED TODAY
+══════════════════════════════════════════════════════════════════════
+The frame's invariant #2 assumes "event_coach_assignments.pay_cents stamps from
+pay_per_session_cents at create time and does not retro-update on rate change."
+LIVE FINDING: there is NO create-time stamping at all.
+  - NO trigger on event_coach_assignments (pg_trigger: zero non-internal triggers).
+  - The import/create path buildAssignmentRows (src/lib/import/coverageConflicts.js:98)
+    builds rows with ONLY { event_id, coach_user_id, assigned_by } — NO pay_cents.
+  - No app code anywhere sets pay_cents at insert (grep: pay_cents writes are all reads
+    in the financial hooks + test fixtures; the only WRITE is CoachSessionSheet's manual
+    per-session edit).
+  So pay_cents on the 137 existing sessions came from the SEED (set directly), not a
+  stamp. A NEW assignment created via the schedule import gets pay_cents = NULL → that
+  session is $0/owed-nothing until an admin manually sets it in CoachSessionSheet.
+
+  Two consequences:
+  (a) Invariant #2 ("rate change must not retro-update pay_cents") is TRIVIALLY satisfied
+      today — nothing links rate→pay_cents, so a rate edit already can't touch existing
+      snapshots. PR-4's anti-retro-update invariant is free to lock with a test.
+  (b) BUT there's a latent GAP the frame didn't anticipate: nothing stamps pay_cents FROM
+      the rate at create either. Today that's masked (seed data has pay_cents; settlement
+      proven on it). It bites when the import creates new coach assignments — they'd owe
+      $0. DECISION FOR ARCHITECT: does PR-4 also add create-time stamping (a trigger or
+      buildAssignmentRows stamping pay_cents = the coach's current pay_per_session_cents
+      for that team), or is that a separate PR? CC lean: keep PR-4 to the clobber fix
+      (app-layer, no migration, as framed) and queue the create-time-stamp as its own
+      small migration/PR — they're distinct concerns and stamping touches the import path
+      + a DB trigger. Flagging so "new sessions owe $0" isn't a surprise at the next
+      import.
+
+══════════════════════════════════════════════════════════════════════
+3. REMAINING rates jsonb READS — NONE (cutover already complete)
+══════════════════════════════════════════════════════════════════════
+grep across src for `.rates` / 'rates' / get_coach_rate_cents → ZERO app reads or writes.
+The jsonb is fully dormant (every row is {}, verified). get_coach_rate_cents() exists in
+the DB but no app path calls it. So PR-4 does NOT need to "stop reading rates" — nothing
+reads it. Invariant #3 is already met; the only residue is the dormant column + its GIN
+index + the helper fn (a later cleanup-migration concern, not PR-4).
+
+══════════════════════════════════════════════════════════════════════
+4. COMPONENT + LOC
+══════════════════════════════════════════════════════════════════════
+src/components/admin/CoachRateSheet.jsx — 64 LOC. Per-assignment rework + the per-row
+list will push it; plan a sub-component (e.g. an AssignmentRateRow) or a dedicated
+per-assignment sheet so the file stays ≤150.
+
+══════════════════════════════════════════════════════════════════════
+SUMMARY FOR THE BUILD PROMPT
+══════════════════════════════════════════════════════════════════════
+- Clobber confirmed: CoachRateSheet writes pay_per_session_cents (right column) but fans
+  across all the coach's season assignments. Fix = per-assignment edit, write one row.
+- Invariant #2 anti-retro-update: free today (rate↔pay_cents not linked) — lock with a test.
+- Invariant #3 stop-reading-rates: already done (zero readers).
+- NEW DECISION the frame should resolve: create-time pay_cents stamping does NOT exist;
+  decide whether PR-4 adds it or it's a separate PR (CC lean: separate).
+- Watch the ≤150 LOC budget on CoachRateSheet (sub-component likely).
