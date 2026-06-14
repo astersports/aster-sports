@@ -7,6 +7,7 @@ import { useGoBack } from '../hooks/useGoBack';
 import { useCoachDetail } from '../hooks/useCoachDetail';
 import { formatCurrency } from '../lib/formatters';
 import Label from '../components/shared/Label';
+import CoachPayoutList from '../components/admin/CoachPayoutList';
 
 const CoachRateSheet = lazy(() => import('../components/admin/CoachRateSheet'));
 const RecordCoachPayoutForm = lazy(() => import('../components/admin/RecordCoachPayoutForm'));
@@ -81,21 +82,7 @@ export default function FinancialCoachDetailPage() {
         ))}
       </div>
 
-      <div style={{ marginTop: 16 }}><Label>Payouts ({data.payouts.length})</Label></div>
-      <div style={CARD}>
-        {data.payouts.length === 0 ? <div style={EMPTY}>No payouts recorded.</div> : data.payouts.map((p, i) => (
-          <button type="button" key={p.id} onClick={() => setEditPayout(p)} className="as-press" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '10px 14px', borderTop: i ? '1px solid var(--as-border-subtle)' : 'none', borderLeft: 'none', borderRight: 'none', borderBottom: 'none', background: 'none', cursor: 'pointer', textAlign: 'left' }}>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--as-text-primary)' }}>{dateLabel(p.paid_at || p.created_at)}</div>
-              <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)' }}>{METHOD[p.payment_method] || 'Not specified'}</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--as-text-primary)' }}>{formatCurrency(p.amount_cents)}</div>
-              <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: STATUS_COLOR[p.status] || 'var(--as-text-tertiary)' }}>{p.status}</div>
-            </div>
-          </button>
-        ))}
-      </div>
+      <CoachPayoutList payouts={data.payouts} onEdit={setEditPayout} />
 
       <Suspense fallback={null}>
         {sheet === 'rate' && <CoachRateSheet coach={data} orgId={orgId} seasonId={seasonId} onClose={() => setSheet(null)} onSaved={() => { setSheet(null); refetch(); }} />}
