@@ -1,0 +1,135 @@
+FINANCIALS BUILD CLOSEOUT
+Session 2026-06-13 (architect lane). Canonical. CC references this, does not re-author it.
+Org: Legacy Hoopers e3e95e21-3571-4e9a-985a-d5d01480d4a6. Supabase project vrwwpsbfbnveawqwbdmj.
+
+====================================================================
+1. SHIPPED AND MERGED THIS SESSION
+====================================================================
+PR-1 (#1055, mirror #1056): coach owed/paid single-sourced via src/lib/coachComp.js
+  (sumOwedCents, sumPaidCents, countOwedSessions). All three coach hooks unified.
+  The -$680 netting artifact removed. Cross-surface invariant test added.
+PR-2 (#1057): PayCoachSheet + pay_coach() settlement. Admin selects a coach's owed
+  sessions and settles them; sessions flip owed->paid, owed drops. Architect-reviewed
+  PASS, CI green (5/5), money-gate honored (human merge GO).
+
+Migrations A-E: applied via Supabase MCP, post-flight clean, byte-faithful mirrors
+written to supabase/migrations/. Repo reproduces all six (001 chain + A-E) from disk.
+  A  20260613203959  financials_invoices_settlement
+       invoices table (+RLS), financial_transactions.invoice_id, next_invoice_number(),
+       pay_coach() RPC, deprecation comments (registration_fees, rates jsonb).
+  B  20260613204237  financials_elite_layer
+       organizations.legal_name/ein, payment_plans (+installments, +RLS), discounts
+       (admin-only) + financial_transactions.discount_id, invoice_reminder_log
+       (UNIQUE invoice_id+stage), ar_aging view. NOTE: org_members does NOT exist;
+       the spec's discounts_read policy was dropped at apply (discounts stay admin-only).
+  C  20260613210010  financials_b_corrections
+       ar_aging ages never-paid debt from COALESCE(last_payment_at, fa.created_at, now());
+       conformed parent-read policies to (SELECT auth.uid()) initplan form; uq_fin_tx_reverses
+       partial unique index (double-void guard); fin_tx_no_mutate append-only trigger.
+  D  20260613213906  pay_coach_paid_only_guard
+       pay_coach() RAISEs if p_status <> 'paid' (guard after auth check, before any write).
+       Signature and EXECUTE grant unchanged. Session pay_status has no intermediate state,
+       so a non-paid payout must never flip sessions out of owed.
+  E  20260613221111  reconcile_coach_payout_source_assignments
+       Seed fixture correction. Darien PAID $1,680 payout (fb694cc0) named 28 owed sessions
+       (28 x $60 = $1,680 exact); honored it by flipping those 28 owed->paid + linking
+       settled_by_payout_id. Cleared source_assignments on Darien PENDING $540 (e5ddd234,
+       had 7 owed + 2 dangling refs). Invariant restored: every session referenced by a
+       PAID payout is itself paid, so pay_coach can never re-settle it; and
+       source_assignments IS NULL <=> prior/pre-tracking payout. Idempotent.
+
+====================================================================
+2. LIVE PRODUCTION STATE AT CLOSE (MCP-verified this session)
+====================================================================
+Coaches (owed = Sum event_coach_assignments.pay_cents WHERE pay_status='owed', org-scoped;
+         paid = Sum coach_payouts.amount_cents WHERE status='paid'):
+  Kenny  9ac6a671-8869-40c9-96de-f1628d0c12db   owed 102 / $12,240   paid $2,820
+  Darien af40a751-1db2-4690-98ad-8b630d354c66   owed   7 / $420      paid $2,780
+Org owed total: 109 sessions / $12,660. All owed work is one season: Spring 2026 [active].
+  (events.season_id == teams.season_id on all 109 owed rows, zero nulls, verified.)
+Paid payouts referencing a still-owed session: 0 (no double-settle trap).
+financial_transactions is append-only (INSERT+SELECT only; fin_tx_no_mutate enforces).
+
+====================================================================
+3. OPEN PRODUCTION ACTION (Frank, in-app) + INTEGRITY READ
+====================================================================
+Settle Darien: /admin/financials/coach/<Darien> -> "Pay coach * $420 owed" ->
+  confirm 7 sessions -> Pay $420.00. This is the only remaining live action; not yet done.
+On "settled" / "check Darien", architect runs and confirms:
+  - Darien owed -> $0.
+  - One new coach_payouts row: status='paid', amount_cents = 42000,
+    source_assignments = the 7 owed ids, and amount_cents == Sum pay_cents of those 7.
+  - Those 7 sessions flipped to paid, settled_by_payout_id = the new row.
+  - Darien paid total $2,780 -> $3,200.
+  - Kenny untouched 102 / $12,240. Paid-payouts-referencing-owed still 0.
+
+====================================================================
+4. RULINGS LOCKED (carry forward)
+====================================================================
+DR-F1  coach owed event-sourced; paid = Sum coach_payouts paid; never net the two.
+DR-F2  cutover leave-history-forward; prior payouts shown separate, never netted.
+DR-F4  rate per coaching_assignments.pay_per_session_cents; rates jsonb deprecated.
+DR-F5  billing = 'fee' financial_transactions stamped registration_id; registration_fees dep.
+DR-F8  discounts/scholarships admin-only catalog; apply writes adjustment(+) credit stamped
+       discount_id, human label denormalized into financial_transactions.notes (no
+       description column exists; notes carries adjustment/refund reason too).
+DR-F9  dunning = scheduled reminders via Resend, logged in invoice_reminder_log (idempotent).
+DR-F12 TAX GUARDRAIL: statements NEVER say "tax deductible" (for-profit LLC). Fixed footer
+       states facts + EIN for Form 2441 / Dependent Care FSA + "not tax advisors."
+       Verb model: Add charge=fee(+), Record payment=payment(+), Apply credit=adjustment(+),
+       Add adjustment=adjustment(-), Issue refund=refund(+), Void=reversing entry; reason
+       required on adjustment/refund (-> notes).
+DR-F13 PAY CONFIDENTIALITY: coach rate+pay readable only by admins and the owning coach;
+       parents never. Its own PR (touches coaching_assignments/event_coach_assignments/
+       coach_payouts read RLS); pre-flight current policies first.
+DR-F14 coach owed/paid org-scoped; Financials season pill governs Families only, never
+       Coaches; season/year enter coach data only as reporting breakdowns.
+E reconciliation rationale: the $1,680 was a real 28-session settlement, so honoring it
+  (flip + link) is correct; nulling its link would have laundered a $1,680 double-pay into
+  the totals. This is why E shipped before PR-2 went live.
+
+====================================================================
+5. TRACKED FOLLOW-UPS (fold into PR-3, the next coach-detail touch)
+====================================================================
+(a) useCoachDetail: stamp seasonId from events.season_id, not teams.season_id. The session
+    query already embeds s.events, so add events.season_id to that select and set
+    seasonId: s.events?.season_id, then drop the teamSeason map. Verified harmless today
+    (event season == team season on all 109 owed), but teams.season_id mis-stamps once a
+    team rolls to a new season while old-season sessions remain owed. Corrupts PR-16
+    cost-by-season and PR-3 splits if left.
+(b) PayCoachSheet: Select all / Clear all control is 32px; bump to 44px (Rule 10 tap target).
+
+====================================================================
+6. NEXT UNLOCK: PR-3 (architect to frame before CC pre-flights)
+====================================================================
+PR-3 = prior-payouts split on the coach ledger. Visually separates prior-unlinked payouts
+from settled-via-tracking so the ledger reads cleanly.
+  Discriminator: source_assignments IS NULL = prior (Migration E made this safe).
+  At close, prior-unlinked = Darien $1,100, Kenny $2,820. Darien $1,680 is now a real
+  linked settlement, NOT prior. After Darien is settled, his $420 settlement also links.
+  Fold both follow-ups (5a, 5b) into PR-3 since it is the next coach-detail edit.
+Do NOT let CC pre-flight PR-3 until the architect ships the frame, or a pass burns on the
+wrong shape.
+
+====================================================================
+7. REMAINING PR QUEUE (per RULING ADDENDUM build order)
+====================================================================
+PR-3 prior-payouts split (+5a,5b) | PR-4 rate per assignment | PR-5 invoices (useInvoices/
+FamilyInvoicePanel/SendInvoiceSheet via Resend) | PR-5b void RPC | PR-6 verb set
+(AdjustmentSheet/IssueRefundSheet, reason->notes) + doVoid fix | PR-6b DR-F13 confidentiality
+RLS | PR-7 parent balance | PR-8 coach pay surface | PR-9 CSV export | PR-10 Settings org
+billing profile | PR-11 parent annual statement | PR-12 coach earnings summary + admin 1099
+totals | PR-13 payment plans | PR-14 discounts (label->notes) | PR-15 dunning | PR-16
+reporting (ar_aging consumption) | PR-17 bulk actions.
+
+====================================================================
+8. PROCESS NOTES
+====================================================================
+- Build-queue entries for migrations D and E delivered in chat; ensure they land in
+  docs/SKYFIRE_BUILD_QUEUE_v2.md. PR-1/PR-2 entries ship in the CC deploy chain.
+- E mirror in repo was sourced from schema_migrations.statements; architect diffed it
+  against the canonical file: executable SQL identical, only the two provenance comment
+  lines differ (non-executable). Faithful.
+- pay_coach cannot be invoked via MCP (RAISEs not authorized; auth.uid() null under service
+  role). Settlement verification is therefore post-action: Frank settles in-app, architect
+  reads the resulting rows.
