@@ -101,3 +101,15 @@ UTC date, files+LOC, version/SHA, verification evidence, next unlock.
   Test: coachPayoutList.test.jsx (split discriminator + paid subtotals + session-count
   caption + empty). Live shape: Darien Settled $1,800 (28+2 sess) / Prior $1,100; Kenny
   Prior $2,820. Tappable rows → CoachPayoutEditSheet (settled-locked per the audit).
+
+2026-06-14 · DR-F13 / PR-6b — coach pay confidentiality RLS (migration 20260614165326)
+  Coach rate + per-session pay readable only by admins and the OWNING coach.
+  coaching_assignments_read: any-org-member → (own OR admin). event_coach_assignments
+  read: self OR team_staff → self-only (admins keep full read via the ALL policy).
+  Pre-flight (grep): only non-admin readers of these tables were useDriverNames
+  (coach display_name, non-pay) + PostOfferForm (own phone); no parent footer reads
+  coaching_assignments. So a policy-level fix sufficed — NO column-grant/SECDEF refactor
+  needed. useDriverNames repointed coaching_assignments → staff_profiles for names.
+  Verified live by impersonation: parent now 0 rates / 0 co-coach pay (was $600 / $1,320);
+  coach Darien own-only (0 co-staff); admin full read intact ($600 rates, $14,340 pay).
+  Closes audit P1-2 + P1-3.

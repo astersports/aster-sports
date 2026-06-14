@@ -24,7 +24,9 @@ export function useDriverNames(orgId, driverUserIds) {
     (async () => {
       const [guardiansRes, coachingRes] = await Promise.all([
         supabase.from('guardians').select('user_id, first_name, last_name').eq('org_id', orgId).in('user_id', ids),
-        supabase.from('coaching_assignments').select('user_id, display_name').eq('org_id', orgId).in('user_id', ids),
+        // Coach names come from staff_profiles (non-pay, org-readable). coaching_assignments
+        // is admin/owner-only now (DR-F13 pay confidentiality), so a parent can't read it.
+        supabase.from('staff_profiles').select('user_id, display_name').eq('org_id', orgId).in('user_id', ids),
       ]);
       if (cancelled) return;
       const map = {};
