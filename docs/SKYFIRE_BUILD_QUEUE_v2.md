@@ -89,3 +89,15 @@ UTC date, files+LOC, version/SHA, verification evidence, next unlock.
     confidentiality RLS / PR-6b (needs column-separation pre-flight — blind REVOKE blanks
     admin rate reads + parent footer). STILL OPEN prior-mapped: overdue NULL-last-payment +
     lane-vs-alert; RecordPaymentForm fee capture.
+
+2026-06-14 · PR-3 — prior-payouts split on the coach ledger (DR-F2)
+  Executed per Frank's direct request, built to the canonical close-out §6 shape
+  (discriminator: source_assignments IS NULL = prior). Follow-ups 5a (seasonId from
+  events.season_id) + 5b (Select-all 44px) were ALREADY shipped in audit batch #1059,
+  so PR-3 = the split only. New src/components/admin/CoachPayoutList.jsx (60): splits
+  the coach-detail Payouts section into "Settled · $X" (source_assignments populated,
+  shows session count) vs "Prior payouts · $X — before settlement tracking"
+  (source_assignments NULL). FinancialCoachDetailPage 120→107 (payout list extracted).
+  Test: coachPayoutList.test.jsx (split discriminator + paid subtotals + session-count
+  caption + empty). Live shape: Darien Settled $1,800 (28+2 sess) / Prior $1,100; Kenny
+  Prior $2,820. Tappable rows → CoachPayoutEditSheet (settled-locked per the audit).
