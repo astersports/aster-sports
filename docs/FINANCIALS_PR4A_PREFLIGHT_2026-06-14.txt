@@ -1,0 +1,103 @@
+PR-4a PRE-FLIGHT — create-time pay_cents stamping — CC → architect
+Date: 2026-06-14. Grounded live (vrwwpsbfbnveawqwbdmj) + repo grep. Go-forward only (no backfill — verified).
+
+══════════════════════════════════════════════════════════════════════
+1. EVERY PATH THAT CREATES event_coach_assignments ROWS
+══════════════════════════════════════════════════════════════════════
+There is exactly ONE create path in the whole system:
+  - Schedule import: src/hooks/useImportSchedule.js:134
+      supabase.from('event_coach_assignments').upsert(assignmentRows, { onConflict: 'event_id,coach_user_id' })
+    rows built by buildAssignmentRows (src/lib/import/coverageConflicts.js:98), which
+    emits one row per DELEGATED coach per imported/matched event:
+      { event_id, coach_user_id, assigned_by }
+NOT a create path (checked):
+  - Manual event/session creation (CreateActivityWizard) creates EVENTS, not coach
+    assignments — no event_coach_assignments insert anywhere in the wizard.
+  - Assigning a coach to a TEAM writes a coaching_assignments row, NOT event rows.
+  - DB layer: ZERO triggers on event_coach_assignments (pg_trigger), and no DB
+    function inserts it. The app import is the sole writer.
+So a stamp added either in the import (app) OR as a BEFORE INSERT trigger covers 100%
+of creation today; a trigger also covers any future insert path.
+
+══════════════════════════════════════════════════════════════════════
+2. THE INSERT SHAPE — pay_cents IS UNSET ON CREATE (confirmed)
+══════════════════════════════════════════════════════════════════════
+The upsert row carries only {event_id, coach_user_id, assigned_by}. Column defaults
+(information_schema): pay_cents → DEFAULT NULL (nullable); pay_status → DEFAULT 'owed'
+(NOT NULL); status → DEFAULT 'assigned' (NOT NULL). So a freshly imported assignment =
+{ pay_cents: NULL, pay_status: 'owed', status: 'assigned' } → it sits in OWED and
+contributes $0 (sumOwedCents treats NULL as 0). That is the gap PR-4a closes.
+LIVE: zero_pay_owed_today = 0 (no NULL/$0 owed rows exist) → confirms go-forward-only,
+no backfill, matching your check.
+
+══════════════════════════════════════════════════════════════════════
+3. SCOPE HANDLING — the create path does NOT consult coaching_assignments.scope
+══════════════════════════════════════════════════════════════════════
+buildAssignmentRows / useImportSchedule do not read coaching_assignments.scope at all.
+(The word "scope" in those files is the IMPORTER's preview scope — unrelated.) Coach
+sessions are created by explicit per-event DELEGATION in the import, not by scope-based
+fan-out. So games_only vs all_events plays NO role at create today.
+WHY THIS MATTERS — a live inconsistency it exposes: Coach Darien is games_only/assistant
+on 8U Boys, yet his 8U *practice* sessions carry pay_cents=$60 (from the seed). If
+PR-4a's stamp is to be CORRECT, it must decide scope: a games_only coach's practice
+session should stamp $0/excluded, a game/tournament should stamp the rate. all_events
+stamps the rate for everything. (DECISION below.)
+
+══════════════════════════════════════════════════════════════════════
+4. RATE-LOOKUP KEY — (coach, team) is NOT schema-unique
+══════════════════════════════════════════════════════════════════════
+coaching_assignments UNIQUE = (team_id, user_id, role, scope) — so a coach CAN hold
+multiple active assignments on ONE team (different role/scope), e.g. a games_only
+assistant row + an all_events head row on the same team.
+LIVE today: coaches_with_multi_assign_same_team = 0 (so (coach,team) is unique in
+practice now). Darien's two assignments are on DIFFERENT teams (9U all_events head $60;
+8U games_only assistant $60); Kenny is all_events head $120 on 4 teams. All rated rows
+are populated; the deprecated rates jsonb is {} everywhere.
+WHY THIS MATTERS — the stamp's lookup "rate for (coach, this event's team)" can match >1
+active assignment once a coach holds two roles on one team. The stamp needs a deterministic
+tiebreak (DECISION below).
+
+══════════════════════════════════════════════════════════════════════
+5. pay_status DEFAULT + UNPAID/OUT-OF-SCOPE HANDLING (current behavior)
+══════════════════════════════════════════════════════════════════════
+Current: every created row is pay_status='owed' (default), pay_cents NULL — regardless of
+rate or scope. So today an unpaid-role coach (NULL rate, e.g. Frank/program_director) and
+an out-of-scope session would BOTH land as 'owed'/$0 noise. The architect's design choice:
+for NULL-rate or out-of-scope, should the stamp produce (a) no assignment row, (b) a
+pay_cents=0 + pay_status='excluded' row, or (c) leave it 'owed'/$0?
+
+══════════════════════════════════════════════════════════════════════
+TWO DECISIONS FOR THE BUILD PROMPT
+══════════════════════════════════════════════════════════════════════
+D1. SCOPE + TIEBREAK rule for the stamp. CC proposed rule:
+    - Match the coach's ACTIVE coaching_assignment(s) for the event's team.
+    - If scope='all_events' → eligible for every event_type.
+    - If scope='games_only' → eligible only for event_type IN ('game','tournament').
+    - If scope='practices_only' → eligible only for event_type='practice'.
+    - If a coach has >1 eligible active assignment on the team, stamp the HIGHEST
+      pay_per_session_cents (deterministic; safe default). If NO eligible assignment
+      (out of scope) or the matched rate is NULL → out-of-scope/unpaid (see D2).
+D2. OUT-OF-SCOPE / NULL-RATE outcome. CC lean: stamp pay_cents=0 AND pay_status='excluded'
+    (keeps the assignment row for coverage/attendance but it never shows as owed-$0 noise
+    and never enters owed/settlement). Alternative: leave 'owed'/$0 (status quo) or write
+    no row. Architect's call.
+
+══════════════════════════════════════════════════════════════════════
+IMPLEMENTATION LOCUS (CC recommendation)
+══════════════════════════════════════════════════════════════════════
+Two options:
+  (A) DB BEFORE-INSERT trigger on event_coach_assignments — looks up the coach's rate
+      for the event's team (+ event_type vs scope), stamps pay_cents + pay_status.
+      PRO: covers EVERY create path (current import + any future), single source of truth,
+      can't be bypassed by a new caller; keeps the import code untouched. CON: it's a
+      migration (so PR-4a touches the DB, not pure app-layer).
+  (B) App-side stamp in buildAssignmentRows/useImportSchedule — fetch rates + event_types,
+      compute pay_cents per row before the upsert. PRO: app-layer, no migration, matches
+      how PR-4 was framed. CON: only covers the import; a future insert path would
+      reintroduce the gap; the import already does several queries so it's more code.
+CC LEAN: (A) the trigger — coach pay correctness shouldn't depend on every future caller
+remembering to stamp, and the rate lookup + scope logic is cleaner as one SQL function.
+It does make PR-4a a migration (mirror per AP#21). If you'd rather keep it app-layer,
+(B) works for today's single path.
+
+── Hand me the D1/D2 ruling + locus pick and I'll take PR-4a; PR-4b (clobber UI) follows. ──
