@@ -85,7 +85,9 @@ export default function FinancialCoachDetailPage() {
       <CoachPayoutList payouts={data.payouts} onEdit={setEditPayout} />
 
       <Suspense fallback={null}>
-        {sheet === 'rate' && <CoachRateSheet coach={data} orgId={orgId} seasonId={seasonId} onClose={() => setSheet(null)} onSaved={() => { setSheet(null); refetch(); }} />}
+        {/* Per-assignment rate saves refetch WITHOUT closing (the sheet stays open
+            to edit other teams); the page closes via Cancel/Esc, data already fresh. */}
+        {sheet === 'rate' && <CoachRateSheet coach={data} orgId={orgId} onClose={() => setSheet(null)} onSaved={refetch} />}
         {sheet === 'payout' && <RecordCoachPayoutForm coach={data} orgId={orgId} seasonId={seasonId} onClose={() => setSheet(null)} onSaved={() => { setSheet(null); refetch(); }} />}
         {sheet === 'paycoach' && <PayCoachSheet coach={data} orgId={orgId} onClose={() => setSheet(null)} onSaved={() => { setSheet(null); refetch(); }} />}
         {editSession && <CoachSessionSheet session={editSession} onClose={() => setEditSession(null)} onSaved={() => { setEditSession(null); refetch(); }} />}

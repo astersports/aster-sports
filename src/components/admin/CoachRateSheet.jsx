@@ -1,64 +1,86 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import BottomSheet from '../shared/BottomSheet';
+import FullScreenForm from '../shared/FullScreenForm';
 import Label from '../shared/Label';
+import CoachRateRow from './CoachRateRow';
 
-// A coach's pay settings: per-session RATE (across their season teams, on
-// coaching_assignments) + DEFAULT payout method (coach-level, on
-// staff_profiles — pre-fills the Record-payout form). Two controls →
-// BottomSheet per AP#15.
+// A coach's pay settings: a PER-ASSIGNMENT rate (one row per coaching_assignments
+// row — each saves on its own, touching exactly that team's row, NOT fanning across
+// every team the coach is on [the PR-4b clobber fix]) + a coach-level DEFAULT payout
+// method. 3+ controls → FullScreenForm (AP#15). Rates flow to FUTURE sessions via the
+// PR-4a stamp trigger; editing a rate never touches existing pay_cents/owed/paid.
 const METHODS = [
   { value: '', label: 'No default' }, { value: 'zelle', label: 'Zelle' }, { value: 'venmo', label: 'Venmo' },
   { value: 'cash', label: 'Cash' }, { value: 'check', label: 'Check' }, { value: 'stripe', label: 'Card/Stripe' }, { value: 'other', label: 'Other' },
 ];
 const field = { width: '100%', minHeight: 44, padding: '0 12px', borderRadius: 10, border: '1.5px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-tertiary)', color: 'var(--as-text-primary)', fontSize: 15, fontFamily: 'inherit', boxSizing: 'border-box' };
+const note = { fontSize: 12, color: 'var(--as-text-tertiary)' };
 
-export default function CoachRateSheet({ coach, orgId, seasonId, onClose, onSaved }) {
-  const [rate, setRate] = useState(coach.rateCents ? String(coach.rateCents / 100) : '');
+export default function CoachRateSheet({ coach, orgId, onClose, onSaved }) {
+  const [rows, setRows] = useState(null); // null = loading
   const [method, setMethod] = useState(coach.defaultMethod || '');
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState(null);
+  const [mSaving, setMSaving] = useState(false);
+  const [mErr, setMErr] = useState(null);
+  const mRef = useRef(false);
 
-  const cents = Math.max(0, Math.round(parseFloat(rate) * 100) || 0);
+  const load = useCallback(async () => {
+    const { data, error } = await supabase.from('coaching_assignments')
+      .select('id, role, scope, pay_per_session_cents, teams!inner(name, sort_order)')
+      .eq('org_id', orgId).eq('user_id', coach.userId).eq('active', true);
+    if (error) { console.error('CoachRateSheet load:', error.message); setRows([]); return; }
+    setRows((data || []).map((r) => ({
+      id: r.id, role: r.role, scope: r.scope, pay_per_session_cents: r.pay_per_session_cents,
+      teamName: r.teams?.name || '—', sort: r.teams?.sort_order ?? 99,
+    })).sort((a, b) => a.sort - b.sort));
+  }, [orgId, coach.userId]);
+  useEffect(() => { Promise.resolve().then(load); }, [load]);
 
-  const handleSave = async () => {
-    setSaving(true); setErr(null);
-    const teamsRes = await supabase.from('teams').select('id').eq('org_id', orgId).eq('season_id', seasonId);
-    if (teamsRes.error) { setSaving(false); setErr('Couldn’t reach the server. Try again in a moment.'); return; }
-    const teamIds = (teamsRes.data || []).map((t) => t.id);
-    const rateRes = await supabase.from('coaching_assignments')
-      .update({ pay_per_session_cents: cents > 0 ? cents : null })
-      .eq('org_id', orgId).eq('user_id', coach.userId).in('team_id', teamIds);
-    const methodRes = await supabase.from('staff_profiles')
+  const afterRowSave = () => { load(); onSaved(); };
+
+  const methodDirty = (method || '') !== (coach.defaultMethod || '');
+  const saveMethod = async () => {
+    if (mRef.current || !methodDirty) return;
+    mRef.current = true; setMSaving(true); setMErr(null);
+    const { error } = await supabase.from('staff_profiles')
       .update({ default_payout_method: method || null })
       .eq('org_id', orgId).eq('user_id', coach.userId);
-    setSaving(false);
-    if (rateRes.error || methodRes.error) { setErr('Looks like that didn’t go through. Try again?'); return; }
+    mRef.current = false; setMSaving(false);
+    if (error) { console.error('CoachRateSheet method:', error.message); setMErr('Looks like that didn’t go through. Try again?'); return; }
     onSaved();
   };
 
   return (
-    <BottomSheet open onClose={onClose}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 4 }}>
-        <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)' }}>{coach.name} — pay settings</div>
+    <FullScreenForm open title={`${coach.name} — pay settings`} onClose={onClose}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <div>
-          <Label>Pay per session ($)</Label>
-          <input type="number" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="0.00" aria-label="Pay per session" style={field} />
-          <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)', marginTop: 6 }}>Applied to every team this coach is on this season. Leave 0 to mark unpaid.</div>
+          <Label>Rate per team</Label>
+          <div style={{ ...note, margin: '2px 0 8px' }}>Each team’s rate saves on its own. Clear a field to mark that team unpaid. Future sessions use the new rate — past pay is unchanged.</div>
+          {rows === null ? (
+            <div style={{ padding: 16, textAlign: 'center', ...note, fontSize: 13 }}>Loading…</div>
+          ) : rows.length === 0 ? (
+            <div style={{ padding: 16, textAlign: 'center', ...note, fontSize: 13 }}>No active assignments for this coach.</div>
+          ) : (
+            <div style={{ backgroundColor: 'var(--as-bg-card)', borderRadius: 10, border: '1px solid var(--as-border-default)', overflow: 'hidden' }}>
+              {/* key includes the saved rate so a row remounts (resets its input to
+                  the new DB value) after its OWN save — other rows' in-progress edits
+                  survive (their rate, hence key, is unchanged by a sibling save). */}
+              {rows.map((r, i) => <CoachRateRow key={`${r.id}:${r.pay_per_session_cents ?? 'null'}`} assignment={r} orgId={orgId} first={i === 0} onSaved={afterRowSave} />)}
+            </div>
+          )}
         </div>
         <div>
           <Label>Default payout method</Label>
-          <select value={method} onChange={(e) => setMethod(e.target.value)} aria-label="Default payout method" style={field}>
+          <select value={method} onChange={(e) => setMethod(e.target.value)} aria-label="Default payout method" style={{ ...field, marginTop: 2 }}>
             {METHODS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
           </select>
-          <div style={{ fontSize: 12, color: 'var(--as-text-tertiary)', marginTop: 6 }}>Pre-fills how you usually pay this coach.</div>
+          <div style={{ ...note, margin: '6px 0 8px' }}>Pre-fills how you usually pay this coach.</div>
+          {mErr && <div style={{ fontSize: 13, color: 'var(--as-danger)', marginBottom: 8 }}>{mErr}</div>}
+          <button type="button" onClick={saveMethod} disabled={mSaving || !methodDirty} className="as-press"
+            style={{ minHeight: 44, padding: '0 20px', borderRadius: 10, border: 'none', backgroundColor: methodDirty ? 'var(--as-accent)' : 'var(--as-bg-tertiary)', color: methodDirty ? 'var(--as-text-inverse)' : 'var(--as-text-tertiary)', fontSize: 15, fontWeight: 600, opacity: mSaving ? 0.6 : 1 }}>
+            {mSaving ? 'Saving…' : 'Save method'}
+          </button>
         </div>
-        {err && <div style={{ fontSize: 13, color: 'var(--as-danger)' }}>{err}</div>}
-        <button type="button" onClick={handleSave} disabled={saving} className="as-press"
-          style={{ minHeight: 48, borderRadius: 10, border: 'none', backgroundColor: 'var(--as-accent)', color: 'var(--as-text-inverse)', fontSize: 16, fontWeight: 600, opacity: saving ? 0.6 : 1 }}>
-          {saving ? 'Saving…' : 'Save'}
-        </button>
       </div>
-    </BottomSheet>
+    </FullScreenForm>
   );
 }

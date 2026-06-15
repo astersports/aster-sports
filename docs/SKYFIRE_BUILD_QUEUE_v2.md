@@ -128,3 +128,24 @@ UTC date, files+LOC, version/SHA, verification evidence, next unlock.
   owed; Darien 8U practice→excluded $0; Kenny game→$120 owed). Also patches the PR-4a
   pre-flight §3 (the "Darien 8U practices carry pay" inconsistency was false — his 8U is
   15 tournaments, scope-consistent; corrected). Next: PR-4b (per-assignment rate-edit UI).
+
+2026-06-15 · PR-4b — per-assignment coach rate editing (clobber fix, app-layer, no migration)
+  CoachRateSheet reworked coach-level → PER-ASSIGNMENT. Was: one rate input UPDATE
+  coaching_assignments WHERE team_id IN (all the coach's season teams) — fanned across
+  every team (the clobber) and couldn't express a per-team rate. Now: fetch the coach's
+  active coaching_assignments (team name + sort_order + role + scope + rate), render one
+  row per assignment sorted oldest→youngest (teams.sort_order), each saving on its OWN —
+  the write is .update({pay_per_session_cents}).eq('id',rowId).eq('org_id') → exactly one
+  row, never a fan-out. NULL renders "Unpaid"; clearing a field writes NULL; a paid rate
+  must be >0 (0/negatives rejected, Save stays off). rates jsonb untouched (already dormant,
+  0 readers). Future imported sessions pick up each row's rate via the PR-4a stamp trigger;
+  editing a rate never touches existing pay_cents/owed/paid/settled history (no re-stamp).
+  Sheet now FullScreenForm (3+ controls, AP#15; was BottomSheet); default-payout-method
+  control kept (coach-level staff_profiles write, its own Save). New CoachRateRow.jsx (57)
+  + CoachRateSheet rewrite (84); FinancialCoachDetailPage onSaved=refetch (no close — sheet
+  stays open to edit other teams; seasonId prop dropped, unused). Row remounts via a
+  rate-bearing key after its own save (no setState-in-effect). Test coachRateRow.test.jsx
+  (5): id-scoped single-row write asserted (clobber lock), NULL/positive/reject-0 rules.
+  Write policy verified live: coaching_assignments_write (ALL, admin-org USING+WITH CHECK)
+  intact post-DR-F13. Lint + 5/5 test + build clean (entry 106.51 KB gz). Live shape:
+  Kenny 4 teams @ $120, Darien 9U $60 + 8U $60, Frank 5 NULL. Next: PR-5 (invoices, family arc).
