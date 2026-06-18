@@ -1,0 +1,118 @@
+==============================================================================
+CC -> ARCHITECT : VERIFICATION FINDINGS , WEATHER RENDER (R-4 token fix + PR-1 clarify)
+Date 2026-06-18. Per §11.8 rule 2 (CC verifies against the closest ground truth and
+surfaces evidence; does NOT silently build a render that rests on a substrate error,
+and does NOT unilaterally override the architect). Annotates
+ARCHITECT_RENDER_WEATHER_20260618. Two findings: VF-1 corrects R-4's tokens
+(load-bearing; blocks PR-3 as written), VF-2 reconciles one PR-1 detail before wiring.
+Pre-flight grep included. PR-1 is otherwise GO. Plain text + full chat paste + file.
+==============================================================================
+
+0. HEADLINE
+   - VF-1: R-4's ruled tokens (--as-cobalt, --as-card, color-mix 13%) DO NOT EXIST in
+     the shipped app. CC's ORIGINAL R-4 tokens (--as-info-soft / --as-info) ARE the
+     shipped ones. The render was verified against the HTML mockups, not src/index.css.
+     The architect's INTENT (info tier, friendly heads-up) is correct AND the app
+     already implements it as SEVERITY_TOKENS.info. Corrected mapping below. Blocks
+     PR-3 as written; does NOT affect PR-1.
+   - VF-2: PR-1's "one useWeather call" (step 3) vs coordsForEvent "closes the
+     org-agnostic default" (step 4) need one reconciliation before I wire it. Lean inside.
+   - PR-1 pre-flight grep: 5 consumers CONFIRMED at the pasted lines. Mechanically GO.
+
+------------------------------------------------------------------------------
+VF-1 , R-4 TOKEN SUBSTRATE CORRECTION (load-bearing; this is the one that matters)
+------------------------------------------------------------------------------
+  WHAT R-4 + §9 RULED:
+    accent var(--as-cobalt); soft bg color-mix(in srgb, var(--as-cobalt) 13%,
+    var(--as-card)); and explicitly "do NOT use --as-info-soft (it does not exist)."
+  GROUND TRUTH (src/index.css :root, the shipped token source , file:line):
+    - --as-info       #3B82F6   (index.css:35)  <- EXISTS
+    - --as-info-soft  #EFF6FF   (index.css:36)  <- EXISTS (this is CC's R-4 pick, exact)
+    - --as-warning #D97706 / --as-warning-soft #FEF3C7 (index.css:31-32) <- EXIST
+    - --as-danger/-soft, --as-success/-soft, --as-academy/-soft ... the full §3 set.
+    - --as-cobalt: ZERO hits in src/. --as-card: ZERO. --as-navy / --as-amber /
+      --as-surface: ZERO. (grep src/)
+    - color-mix in src/: ONE hit (index.css:200) , a page scrim
+      color-mix(in srgb, var(--as-bg-page) 85%, transparent). NOT a 13%/--as-card
+      tint. The "13% tint" convention is MOCKUP-only, not shipped.
+  THE REAL SEVERITY SYSTEM (src/lib/alerts/severityTokens.js , authoritative in-app):
+    info     = { bg: var(--as-info-soft),    border/text: var(--as-info),    icon Info }
+    warning  = { bg: var(--as-warning-soft), border/text: var(--as-warning), AlertTriangle }
+    critical = { bg: var(--as-danger-soft),  border/text: var(--as-danger),  AlertCircle }
+    Used app-wide as SOLID soft tokens (Badge.jsx:22, StatusBadge, statusTable,
+    ~20 files) , NOT color-mix.
+  WHY (not blocking, but worth knowing): the architect's corpus is the HTML render
+    mockups (CREATE_PROGRAM_TEAM_RENDER.html, SETTINGS_S9_NOTIFICATIONS_RENDER.html),
+    which use a parallel, simpler vocabulary (--as-cobalt/--as-navy/--as-amber/
+    --as-card + color-mix tints) the React app DOES NOT SHIP. Shipped source of truth
+    = src/index.css (mirrors CLAUDE.md §3). Future token rulings should ground there.
+    (AP#60 source-hierarchy: verify against the shipped CSS, not a mockup.)
+  CORRECTED R-4 (preserves the architect's intent EXACTLY , the reasoning was right):
+    RainAlertBanner reuses the shipped info tier , import tokensForSeverity('info')
+    (or SEVERITY_TOKENS.info) from src/lib/alerts/severityTokens.js:
+      background: var(--as-info-soft)
+      accent (icon + optional 3px left border): var(--as-info)
+      text: var(--as-text-primary) on the soft bg
+    Override the severity icon to a weather glyph , Lucide CloudRain (or Umbrella),
+    stroke-width 1.75, stroke var(--as-info). Everything else in R-4 stands (info tier
+    not warn/crit; friendly copy; no alarm words). ZERO phantom tokens, ZERO hardcoded
+    hex, AP-clean. Amber/red still rejected (they are the warn/crit tiers), as intended.
+  §9 GUARDRAIL CORRECTION:
+    "Soft backgrounds via color-mix(in srgb, var(--token) 13%, var(--as-card))" ->
+    in THIS app soft backgrounds are the SOLID --as-*-soft tokens (--as-info-soft,
+    --as-warning-soft, ...); the card surface token is --as-bg-card (not --as-card).
+    color-mix is not a shipped tint convention. PR-2/PR-3 build guardrail: --as-*-soft.
+
+------------------------------------------------------------------------------
+VF-2 , PR-1 CLARIFICATION : WeatherContext coord sourcing (confirm before I wire)
+------------------------------------------------------------------------------
+  THE TENSION: step 3 = WeatherContext makes "one useWeather call set"; step 4 =
+    coordsForEvent "closes the org-agnostic default (every org no longer hard-defaults
+    to Westchester when an event has its own location)." When a surface holds events at
+    MULTIPLE venues, one fetch cannot be per-venue. Today all 5 consumers call
+    useWeather(...WEATHER_DEFAULT_COORDS) , one coord set, cache-deduped , so "no
+    behavior loss" currently means one coord set.
+  CC LEAN (AP#39): PR-1 keeps ONE call. The context derives coords ONCE via
+    coordsForEvent(upcomingEvents, locations) -> first event-location carrying lat/lon,
+    WEATHER_DEFAULT_COORDS fallback. For Legacy Hoopers (all-Westchester venues) this
+    is behavior-neutral; it closes the org-agnostic default by sourcing coords from
+    real event locations instead of the hardcoded constant. TRUE per-venue weather (a
+    fetch per distinct location) is a deliberate LATER step, not PR-1 (it re-introduces
+    a controlled, memoized fan-out keyed per coord set). Provider mounts at AppShell,
+    fed the org's upcoming events (the set the homes/schedule already load); exposes
+    { weather, getWeatherForTime, fetchDaily }.
+  CONFIRM OR REDIRECT: (a) approve the lean (one representative coord now, per-venue
+    later), or (b) you want per-distinct-venue fetching IN PR-1 (I build the memoized
+    multi-coord context now). I build PR-1 immediately on your pick; absent a redirect
+    I proceed on (a).
+
+------------------------------------------------------------------------------
+PR-1 PRE-FLIGHT GREP (architect step 1 , done , do-not-trust-pasted-numbers honored)
+------------------------------------------------------------------------------
+  grep 'useWeather(' src/ , current line numbers CONFIRMED:
+    src/pages/ParentHomePage.jsx:47
+    src/pages/AdminHomePage.jsx:45
+    src/pages/CoachHomePage.jsx:44
+    src/pages/SchedulePage.jsx:46
+    src/components/roster/UpcomingEvents.jsx:21
+  (Plus the definition at src/hooks/useWeather.js:57.) 5 consumers, every one passing
+  ...WEATHER_DEFAULT_COORDS , matches the spec exactly. Mechanically GO.
+
+------------------------------------------------------------------------------
+IMPACT / SEQUENCING
+------------------------------------------------------------------------------
+  - PR-1 (foundation): unaffected by VF-1 (no tokens, no UI). Needs only VF-2 confirm,
+    or proceeds on the lean.
+  - PR-2 (popover): mostly icon + text; any soft bg uses --as-*-soft per the §9 fix.
+    R-1/R-2/R-3 otherwise stand as ruled.
+  - PR-3 (RainAlertBanner): build on the CORRECTED R-4 (SEVERITY_TOKENS.info). Do NOT
+    use the render's --as-cobalt/--as-card/color-mix.
+  - PR-4 (window): unaffected.
+
+WHAT WE NEED:
+  - ARCHITECT: ack VF-1 (corrected R-4 + the §9 token guardrail), rule VF-2 (a or b).
+  - FRANK: relay , or, if you just want momentum, say "go with the lean" and I build
+    PR-1 now on VF-2 (a).
+==============================================================================
+END VERIFICATION FINDINGS.
+==============================================================================
