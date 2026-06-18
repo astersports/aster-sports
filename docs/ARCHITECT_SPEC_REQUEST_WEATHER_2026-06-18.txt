@@ -1,0 +1,125 @@
+==============================================================================
+CC -> ARCHITECT : SPEC + RENDER REQUEST , WEATHER UX LAYER (parent-delight build)
+Date 2026-06-18. Per §11.8 (architect spec/render deliverable). Pairs with — and
+advances — the merged decision-request #1071
+(docs/ARCHITECT_DECISION_REQUEST_WEATHER_2026-06-18.txt). Frank has RULED on the
+W-1 headline fork: BUILD it (not defer), FOUNDATION-FIRST, as a deliberate
+"cool parent" delight feature. Frank's words: "Foundation and love the weather as a
+cool parent ask." This doc gives the grounded build plan and requests the architect's
+design RENDER (W-5 + content/placement/threshold) so CC can build. Plain text + full
+chat paste + delivered as a file.
+==============================================================================
+
+0. PURPOSE / THE RULING THAT CHANGES THE FRAME
+   The #1071 decision-request leaned DEFER on a UTILITY argument (indoor basketball =
+   low weather stakes). Frank's ruling supersedes that with an ENGAGEMENT argument:
+   weather is a parent-delight touch worth having regardless of indoor/outdoor —
+   "a cool parent ask." That reframe is legitimate and it CHANGES THE DESIGN BRIEF:
+   the popover should be a pleasant micro-interaction, the rain banner should read
+   FRIENDLY (a heads-up), not an alarm. Engagement, not operations. This aligns with
+   the platform's own Nike-Run-Club engagement benchmark (CLAUDE.md §1) and the §16
+   ELITE principles. CC is no longer arguing defer — this requests the render to
+   build it WELL.
+
+------------------------------------------------------------------------------
+1. WHAT EXISTS TODAY (engine substrate — verified, file:line)
+------------------------------------------------------------------------------
+   The engine is shipped and is the strong foundation we build ON (do NOT rebuild):
+   - src/hooks/useWeather.js : hourly Open-Meteo, &timeformat=unixtime epoch matching
+     (line 76, DL-13 safe), 30-min sessionStorage cache + localStorage fallback +
+     signout cache-buster (17-26, 64-96), getWeatherForTime() = closest hour within
+     2h (103-113), forecast_days=7 (76).
+   - src/lib/engine/resolvers/tournamentWeather.js : DAILY endpoint (temp max +
+     precipitation_probability_max, 58-60), PURE w/ injected fetch (AP#27, line 55),
+     never fabricates (returns [] , 56/65/72). weatherLocationFrom(events, locations)
+     already picks the first event-location w/ lat/lon (81-90) — the selector exists.
+   - src/lib/engine/renderers/weather.js : email per-day strip (table-based, §13).
+   - Inline render TODAY: EventCard.jsx:80-82 shows `{icon} {temp}°` for upcoming
+     events; fed per-event via getWeatherForTime in DateGroupedList.jsx:29 / GamesView.
+   - constants.js:42-43 : WEATHER_DEFAULT_COORDS = [41.03,-73.76], WEATHER_TZ
+     America/New_York. ORG-AGNOSTIC (every org gets Westchester) = the open half of
+     AP#7 / the §4.C.2 P1-2 ledger item.
+   MISSING (this build): WeatherContext, coordsForEvent selector, WeatherPopover,
+     RainAlertBanner, forecast-window helper. (grep-confirmed 0 hits.)
+
+------------------------------------------------------------------------------
+2. BUILD PLAN — FOUNDATION FIRST (the sequence Frank named)
+------------------------------------------------------------------------------
+   PR-1  FOUNDATION (infra only, NO new parent-facing UX — needs only sequence
+         ratification, NOT a design render, so it can start first):
+           - src/lib/weather/wmo.js : single WMO_ICONS / WMO_LABELS / rainWord source;
+             re-export from useWeather.js + tournamentWeather.js (closes the AP#42
+             duplication: useWeather.js:38-55 vs tournamentWeather.js:17-32).
+           - src/context/WeatherContext.jsx : ONE useWeather call set; exposes
+             getWeatherForTime + the daily fetch. Kills the 5x hook fan-out.
+           - src/lib/weather/coordsForEvent.js : event-location coords (via
+             weatherLocationFrom) with WEATHER_DEFAULT_COORDS fallback. Closes the
+             AP#7 org-agnostic leak.
+           - Repoint the 5 consumers (ParentHomePage:47, AdminHomePage:45,
+             CoachHomePage:44, SchedulePage:46, UpcomingEvents:21) to the context.
+           - AP#43 cross-surface test (all homes source weather identically).
+   PR-2  WeatherPopover.jsx  (the parish "popover" pillar) — NEEDS RENDER (§3 below).
+   PR-3  RainAlertBanner.jsx (the parish "rain alert" pillar) — NEEDS RENDER.
+   PR-4  forecastWindow.js : isWithinForecastWindow(iso, now, days) + gate the inline
+         indicator. (Note: Aster ALREADY gates implicitly via forecast_days=7 + the
+         2h match; this just formalizes it as a named rule + the daily-coverage path.)
+   Every file <=150 LOC, var(--as-*) tokens ONLY (no invented tokens, §0/§3), never
+   fabricate (render nothing when no forecast), AP#43 + AP#46 guards.
+
+------------------------------------------------------------------------------
+3. WHAT THE ARCHITECT MUST RENDER / RULE (PR-2..PR-4 are blocked on these)
+------------------------------------------------------------------------------
+   R-1  POPOVER SURFACE PRIMITIVE (the Manus §9 open question). Aster separates
+        BottomSheet (<=2 controls) from FullScreenForm (>=3, AP#15) — but this is a
+        READ-ONLY disclosure, not a form. Pick: (a) lightweight inline popover,
+        (b) BottomSheet, (c) a new shared <Disclosure>. CC lean: (a) inline popover —
+        read-only, avoids overloading form vocabulary. YOUR CALL.
+   R-2  POPOVER CONTENT. What it shows on tap of the `{icon}{temp}°` trigger. Options:
+        matched-hour temp + condition label only; OR + the surrounding ~3 hours; OR +
+        the day's high + rain%. CC lean: matched hour (temp + label) + rain% for the
+        day, kept to one glanceable card. YOUR render.
+   R-3  POPOVER TRIGGER + A11Y. The existing rail indicator becomes the trigger;
+        needs >=44px hit area (invisible padding) + aria-label
+        ("Weather for {event}: {label}, {temp}°") + dismiss on outside-tap/Esc.
+        Confirm the trigger placement (rail vs facts line).
+   R-4  RAIN BANNER — TONE + TOKEN. Frank's "cool parent" framing => FRIENDLY heads-up,
+        not alarm. (a) background token: --as-info-soft (#EFF6FF, calm/informational)
+        vs --as-warning-soft (#FEF3C7, warmer "bring an umbrella"). MUST be an existing
+        token. CC lean: --as-info-soft (matches the friendly framing). (b) copy tone +
+        icon. YOUR render.
+   R-5  RAIN BANNER — PLACEMENT + TRIGGER THRESHOLD + DISMISSAL. Which surface(s):
+        home, schedule, or both? Threshold: precipitation_probability_max >= N%
+        (parish used 50; named constant). Dismissal: sessionStorage so it doesn't nag.
+        CC lean: home only, >=50%, session-dismissible. YOUR call on surface + N.
+   R-6  FORECAST WINDOW CONSTANT. Parish rule = "next event within 10 days"; Aster
+        hourly is reliable ~7 (forecast_days=7), daily extends further. Confirm
+        WEATHER_FORECAST_WINDOW_DAYS (CC lean: 10, with the per-row hourly indicator
+        returning null beyond hourly coverage — no fabrication).
+   R-7  RATIFY THE SEQUENCE (PR-1 foundation first; PR-2/3/4 after the render).
+
+------------------------------------------------------------------------------
+4. DESIGN NORTH STAR (carry into the render)
+------------------------------------------------------------------------------
+   - DELIGHT, not operations. A parent glancing at "Saturday's game" gets a small,
+     pleasant "and here's the weather" moment. Mobile-first, big tap targets, legible
+     (the parish a11y conclusion holds: busy parents on phones).
+   - Never fabricate. No forecast (out of window / no coords / fetch fail) => render
+     NOTHING. A null location.name renders nothing, not "Location TBD" in this surface.
+   - Friendly microcopy (§16.3 kindness mandate) — the rain banner is "Looks like rain
+     Saturday — plan the drive," not "PRECIPITATION ALERT."
+   - Honors the locked design system: 44px targets, var(--as-*) only, Lucide icons,
+     the §16.14 detail-page hero/collapsible pattern if the popover ever expands.
+
+------------------------------------------------------------------------------
+WHAT WE NEED
+------------------------------------------------------------------------------
+   - ARCHITECT: render R-1..R-6, ratify R-7. PR-1 (foundation) needs only R-7 to
+     start; PR-2/3/4 need their respective renders. A render doc back (or inline
+     rulings) unblocks the build.
+   - FRANK: nothing further required — your ruling is captured. (Optional: if you have
+     a preference on rain-banner surface — home vs schedule vs both — name it; else CC
+     builds to the architect's render.)
+   Status: PR-1 ready to build on R-7; PR-2..PR-4 BLOCKED on the architect render.
+==============================================================================
+END SPEC + RENDER REQUEST.
+==============================================================================

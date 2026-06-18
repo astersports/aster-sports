@@ -1589,6 +1589,23 @@ at compose time, 6h cache, indoor events skip. Backlog. ~4-6h.
 
 ---
 
+### §4.J2 — Weather parent-delight UX layer (greenlit 2026-06-18)
+
+Frank greenlit the St. Patrick / Manus weather-UX port as a "cool parent"
+delight feature (NOT deferred) — engine stays as-is, build a richer UI layer
+on top, FOUNDATION-FIRST. The #1071 decision-request leaned defer on a utility
+argument; Frank's ruling supersedes with an engagement argument. Spec routed to
+architect: `docs/ARCHITECT_SPEC_REQUEST_WEATHER_2026-06-18.txt` (follows the
+merged decision-request #1071). Plan: (PR-1 foundation) WMO-map consolidation
+(AP#42) + `WeatherContext` (kills the 5x `useWeather` fan-out) + `coordsForEvent`
+— closes the AP#7 org-agnostic-coords leak (the §4.C.2 / P1-2 item); (PR-2)
+`WeatherPopover`; (PR-3) `RainAlertBanner` (friendly tone per Frank's framing);
+(PR-4) `forecastWindow` helper. Each <=150 LOC, var(--as-*) only, AP#43 + AP#46
+guards. **Status: PR-1 ready on architect sequence-ratify (R-7); PR-2..PR-4
+BLOCKED on architect render (R-1..R-6).**
+
+---
+
 ### §4.K — Dependabot PR #147
 
 Per `AUDIT_DAY_2026-05-16_FINAL_CLOSE:85`: needs workflow-read token
