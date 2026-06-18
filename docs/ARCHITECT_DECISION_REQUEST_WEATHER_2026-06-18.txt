@@ -1,0 +1,195 @@
+==============================================================================
+CC -> ARCHITECT : DECISION REQUEST , WEATHER UX LAYER (St. Patrick / Manus spec)
+Date 2026-06-18. Per §11.8 rule 6. Origin: Frank attached a Manus-authored spec
+("Weather Functionality , Build Instructions for Claude Code") proposing to bring
+the St. Patrick parish site's weather UX into Aster, and asked: is it superior or
+inferior to Aster's existing weather build; if superior, integrate. CC verified the
+spec's claims against live code (file:line below) and routes the build-scope fork
+here. Each item: REQUEST · EVIDENCE · OPTIONS+REQUIREMENTS · CC LEAN (AP#39).
+Plain text + full chat paste + delivered as a file.
+==============================================================================
+
+CONTEXT / DIAGNOSIS (live, this session , every claim verified against code)
+
+  THE REFRAME: the Manus doc is NOT a competing weather build. It is a spec to add
+  the parish site's UX *on top of Aster's existing engine*, and it concedes the
+  engine point itself ("You are NOT porting parish code... Aster's existing weather
+  primitives... better factored than the parish version", §0). So "superior/inferior"
+  splits in two: ENGINE (data/fetch) vs UX (presentation).
+
+  ENGINE , Aster wins. Verified:
+    - src/hooks/useWeather.js : hourly Open-Meteo hook. Uses &timeformat=unixtime
+      (line 76) so hour-matching is pure epoch math , dodges the DL-13 TZ-shift trap
+      the parish version is described as having. Dual cache: 30-min sessionStorage
+      (line 64-68) + localStorage last-known-good fallback on fetch failure
+      (line 90-96) + signout cache-buster (line 17-26). getWeatherForTime() matches
+      closest hour within a 2h window (line 103-113). forecast_days=7 (line 76).
+    - src/lib/engine/resolvers/tournamentWeather.js : DAILY endpoint (temp max +
+      precipitation_probability_max, line 58-60), PURE with injected fetch per AP#27
+      (line 55), never fabricates , returns [] on missing coords/dates/failure
+      (line 56, 65, 72). weatherLocationFrom(events, locations) picks first
+      event-location with lat/lon (line 81-90).
+    - src/lib/engine/renderers/weather.js : email/HTML per-day strip (table-based,
+      inline-styled per §13).
+    The parish version (per the doc's own review, §6) couples timezone math +
+    scheduling + weather-querying into one untestable component , the exact
+    anti-pattern Aster's engine already avoids.
+
+  UX , parish is richer, BUT calibrated for a different audience. Verified what
+  Aster renders TODAY:
+    - Inline indicator only: EventCard.jsx:80-82 renders `{icon} {temp}°` when
+      timeState === 'upcoming'. Fed per-event via getWeatherForTime in
+      DateGroupedList.jsx:29 (and GamesView). Home pages pass the same.
+    - NO tappable popover, NO rain-alert banner, NO explicit forecast-window helper,
+      NO WeatherContext. Confirmed absent: grep for WeatherPopover / RainAlertBanner
+      / isWithinForecastWindow / WeatherContext / src/components/weather/ = 0 hits.
+
+  THE LOAD-BEARING JUDGMENT (indoor vs outdoor):
+    Legacy Hoopers = AAU youth basketball = INDOOR gyms. The parish feature's value
+    was high because parish events are OUTDOOR and the audience is elderly. For
+    indoor hoops, weather is genuinely low-stakes (drive/parking/morning-of logistics
+    at most). The one thing the parish build does better , richer weather UX , is the
+    thing THIS org needs least. This is the crux of CC's lean below.
+
+  ONE CORRECTION to the Manus doc (AP#60 verification): it says coords are
+  "hardcoded at 7 callsites" implying literal hex. They are ALREADY centralized to
+  WEATHER_DEFAULT_COORDS (constants.js:42-43 = [41.03, -73.76], TZ America/New_York)
+  and locked by a test (homeSignalInvariants.test.js:23-27 asserts the three homes
+  use the constant and do NOT hardcode literal lat/lon). The 5 live consumers,
+  ParentHomePage:47, AdminHomePage:45, CoachHomePage:44, SchedulePage:46,
+  UpcomingEvents:21, all call useWeather(...WEATHER_DEFAULT_COORDS). So the real
+  issue is the constant is ORG-AGNOSTIC (every org gets Westchester), NOT that it is
+  duplicated. The dedup half of AP#7 is already closed; the multi-tenant half is not.
+
+  ASTER ALREADY OWNS THE ONE GOOD IDEA: docs/AUDIT_HOME_REDESIGN_L99.md flags the
+  org-agnostic coords as P1-2 / AP#7 (line 45 α3, line 149, AP#7 "open" line 199)
+  and lists "Full multi-tenant weather (org-level coordinates + per-event
+  location-driven weather + dynamic TZ)" as known future scope (line 317-318). The
+  parish is single-tenant , it does not even have this. So Task B is Aster's own
+  backlog item, not a parish import.
+
+------------------------------------------------------------------------------
+W-1 , HEADLINE: adopt the parish weather UX, a slice, or defer?
+------------------------------------------------------------------------------
+  REQUEST: how much of the Manus A->E plan do we build now?
+  OPTIONS:
+    (A) DEFER the UX layer. Keep the engine as-is. Build no popover/banner/window
+        UI. Revisit the full plan the day an outdoor-sport tenant onboards (when
+        C/D actually pay off). REQUIRES: nothing , zero code.
+    (B) COORDS SLICE ONLY (Manus Task A + B). Consolidate the duplicated WMO maps
+        + close the org-agnostic coords leak (AP#7). No new parent-facing UX.
+        REQUIRES: see W-2 + W-3.
+    (C) FULL BUILD (Manus A->E). Coords + WeatherContext + tappable popover +
+        rain-alert banner + window gating. REQUIRES: W-2..W-5, ~5 PRs, new
+        parent-facing surfaces.
+  CC LEAN: (A) DEFER , with (B) available on its own merits when multi-tenant/
+    outdoor onboarding actually needs it. Rationale: the engine already won the hard
+    part; the parish UX is polish for an outdoor use case this org does not have
+    (§16.16 "consumption is the gate", AP#51 "don't build speculative surfaces").
+    C/D are low-value indoors and the rain banner brushes §16.5's deliberate
+    restraint on parent-facing noise. NOT a rejection , a "revisit when an outdoor
+    tenant lands, and do B first then since the rest builds on it."
+
+------------------------------------------------------------------------------
+W-2 , TASK A: consolidate the duplicated WMO maps (only if W-1 = B or C)
+------------------------------------------------------------------------------
+  REQUEST: pull WMO_ICONS / WMO_LABELS / rainWord into one lib module?
+  EVIDENCE: the WMO icon map is duplicated , useWeather.js:38-55 and
+    tournamentWeather.js:17-32 carry near-identical copies (AP#42 duplicated
+    constants). rainWord() is inlined only in tournamentWeather.js:28-32.
+  OPTIONS:
+    (A) Create src/lib/weather/wmo.js as the single source; re-export from both.
+        REQUIRES: one pure lib file (<150 LOC) + wmo.test.js. Zero behavior change.
+    (B) Leave as-is. Two small static maps that rarely change; the duplication is
+        inert.
+  CC LEAN: (A) IF we are already touching weather for W-3; otherwise (B). Cheap,
+    pure, low-risk hygiene , but not worth a standalone PR on its own. Bundle it
+    with the coords work or skip.
+
+------------------------------------------------------------------------------
+W-3 , TASK B: location-aware coords + fan-out (only if W-1 = B or C)
+------------------------------------------------------------------------------
+  REQUEST: close AP#7 , source weather from event-location coords with org-default
+    fallback , and reduce the useWeather fan-out?
+  EVIDENCE: 5 consumers each call useWeather(...WEATHER_DEFAULT_COORDS) (callsites
+    above). weatherLocationFrom (tournamentWeather.js:81) already implements the
+    "first event-location with lat/lon" pick , the selector exists, it is just not
+    used by the in-app hooks. locations.lat/lon exist (useLocations select). The
+    audit recommends lifting weather into a context to kill the 5-10x fan-out.
+  OPTIONS:
+    (A) Full: src/context/WeatherContext.jsx (one useWeather call set) + a
+        coordsForEvent(event, locations, orgDefault) selector + repoint all 5
+        consumers. REQUIRES: provider + selector + 5 repoints + AP#43 cross-surface
+        test. Closes fan-out AND the coords leak in one move.
+    (B) Coords-only, no context: add coordsForEvent + pass per-surface, leave the
+        hook fan-out. REQUIRES: selector + repoints, no provider. Smaller, but
+        leaves the fan-out the audit flagged.
+    (C) Defer (folds into W-1 = A).
+  CC LEAN: (A) , but only WHEN W-1 picks B or C. If we do the coords work at all, do
+    it once and correctly (context + selector), because partial coord handling is
+    the kind of half-measure that gets re-audited. Note: this is real platform value
+    independent of the parish , it is the AP#7 item , so it is the FIRST thing to
+    build if/when multi-tenant onboarding lands, regardless of the popover/banner.
+
+------------------------------------------------------------------------------
+W-4 , TASKS C/D/E: popover, rain banner, window gating (only if W-1 = C)
+------------------------------------------------------------------------------
+  REQUEST: build the three parent-facing UX pillars?
+  EVIDENCE / per-pillar read:
+    - C (popover): Aster shows `{icon}{temp}°` already (EventCard:80). A detail
+      popover adds surrounding-hours / day-high / rain%. Low marginal value indoors.
+    - D (rain banner): a precip-over-threshold banner. Lowest value indoors; also
+      adds a standing parent-facing surface , tension with §16.5 noise restraint.
+    - E (window gating): "within N days" rule on the row. NOTE , Aster ALREADY gates
+      implicitly: forecast_days=7 (useWeather:76) + the 2h match window
+      (useWeather:112) mean an event beyond hourly coverage yields null and renders
+      nothing. E is mostly formalizing existing behavior as a named rule.
+  OPTIONS:
+    (A) Build C+D+E now. REQUIRES: WeatherPopover.jsx + RainAlertBanner.jsx
+        (each <150 LOC, var(--as-*) tokens only, >=44px targets, aria-labels,
+        sessionStorage dismissal) + forecastWindow.js helper + AP#43 tests +
+        AP#46 visual evidence + the §9 design rulings (see W-5).
+    (B) Build E only (cheap, formalizes the window) , skip C/D.
+    (C) Defer all three (folds into W-1 = A).
+  CC LEAN: (C) DEFER. These are the pillars whose value is lowest for indoor hoops
+    and highest for an outdoor tenant we do not have yet. Revisit on outdoor
+    onboarding. If forced to ship something, E-only (B) is the only piece with a
+    clean cost/value , but even E is largely already happening.
+
+------------------------------------------------------------------------------
+W-5 , DESIGN RULINGS the Manus doc defers to you (only if W-1 = C / W-4 = A)
+------------------------------------------------------------------------------
+  REQUEST: the Manus §9 open question , which surface primitive + which token?
+  CONTEXT: Aster distinguishes BottomSheet (<=2 controls) from FullScreenForm (>=3,
+    AP#15). The popover + rain banner are READ-ONLY disclosures, not forms.
+  SUB-DECISIONS (architect render):
+    (a) popover primitive: lightweight inline popover vs BottomSheet vs a new
+        Disclosure component. CC lean: lightweight inline popover (read-only, no
+        form vocabulary , avoids overloading BottomSheet/FullScreenForm semantics).
+    (b) rain-banner background token: which existing token (e.g. --as-info-soft or
+        --as-warning-soft). MUST be an existing token , NO invented tokens (§0/§3).
+        CC lean: --as-warning-soft (#FEF3C7) for an actionable "rain likely" warmth,
+        or --as-info-soft (#EFF6FF) if you want it informational not alarming.
+  CC LEAN: defer both to the architect's render , flagged here only so they are not
+    rediscovered mid-build. Moot if W-1 != C.
+
+------------------------------------------------------------------------------
+SEQUENCE + WHAT WE NEED
+------------------------------------------------------------------------------
+  CC RECOMMENDATION IN ONE LINE: W-1 = (A) DEFER. The engine is the part that is
+  hard to get right and Aster already owns it; the parish UX is outdoor-audience
+  polish. Hold the whole UX layer until an outdoor-sport tenant onboards, at which
+  point build W-3 (coords) FIRST, then W-4 (C/D/E), to your W-5 render.
+
+  IF the architect/Frank instead want forward motion now, the cleanest non-deferral
+  is W-1 = (B): W-2 (A) + W-3 (A) , pure infra that closes the real AP#7 debt with
+  no speculative parent-facing UX , then stop.
+
+  WHAT WE NEED:
+    - ARCHITECT: rule W-1 (the headline). If B or C: rule W-2, W-3; if C: rule W-4
+      + render W-5.
+    - FRANK: confirm the indoor-basketball framing holds (is any current/near-term
+      tenant outdoor?) , that single fact flips the value calculus on C/D.
+==============================================================================
+END DECISION REQUEST.
+==============================================================================
