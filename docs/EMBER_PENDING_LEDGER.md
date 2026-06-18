@@ -1601,8 +1601,13 @@ merged decision-request #1071). Plan: (PR-1 foundation) WMO-map consolidation
 — closes the AP#7 org-agnostic-coords leak (the §4.C.2 / P1-2 item); (PR-2)
 `WeatherPopover`; (PR-3) `RainAlertBanner` (friendly tone per Frank's framing);
 (PR-4) `forecastWindow` helper. Each <=150 LOC, var(--as-*) only, AP#43 + AP#46
-guards. **Status: PR-1 ready on architect sequence-ratify (R-7); PR-2..PR-4
-BLOCKED on architect render (R-1..R-6).**
+guards. **Status (2026-06-18): architect render received (R-1..R-7), PR-1 ratified
+(R-7). CC verification filed `docs/CC_VERIFICATION_WEATHER_RENDER_2026-06-18.txt`:
+VF-1 corrects R-4 (the render's `--as-cobalt`/`--as-card`/`color-mix` tokens don't
+ship; rain banner reuses the real `SEVERITY_TOKENS.info` = `--as-info`/`--as-info-soft`
+per index.css:35-36) — blocks PR-3 as written, not PR-1; VF-2 = one WeatherContext
+coord-sourcing confirm before PR-1 wiring (CC lean: one representative coord now,
+per-venue later). PR-1 GO on VF-2 ack.**
 
 ---
 
