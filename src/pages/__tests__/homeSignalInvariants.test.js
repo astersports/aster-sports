@@ -20,11 +20,12 @@ describe('home signal invariants', () => {
     expect(read('hooks/useAdminNeedsYou.js')).not.toMatch(/domain:\s*['"]rsvp['"]/);
   });
 
-  it('all three homes pull weather from the shared WEATHER_DEFAULT_COORDS — no hardcoded lat/lon (AP#7)', () => {
-    for (const f of ['pages/ParentHomePage.jsx', 'pages/CoachHomePage.jsx', 'pages/AdminHomePage.jsx']) {
+  it('all weather consumers source weather through the shared WeatherContext — no direct useWeather / hardcoded coords (AP#7/AP#43)', () => {
+    for (const f of ['pages/ParentHomePage.jsx', 'pages/CoachHomePage.jsx', 'pages/AdminHomePage.jsx', 'pages/SchedulePage.jsx', 'components/roster/UpcomingEvents.jsx']) {
       const s = read(f);
-      expect(s, `${f} should use WEATHER_DEFAULT_COORDS`).toMatch(/WEATHER_DEFAULT_COORDS/);
-      expect(s, `${f} should not hardcode 41.x/40.x coords`).not.toMatch(/useWeather\(\s*4[01]\.\d/);
+      expect(s, `${f} should source weather via useWeatherContext`).toMatch(/useWeatherContext/);
+      expect(s, `${f} should not call the useWeather hook directly`).not.toMatch(/\buseWeather\(/);
+      expect(s, `${f} should not reference WEATHER_DEFAULT_COORDS directly`).not.toMatch(/WEATHER_DEFAULT_COORDS/);
     }
   });
 

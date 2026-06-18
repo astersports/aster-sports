@@ -5,7 +5,7 @@ import { useSeason } from '../context/SeasonContext';
 import { useActivities } from '../hooks/useActivities';
 import { useNow } from '../hooks/useNow';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
-import { getWeatherForTime, useWeather } from '../hooks/useWeather';
+import { useWeatherContext } from '../context/WeatherContext';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { useCoachNeedsYou } from '../hooks/useCoachNeedsYou';
 import { useParentComingUp } from '../hooks/useParentComingUp';
@@ -18,7 +18,6 @@ import CoachCompCard from '../components/home/CoachCompCard';
 import CoachRosterHealthCard from '../components/home/CoachRosterHealthCard';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import { firstNameFrom } from '../lib/greetings';
-import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
 import { isHomeOffSeason } from '../lib/home/offSeason';
 import { useActivePrograms } from '../hooks/useActivePrograms';
 import { useCoachComp } from '../hooks/useCoachComp';
@@ -41,7 +40,7 @@ export default function CoachHomePage() {
     [needsYou.items],
   );
   const comingUp = useParentComingUp(activities, now, excludeIds);
-  const weather = useWeather(...WEATHER_DEFAULT_COORDS);
+  const { weather, getWeatherForTime } = useWeatherContext();
   const { byTeamId: recordsByTeam, loading: recordsLoading } = useOrgTeamRecords(orgId);
   const activePrograms = useActivePrograms();
   const offSeason = useMemo(() => isHomeOffSeason(activePrograms.programs, activities, now), [activePrograms.programs, activities, now]);

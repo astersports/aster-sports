@@ -22,7 +22,7 @@ vi.mock('../../context/AuthContext', () => ({
 }));
 vi.mock('../../hooks/useDensity', () => ({ useDensity: () => ({ density: 'minimal' }) }));
 vi.mock('../../hooks/usePreferences', () => ({ usePreferences: () => ({ preferences: null, updatePreference: () => Promise.resolve() }) }));
-vi.mock('../../hooks/useWeather', () => ({ useWeather: () => null, getWeatherForTime: () => null }));
+vi.mock('../../context/WeatherContext', () => ({ useWeatherContext: () => ({ weather: null, getWeatherForTime: () => null }) }));
 vi.mock('../../hooks/useRefetchOnVisible', () => ({ useRefetchOnVisible: () => {} }));
 vi.mock('../../components/schedule/WeekStrip', () => ({ default: () => <div data-testid="week-strip" /> }));
 vi.mock('../../components/schedule/GamesView', () => ({ default: () => <div data-testid="games-view" /> }));

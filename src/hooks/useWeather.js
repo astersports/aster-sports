@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { registerCacheBuster } from '../lib/cacheBuster';
 import { WEATHER_TZ } from '../lib/constants';
+import { WMO_ICONS, WMO_LABELS } from '../lib/weather/wmo';
 
 // v2 keys (DL-13, PR-C'): the hourly shape changed from TZ-naive local
 // strings to epoch ms (`timeMs`). Versioned prefixes orphan any v1
@@ -34,25 +35,6 @@ function cacheKeyFor(lat, lon) {
 function fallbackKeyFor(lat, lon) {
   return `${FALLBACK_PREFIX}${lat.toFixed(3)},${lon.toFixed(3)}`;
 }
-
-const WMO_ICONS = {
-  0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️',
-  45: '🌫️', 48: '🌫️',
-  51: '🌧️', 53: '🌧️', 55: '🌧️',
-  61: '🌧️', 63: '🌧️', 65: '🌧️',
-  71: '🌨️', 73: '🌨️', 75: '🌨️',
-  80: '🌦️', 81: '🌦️', 82: '🌦️',
-  95: '⛈️', 96: '⛈️', 99: '⛈️',
-};
-
-const WMO_LABELS = {
-  0: 'Clear', 1: 'Mostly clear', 2: 'Partly cloudy', 3: 'Overcast',
-  45: 'Fog', 48: 'Fog', 51: 'Drizzle', 53: 'Drizzle', 55: 'Heavy drizzle',
-  61: 'Rain', 63: 'Rain', 65: 'Heavy rain',
-  71: 'Snow', 73: 'Snow', 75: 'Heavy snow',
-  80: 'Showers', 81: 'Showers', 82: 'Heavy showers',
-  95: 'Thunderstorm', 96: 'Thunderstorm', 99: 'Thunderstorm',
-};
 
 export function useWeather(lat, lon) {
   const [weather, setWeather] = useState(null);
