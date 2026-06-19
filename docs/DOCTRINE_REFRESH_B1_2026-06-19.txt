@@ -1,0 +1,81 @@
+DOCTRINE REFRESH — PASS B / B1 (structural slim: extract history, reconcile reality)
+Date: 2026-06-19
+Branch: docs/claude-md-refresh-b1
+Scope: CLAUDE.md + new docs/archive/CLAUDE_DOCTRINE_HISTORY.md + this handoff txt.
+No src/ changes. No schema.
+Guard: handoff named DOCTRINE_REFRESH_B1_* (not CC_SESSION_HANDOFF_*) so nothing in the diff
+matches ledger-reconcile-guard globs (docs/AUDIT_*, docs/*_DESIGN_SPEC.md,
+docs/CC_SESSION_HANDOFF_*, docs/STATE_OF_AFFAIRS_L99_*). No ledger touch forced.
+
+METHOD
+Two legible passes so no load-bearing rule is dropped in a blind rewrite. B1 is the
+extract-history + reality-reconcile pass. Every removal is a verbatim move to the archive
+with a grep-verifiable pointer left in place; live rules stay in CLAUDE.md.
+
+THE MOVES (4) — each: verbatim content → archive heading + pointer stub in CLAUDE.md
+Pointer-stub shape (grep-verifiable both directions): the literal string
+`Moved to docs/archive/CLAUDE_DOCTRINE_HISTORY.md → "<heading>"` appears once in CLAUDE.md
+and the identical <heading> appears once in the archive.
+
+1. §5 schema illustrative tables — moved: intro blockquote + foundation 001–012 table +
+   Wave-migrations table + Ghost-migrations list. KEPT IN PLACE (live rules): "### RLS
+   Pattern", the auth.uid() subselect-wrapper pattern, "Key Field Decisions (locked)". Cut
+   line = everything between the §5 header and "### RLS Pattern" moves; RLS Pattern onward stays.
+   Archive heading: "§5 SCHEMA ILLUSTRATIVE TABLES (foundation 001–012 + Wave + Ghost migrations)".
+
+2. §8 build prompt order — moved: the 1-A→7-C table + "Financial data loaded" paragraph +
+   "⬅ Status reconciled" paragraph (the whole body). No live rule remains in §8; build status
+   lives in docs/EMBER_PENDING_LEDGER.md. Pre-pull check done: §16.12 still carries the
+   per-player game-stats lock ("Game stats | NO (team-level only locked)"), so pulling §8's
+   status note loses nothing load-bearing. Archive heading:
+   "§8 BUILD PROMPT ORDER (historical build-tracking)".
+
+3+4. Retired APs #50 / #56 / #59 — KEPT IN PLACE: the "RETIRED <date>" line + the one
+   "Standing rule (replaces AP #XX)" paragraph in each. Moved: the "Rationale:" paragraph and
+   the "Cross-references that previously cited AP #XX" list. Archive headings:
+   "AP #50 / #56 / #59 RETIREMENT — rationale + cross-references".
+
+REWORDS (2) — accuracy reconcile, in place (not moved)
+
+A. §54 arming-race fix (settled accuracy fix per the B1 ruling, not a decision). The "exact
+   phrasing" Discipline block now reads: flip ready in the same MCP burst, THEN arm auto-merge
+   once the first required check has registered; if enable_pr_auto_merge returns `unstable`
+   (combined status still empty), direct-merge on `clean` once all checks report success. A
+   dated "Arming-race amendment (2026-06-19)" note records the mechanism observed across
+   #1081–#1084 and points at the §15 relaxation.
+
+B. §11.7 operational rule #2 (verify-before-stack INTERIM webhook workflow) — kept INTERIM,
+   added a dated "Expiration stamp (2026-06-19)" per AP #62. Notes merge webhooks WERE observed
+   delivering this session (#1081–#1084) as evidence the regression may be resolving, but not
+   yet confirmed reliable; CI-success/new-push/merge-conflict transitions still never delivered.
+   Keep until verified reliable, then remove.
+
+JUDGMENT CALLS FLAGGED FOR YOUR ONE-LOOK (veto any)
+- Pointer trailing clause is accurate-per-site, not the literal "stays above" everywhere: for
+  §5 the live rules are BELOW the pointer (so the stub says "stay below"); for §8 there is no
+  live rule (stub says so); for the retired APs the live rule is ABOVE ("stays above"). The
+  grep-verifiable `Moved to ... → "<heading>"` portion IS identical everywhere; only the
+  informational tail varies to avoid stating something false. If you want the literal identical
+  string everywhere regardless of geometry, say so and I'll force it.
+- §56 / §59: I moved the trailing one-liner "See §4.AQ for the policy lock + Wave 2.C close."
+  into the archive together with the rationale/cross-refs (it is historical, not a rule). The
+  ruling named only "rationale paragraphs + cross-references lists"; this line was unaddressed.
+  Easy to pull back into CLAUDE.md if you'd rather keep the breadcrumb live.
+- §11.7 rule #2 stamp wording is MINE (the exact stamp text did not survive the relay; you
+  delegated draft-and-approve). Replace with your intended wording if different.
+- Residual tension NOT touched (out of B1 scope, flag for B2): §11.7 operational rule #1 still
+  says "Auto-merge stays armed ... in the same MCP burst as create_pull_request", which the
+  §54 arming-race amendment now qualifies. Left as-is pending your call.
+
+VERIFICATION
+- Each of the 5 headings: grep count 1 in CLAUDE.md (pointer) AND 1 in the archive (heading).
+- Live rules present in CLAUDE.md: "### RLS Pattern", "Key Field Decisions (locked)", all three
+  "Standing rule (replaces AP #5x)" lines.
+- Moved content absent from CLAUDE.md: wave_1h... = 0, "Skeleton + auth + layout + shared" = 0,
+  "comfort over velocity. Empirical signal" = 0.
+- src/ untouched.
+
+SHIP
+Show full diff for one-look approval (this turn), then on approval: push, create PR, ready +
+auto-merge SQUASH (arming per the new §54 timing), direct-merge on clean. Report merged SHA.
+B2 (anti-pattern compression) follows, with the §11.7.7 fresh-eyes pass before it merges.

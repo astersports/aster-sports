@@ -205,45 +205,7 @@ Tenant-specific values (team names, team colors, season names, competition-type 
 
 ## 5. DATABASE SCHEMA (190 migration files in repo as of 2026-06-02 — consult the directory for the canonical count; registered-vs-mirror parity tracked separately per AP #21)
 
-> The illustrative tables below capture the foundation (001–012) and select Wave migrations.
-> They are NOT exhaustive, and the per-file 001–012 names below are partly stale (consult the directory for actual filenames). Actual count 190 files in `supabase/migrations/` (as of 2026-06-02).
-> Source of truth for the full list is the migrations directory; consult it directly when
-> reasoning about current schema.
-
-| # | File | What It Does |
-|---|---|---|
-| 001 | foundation.sql | organizations, user_roles (membership; there is no `org_members` table), seasons, LH seed |
-| 002 | programs_teams.sql | programs, team_staff, LH 5 teams seed |
-| 003 | players_guardians.sql | players, guardians, player_guardians, roster_members, pricing_tiers, payment_plans, discount_codes, registrations, payments, form_fields, form_responses, waivers, waiver_signatures |
-| 004 | activities.sql | events (was "activities" — table renamed mid-flight; migration filename retained per archive doctrine), event_change_audit |
-| 005 | rsvp_checkin_interactions.sql | event_rsvps (was rsvps), check_ins, event_duties (was activity_duties), event_rides (was activity_rides), event_comments (was activity_comments), event_views (was activity_views), player_activations |
-| 006 | messaging.sql | messages, message_reactions, message_reads |
-| 007 | notifications.sql | notifications |
-| 008 | locations_opponents.sql | locations, opponents, FK additions, LH venue seeds |
-| 009 | invites.sql | team_invites |
-| 010 | scoring.sql | game_results, game_plays |
-| 011 | financials.sql | Phase 7 — TBD |
-| 012 | indexes_views.sql | all performance indexes |
-
-#### Wave migrations (May 4–5, 2026 — canonical version strings)
-| Version | Name | What It Does |
-|---|---|---|
-| 20260504190331 | wave_1h_rls_with_check_hygiene_24_policies | WITH CHECK on 24 ALL/UPDATE policies |
-| 20260504213434 | wave_3b_hardening_anon_column_grants | Column-level anon grants on events/game_results/tournaments |
-| 20260504230402 | wave_5b_game_plays_table | game_plays for live scoring play-by-play |
-| 20260505024916 | wave_2d3_event_arrivals_and_checklist_state | event_arrivals + coach_checklist_state on events |
-| 20260505115253 | wave_7b2_season_rollover_schema | seasons.status + season_rollovers audit table |
-| 20260505120640 | wave_7a_financials_schema | financial_accounts + financial_transactions + coach_payouts |
-| 20260505140316 | wave_7a_add_processing_fee_cents | processing_fee_cents column + family_balances view |
-| 20260505161540 | user_roles_self_privilege_escalation_fix | Split user_roles_self into SELECT + INSERT(parent only) |
-
-#### Ghost migrations (applied via SQL editor, not registered — known divergence)
-**Audit-day reconciliation (Wave 1+2.A, 2026-05-28):** 16 ghost migrations exist as repo files but are NOT registered in `supabase_migrations.schema_migrations` (the 5 originally documented below + 13 stale legacy-numbered `023_*`–`033_*` files that were renumbered to timestamp versions but never deleted from the repo — pre-PR-#566 state). Plus 29 orphan applied changes (DB-registered versions whose repo files were renamed to different timestamps, AP #21 mirror-discipline violations) — including 8 with NO repo mirror at all (backfilled in PR #566). Wave 2.A #23 reconciliation (PR #566): 6 AP #21 drift files renamed, 8 backfill mirrors written; the 13 stale files were slated for deletion but 6 (023_*–028_*) REMAIN present as of 2026-05-29 (deletion incomplete — D1-4). Schemas are live in production; if running `supabase db reset`, the 5 originally-documented ghosts are needed to recreate the schema.
-- `20260504_messaging.sql` — messages table + message_reads + RLS
-- `20260504_dm_threads.sql` — dm_threads (user_a/user_b) + messages.dm_thread_id + RLS
-- `20260504_ride_requests.sql` — event_ride_requests table + RLS
-- `20260504_game_results_cascade_delete.sql` — FK CASCADE on game_results.event_id
-- `20260504_rls_cleanup_dangling_policies.sql` — drops orphaned org_announcements/message_drafts policies
+Moved to docs/archive/CLAUDE_DOCTRINE_HISTORY.md → "§5 SCHEMA ILLUSTRATIVE TABLES (foundation 001–012 + Wave + Ghost migrations)". The illustrative/partly-stale dated tables (foundation 001–012, Wave migrations, Ghost migrations) live there; the source of truth for current schema is the migrations directory (`supabase/migrations/`). Live rules (the RLS Pattern, the `auth.uid()` subselect-wrapper pattern, and "Key Field Decisions (locked)") stay below.
 
 ### RLS Pattern
 ```sql
@@ -398,35 +360,7 @@ as-pulse, as-fade-in, as-pulse-dot, as-bounce-tap, as-fill-grow, card-expand, sh
 
 ## 8. BUILD PROMPT ORDER
 
-| # | Prompt | Status |
-|---|---|---|
-| 1-A | Skeleton + auth + layout + shared | ✅ DONE |
-| 1-B | Admin home + season mgr + team mgr | ✅ DONE |
-| RESET | Foundation Reset (token + visual fix) | ✅ DONE |
-| 2-A | Roster + player/guardian CRUD | ✅ DONE |
-| 2-B | Schedule + weather + density | ⚠ PARTIAL — schedule + density done; weather wired to coach/admin home |
-| 2-C | Activity CRUD wizard | ✅ DONE |
-| 2-D | RSVP + event detail + check-in | ✅ DONE |
-| 2-D2 | Ride board + duties + comments | ✅ DONE |
-| 2-D3 | Game day checklist + running late | ✅ DONE — arrival board, parent status buttons, coach checklist |
-| 2-E | Availability heatmap | ✅ DONE — per-player attendance grid with streak fire icon |
-| 3-A | Location + opponent mgr | ⚠ PARTIAL — locations seeded (9 venues), no mgmt UI |
-| 3-B | Calendar sync + public schedule + QR | ✅ DONE — public schedule page; calendar sync (PR #342 V-23 iCal); QR SHIPPED (`qrcode.react` + `ShareScheduleButton.jsx`) |
-| 3-C | Home dashboard + inline RSVP | ✅ DONE |
-| 4-A | Team chat + announcements | ✅ DONE — channels, DM threads, unread badges, message deletion |
-| 4-B | Save & Message Team + auto-notifications | |
-| 5-A | Quick score entry + records | ✅ DONE — records page with standings + tournament scorebooks |
-| 5-B | Live scoring interface | ✅ DONE — play-by-play, stats tab, subs sheet, fouls, undo toast |
-| 5-C | Player stats + box score | |
-| 6-A | Parent onboarding + QR invites | ⚠ PARTIAL — auto-link guardians done; QR invites not |
-| 7-A | Financial dashboard | ✅ DONE — season picker, net-to-bank, LeagueApps import, record payment |
-| 7-B | Multi-org + season rollover | ✅ DONE (7-B.2) — 5-step rollover wizard with atomic execution |
-| 7-C | PWA + auth upgrades | ✅ DONE — sw.js, manifest, install prompt, apple-touch-icon |
-
-#### Financial data loaded (May 5–6, 2026)
-LeagueApps import across two waves: May-5 initial import (100 accounts), May-6 retrospective Fall 2025 top-up for families who joined Spring 2026 first (64 additional accounts). Current state: 164 accounts across 3 seasons (Fall 2025 + Winter 2025-26 + Spring 2026), 244 transactions, $166,910 billed, $165,635 gross / $160,244 net to bank. Email-first dedup. DeMasi: 2 legitimate co-guardian rows (no merge needed). KHOJASTEH: family correctly modeled with both parents linked to Aubtin via player_guardians; financial_accounts attached to mom (Anjella Teimoori).
-
-⬅ Status (reconciled 2026-06-02 — see EMBER_PENDING_LEDGER §4.0 + §4.BV for the verified index): in-app QR **SHIPPED** (`qrcode.react` dep + `ShareScheduleButton.jsx`) — the 3-B/6-A QR arc is no longer unbuilt. Already DONE since this list was written: 2-B weather (Open-Meteo, wired), 3-A location mgr UI (`/admin/locations`), schedule-change notifications, coach_roundup briefing, QR, **4-B auto-notifications** (Stream A handler gates on `organizations.auto_notifications.reminders_enabled` per Wave 3.A #19 P0-3 closure, PR #643; the operator settings UI — `AutoNotificationSettingsForm` at `/admin/settings` → Communications — shipped 2026-06-09 with the admin-gated `set_org_auto_notifications` RPC). BLOCKED: 5-C player stats/box score — §16.12 forbids per-player game stats in 2026 (do not build).
+Moved to docs/archive/CLAUDE_DOCTRINE_HISTORY.md → "§8 BUILD PROMPT ORDER (historical build-tracking)". The build-prompt-order table, the "Financial data loaded" note, and the "⬅ Status reconciled" paragraph live there; live build status is tracked in `docs/EMBER_PENDING_LEDGER.md`. The per-player game-stats lock that the old status note referenced is carried live by §16.12. No live rule remains in this section.
 
 ---
 
@@ -602,19 +536,7 @@ regardless of surface breadth. §16.15 2-pass deep-read addendum per
 category to close the cascade rate inherent to line-by-line at broad
 scope. See PLATFORM_PRIORITIES.md §17.3 + §17.8.
 
-Rationale: comfort over velocity. Empirical signal that drove the
-retirement — home page LCP regressed to ~5s (vs §17.1 1.5s target)
-without the surface methodology catching it because perf was deferred
-to Wave 2 RUM-data availability. "Comfort level of clean code in
-current state" is the operative criterion before next-phase build
-engages, not perf budgets or architectural invariants alone.
-
-Cross-references that previously cited AP #50:
-- AP #56, #58, #59 — principles stand (stop-conditions, cross-batch
-  synthesis, close-when-exhausted); "narrow-scope" framing was not
-  in their active rule language, so no edit needed.
-- AP #61 — reworded to drop the "parallel narrow-scope agents per
-  AP #50" methodology line; pre-phase audit gate principle remains.
+Moved to docs/archive/CLAUDE_DOCTRINE_HISTORY.md → "AP #50 RETIREMENT — rationale + cross-references". Live rule (RETIRED line + standing rule) stays above.
 
 51. **Dead-feature mount retirement.** Surfaces that serve no current Frank workflow get retired, not gated by config. Engine Preview removal (PR #398, 2026-05-20) established the precedent. The gate-by-config pattern produces confusing future-Frank ("why is this here?") and accumulates dead-code mass. Promoted 2026-05-22 after 17+ dead-feature surfaces accumulated; promotion criterion (third NEW surface) overwhelmingly met.
 
@@ -717,10 +639,24 @@ PR is ready (not draft)") does.
 Discipline: every agent prompt creating PRs MUST include this exact
 phrasing as an explicit step:
 
-  "Push + create PR + flip ready + enable auto-merge SQUASH **in the
-  same MCP burst as create_pull_request**. Do not return success
-  without confirming PR is ready (not draft) — verify via
-  mcp__github__pull_request_read after enable_pr_auto_merge."
+  "Push + create PR + flip ready in the same MCP burst as
+  create_pull_request. Then arm auto-merge SQUASH once the first
+  required check has registered; if enable_pr_auto_merge returns
+  `unstable` because the combined status is still empty, direct-merge
+  on `clean` once all checks report success. Do not return success
+  without confirming the PR is ready (not draft) — verify via
+  mcp__github__pull_request_read."
+
+**Arming-race amendment (2026-06-19):** the ready-flip stays same-burst,
+but auto-merge ARMING does not — arming in the same burst as
+`create_pull_request` races CI registration and `enable_pr_auto_merge`
+returns `unstable` ("required checks are failing") while the combined
+status is still empty. Arm once the first required check registers, or
+direct-merge on `mergeable_state: clean` once all checks report success.
+Observed across PRs #1081–#1084. (§15's "auto-merge self-fires on green
+CI" is now structurally true since branch-protection required-approval
+was relaxed 2026-06-19; this amendment is about the arming call timing,
+not the merge gate.)
 
 Origin: PRs #275/#276/#277 (anti-pattern #15 footnote — caught 2026-05-19).
 Recurrence: PRs #439, #440, #441 (2026-05-21 — same slip class, same
@@ -770,18 +706,7 @@ should pre-design brake points; in practice Frank IS the external
 direction, and his real-time signals (next move, "go," "stop,"
 routing decisions) replace any pre-locked contract.
 
-Rationale: every prior session where CC invoked AP #56/AP #59 to
-close, Frank's actual signal was to continue. The discipline was
-applying brakes the operator didn't want applied. Comfort over
-velocity remains the §17.8 audit-gate criterion; capacity-pacing
-inside a single session is not.
-
-Cross-references that previously cited AP #56:
-- AP #59 — also RETIRED in the same PR.
-- AP #61 — "Stop conditions per AP #56 + AP #59" line dropped; the
-  pre-phase audit gate principle remains.
-
-See §4.AQ for the policy lock + Wave 2.C close.
+Moved to docs/archive/CLAUDE_DOCTRINE_HISTORY.md → "AP #56 RETIREMENT — rationale + cross-references". Live rule (RETIRED line + standing rule) stays above.
 
 57. **Supabase default privileges auto-grant EXECUTE to anon despite
     REVOKE FROM PUBLIC (extends anti-pattern #23).**
@@ -866,18 +791,7 @@ invoke the indicators as a stop signal. Frank's real-time signals
 (next move, "go," "stop," "1," "2," routing decisions) replace any
 capacity-pacing heuristic.
 
-Rationale: in every prior session where CC invoked AP #59 to close,
-Frank's actual signal was to continue. The discipline applied brakes
-the operator didn't want applied. Comfort over velocity remains the
-§17.8 audit-gate criterion (it governs whether next-phase build
-opens); capacity-pacing inside a single session is not.
-
-Cross-references that previously cited AP #59:
-- AP #56 — also RETIRED in the same PR.
-- AP #61 — "Stop conditions per AP #56 + AP #59" line dropped; the
-  pre-phase audit gate principle remains.
-
-See §4.AQ for the policy lock + Wave 2.C close.
+Moved to docs/archive/CLAUDE_DOCTRINE_HISTORY.md → "AP #59 RETIREMENT — rationale + cross-references". Live rule (RETIRED line + standing rule) stays above.
 
 60. **Fact-grounding discipline — no inference where verification is
 possible.** (CANDIDATE — promotes to permanent on third observed
@@ -1081,7 +995,7 @@ Shared fixtures for E2E live in `e2e/_fixtures/` or `e2e/_helpers/` (underscore 
 **Operational rules** — apply to every session:
 
 1. **Auto-merge stays armed on every PR.** Per §15 the default is `enable_pr_auto_merge` in the same MCP burst as `create_pull_request`.
-2. **Verify-before-stack INTERIM workflow** during the GitHub MCP merge-webhook regression. Before opening a follow-up PR or stacking new work, `pull_request_read` the prior PR to verify its merge state. This rule expires when the webhook regression is closed (per AP #62).
+2. **Verify-before-stack INTERIM workflow** during the GitHub MCP merge-webhook regression. Before opening a follow-up PR or stacking new work, `pull_request_read` the prior PR to verify its merge state. This rule expires when the webhook regression is closed (per AP #62). **Expiration stamp (2026-06-19):** still INTERIM. Merge webhooks WERE observed delivering this session (#1081–#1084 each fired a merge/unsubscribe event), which is evidence the regression may be resolving — but delivery is not yet confirmed reliable across a full session, and CI-success / new-push / merge-conflict transitions are still never delivered. Keep the rule until merge-webhook delivery is verified reliable end-to-end, then remove it per AP #62. Do not let it calcify into permanent doctrine.
 3. **Source hierarchy applied to every claim.** Source 5 (inference) explicitly labeled.
 4. **Pre-phase gate runs before every cutover** per AP #61.
 5. **L99 methodology for every code review** — line-by-line per category with §16.15 2-pass deep-read addendum per PLATFORM_PRIORITIES.md §17.3 + §17.8 (AP #50 RETIRED 2026-05-28; surface-dependent methodology dropped).
