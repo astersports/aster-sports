@@ -10,7 +10,7 @@ import { formatEventTitle } from '../../lib/eventTitle';
 // already-matched `hour`; the day's rain% is fetched on OPEN only (per
 // interaction, never per-row) via the context. Renders nothing when there is
 // no matched hour (never fabricate). ≤150 LOC, var(--as-*) tokens only.
-export default function WeatherPopover({ event, hour }) {
+export default function WeatherPopover({ event, hour, compact = true }) {
   const { fetchDaily } = useWeatherContext();
   const [open, setOpen] = useState(false);
   const [rain, setRain] = useState(null);
@@ -56,11 +56,13 @@ export default function WeatherPopover({ event, hour }) {
         onClick={() => (open ? setOpen(false) : openPopover())}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
         aria-label={label} aria-haspopup="dialog" aria-expanded={open}
-        style={{ position: 'relative', border: 'none', background: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600, lineHeight: 1, color: 'var(--as-text-tertiary)' }}
+        style={{ position: 'relative', border: 'none', background: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: compact ? 11 : 13, fontWeight: 600, lineHeight: 1, color: 'var(--as-text-tertiary)' }}
       >
         {/* invisible ≥44px hit area, centred on the glyph, no layout shift */}
         <span aria-hidden="true" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 44, height: 44 }} />
-        <span aria-hidden="true" style={{ fontSize: 17, lineHeight: 1 }}>{hour.icon}</span>
+        {/* glyph scales with density so it grows alongside the hour numeral
+            (compact rail hour 17px / detailed 24px) — Frank 2026-06-19 */}
+        <span aria-hidden="true" style={{ fontSize: compact ? 16 : 21, lineHeight: 1 }}>{hour.icon}</span>
         {`${hour.temp}°`}
       </button>
       {open && pos && createPortal(

@@ -79,7 +79,7 @@ export default memo(function EventCard({ event, rsvpCount, rideCount, dutyCount,
       <div style={{ flexShrink: 0, width: compact ? 54 : 68, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, borderRight: '1px solid var(--as-border-subtle)', padding: compact ? '10px 0 9px' : '15px 0 13px' }}>
         <span style={{ fontSize: compact ? 17 : 24, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1, color: completed ? 'var(--as-text-tertiary)' : teamColor }}>{hm}</span>
         <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--as-text-tertiary)' }}>{mer}</span>
-        {weather && timeState === 'upcoming' && isWithinForecastWindow(event.start_at) && <WeatherPopover event={event} hour={weather} />}
+        {weather && timeState === 'upcoming' && isWithinForecastWindow(event.start_at) && <WeatherPopover event={event} hour={weather} compact={compact} />}
       </div>
 
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: compact ? '9px 12px 9px 11px' : '15px 14px 15px 13px' }}>
