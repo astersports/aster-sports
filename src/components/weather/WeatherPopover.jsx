@@ -56,11 +56,12 @@ export default function WeatherPopover({ event, hour }) {
         onClick={() => (open ? setOpen(false) : openPopover())}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
         aria-label={label} aria-haspopup="dialog" aria-expanded={open}
-        style={{ position: 'relative', border: 'none', background: 'none', padding: 0, cursor: 'pointer', fontSize: 11, lineHeight: 1, color: 'var(--as-text-tertiary)' }}
+        style={{ position: 'relative', border: 'none', background: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600, lineHeight: 1, color: 'var(--as-text-tertiary)' }}
       >
         {/* invisible ≥44px hit area, centred on the glyph, no layout shift */}
         <span aria-hidden="true" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 44, height: 44 }} />
-        {`${hour.icon} ${hour.temp}°`}
+        <span aria-hidden="true" style={{ fontSize: 17, lineHeight: 1 }}>{hour.icon}</span>
+        {`${hour.temp}°`}
       </button>
       {open && pos && createPortal(
         <div
