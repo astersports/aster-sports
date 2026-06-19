@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSeason } from '../context/SeasonContext';
 import { useHomeRole } from '../hooks/useHomeRole';
 import { isStaff } from '../lib/permissions';
 import { useActiveSeasonTeams } from '../hooks/useActiveSeasonTeams';
@@ -33,6 +34,7 @@ export default function TeamDetailPage() {
   // CLAUDE.md §16.14 follow-up: in-row permission checks (InviteButton
   // etc.) still read realRole via useAuth().
   const { myTeamIds, myChildren } = useAuth();
+  const { activeSeason } = useSeason();
   const { activeRole } = useHomeRole();
   const role = activeRole;
   const { teams, loading: teamsLoading } = useActiveSeasonTeams();
@@ -111,9 +113,7 @@ export default function TeamDetailPage() {
           per §16.14. PR C / V8: "Spring 2026" scope tag below the hero
           surfaces season scope (data IS season-scoped). */}
       <TeamDetailHeroSlot team={team} role={role} summary={recordsLoading ? null : summary} myChild={myChild} myChildPlayer={myChildPlayer} activities={activities} teamId={teamId} data={scheduleData} />
-      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)', padding: '0 4px 8px' }}>
-        Spring 2026
-      </div>
+      {activeSeason?.name && <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)', padding: '0 4px 8px' }}>{activeSeason.name}</div>}
       <CollapsibleSection title="Upcoming" subtitle="next 7 days">
         <UpcomingEvents teamId={teamId} data={scheduleData} />
       </CollapsibleSection>

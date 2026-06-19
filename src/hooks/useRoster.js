@@ -94,6 +94,9 @@ export function useRoster(teamId) {
           if (b) { balance += b.balance; paid += b.paid; }
         }
         p.payment_status = balance <= 0 ? 'paid' : paid > 0 ? 'partial' : 'overdue';
+        // Signed balance for the admin roster money line (PR-1 paymentSignal).
+        // All-seasons per Cat#30 ROSTER-1; scope reconciliation deferred to PR-3.
+        p.balance_cents = balance;
       }
       setPlayers(mapped);
     } catch (err) {
