@@ -120,12 +120,10 @@ export default function TeamDetailPage() {
 
       {rosterLoading ? (
         <LoadingSkeleton variant="list" count={6} />
-      ) : players.length === 0 ? (
-        isStaff(role) ? (
-          <EmptyState icon={Users} title={`No players on ${team.name} yet`} description="Players are added via the admin roster management tools." />
-        ) : (
-          <EmptyState icon={Users} title="Roster not posted yet" description="The coach is still setting up this team's roster. Check back soon." />
-        )
+      ) : players.length === 0 && !isStaff(role) ? (
+        // PR-2 Part A: staff keep RosterSection at 0 players so the Add-player
+        // affordance is present on an empty team; parents see the wait state.
+        <EmptyState icon={Users} title="Roster not posted yet" description="The coach is still setting up this team's roster. Check back soon." />
       ) : (
         <RosterSection team={team} sortedPlayers={sortedPlayers} search={search} setSearch={setSearch}
           sortBy={sortOrder} setSortBy={setSortOrder}

@@ -1,15 +1,21 @@
 import { Lock } from 'lucide-react';
 import RosterControls from './RosterControls';
 import CopyRosterButton from './CopyRosterButton';
+import AddPlayerButton from './AddPlayerButton';
 import PlayerRow from './PlayerRow';
 import CollapsibleSection from '../shared/CollapsibleSection';
 import { useAuth } from '../../context/AuthContext';
 import { isStaff } from '../../lib/permissions';
 import { useRosterHidden } from '../../hooks/useRosterHidden';
+import { useRosterActions } from '../../hooks/useRosterActions';
 
 export default function RosterSection({ team, sortedPlayers, search, setSearch, sortBy, setSortBy, lastFetchedAt, onRefresh }) {
-  const { role, myChildren } = useAuth();
+  const { role, myChildren, orgId } = useAuth();
   const myPlayerIds = (myChildren || []).map((c) => c.playerId);
+  // PR-2 Part A: roster management (admin/coach). realRole-gated (isStaff),
+  // matching CopyRosterButton/InviteButton — not the activeRole money gate.
+  const canManage = isStaff(role);
+  const actions = useRosterActions(team.id, onRefresh);
   // R3: a hidden roster (tryout/camp) returns only the parent's own child via RLS;
   // this line frames that one-child view as privacy-by-design rather than a bug.
   const rosterHidden = useRosterHidden(team.id);
@@ -24,8 +30,9 @@ export default function RosterSection({ team, sortedPlayers, search, setSearch, 
     <CollapsibleSection title="Roster" sectionKey="roster" count={`${sortedPlayers.length}`} subtitle={subtitle} defaultOpen={false}>
       <RosterControls search={search} setSearch={setSearch} sortBy={sortBy} setSortBy={setSortBy} role={role}
         lastFetchedAt={lastFetchedAt} onRefresh={onRefresh} />
-      <div className="flex items-center justify-end" style={{ marginBottom: 8 }}>
-        {isStaff(role) && <CopyRosterButton team={team} sortedPlayers={sortedPlayers} />}
+      <div className="flex items-center justify-end" style={{ marginBottom: 8, gap: 8 }}>
+        {canManage && <AddPlayerButton teamId={team.id} orgId={orgId} teamColor={team.team_color} addPlayer={actions.addPlayer} />}
+        {canManage && <CopyRosterButton team={team} sortedPlayers={sortedPlayers} />}
       </div>
       <div style={{
         backgroundColor: 'var(--as-bg-card)', borderRadius: 10,
@@ -34,7 +41,7 @@ export default function RosterSection({ team, sortedPlayers, search, setSearch, 
       }}>
         {sortedPlayers.map((player, i) => (
           <div key={player.id} className={`as-stagger-${Math.min(i + 1, 8)}`}>
-            <PlayerRow player={player} teamColor={team.team_color} isLast={i === sortedPlayers.length - 1} isMyChild={myPlayerIds.includes(player.id)} teamId={team.id} />
+            <PlayerRow player={player} teamColor={team.team_color} isLast={i === sortedPlayers.length - 1} isMyChild={myPlayerIds.includes(player.id)} canManage={canManage} actions={actions} />
           </div>
         ))}
         {role === 'parent' && rosterHidden && (
