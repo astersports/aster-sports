@@ -5,7 +5,7 @@ import { useSeason } from '../context/SeasonContext';
 import { useActivities } from '../hooks/useActivities';
 import { useNow } from '../hooks/useNow';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
-import { getWeatherForTime, useWeather } from '../hooks/useWeather';
+import { useWeatherContext } from '../context/WeatherContext';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { useRecentAchievements } from '../hooks/useRecentAchievements';
 import { useParentNeedsYou } from '../hooks/useParentNeedsYou';
@@ -19,7 +19,6 @@ import ParentHomeRegistration from '../components/home/ParentHomeRegistration';
 import ParentTail from '../components/home/ParentTail';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import { firstNameFrom } from '../lib/greetings';
-import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
 import { seasonProgress } from '../lib/seasonProgress';
 import { shapeAchievement, shapeChildRecords } from '../lib/home/parentHomeData';
 import { isHomeOffSeason } from '../lib/home/offSeason';
@@ -44,7 +43,7 @@ export default function ParentHomePage() {
   );
   const comingUp = useParentComingUp(activities, now, excludeIds);
   const comingUpDraft = useEventDraftStatus(comingUp);
-  const weather = useWeather(...WEATHER_DEFAULT_COORDS);
+  const { weather, getWeatherForTime } = useWeatherContext();
   const { byTeamId: recordsByTeam } = useOrgTeamRecords(orgId);
   const { achievements } = useRecentAchievements(myTeamIds, now);
 

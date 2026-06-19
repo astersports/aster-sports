@@ -5,7 +5,7 @@ import { useSeason } from '../context/SeasonContext';
 import { useActivities } from '../hooks/useActivities';
 import { useNow } from '../hooks/useNow';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
-import { getWeatherForTime, useWeather } from '../hooks/useWeather';
+import { useWeatherContext } from '../context/WeatherContext';
 import { useAdminNeedsYou } from '../hooks/useAdminNeedsYou';
 import { useParentComingUp } from '../hooks/useParentComingUp';
 import HomeShell from '../components/home/HomeShell';
@@ -16,7 +16,6 @@ import HomeRegistrationCard from '../components/home/HomeRegistrationCard';
 import AdminTail from '../components/home/AdminTail';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import { firstNameFrom } from '../lib/greetings';
-import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
 import { seasonProgress } from '../lib/seasonProgress';
 import { isHomeOffSeason } from '../lib/home/offSeason';
 import { useActivePrograms } from '../hooks/useActivePrograms';
@@ -42,7 +41,7 @@ export default function AdminHomePage() {
     [needsYou.items],
   );
   const comingUp = useParentComingUp(activities, now, excludeIds);
-  const weather = useWeather(...WEATHER_DEFAULT_COORDS);
+  const { weather, getWeatherForTime } = useWeatherContext();
   const openReg = useOpenRegistration();
 
   const name = firstNameFrom(user);

@@ -12,8 +12,7 @@ import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import ScheduleListSections from '../components/schedule/ScheduleListSections';
 import { useDensity } from '../hooks/useDensity';
 import { usePreferences } from '../hooks/usePreferences';
-import { useWeather } from '../hooks/useWeather';
-import { WEATHER_DEFAULT_COORDS } from '../lib/constants';
+import { useWeatherContext } from '../context/WeatherContext';
 import { isStaff } from '../lib/permissions';
 import ShareScheduleButton from '../components/shared/ShareScheduleButton';
 const CreateActivityWizard = lazy(() => import('../components/wizard/CreateActivityWizard'));
@@ -43,7 +42,7 @@ export default function SchedulePage() {
   // SD-1: the dead 'schedule-list' density key is purged — the home-level
   // card_density default (§16.2) is the ONE density control.
   const { density } = useDensity('default');
-  const weather = useWeather(...WEATHER_DEFAULT_COORDS);
+  const { weather } = useWeatherContext();
   const data = useMemo(() => ({ ...scheduleData, weather }), [scheduleData, weather]);
 
   useRefetchOnVisible(refetch);

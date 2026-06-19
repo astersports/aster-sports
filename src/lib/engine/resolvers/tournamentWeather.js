@@ -14,22 +14,7 @@
 // hourly endpoint — the strip is a per-day forecast (FRI/SAT/SUN),
 // matching docs/BRIEFING_FULL_PRESENTATION.html §2's .wx / .wxd.
 
-const WMO_ICONS = {
-  0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️',
-  45: '🌫️', 48: '🌫️',
-  51: '🌧️', 53: '🌧️', 55: '🌧️',
-  61: '🌧️', 63: '🌧️', 65: '🌧️',
-  71: '🌨️', 73: '🌨️', 75: '🌨️',
-  80: '🌦️', 81: '🌦️', 82: '🌦️',
-  95: '⛈️', 96: '⛈️', 99: '⛈️',
-};
-
-// Per-code rain-label word (mockup shows "55% storms" / "96% rain").
-function rainWord(code) {
-  if (code >= 95) return 'storms';
-  if (code >= 71 && code <= 77) return 'snow';
-  return 'rain';
-}
+import { rainWord, WMO_ICONS } from '../../weather/wmo';
 
 const NY_TZ = 'America/New_York';
 const dayFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, weekday: 'short' });

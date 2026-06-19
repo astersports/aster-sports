@@ -7,6 +7,7 @@ import { PreferencesProvider } from './context/PreferencesProvider';
 import { SeasonProvider } from './context/SeasonContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './context/ToastProvider';
+import { WeatherProvider } from './context/WeatherContext';
 import App from './App.jsx';
 import { applyCachedBrandColorsSync } from './lib/orgBrandingCache';
 import { APP_BASE_URL } from './lib/constants';
@@ -42,7 +43,9 @@ createRoot(document.getElementById('root')).render(
           <PreferencesProvider>
             <SeasonProvider>
               <ToastProvider>
-                <App />
+                <WeatherProvider>
+                  <App />
+                </WeatherProvider>
               </ToastProvider>
             </SeasonProvider>
           </PreferencesProvider>
