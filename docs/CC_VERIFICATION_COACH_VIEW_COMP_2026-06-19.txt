@@ -1,0 +1,130 @@
+================================================================================
+CC -> ARCHITECT / FRANK : VERIFICATION + ASSESSMENT OF THE COACH-VIEW + COMP PKG
+================================================================================
+Date 2026-06-19. Reviews ARCHITECT_RENDER_COACH_VIEW + ARCHITECT_RENDER_COACH_COMP
+(+ the two HTML renders). Every DB claim below was re-checked live by CC against
+vrwwpsbfbnveawqwbdmj today (AP#60). Verdict first, then evidence, then the two
+spec-affecting refinements, then the decisions only Frank can close.
+
+--------------------------------------------------------------------------------
+0. VERDICT — AGREE WITH THE DIRECTION
+--------------------------------------------------------------------------------
+The package is sound and well-grounded. The comp deep-dive is a genuine catch:
+assignment (team_staff) and pay (coaching_assignments) are two tables that
+already drift, and the first Staff-tab spec (team_staff only) would have let a
+coach work unpaid silently. Tying the rate into the assign flow is the right
+call. I verified the load-bearing claims; they hold. Two refinements below change
+the comp RPC/UI shape (not the direction). Token :root is locked in §1 so the
+color work isn't built twice.
+
+--------------------------------------------------------------------------------
+1. TOKEN LOCK — raw :root, verbatim from live src/index.css (the architect's ask)
+--------------------------------------------------------------------------------
+The shipped stylesheet uses the §6/§3 names. The render-file palette
+(--as-cobalt/green/red/amber/surface/card/text/...) exists NOWHERE in src/.
+BUILD MAPPING (render palette -> REAL token):
+  --as-cobalt   -> --as-accent      (#C9952E default; LH runtime override #4a8fd4)
+  --as-green    -> --as-success     #16A34A   (+ --as-success-soft #DCFCE7)
+  --as-red      -> --as-danger      #DC2626   (+ --as-danger-soft  #FEE2E2)
+  --as-amber    -> --as-warning     #D97706   (+ --as-warning-soft #FEF3C7)
+  --as-violet   -> --as-academy     #7C3AED   (+ --as-academy-soft)
+  --as-surface  -> --as-bg-page     #F7F8FA
+  --as-card     -> --as-bg-card     #FFFFFF   (hover --as-bg-card-hover #F9FAFB)
+  --as-border   -> --as-border-default #E2E8F0 (subtle --as-border-subtle #EDF2F7)
+  --as-text     -> --as-text-primary  #1A1D23
+  --as-text-2   -> --as-text-secondary #4A5568
+  --as-muted    -> --as-text-tertiary #8896AB  (AA-text floor: --as-text-meta #6B7280)
+  info (cobalt-blue, non-brand) -> --as-info #3B82F6 (+ --as-info-soft #EFF6FF)
+RULES: no color-mix — use the existing `-soft` tokens; gold (--as-gold) is
+achievement-only, never money; money text is plain --as-text-primary/secondary.
+Architect: conform every spec/render token column to the LEFT-of-arrow real names.
+
+--------------------------------------------------------------------------------
+2. VERIFIED LIVE (confirms the architect)
+--------------------------------------------------------------------------------
+  - programs.status values = active, archived ONLY (no 'upcoming'/'draft' in
+    data). So the #2A/#4 season filter is simply status='active' (Summer Select
+    is the only active season). Use that, not a 4-state predicate.
+  - DRIFT CONFIRMED (org e3e95e21): Summer Select 2026 (active) = 2 teams /
+    0 staff / 0 comp.  Spring 2026 (archived) = 5 teams / 7 team_staff rows /
+    11 coaching_assignments rows. The two tables disagree, live.
+  - team_staff: cols (id, team_id, user_id, role, created_at); UNIQUE (team_id,
+    user_id). Clean upsert target; re-assign with a new role = UPDATE role.
+  - No `channels` table. Channels are derived in src/hooks/useChannels.js from
+    useTeams(orgId) — ALL org teams across ALL seasons (line 12). That is the #4
+    pile-up. Fix = filter `visible` teams to status='active' there. The 2 Summer
+    teams are real teams, so they DO get channels — #4 is safe standalone.
+  - coaching_assignments chain + RLS as the architect described (admin write;
+    coach self-reads own rate/pay/payouts; family money stays admin-only).
+
+--------------------------------------------------------------------------------
+3. TWO SPEC-AFFECTING REFINEMENTS (architect please fold in)
+--------------------------------------------------------------------------------
+R1 — coaching_assignments UNIQUE = (team_id, user_id, role, scope), NOT
+   (team_id,user_id[,active]). Consequences for the comp RPCs:
+     • A coach can hold MULTIPLE comp rows on one team (different role/scope) —
+       that's why 11 comp > 7 staff. The "rate" is whichever ACTIVE row the pay
+       trigger picks (scope matches event_type, highest rate, tiebreak created_at).
+     • assign_team_coach / set_coach_comp must upsert on the FULL composite
+       (team,user,role,scope). Changing a coach's role or scope creates a NEW row,
+       it does not update the old one — so the RPC must deactivate the prior
+       active row (active=false) and insert/activate the new one, or it silently
+       leaves two active rows and the trigger's "highest rate wins" picks one.
+     • Staff-tab comp display: show the single ACTIVE row matching the trigger's
+       lookup, not a raw count. One coach can look like 2 rates otherwise.
+R2 — CoachRateSheet (the Financials-lane editor) ONLY EDITS existing
+   coaching_assignments.pay_per_session_cents per active row (keyed by row id) +
+   staff_profiles.default_payout_method. It does NOT create comp rows. The new
+   Staff-tab "Edit comp" (set_coach_comp) would be a SECOND editor of the same
+   field. Not a hard conflict (both write pay_per_session_cents), but two UIs for
+   one value drifts over time. DECISION (architect): does the Staff-tab comp
+   SUPERSEDE CoachRateSheet, or coexist? Lean: coexist short-term (identical
+   writes), converge the Financials rate editor into the Staff tab later. Either
+   way, both must write the same field with the same units (cents).
+
+--------------------------------------------------------------------------------
+4. FRANK'S THREE QUESTIONS, ANSWERED FROM PRODUCTION
+--------------------------------------------------------------------------------
+  Q "How was it built to assign the coach to the team?"
+   -> Today there is NO UI. team_staff (access) and coaching_assignments (rate)
+      are seeded by the rollover/import only, and they have drifted (verified §2).
+  Q "Will the new Teams build edit/assign the coach?"
+   -> Yes — the PR-2 Staff tab: Assign coach, Change role, Remove, all admin-only.
+  Q "The coach gets a rate — tie it into the package."
+   -> Yes — the assign flow writes team_staff AND coaching_assignments together
+      (rate + scope + effective date), via one transactional RPC, so access and
+      pay can't drift. Chain: coaching_assignments(rate) -> stamp trigger writes
+      event_coach_assignments(per-event pay) -> coach_payouts(settles a batch).
+      A coach can self-see their own pay (RLS), never family money or peers' rates.
+
+--------------------------------------------------------------------------------
+5. BUILD ORDER (I agree; refined by §2-§3)
+--------------------------------------------------------------------------------
+  Merge #1078              recommend now (verified base, grown large).
+  #4 channel filter        STANDALONE now (status='active' in useChannels) — safe.
+  #1 nav/back chevron      PR-1.5, small/mechanical.
+  COMP RPCs                GO-gated (assign_team_coach/set_coach_comp/
+                           remove_team_coach), keyed on (team,user,role,scope) per
+                           R1; apply before PR-2 Staff tab.
+  PR-2                     Manage Roster + Staff tab (assign + comp). Now larger.
+  #5 $ payment display     4A roster row (PR-2 / PR-1-follow), 4B money sheet (PR-3).
+  PR-3                     family money sheet (admin-only, unchanged).
+  Coach "Your pay" card    follow PR after PR-2 (read-only, no new DB).
+
+--------------------------------------------------------------------------------
+6. DECISIONS ONLY FRANK CAN CLOSE
+--------------------------------------------------------------------------------
+  D1 Volunteer allowed vs rate-required (architect + CC lean: volunteer allowed,
+     with comp state shown explicitly so unpaid is never silent).
+  D2 Merge #1078 now? (lean: yes.)
+  D3 GO to apply the 3 comp RPCs (new money+access SECDEF, GO-gated) before PR-2.
+  D4 Kenny's 9U Boys team_staff row has no rate — mark Volunteer, or backfill a
+     rate? (one-time data cleanup.)
+  D5 CoachRateSheet vs Staff-tab comp — supersede or coexist (R2)?
+
+STANDING INSTRUCTION NOTED: "always produce specs and image renders." Architect
+renders shipped (2 HTML). CC lane stays verify + build; CC produces verification/
+decision docs like this one, not mockups.
+================================================================================
+END — on Frank's D1-D5 + GO, CC builds the slots in §5.
+================================================================================
