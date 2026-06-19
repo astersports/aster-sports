@@ -6,12 +6,13 @@
 // season) and keeps jersey_NUMBER from roster_members (numbers stay canonical
 // on team_players/roster_members per §11.5). Consumers: ArrivalBoard,
 // PlayerOfGamePicker, LiveScorePage, TeamDetailPage.
-// Payment status (Cat#30 ROSTER-1 / §4.AW all-seasons decision): derived
-// from the canonical `family_balances` view across ALL seasons, NOT the
-// legacy roster_members.payment_status column (which was a stale constant —
-// 'paid' for every row, structurally unable to flag an owing family).
-// balance>0 with prior payments → 'partial'; balance>0 with none →
-// 'overdue'; else 'paid'.
+// Payment status: derived from the canonical `family_balances` view, NOT the
+// legacy roster_members.payment_status column (a stale 'paid' constant). Scoped
+// to the team's SEASON (Frank 2026-06-19 — overrides the Cat#30 ROSTER-1
+// all-seasons rule for the roster dot: a Summer roster shows the Summer balance,
+// not a prior season's debt). balance>0 with prior payments → 'partial';
+// balance>0 with none → 'overdue'; else 'paid'. (NOTE: reconcile CLAUDE.md §11.5
+// / Cat#30 to record this roster-scope override.)
 
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
@@ -75,10 +76,13 @@ export function useRoster(teamId) {
       const guardianIds = [...new Set(mapped.flatMap((p) => p.guardians.map((g) => g.id)))];
       const balByGuardian = {};
       if (guardianIds.length) {
-        const { data: fb, error: fbErr } = await supabase
-          .from('family_balances')
+        // Season-scoped (Frank 2026-06-19): the roster dot reflects THIS season,
+        // not all-seasons. Falls back to all-seasons only if seasonId is unknown.
+        let fbq = supabase.from('family_balances')
           .select('guardian_id, balance_cents, net_paid_cents')
           .in('guardian_id', guardianIds);
+        if (seasonId) fbq = fbq.eq('season_id', seasonId);
+        const { data: fb, error: fbErr } = await fbq;
         if (fbErr) throw fbErr;
         for (const r of fb || []) {
           const b = balByGuardian[r.guardian_id] || { balance: 0, paid: 0 };
@@ -94,6 +98,9 @@ export function useRoster(teamId) {
           if (b) { balance += b.balance; paid += b.paid; }
         }
         p.payment_status = balance <= 0 ? 'paid' : paid > 0 ? 'partial' : 'overdue';
+        // Signed balance for the admin roster money line (PR-1 paymentSignal).
+        // All-seasons per Cat#30 ROSTER-1; scope reconciliation deferred to PR-3.
+        p.balance_cents = balance;
       }
       setPlayers(mapped);
     } catch (err) {

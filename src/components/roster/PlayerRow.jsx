@@ -1,19 +1,28 @@
 import { useMemo, useState } from 'react';
-import { ChevronDown, Mail, MessageSquare, Phone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useHomeRole } from '../../hooks/useHomeRole';
 import { isSparseRsvp } from '../../hooks/useSparseRsvp';
-import InviteButton from './InviteButton';
+import GuardianRow from './GuardianRow';
+import PlayerRowActions from './PlayerRowActions';
+import { paymentSignal } from '../../lib/roster/paymentSignal';
 
 const NOW = Date.now();
 
 export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
   const [expanded, setExpanded] = useState(isMyChild);
   const { role } = useAuth();
+  // Money signal gates on the PREVIEW role (activeRole), not the real role, so
+  // "view as coach" faithfully hides it (Frank 2026-06-19). Real coaches/parents
+  // never have activeRole='admin'. Row ACTIONS (InviteButton) still use realRole.
+  const { activeRole } = useHomeRole();
   const initial = (player.last_name || player.first_name || '?').charAt(0).toUpperCase();
   // §11.5: academy status is per-team (team_players.roster_type), falling back
   // to the global members flag only when roster_type is absent (Cat#30 ROSTER-3).
   const isAcademy = player.roster_type ? player.roster_type === 'futures' : player.member_type === 'futures_academy';
   const guardians = player.guardians || [];
+  // Admin-only payment signal from family_balances (A.4: coach has no money
+  // RLS; A.6: never roster_members.amount_paid). pastDue=false until PR-3.
+  const sig = paymentSignal(player.balance_cents);
   const age = useMemo(() => player.dob ? Math.floor((NOW - new Date(player.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null, [player.dob]);
   const PILL = { fontSize: 11, fontWeight: 500, padding: '1px 5px', borderRadius: 4, lineHeight: '16px' };
   const showRsvp = player.totalPast > 0 && (role !== 'parent' || isMyChild);
@@ -55,13 +64,9 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
             <div className="font-semibold truncate" style={{ color: 'var(--as-text-primary)', fontSize: 15 }}>
               {player.first_name} {player.last_name}
             </div>
-            {(role === 'admin' || role === 'coach') && (
-              <div style={{
-                width: 6, height: 6, borderRadius: '50%',
-                backgroundColor: player.payment_status === 'partial' ? 'var(--as-warning)'
-                  : player.payment_status === 'overdue' ? 'var(--as-danger)' : 'var(--as-success)',
-                flexShrink: 0,
-              }} title={player.payment_status === 'partial' ? 'Partial payment' : player.payment_status === 'overdue' ? 'Payment overdue' : 'Paid'} />
+            {activeRole === 'admin' && (
+              <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: sig.dot, flexShrink: 0 }}
+                title={sig.label} aria-label={`Payment: ${sig.label}`} />
             )}
           </div>
           <div className="flex items-center gap-1" style={{ marginTop: 2 }}>
@@ -88,15 +93,10 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
             </div>
           )}
         </div>
-        {player.jersey_number != null && (
-          <div style={{
-            width: 32, height: 32, borderRadius: '50%', border: `2px solid ${teamColor || 'var(--as-neutral)'}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 13, fontWeight: 700, color: teamColor || 'var(--as-text-primary)', flexShrink: 0,
-          }}>{player.jersey_number}</div>
+        {activeRole === 'admin' && (Number(player.balance_cents) || 0) !== 0 && (
+          <span style={{ fontSize: 13, fontWeight: 500, color: sig.labelColor, flexShrink: 0, marginLeft: 8, whiteSpace: 'nowrap' }}>{sig.label}</span>
         )}
-        <ChevronDown size={16} strokeWidth={1.75} color="var(--as-text-tertiary)"
-          style={{ marginLeft: 8, flexShrink: 0, transform: expanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 150ms' }} />
+        <PlayerRowActions jerseyNumber={player.jersey_number} teamColor={teamColor} expanded={expanded} />
       </div>
       {expanded && (guardians.length > 0 || role === 'admin') && (
         <div style={{ padding: '4px 16px 12px 68px', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -111,28 +111,6 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
             : guardians.map((g) => <GuardianRow key={g.id} guardian={g} role={role} />)}
         </div>
       )}
-    </div>
-  );
-}
-
-function GuardianRow({ guardian, role }) {
-  const name = `${guardian.firstName || ''} ${guardian.lastName || ''}`.trim() || 'Guardian';
-  const canInvite = role === 'admin' && guardian.email && !guardian.userId;
-  const linked = guardian.email && guardian.userId;
-  const iconBtn = { width: 44, height: 44, borderRadius: '50%', backgroundColor: 'var(--as-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' };
-  const spacer = <div style={{ width: 44, height: 44, flexShrink: 0 }} />;
-  const stop = (e) => e.stopPropagation();
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 36 }}>
-      <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: 'var(--as-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
-      <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-        {guardian.phone ? <a href={`tel:${guardian.phone}`} onClick={stop} aria-label="Call" style={iconBtn}><Phone size={14} strokeWidth={1.75} color="var(--as-text-secondary)" /></a> : spacer}
-        {guardian.phone ? <a href={`sms:${guardian.phone}`} onClick={stop} aria-label="Text" style={iconBtn}><MessageSquare size={14} strokeWidth={1.75} color="var(--as-text-secondary)" /></a> : spacer}
-        {guardian.email ? <a href={`mailto:${guardian.email}`} onClick={stop} aria-label="Email" style={iconBtn}><Mail size={14} strokeWidth={1.75} color="var(--as-text-secondary)" /></a> : spacer}
-        {canInvite ? <span onClick={stop}><InviteButton guardianEmail={guardian.email} /></span>
-          : linked ? <span style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, color: 'var(--as-success)' }} title="Account linked">✓</span>
-          : spacer}
-      </div>
     </div>
   );
 }

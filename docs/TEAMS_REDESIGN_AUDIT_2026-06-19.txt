@@ -1,0 +1,501 @@
+================================================================================
+TEAMS SECTION REDESIGN — FULL CLAUDE CODE AUDIT
+================================================================================
+Date:        2026-06-19
+Author:      CC (Claude Code) — implementation + live-verification lane
+For:         The architect (claude.ai) — design / render / spec lane
+Method:      14 parallel read-only audit agents (NOT a 40% surface pass) — UI
+             mount tree, roster membership + alignment triggers, financial-action
+             UI, in-house credit, hero insertion points, payment-status source,
+             payment-plans/deposits, fee/pricing config, registration→roster flow,
+             team data hooks, edge functions/RPCs, locked tests/invariants, AND a
+             LIVE Supabase schema query (source-hierarchy #1). Plus direct
+             re-verification by CC of every load-bearing claim, incl. resolving one
+             cross-agent discrepancy by querying information_schema myself (the
+             payment_plan_installments table — present; live-agent miss corrected).
+             §16.15 L99 methodology; AP#60 source hierarchy throughout.
+Branch:      claude/gifted-cannon-cwtzwr
+Deliverable: this committed .txt + full chat paste (§11.8 rule 1 / §49).
+
+--------------------------------------------------------------------------------
+0. WHAT FRANK ASKED FOR (verbatim intent → audit targets)
+--------------------------------------------------------------------------------
+"Next on the list to redesign is the teams section. I just ported the full set
+ of rosters over to the new summer teams, but not all are on it. I can edit the
+ team details but not the rosters. some paid the full 500 to join, but some paid
+ the 100 deposit and 400 due on June 22 fee. other paid partial and used in
+ house credit to pay for portion. I should be able to return funds, issue credit
+ or adjust the invoice or delete the player from the roster as they never
+ accepted. lets perform a full redesign of the teams section but start with a
+ full Claude code audit (not the 40% surface audit) to uncover the full set of
+ details, then produce these details to the Claude ai which is our architect for
+ a full set of renders and specs for cc to build exactly."
+
+Five concrete asks decoded:
+  ASK-1  "edit team details but not the rosters" → no roster-edit UI exists.
+  ASK-2  "ported... but not all are on it"       → registration→roster is manual;
+                                                    "never accepted" players exist.
+  ASK-3  payment states to represent:
+           (a) paid full $500
+           (b) $100 deposit + $400 due June 22  (split / installment)
+           (c) partial + in-house credit
+  ASK-4  four actions admin needs from a roster row:
+           (i)  return funds   (refund)
+           (ii) issue credit   (in-house credit)
+           (iii) adjust invoice (charge / adjustment)
+           (iv) delete player from roster ("never accepted")
+  ASK-5  this audit → architect produces renders + specs → CC builds exactly.
+
+This document is ASK-5's first half. It is organized so the architect can lock
+decisions (§7 forks) and draw per-role renders (§10) without re-reading code.
+
+--------------------------------------------------------------------------------
+1. EXECUTIVE SUMMARY (the five things that matter)
+--------------------------------------------------------------------------------
+1. ROSTER-EDIT UI IS ENTIRELY ABSENT. You can create/edit/delete a TEAM
+   (TeamFormSheet) but there is NO surface anywhere to add a player to a team,
+   remove a player from a team, set a jersey number, or move a player between
+   teams mid-season. The only writes that touch roster membership today are the
+   season-rollover RPC and the public registration RPC. (§2, §4)
+
+2. REGISTRATION → ROSTER IS MANUAL AND DECOUPLED. submit_registration() creates
+   guardians/players/registrations/fees but writes NOTHING to team_players /
+   roster_members / financial_accounts. "Mark confirmed" flips a status enum and
+   nothing else. So "ported but not all on it" = players exist with pending/no
+   roster rows. "Never accepted" = registrations.status='pending'. (§4, §5)
+
+3. THE FINANCIAL MODEL IS FAMILY-KEYED, NOT PLAYER-KEYED. The money lives on
+   financial_accounts(guardian_id, season_id) and the family_balances VIEW; the
+   roster is player-keyed. financial_transactions HAS an unused applied_to_player_id
+   column — so per-player attribution is possible WITHOUT a billing rewrite, but
+   it is a real architectural fork (annotate-family vs new-player-account). (§5, §7-FORK-A)
+
+4. DEPOSIT / PAYMENT-PLAN SCHEMA IS COMPLETE BUT 100% DORMANT. payment_plans +
+   payment_plan_installments (WITH per-seq due_date + amount_cents) + invoices
+   (WITH due_date) + discounts all ship with RLS and correct columns — VERIFIED
+   live — but have ZERO UI, ZERO RPC, ZERO reads, and ZERO rows in the entire DB.
+   So "$100 deposit, $400 due June 22" is fully REPRESENTABLE with existing
+   schema (a plan + 2 dated installments, or an invoice w/ due_date); the gap is
+   purely UI + one RPC, NOT a migration. This is the single biggest build
+   decision — but cheaper than first assumed. (§6, §7-FORK-C)
+
+5. CREDIT IS A POSITIVE ADJUSTMENT, NOT A STORED POOL. "In-house credit" today =
+   a financial_transactions row of type 'adjustment' with a credit sign. There is
+   no credit-balance ledger, no "apply credit" affordance. A negative family
+   balance (overpaid) is the only "credit" representation. (§5, §7-FORK-D)
+
+6. SUMMER SELECT IS A CLEAN SLATE. 24 players are rostered across the two new
+   teams; there are ZERO financial rows / registrations for the season. Frank's
+   described payment states are states he needs to ENTER from scratch (tracked
+   out-of-band today), not data to migrate. No legacy summer money is at risk.
+   (§3.E)
+
+Net: the redesign is ~30% "surface the data we already have" (payment dot →
+real numbers, roster read view) and ~70% NET-NEW write plumbing (roster member
+CRUD + per-player financial actions + optionally the deposit/plan layer), most
+of which needs new SECURITY DEFINER RPCs (§9 lists the 7 missing primitives).
+The substrate is friendlier than feared: the money model is immutable + well-
+constrained, and the deposit/plan/invoice schema is complete-but-dormant, so
+most of the build is UI + thin RPCs over an existing data shape.
+
+--------------------------------------------------------------------------------
+2. CURRENT STATE — TEAMS SECTION UI MOUNT TREE (file:line, LOC)
+--------------------------------------------------------------------------------
+ROUTES:
+  /teams                         → TeamsPage.jsx (60)         grid of team cards
+  /teams/:teamId                 → TeamDetailPage.jsx (147)   the detail surface
+  /admin/teams                   → AdminTeamsPage.jsx (134)   admin team list+CRUD
+
+TeamsPage.jsx (60)
+  - Lists active-season teams as cards (useActiveSeasonTeams). Read-only nav.
+
+TeamDetailPage.jsx (147)  — the hero+collapsible detail page (§16.14)
+  - Hooks: useActiveSeasonTeams, useRoster(teamId), useFilteredRoster,
+    useAttendanceData, useTeamRecords, useScheduleData, usePlayerSortOrder.
+  - Renders, top to bottom:
+      • back-chevron strip + TeamDetailOverflowMenu (⋯)
+      • TeamSwitcher (if >1 team in scope)
+      • TeamDetailHeroSlot  (record / next-event / per-role action stack)
+      • HARDCODED scope tag literal "Spring 2026"  ← STALE BUG (line 115)
+      • CollapsibleSection "Upcoming" → UpcomingEvents
+      • RosterSection (read-only) OR EmptyState
+      • TeamHeatmap (attendance grid)
+      • TeamAchievements
+  - NOTE: TeamPlayerStats mount already removed (AP#51, PR C / Obs 1).
+
+TeamDetailOverflowMenu.jsx (80)  — the (⋯) menu, BottomSheet
+  - parent role: ONE item → "Subscribe to calendar" (family-feed token).
+  - staff: "View records", "View full schedule", (admin) "Edit team" → /admin/teams,
+    (staff) "Tournaments".
+  - >>> "Edit team" routes to /admin/teams which edits TEAM DETAILS, not roster. <<<
+
+RosterSection.jsx (49)  — CollapsibleSection "Roster", default-closed
+  - RosterControls (search + sort chips: #, A-Z, +Age/+Att for staff)
+  - CopyRosterButton (staff) — copies roster TEXT to clipboard; NOT an editor
+  - maps PlayerRow per player; parent + hidden roster → privacy footer
+  - >>> NO add / remove / edit affordance. Pure render. <<<
+
+PlayerRow.jsx (146)  — one roster row, expand-to-guardians
+  - avatar (academy = dashed purple), name, 6px PAYMENT DOT (admin/coach only:
+    green=paid / amber=partial / red=overdue, title tooltip), grade/age pills,
+    RSVP going/maybe/no/NR pills + streak, jersey bubble, chevron.
+  - expanded: GuardianRow(s) → call / text / email / InviteButton (admin, unlinked).
+  - >>> The payment dot is the ENTIRE financial surface. Tapping the row only
+        expands guardians — no money action, no remove. <<<
+
+AdminTeamsPage.jsx (134)  — admin team management
+  - useActiveSeasonTeams → { teams, createTeam, updateTeam, deleteTeam }.
+  - tap a team → TeamFormSheet (edit); also create + delete.
+  - >>> Operates on TEAMS only. No player/roster rows here at all. <<<
+
+TeamFormSheet.jsx (131)  — FullScreenForm (correct per AP#15: 8 fields)
+  - Fields: display name, team type, age group, gender, competition type,
+    circuit name, color, practice day, practice location, sort order,
+    roster-visibility override. Delete-team with ConfirmDialog.
+  - >>> Zero roster fields. This is the "edit team details" Frank means. <<<
+
+SUPPORTING (read-only) roster components:
+  RosterControls, CopyRosterButton, InviteButton, TeamAchievements,
+  TeamDetailHero/HeroSlot (147), TeamSwitcher, UpcomingEvents, TeamHeatmap.
+
+CONCLUSION (ASK-1): the entire Teams section is READ + TEAM-LEVEL-CRUD. There is
+no player-level write path. Frank's "edit details but not rosters" is exact.
+
+--------------------------------------------------------------------------------
+3. CURRENT STATE — DATA SUBSTRATE
+--------------------------------------------------------------------------------
+3.A MEMBERSHIP (two tables, mirrored by triggers)
+  team_players  (CANONICAL — §11.5 "which kids are on a team right now")
+     id, team_id, player_id, roster_type ('rostered'|'futures'),
+     jersey_number (text), status ('active'|'inactive'),
+     created_at, joined_at, left_at.  UNIQUE(team_id, player_id).
+  roster_members  (LEGACY MIRROR — historical date windows + sizes mirror)
+     team_id, player_id, jersey_number, jersey_size, shorts_size,
+     registered_at, left_at, (payment_status column DROPPED 2026-06-02).
+  ALIGNMENT TRIGGER (migration 20260505201932_wave4_roster_alignment_lock):
+     tg_team_players_alignment_check — an INSERT/UPDATE of a team_players row to
+     status='active' REQUIRES a matching roster_members row to already exist, or
+     it RAISES. The two tables are kept in lockstep; divergence surfaces as a
+     write failure, not a silent UI bug.
+  >>> SAFE REMOVAL SEQUENCE (load-bearing for ASK-4-iv "delete from roster"):
+        1. UPDATE team_players SET status='inactive', left_at=now() ...   (first)
+        2. (optionally) DELETE roster_members row, or set left_at.
+      Deleting roster_members FIRST while team_players is still 'active' trips
+      the alignment trigger. Inactivate the canonical row first. <<<
+
+3.B FINANCIAL (family-keyed ledger + view)
+  financial_accounts   — one row per (org_id, guardian_id, season_id). UNIQUE.
+     season_fee_cents + discount_cents are LEGACY/zeroed (billing unified 2026-06-11).
+  financial_transactions  — APPEND-ONLY ledger (trigger fin_tx_append_only blocks
+     UPDATE/DELETE). Columns of interest:
+       transaction_type CHECK IN ('payment','refund','adjustment','fee')
+       amount_cents (signed for adjustment; positive otherwise)
+       payment_method ('zelle'|'venmo'|'cash'|'check'|'stripe'|'other')
+       reference, notes, processing_fee_cents, occurred_at, recorded_by
+       reverses_transaction_id  (void = append a reversing row; pair nets out)
+       applied_to_player_id  → FK to players, INDEXED, **NEVER WRITTEN (unused)**
+       registration_id, invoice_id, discount_id  (FKs; mostly unused in UI)
+  family_balances  (VIEW, security_invoker; migration 20260611105511)
+       billed_cents   = SUM(amount) WHERE type='fee'
+       net_paid_cents = SUM(payment) − SUM(refund) + SUM(adjustment)
+       balance_cents  = billed − net_paid   (positive = owes; negative = credit)
+       total_fees_cents, last_payment_at.  Keyed by account_id (+org+season+guardian).
+  >>> This VIEW is the canonical money source for ALL surfaces (AP#63, financialMathAudit
+      test). The redesign must NOT recompute billed/paid/balance inline. <<<
+
+3.C DEPOSIT / PLAN / INVOICE / DISCOUNT (exist + complete, UNWIRED — §6)
+  payment_plans(id, org_id, account_id, invoice_id, total_cents,
+     installment_count [CHECK 2..12], status ∈ active|completed|cancelled)
+  payment_plan_installments(plan_id, org_id, seq, due_date, amount_cents,
+     status ∈ scheduled|paid|overdue|waived, paid_transaction_id)
+     >>> VERIFIED LIVE 2026-06-19: this installment CHILD TABLE EXISTS with a
+         per-seq due_date + amount_cents. (The live-schema agent initially
+         claimed "no installment child table" — that was its one error; I
+         queried information_schema directly and it is present.) Meaning: a
+         DATED installment schedule ("$100 now, $400 due 2026-06-22") is fully
+         representable with EXISTING schema — the only gap is UI + an RPC, not a
+         migration. <<<
+  invoices(account_id, season_id, invoice_number, status ∈
+     draft|sent|paid|overdue|void, total_cents, due_date [nullable])
+     — invoices.due_date is a SECOND structural home for "June 22".
+  discounts(label, kind ∈ sibling|scholarship|early_bird|code, code,
+     amount_cents | percent, active)
+  next_invoice_number(org) RPC exists. NO create/read UI for ANY of these, and
+  ZERO rows in payment_plans / payment_plan_installments / invoices / discounts
+  across the ENTIRE DB (all orgs). Dormant-but-complete greenfield.
+
+3.D REGISTRATION (lifecycle, decoupled from roster + billing)
+  registrations(program_id, player_id, team_id, status, ...)
+     status ∈ pending | confirmed | waitlist | cancelled | payment_overdue
+  registration_fees(registration_id ON DELETE CASCADE, fee_type, amount_cents)
+     line items: base + add_on + family_discount (negative).
+  Partial UNIQUE: (program_id, player_id) WHERE status <> 'cancelled' — a
+     cancelled reg lets the player re-register.
+  submit_registration(p_payload) [SECDEF, anon] — upserts guardians/players/
+     player_guardians, inserts registrations(pending) + registration_fees, posts
+     a 'fee' financial_transaction (PR-B0). Does NOT touch team_players/roster_members.
+
+3.E LIVE-DB GROUND TRUTH (Summer Select current state — VERIFIED 2026-06-19,
+    project vrwwpsbfbnveawqwbdmj, read-only; source-hierarchy #1)
+  SUMMER SELECT 2026 = program 097af2fb-0e08-4928-a062-9ba6b14a4633
+    (program_type 'season', active, 2026-06-24 → 2026-08-02).
+    • 6th Grade Girls — team 88f223c5… (12U, female): 14 rostered
+    • 5th Grade Boys  — team a083d136… (11U, male):   10 rostered
+    • 24 active team_players total.   ROSTER EXISTS.
+  BILLING SUBSTRATE FOR SUMMER = EMPTY:
+    • financial_accounts = 0   • financial_transactions = 0
+    • invoices = 0   • payment_plans = 0   • registrations = 0
+  >>> IMPLICATION (reframes ASK-2 & ASK-3): the $500-paid / $100-deposit-$400-due
+      / partial-plus-credit states Frank described DO NOT EXIST in the data yet.
+      They are states he needs to ENTER (he's tracking them out-of-band — Zelle/
+      Venmo/cash/credit in his head or a sheet). The redesign builds the billing
+      layer onto a CLEAN SLATE for this season — there is no legacy summer money
+      to migrate, and the tool must let him record these states from scratch. <<<
+  HOW THE 24 GOT ROSTERED: NOT via registration (0 summer regs; only 2
+    registration rows org-wide ever). They were placed by direct team_players
+    insert / the season-rollover carry. So "delete the player… they never
+    accepted" (ASK-4-iv) = a ROSTER DROP (team_players/roster_members), NOT a
+    registration-cascade delete. (Corrects §4's secondary framing.)
+  ORG-WIDE FINANCIAL REALITY (all seasons): only two transaction types have ever
+    been written — fee (166 rows, ~$166,980 billed) + payment (244 rows, method
+    always 'other', ~$165,635). ZERO refund, ZERO adjustment rows exist. So
+    ASK-4-i (refund) and ASK-4-ii (credit/adjustment) are genuinely first-use
+    actions, never exercised in production.
+  ACCOUNT GRAIN: UNIQUE(org_id, guardian_id, season_id); "season" = a programs
+    row (financial_accounts.season_id → programs, RESTRICT). Multi-kid families
+    share ONE account with ONE summed 'fee' + per-kid 'payment' rows whose notes
+    carry "PlayerName / Team". season_fee_cents/discount_cents are 0 on every
+    row (billing lives as 'fee' transactions, not the account columns).
+  LEGACY: roster_members still has amount_paid/amount_due (numeric dollars,
+    legacy, unused by UI); payment_status column dropped 2026-06-02.
+
+--------------------------------------------------------------------------------
+4. GAP 1 — ROSTER EDITING (ASK-1, ASK-2, ASK-4-iv)
+--------------------------------------------------------------------------------
+TODAY: nothing. No add-to-team, no remove-from-team, no jersey edit, no move.
+WHAT EXISTS to build on:
+  - team_players is the canonical write target; roster_members the mirror.
+  - rollover_season RPC already inserts roster_members rows (carry/drop pattern)
+    — a reference for the insert shape, but it is season-scoped, not mid-season.
+MISSING PRIMITIVE: a mid-season drop_roster_member(team_id, player_id) [SECDEF,
+  admin-gated, audited] and an add_roster_member(team_id, player_id, jersey,
+  roster_type) that writes roster_members FIRST then team_players (trigger order).
+"NEVER ACCEPTED" DELETE (ASK-4-iv) — TWO distinct cases (live data picks A):
+  CASE A — PRIMARY for Summer (player is ON team_players, NO registration row):
+    This is the real summer situation (0 registrations; 24 placed by direct/
+    rollover insert). "Delete… they never accepted" = a ROSTER DROP:
+      1. UPDATE team_players SET status='inactive', left_at=now()   (canonical first)
+      2. DELETE (or left_at) roster_members row.
+      KEEP players/guardians (org-scoped). financial_* untouched (none exist).
+    A "hard delete" (remove the team_players row entirely) is also possible since
+    the player never paid — architect/Frank choose inactivate-vs-hard-delete.
+  CASE B — a pending REGISTRATION exists (the general future flow):
+    DELETE registrations → registration_fees CASCADE (auto). KEEP players/
+    guardians/player_guardians. player_equipment manual-cleanup if sole source.
+  >>> Decision the architect/Frank must frame: is "delete from roster" ONE verb
+      (drop the team_players/roster_members membership — CASE A, what Summer
+      needs) or does it also need the registration-cascade (CASE B) for the
+      future registration-driven flow? Lean: ship CASE A now (a drop_roster_member
+      RPC); CASE B when registrations actually drive rosters. (§7-FORK-B) <<<
+
+--------------------------------------------------------------------------------
+5. GAP 2 — PER-PLAYER FINANCIAL ACTIONS (ASK-3, ASK-4 i/ii/iii)
+--------------------------------------------------------------------------------
+WHAT EXISTS (family-scoped, on /admin/financials/family/:accountId):
+  RecordPaymentForm.jsx — FullScreenForm, 3 modes via recordMoney.js:
+     payment   → insert type='payment'  (balance −)
+     refund    → insert type='refund'   (balance +)   ← ASK-4-i "return funds"
+     adjustment→ insert type='adjustment' signed       ← ASK-4-ii/iii credit/charge
+  AddChargeSheet.jsx — BottomSheet, insert type='fee'  ← ASK-4-iii "adjust invoice"
+  Void (inline in FinancialFamilyDetailPage) — append reversing row.
+  All are DIRECT inserts to financial_transactions (no RPC). All keyed by
+  account_id (family), all write applied_to_player_id = NULL today.
+THE GAP: none of these are reachable from a team roster, and none are attributed
+  to a player. To do ASK-4 from a roster row you need EITHER:
+    (path-thin) reuse RecordPaymentForm with a player prop, derive the family
+       account via player_guardians, and WRITE applied_to_player_id = player.id;
+       OR
+    (path-thick) a new player-scoped account/credit model.
+  recordMoney.js (balanceAfter, txnForMode, MONEY_MODES) is 100% reusable as-is.
+PAYMENT-STATUS SIGNAL (ASK-3 surface): useRoster derives player.payment_status
+  ∈ paid|partial|overdue from family_balances (ALL seasons, summed across the
+  player's guardians) — a boolean-ish dot only. It CANNOT today show "$400" or
+  "due 6/22" (no amount, no due date in roster scope). Showing real numbers per
+  player requires either a new view (player_financial_snapshot joining
+  financial_accounts ↔ player_guardians) or enriching useRoster with the family
+  account balance. (§7-FORK-A)
+
+--------------------------------------------------------------------------------
+6. GAP 3 — DEPOSIT / PAYMENT PLAN  ($100 now + $400 due June 22)  (ASK-3b)
+--------------------------------------------------------------------------------
+TODAY: no representation in app code. payment_plans, payment_plan_installments
+  (incl. per-seq due_date + amount_cents — VERIFIED present), and invoices (incl.
+  due_date) exist with RLS but are never read or written by any hook/page/edge
+  function, and hold ZERO rows. NO payment-intent capture at registration (the
+  deposit-vs-full choice is stored nowhere; it's implicit in whatever amount an
+  admin later records).
+TO MODEL "$100 deposit, $400 due June 22" the options are:
+  (6.1 thin)  Plain transactions: a 'fee' of $500 + a 'payment' of $100; the
+     $400 "due" is the residual family_balances balance; "June 22" lives only in
+     a note. No structured due date. Cheapest; no dated reminders possible.
+  (6.2 full)  Use the EXISTING (dormant) substrate — NO migration needed:
+     a payment_plan + 2 payment_plan_installments (seq1 $100 'paid', seq2 $400
+     due 2026-06-22 'scheduled'), OR an invoice with due_date=2026-06-22. Needs:
+     admin UI + ONE create_payment_plan/create_invoice RPC + a parent-facing
+     installment timeline + (optional) a reminder job. Because the installment
+     table already exists with the right columns, this is materially cheaper than
+     a from-scratch build.
+  >>> The audit's lean is 6.1-now / 6.2-fast-follow, UNLESS Frank wants dated
+      "due June 22" reminders to actually fire THIS build — in which case 6.2 is
+      not as expensive as it looks (schema is done; it's UI + 1 RPC). (§7-FORK-C) <<<
+
+--------------------------------------------------------------------------------
+7. THE CENTRAL ARCHITECT FORKS (decisions to lock before renders)
+--------------------------------------------------------------------------------
+FORK-A  PER-PLAYER FINANCIAL ATTRIBUTION
+  A1 (lean): keep family-keyed billing; WRITE applied_to_player_id on each txn so
+     a roster row can show/record "Charlie · refund $50". Reuses family_balances,
+     all hooks, the append-only ledger. Lowest risk. Per-player BALANCE stays a
+     derived annotation, not a separate pot.
+  A2: new player-scoped accounts/credit buckets. Cleanest per-player reporting,
+     but breaks family_balances reuse and needs a new aggregation view. High cost.
+  CC LEAN: A1. (applied_to_player_id already exists + indexed; AP#39 — committing.)
+
+FORK-B  ROSTER-EDIT SURFACE + "DELETE" SEMANTICS
+  Where do add/remove/jersey/move live — TeamDetailHero action stack? a dedicated
+  /admin/teams/:id/manage roster editor? inline on PlayerRow (staff)? AND is
+  "delete from roster" one verb or two (inactivate-rostered vs delete-never-accepted)?
+  CC LEAN: a staff-only "Manage roster" editor reachable from the hero + overflow,
+     with row actions; "remove" = inactivate (keeps history), "delete" reserved
+     for never-accepted pending regs. Architect draws the surface.
+
+FORK-C  DEPOSIT / PAYMENT PLAN DEPTH
+  6.1 thin (residual balance + note) vs 6.2 full (wired payment_plans + dated
+  installments + reminders). NOTE the installment schema (payment_plan_installments
+  with due_date+amount_cents) ALREADY EXISTS — 6.2 is UI + 1 RPC, no migration.
+  CC LEAN: 6.1 this build, 6.2 as a fast-follow, UNLESS Frank wants the dated
+  "due June 22" reminder to actually fire now (then do 6.2 — it's cheaper than it
+  sounds). Whichever way: the deposit-vs-full CHOICE needs a capture point.
+
+FORK-D  CREDIT REPRESENTATION
+  D1 (lean): "issue credit" = a positive 'adjustment' (reuse RecordPaymentForm
+     adjustment mode), negative balance = available credit. No new schema.
+  D2: a real stored credit pool (new table) with explicit apply-credit flow.
+  CC LEAN: D1 — matches the "partial + used in-house credit" Frank described
+     (an adjustment that offset part of the fee). No pool needed for the pilot.
+
+FORK-E  ACTIONS: DIRECT INSERT vs NEW RPCs
+  Current financial writes are direct table inserts. The 4 roster actions touch
+  money + roster across tables; doing them as SECDEF RPCs gives atomicity + audit
+  + a clean RLS story. §9 lists 7 missing RPCs. CC LEAN: build the 4 roster-facing
+  ones as RPCs (drop_roster_member, record_payment, issue_refund/adjust,
+  void_transaction), defer invoice/plan RPCs to FORK-C.
+
+--------------------------------------------------------------------------------
+8. LOCKED INVARIANTS THE REDESIGN MUST PRESERVE (from the test-audit agent)
+--------------------------------------------------------------------------------
+These tests will fail the build if the redesign drifts. Treat as constraints:
+  - MONEY SINGLE SOURCE: all billed/paid/balance via family_balances /
+    useSeasonFinancials — no inline recompute (financialMathAudit.test.js).
+  - COACH owed vs paid are INDEPENDENT, never netted (coachComp.test.js).
+  - ROSTER VISIBILITY follows COALESCE(team.override, program.roster_visibility,
+    program_type default) (rosterVisibility.test.js).
+  - COMPETITIVE-TEAM FILTER: camp/clinic/training/academy excluded from records/
+    standings/brackets via isCompetitiveTeam (teamTypes.test.js).
+  - PLAYER SORT identical across RosterSection + TeamHeatmap (playerSort.test.js).
+  - team_staff ↔ staff_profiles: NO PostgREST embed (no FK) — join in JS
+    (teamStaffEmbedAudit.test.js).
+  - ORG-SCOPE: every org-scoped .from() filters .eq('org_id', …) (AP#37;
+    teamsPageOrgScopeAudit.test.js).
+  - 150-LOC cap on every component (homePageInvariantAudit + pre-commit hook).
+  - TeamDetailHero PER-ROLE invariant (parent: View calendar + coach contact;
+    coach-not-self: Message+Briefing; coach-self: contact HIDDEN; admin:
+    Message+Briefing+contact) (TeamDetailHeroPerRoleInvariant.test.jsx).
+  - PAYMENT-STATUS one source = family_balances (AP#63; the dot already complies).
+
+--------------------------------------------------------------------------------
+9. SERVER-SIDE PRIMITIVES — EXIST vs MISSING
+--------------------------------------------------------------------------------
+EXIST (callable today):
+  Roster:  lock_event_roster, unlock_event_roster, add_academy_callup,
+           remove_academy_callup, get_tournament_roster_player_ids,
+           rollover_season (season-scoped carry/drop).
+  Reg:     submit_registration, claim_invite, claim_guardian_by_email.
+  Finance: pay_coach (paid-only guard), next_invoice_number.
+MISSING (must build for this redesign — all SECDEF, admin-gated, audited):
+  1. drop_roster_member(team_id, player_id)              [ASK-4-iv]
+  2. add_roster_member(team_id, player_id, jersey, type) [ASK-1/2]
+  3. record_payment(account_id, player_id, amount, method, occurred_at, ref, notes) [ASK-3]
+  4. issue_refund(account_id, player_id, amount, reason / original_txn)  [ASK-4-i]
+  5. adjust_family_balance(account_id, player_id, amount, kind, reason)  [ASK-4-ii/iii]
+  6. void_transaction(transaction_id, reason)
+  7. create_payment_plan(account_id, total, installments, first_due)  [ASK-3b / FORK-C only]
+  (3–5 can collapse into ONE record_money(account_id, player_id, mode, …) RPC
+   mirroring recordMoney.js MONEY_MODES, which is the leaner shape.)
+
+--------------------------------------------------------------------------------
+10. PER-ROLE COVERAGE (what each role does on the Teams surface — for renders)
+--------------------------------------------------------------------------------
+ADMIN:  full team CRUD (today) + (NEW) roster add/remove/jersey + per-player
+        money actions (refund/credit/adjust) + delete never-accepted. Sees payment
+        dot + (NEW) real amounts. The redesign's primary new surface area is admin.
+COACH:  team-scoped read of roster + attendance + records; payment dot visible.
+        OPEN Q: should coaches see money amounts or only the dot? (privacy — §16.7)
+        CC LEAN: coaches keep the dot, NOT amounts/actions (money is admin-only).
+PARENT: own child highlighted; roster (or privacy footer if hidden); subscribe to
+        calendar; NO payment dot, NO money. Unchanged by this redesign except
+        whatever the new hero/roster layout implies.
+VIEW-AS: role derives from useHomeRole (activeRole) — preview affordance already
+        wired; new staff actions must gate on REAL role (useAuth) not activeRole,
+        per the PlayerRow/InviteButton precedent (TeamDetailPage.jsx:33-34 note).
+
+--------------------------------------------------------------------------------
+11. ANTI-PATTERN CROSS-REFERENCE (§16.15-c)
+--------------------------------------------------------------------------------
+  AP#63 PATTERN A — payment "same concept, one source": the dot already routes
+     through family_balances; new amount displays MUST use the same source/scope
+     and LABEL scope (all-seasons family balance vs this-season). Also: the stale
+     "Spring 2026" literal (TeamDetailPage.jsx:115) is a PATTERN-A hardcoded-season
+     bug (sibling of SCORE-1) — fix to derive from active season in this redesign.
+  AP#43 — cross-surface: payment dot/amount appears on roster + financials; lock
+     with an invariant test. Roster-edit changes ripple to TeamHeatmap/records.
+  AP#37 — org-scope every new org-scoped query.
+  AP#36 — destructure {data,error}; never `= []` default that swallows errors
+     (esp. new financial reads).
+  AP#15 / §6 — money/roster forms with 3+ fields → FullScreenForm; 1-2 actions →
+     BottomSheet. RecordPaymentForm is already FullScreenForm (correct).
+  AP#20 — any new ALL/UPDATE RLS policy needs explicit WITH CHECK.
+  AP#23/#57 — new SECDEF RPCs: REVOKE EXECUTE FROM PUBLIC *and* FROM anon.
+  §16.14 — keep the detail page hero + collapsibles; new roster editor should be
+     its own surface or a collapsible, not floating chrome.
+  150-LOC — PlayerRow is already 146; adding row actions WILL breach the cap →
+     must split (e.g. extract PlayerRowActions / GuardianRow already separable).
+
+--------------------------------------------------------------------------------
+12. OUT OF SCOPE (explicit — §16.15-e)
+--------------------------------------------------------------------------------
+  - Coach payouts / compensation (FinancialCoachDetailPage) — separate surface.
+  - Per-player GAME stats / box score — forbidden in 2026 (§16.12).
+  - Stripe / real payment processing — money is recorded, not collected, today.
+  - Multi-org onboarding of the fee/plan config editors (two-bucket doctrine
+    §16.16: build a writer only for config something READS — defer plan/discount
+    editors unless FORK-C goes "full").
+  - Translation / i18n of new strings beyond extractability (§16.6 baseline).
+  - Tournament roster (tournament_rosters) — distinct from team roster.
+
+--------------------------------------------------------------------------------
+13. OPEN QUESTIONS FOR THE ARCHITECT / FRANK
+--------------------------------------------------------------------------------
+  Q1 (FORK-A) per-player attribution: annotate family account (A1) — confirm?
+  Q2 (FORK-B) roster-editor surface + is "delete" one verb or two? draw it.
+  Q3 (FORK-C) deposit/plan: thin (residual + note) now, or full wired installments
+     with dated "due June 22" reminders THIS build?
+  Q4 (FORK-D) credit = positive adjustment (D1) — confirm (no stored pool)?
+  Q5 (FORK-E) build the 4 roster actions as SECDEF RPCs — confirm?
+  Q6 coaches: dot-only, or amounts too? (privacy lean: dot-only.)
+  Q7 should the redesign also fix the stale "Spring 2026" scope literal +
+     surface real per-player amounts on the dot row (low-cost wins)?
+
+================================================================================
+END — awaiting §3.E live-DB ground truth, then architect renders/specs.
+================================================================================

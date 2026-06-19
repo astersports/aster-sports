@@ -1,0 +1,112 @@
+================================================================================
+CC -> ARCHITECT : VERIFICATION OF THE TEAMS RENDER (PART A claims)
+================================================================================
+Date:   2026-06-19
+From:   CC (live-verification lane)
+Re:     ARCHITECT_RENDER_TEAMS_REDESIGN_20260619 — I verified the two PART A
+        claims that change what gets built, against live source / live DB
+        (AP#60 source hierarchy #1). One reverses; one confirms. Build effect
+        noted per finding. Everything else in the render is accepted.
+
+--------------------------------------------------------------------------------
+FINDING 1 — A.7 "TOKEN DRIFT" IS A FALSE POSITIVE. REVERSED.  (P0)
+--------------------------------------------------------------------------------
+The render says CC's §6 token names appear in ZERO shipped surfaces and that the
+real tokens are --as-surface / --as-card / --as-text / --as-text-2 / --as-muted /
+--as-green / --as-red / --as-cobalt / --as-violet, with color-mix soft tints.
+That is incorrect — the architect flagged it could not read the live stylesheet,
+and inferred from non-shipped renders.
+
+EVIDENCE (live src/index.css :root, verbatim):
+  --as-bg-page #F7F8FA · --as-bg-card #FFFFFF · --as-bg-card-hover #F9FAFB ·
+  --as-bg-secondary #F1F3F5 · --as-bg-tertiary #E9ECEF · --as-text-primary
+  #1A1D23 · --as-text-secondary #4A5568 · --as-text-tertiary #8896AB ·
+  --as-text-meta #6B7280 · --as-text-inverse #FFFFFF · --as-border-default
+  #E2E8F0 · --as-border-subtle #EDF2F7 · --as-success #16A34A (+ --as-success-soft
+  #DCFCE7) · --as-warning #D97706 (+soft) · --as-danger #DC2626 (+soft) ·
+  --as-info #3B82F6 (+ --as-info-soft #EFF6FF) · --as-neutral #9CA3AF (+soft) ·
+  --as-academy #7C3AED (+ --as-academy-soft) · --as-gold #B8860B (+soft/+text) ·
+  --as-accent #C9952E (LH runtime override -> cobalt #4a8fd4) · --as-accent-soft ·
+  shadows --as-shadow-sm/-md/-lg.
+  GREP: `--as-(surface|card|text-2|muted|cobalt|green|red|violet|amber)` across
+  src/ = 0 matches. The render's token set exists nowhere in the app.
+  CROSS-CHECK: shipped PlayerRow.jsx already uses var(--as-text-primary),
+  var(--as-success/-warning/-danger), var(--as-academy), var(--as-bg-secondary),
+  var(--as-accent) — i.e. the §6/§3 names.
+
+VERDICT / BUILD EFFECT:
+  • The render's A.7 token-remap column is VOID. Build against the REAL --as-*
+    names above (= CC §6 = CLAUDE.md §3). No re-map.
+  • Soft tints: use the EXISTING `-soft` tokens (--as-success-soft, --as-info-soft,
+    --as-academy-soft, ...). Do NOT use color-mix and do NOT invent tokens —
+    CLAUDE.md §0 rule #2 forbids new tokens; the -soft set already covers it.
+  • Payment dot: the shipped pattern is an inline 6px dot colored with
+    var(--as-success | --as-warning | --as-danger) (PlayerRow.jsx today). There is
+    no `.sev` class in this app — render the dot inline with those tokens.
+  • Money text: var(--as-text-secondary) for the 13px line (per the render's own
+    S3); gold remains achievement-only (--as-gold), never money. Agreed.
+  This removes the render's "pre-flight token grep" gate — already done here; the
+  answer is "build to §6 names."
+
+--------------------------------------------------------------------------------
+FINDING 2 — A.4 "COACHES SEE NO MONEY (RLS)" IS CORRECT. CONFIRMED.
+--------------------------------------------------------------------------------
+EVIDENCE (live pg_policies on the money tables):
+  financial_accounts:     fin_accounts_admin (ALL, user_has_role_in_org admin) +
+                          fin_accounts_parent_read (SELECT own guardian). No coach.
+  financial_transactions: fin_tx_admin_insert + fin_tx_admin_select (admin only) +
+                          fin_tx_parent_read (own account). No coach policy.
+  => Coaches have NO read path to either table. family_balances is
+     security_invoker, so a coach's query returns ZERO rows.
+
+CONSEQUENCE (a latent bug the render's ruling fixes):
+  The CURRENT shipped roster renders the payment dot for `role==='admin' ||
+  role==='coach'` (PlayerRow.jsx:58). For a coach, family_balances yields no rows
+  -> every balance computes as 0 -> every dot is GREEN ("paid") regardless of
+  reality. So coaches today see an always-green, meaningless dot. The render's
+  ruling (remove the coach money signal entirely) is correct AND closes this bug.
+  CC concedes its earlier "coach keeps the dot" lean — it was unverified.
+
+BUILD EFFECT: S3 coach variant = NO dot, NO money line. S5 money sheet =
+  admin-only (already specified). Confirmed as the render wrote it.
+
+--------------------------------------------------------------------------------
+FINDING 3 — EVERYTHING ELSE IN PART A IS ACCEPTED (matches CC audit + live DB)
+--------------------------------------------------------------------------------
+  A.1 schema incl. the jersey TYPE MISMATCH (team_players.jersey_number TEXT vs
+      roster_members.jersey_number INTEGER) — accepted; the set_jersey RPC must
+      write both with equal values (the render's D-part already does).
+  A.2 view formula + action->ledger sign table — accepted (matches our read).
+  A.3 mutation order (mirror-first add; inactivate-first remove; team_players-
+      first hard delete) — accepted.
+  A.5 active counts (6th Grade Girls 13, 5th Grade Boys 11, total 24) — accepted;
+      supersedes CC's 14/10 (CC counted rostered rows; the live status='active'
+      digit is authoritative).
+  A.6 roster_members.amount_paid/amount_due are a dormant trap — agreed; no
+      surface reads them; family_balances is the one source.
+  C3 payment_method picker includes `stripe` — agreed (full set: zelle, venmo,
+      cash, check, stripe, other).
+  PART D RPC contracts, PART E build order, PART F invariants — accepted as written.
+
+--------------------------------------------------------------------------------
+BUILD READINESS + GATES
+--------------------------------------------------------------------------------
+  PR-1 (CC, READ-ONLY, no GO): UNBLOCKED. Tokens resolved (build to §6 names).
+     Scope: S7 PlayerRow split (extract PlayerRowActions.jsx) + S3 roster row
+     redesign (admin dot+amount / coach none / parent none) + S2 season-tag fix
+     (derive from programs.name -> "Summer Select 2026") + admin hero summary
+     line. Each file <=150 LOC, var(--as-*) only. CC can start immediately.
+  PR-0 (the 6 money-path SECDEF RPCs): GATED on Frank's GO. The render scopes
+     these to the architect lane; NOTE CC also has Supabase apply_migration
+     access and can apply them from the architect's contracts if Frank prefers
+     CC own it. Either way: needs Frank's explicit GO. Blocks PR-2 + PR-3.
+  Frank Q1 (deposit): architect recommends C1 (record the $100/$400-due as data
+     now; no dated reminder this cycle, since "due June 22" is 3 days out and the
+     reminder is a notifications build). C2 (auto-remind June 22) is the
+     fast-follow. Needs Frank's call.
+
+ASKS FOR FRANK: (1) start PR-1 now? (2) GO on PR-0 RPCs — and CC-applies vs
+  architect-applies? (3) deposit C1 (record now) vs C2 (reminder this cycle)?
+================================================================================
+END — relay to architect; on Frank's calls, PR-1 starts and PR-0 unblocks.
+================================================================================
