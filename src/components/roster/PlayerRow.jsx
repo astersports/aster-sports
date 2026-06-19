@@ -4,12 +4,18 @@ import { useHomeRole } from '../../hooks/useHomeRole';
 import { isSparseRsvp } from '../../hooks/useSparseRsvp';
 import GuardianRow from './GuardianRow';
 import PlayerRowActions from './PlayerRowActions';
+import RosterRowMenu from './RosterRowMenu';
 import { paymentSignal } from '../../lib/roster/paymentSignal';
 
 const NOW = Date.now();
 
-export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
+export default function PlayerRow({ player, teamColor, isLast, isMyChild, canManage, actions }) {
   const [expanded, setExpanded] = useState(isMyChild);
+  const [menuOpen, setMenuOpen] = useState(false);
+  // PR-2 Part A: staff manage menu. Gated on canManage (realRole isStaff,
+  // passed from RosterSection) — NOT activeRole; mutations stay realRole-gated
+  // like InviteButton, while the money signal below is activeRole-gated.
+  const manage = canManage && actions;
   const { role } = useAuth();
   // Money signal gates on the PREVIEW role (activeRole), not the real role, so
   // "view as coach" faithfully hides it (Frank 2026-06-19). Real coaches/parents
@@ -96,8 +102,13 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
         {activeRole === 'admin' && (Number(player.balance_cents) || 0) !== 0 && (
           <span style={{ fontSize: 13, fontWeight: 500, color: sig.labelColor, flexShrink: 0, marginLeft: 8, whiteSpace: 'nowrap' }}>{sig.label}</span>
         )}
-        <PlayerRowActions jerseyNumber={player.jersey_number} teamColor={teamColor} expanded={expanded} />
+        <PlayerRowActions jerseyNumber={player.jersey_number} teamColor={teamColor} expanded={expanded}
+          onMenu={manage ? () => setMenuOpen(true) : undefined} />
       </div>
+      {manage && (
+        <RosterRowMenu open={menuOpen} onClose={() => setMenuOpen(false)} player={player}
+          setJersey={actions.setJersey} setRosterType={actions.setRosterType} removePlayer={actions.removePlayer} />
+      )}
       {expanded && (guardians.length > 0 || role === 'admin') && (
         <div style={{ padding: '4px 16px 12px 68px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           {/* 2026-05-20 — "No guardians linked" diagnostic copy is admin-only.
