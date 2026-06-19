@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Mail, MessageSquare, Phone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useHomeRole } from '../../hooks/useHomeRole';
 import { isSparseRsvp } from '../../hooks/useSparseRsvp';
 import InviteButton from './InviteButton';
 import PlayerRowActions from './PlayerRowActions';
@@ -11,6 +12,10 @@ const NOW = Date.now();
 export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
   const [expanded, setExpanded] = useState(isMyChild);
   const { role } = useAuth();
+  // Money signal gates on the PREVIEW role (activeRole), not the real role, so
+  // "view as coach" faithfully hides it (Frank 2026-06-19). Real coaches/parents
+  // never have activeRole='admin'. Row ACTIONS (InviteButton) still use realRole.
+  const { activeRole } = useHomeRole();
   const initial = (player.last_name || player.first_name || '?').charAt(0).toUpperCase();
   // §11.5: academy status is per-team (team_players.roster_type), falling back
   // to the global members flag only when roster_type is absent (Cat#30 ROSTER-3).
@@ -60,7 +65,7 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
             <div className="font-semibold truncate" style={{ color: 'var(--as-text-primary)', fontSize: 15 }}>
               {player.first_name} {player.last_name}
             </div>
-            {role === 'admin' && (
+            {activeRole === 'admin' && (
               <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: sig.dot, flexShrink: 0 }}
                 title={sig.label} aria-label={`Payment: ${sig.label}`} />
             )}
@@ -89,7 +94,7 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
             </div>
           )}
         </div>
-        {role === 'admin' && (Number(player.balance_cents) || 0) !== 0 && (
+        {activeRole === 'admin' && (Number(player.balance_cents) || 0) !== 0 && (
           <span style={{ fontSize: 13, fontWeight: 500, color: sig.labelColor, flexShrink: 0, marginLeft: 8, whiteSpace: 'nowrap' }}>{sig.label}</span>
         )}
         <PlayerRowActions jerseyNumber={player.jersey_number} teamColor={teamColor} expanded={expanded} />
