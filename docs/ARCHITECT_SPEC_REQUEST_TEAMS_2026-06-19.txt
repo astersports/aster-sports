@@ -1,0 +1,301 @@
+================================================================================
+ARCHITECT SPEC + DECISION REQUEST — TEAMS SECTION REDESIGN
+================================================================================
+Date:     2026-06-19
+From:     CC (Claude Code — implementation + live-verification lane)
+To:       The architect (claude.ai — design / render / spec lane)
+Relay:    Frank (operator — ratifies + relays)
+Pairs with: docs/TEAMS_REDESIGN_AUDIT_2026-06-19.txt  (the full findings; this
+            doc is the ASK — read the audit for any file:line / schema depth.)
+Protocol: §11.8 round-trip — you reply with a committed renders+specs .txt that
+          CC builds "exactly" (Frank's word). Per §11.8 rule 6 this is a
+          DECISION request: each fork below carries options + CC's labeled lean;
+          you + Frank decide, CC does not settle a fork unilaterally.
+
+--------------------------------------------------------------------------------
+HOW TO USE THIS DOC
+--------------------------------------------------------------------------------
+1. §1 says what we're building and what CC needs back from you.
+2. §2 is Frank's request verbatim — the source of truth for intent.
+3. §3 is the substrate you must design WITHIN (data shape, what's reusable,
+   what's empty). It is condensed from the audit; trust it.
+4. §4 is the 5 DECISIONS to lock. Render against your chosen branch; if you
+   pick differently from CC's lean, say so and CC rebuilds to your call.
+5. §5 enumerates the SURFACES + STATES we need rendered, per role.
+6. §6 is the LOCKED design system — renders MUST use these tokens/components/
+   patterns or CC cannot build them "exactly."
+7. §7 is the invariants the design must not break (they are enforced by tests).
+8. §8 is the exact DELIVERABLE shape we need back.
+9. §9 open questions for Frank. §10 out of scope.
+
+--------------------------------------------------------------------------------
+1. MISSION
+--------------------------------------------------------------------------------
+Redesign the Teams section so an admin can MANAGE A ROSTER and the MONEY attached
+to each player — not just view it. Today the section is read-only + team-level
+CRUD; there is no way to add/remove a player, set a jersey, or take a financial
+action from a roster. We are adding that, on top of a clean-slate season.
+
+WHAT CC NEEDS BACK FROM YOU (the deliverable, detailed in §8):
+  (a) Per-role wireframes for every surface in §5, in every state.
+  (b) Component-level specs precise enough to build verbatim (layout, tokens,
+      copy, interaction, empty/loading/error/optimistic/confirm states).
+  (c) A PR/build order (which surface ships first, dependencies).
+  (d) Your ruling on each §4 fork (or confirm CC's lean).
+
+--------------------------------------------------------------------------------
+2. FRANK'S REQUEST (verbatim)
+--------------------------------------------------------------------------------
+"I just ported the full set of rosters over to the new summer teams, but not all
+ are on it. I can edit the team details but not the rosters. some paid the full
+ 500 to join, but some paid the 100 deposit and 400 due on June 22 fee. other
+ paid partial and used in house credit to pay for portion. I should be able to
+ return funds, issue credit or adjust the invoice or delete the player from the
+ roster as they never accepted."
+
+Decoded into the jobs the redesign must support:
+  J1  Add / remove players on a team's roster; fix who's on it ("not all are on it").
+  J2  Set/show payment state per player: paid-in-full $500 · deposit+balance-due ·
+      partial+credit.
+  J3  From a player: RETURN FUNDS (refund), ISSUE CREDIT, ADJUST THE INVOICE
+      (charge/adjustment), DELETE FROM ROSTER (never-accepted).
+PRIORITY (CC read of Frank's words): J1 + J3-delete are the live pain (he's
+  cleaning up a just-ported roster right now). J2/J3-money is the bigger surface
+  but the underlying season has $0 of data yet, so it's build-fresh not fix-now.
+
+--------------------------------------------------------------------------------
+3. SUBSTRATE YOU MUST DESIGN WITHIN (condensed; full depth in the audit)
+--------------------------------------------------------------------------------
+DATA SHAPE
+  • Roster membership = team_players (canonical: roster_type rostered|futures,
+    jersey_number, status active|inactive) mirrored to roster_members by a
+    trigger. To REMOVE: set team_players.status='inactive' FIRST, then drop the
+    mirror — order matters (trigger enforced). "Delete never-accepted" can be a
+    hard delete since no money/registration is attached.
+  • Money = family-keyed, NOT player-keyed. One financial_accounts row per
+    (guardian, season). An append-only financial_transactions ledger (types:
+    payment / refund / adjustment / fee). family_balances VIEW is the ONE
+    canonical balance source (balance = billed − net_paid; negative = credit).
+  • financial_transactions has an UNUSED applied_to_player_id column — so a
+    per-player action can be ATTRIBUTED to a kid while the money still lives on
+    the family account. This is the seam that makes per-player actions cheap.
+  • Deposit/installment schema EXISTS and is dormant: payment_plans +
+    payment_plan_installments (per-seq due_date + amount_cents) + invoices (with
+    due_date). Zero rows anywhere. So "$100 now, $400 due June 22" is
+    representable today with no migration — it just has no UI.
+  • Credit today = a positive 'adjustment' transaction (no stored credit pool).
+
+WHAT'S REUSABLE (design to reuse, not reinvent)
+  • RecordPaymentForm (FullScreenForm) already does payment / refund / adjustment
+    with a live "balance after" preview — it's family-scoped on the Financials
+    page. The redesign wants this same form REACHABLE FROM A ROSTER ROW with a
+    player in context (writing applied_to_player_id).
+  • AddChargeSheet (BottomSheet) already adds a 'fee'.
+  • Void = append a reversing row (already built on the family page).
+  • The Team Detail page is already a hero + collapsibles surface (§16.14).
+
+GROUND TRUTH (live, 2026-06-19)
+  • Summer Select 2026: 24 players rostered across "6th Grade Girls" (12U F, 14)
+    and "5th Grade Boys" (11U M, 10). ZERO financial rows / registrations for the
+    season — a clean slate. Frank's payment states are states he must ENTER.
+  • Org-wide, only 'fee' + 'payment' transactions have ever been written; refund
+    and adjustment are first-use. Money method has always been 'other'.
+  • STALE BUG to fix in-flight: TeamDetailPage hardcodes a "Spring 2026" scope
+    tag — wrong now. Should derive from the active season.
+
+--------------------------------------------------------------------------------
+4. DECISIONS TO LOCK (render against your ruling; CC lean labeled)
+--------------------------------------------------------------------------------
+FORK-A — PER-PLAYER MONEY ATTRIBUTION
+  A1 (CC LEAN): keep family billing; stamp applied_to_player_id on each txn so a
+     roster row shows/records "Charlie · refund $50". Reuses every money hook.
+  A2: new player-scoped accounts. Cleaner per-kid reporting; breaks reuse; costly.
+  → Render implication: if A1, the money sheet shows "Player (family account: X)"
+     and a per-player line within a family ledger; if A2, a standalone player
+     ledger. Please rule.
+
+FORK-B — ROSTER-EDIT SURFACE + "DELETE" SEMANTICS  ★ highest design value
+  Where do add / remove / jersey / move live? Options to render one of:
+    B1 a dedicated "Manage roster" admin screen (own route),
+    B2 an edit-mode toggle on the Team Detail roster section (inline row actions),
+    B3 row actions in an overflow per PlayerRow.
+  AND: is "remove" one verb or two? CC LEAN: TWO — "Remove" = inactivate (keeps
+     history, for a real player leaving) vs "Delete" = hard-remove a
+     never-accepted port (no history needed). Render both as distinct,
+     differently-weighted actions (delete = destructive/confirm).
+  → CC LEAN on surface: B2 (edit-mode on the existing roster collapsible) keeps
+     it in context and avoids a new route, but B1 is cleaner for bulk cleanup —
+     YOUR call; this is the core UX decision.
+
+FORK-C — DEPOSIT / PLAN DEPTH ($100 now, $400 due June 22)
+  C1 (thin): model as 'fee' $500 + 'payment' $100; "$400 due" = residual balance;
+     the date lives in a note. No dated reminder. Cheapest.
+  C2 (full): use the dormant payment_plans + installments (seq1 $100 paid, seq2
+     $400 due 2026-06-22) or an invoice.due_date; gives a real dated schedule +
+     a parent-facing timeline + (optional) reminders. No migration needed.
+  → CC LEAN: C1 now / C2 fast-follow UNLESS Frank wants the dated "due June 22"
+     reminder to actually fire this build. Either way the deposit-vs-full CHOICE
+     needs a capture control on the money sheet — please render that control.
+
+FORK-D — CREDIT REPRESENTATION
+  D1 (CC LEAN): "issue credit" = positive 'adjustment'; negative balance = credit
+     available; reuses the form. D2: a real credit pool (new table) + apply-credit
+     flow. → Render implication: D1 = one "Issue credit" mode in the money sheet;
+     D2 = a separate credit-balance card + "apply" affordance.
+
+FORK-E — ACTIONS AS RPCs
+  CC will build the 4 roster-facing actions as audited SECDEF RPCs
+  (drop_roster_member, record_payment, issue_refund/adjust, void) regardless of
+  your render — noting it so you know each action is atomic + can show an
+  optimistic state then confirm. No render impact; just confirm you're aligned.
+
+--------------------------------------------------------------------------------
+5. SURFACES + STATES TO RENDER (per role: admin / coach / parent)
+--------------------------------------------------------------------------------
+For each surface give the admin render (primary), plus how coach + parent differ.
+States to cover where they apply: default · empty · loading · error · optimistic
+(mid-write) · destructive-confirm.
+
+S1. TEAMS LIST (/teams, /admin/teams)
+   - Mostly intact. Confirm card layout + whether "Manage roster" is reachable
+     from here (vs only Team Detail). Admin sees team CRUD; coach/parent read.
+
+S2. TEAM DETAIL — HERO (§16.14 hero card)
+   - Today: record / next-event / per-role action stack + a (stale) season tag.
+   - NEW: does the hero gain a roster-health / money summary line for admin
+     (e.g. "14 rostered · 3 owe · $1,200 out")? Render the admin hero with this
+     summary + how coach (record only) and parent (own-child) heroes differ.
+   - Fix the season tag to be derived (no hardcoded "Spring 2026").
+
+S3. TEAM DETAIL — ROSTER SECTION (the read view + entry to edit)
+   - Today: collapsible list of PlayerRow (avatar, name, 6px payment dot, RSVP
+     pills, jersey, expand→guardians). Render the redesigned row:
+       • admin/coach: payment signal. FORK: dot-only vs dot+amount. CC LEAN:
+         admin sees AMOUNT ("owes $400" / "paid" / "deposit · $400 due Jun 22"),
+         coach sees DOT only, parent sees neither. Render all three.
+       • the entry point to "Manage roster" / edit mode (per FORK-B).
+
+S4. MANAGE ROSTER (admin) — the new editing surface (per FORK-B)  ★
+   - ADD player: a picker of org players NOT already on this team (search by
+     name; show grade/age; mark academy). Empty state when all are added.
+   - Each row's actions: set/edit jersey number; set roster_type (rostered vs
+     futures); REMOVE (inactivate, confirm) vs DELETE (never-accepted, hard,
+     stronger confirm); optional MOVE to another team.
+   - Optimistic add/remove with the §16.1 rollback microcopy on failure.
+   - Loading / empty ("No players yet — add from the org") / error states.
+
+S5. PLAYER MONEY SHEET (admin) — the new per-player financial action surface  ★
+   - Opened from a roster row (admin). Shows: player name + family account +
+     current family balance (labeled scope). Actions = Record payment · Return
+     funds (refund) · Issue credit · Adjust invoice (charge). Reuse the
+     RecordPaymentForm shape (FullScreenForm, 3+ controls) with a live
+     "balance after" preview. Include the DEPOSIT-vs-FULL capture control
+     (FORK-C): "Paid in full ($500)" vs "Deposit $X, balance $Y due [date]".
+   - Method picker (zelle/venmo/cash/check/other), amount, date, note.
+   - Confirm + optimistic update + rollback copy. Error state.
+
+S6. PARENT-FACING BALANCE (only if FORK-C = C2)
+   - A parent's view of "paid $100, $400 due June 22" — a small installment
+     timeline. Render only if Frank wants C2 this build.
+
+S7. PLAYERROW SPLIT NOTE (constraint, not a surface)
+   - PlayerRow is already 146 LOC (cap 150). Any added row action FORCES a split.
+     Please design the row so the action affordance is a thin element CC can
+     extract (e.g. a trailing action button / overflow) — flag this in the spec.
+
+--------------------------------------------------------------------------------
+6. LOCKED DESIGN SYSTEM (renders MUST conform — CC builds to var(--as-*))
+--------------------------------------------------------------------------------
+TOKENS (use these names; no hardcoded hex except team_color inline from DB):
+  surfaces/text: --as-bg-page #F7F8FA · --as-bg-card #FFF · --as-bg-card-hover ·
+    --as-bg-secondary · --as-bg-tertiary · --as-text-primary #1A1D23 ·
+    --as-text-secondary #4A5568 · --as-text-tertiary #8896AB · --as-text-inverse ·
+    --as-border-default #E2E8F0 · --as-border-subtle.
+  status: --as-success #16A34A (+soft) · --as-warning #D97706 (+soft) ·
+    --as-danger #DC2626 (+soft) · --as-info #3B82F6 (+soft) · --as-academy #7C3AED.
+  money/achievement: gold = ACHIEVEMENT ONLY (never money). Money is plain text.
+  brand (Legacy Hoopers runtime override): accent = cobalt #4a8fd4 (--as-accent),
+    --as-accent-hover #5BA0E0, --as-header #4a8fd4. Use var(--as-accent), not hex.
+  shadows: only --as-shadow-sm / -md / -lg. radius: 6 badge / 10 card+input /
+    16 modal / 9999 avatar.
+COMPONENTS:
+  • Tap target ≥44px. Inputs 44px, bg --as-bg-tertiary, 1.5px border, 10px radius,
+    accent focus ring.
+  • Cards: --as-bg-card, --as-border-default, 10px, --as-shadow-sm.
+  • Buttons: primary (accent bg, inverse text) / secondary (accent border) /
+    destructive (danger bg) / ghost. Press = scale(0.97)+vibrate(50).
+  • Modal backdrop rgba(0,0,0,0.3) — never black/50.
+  • Icons: Lucide only, 16/20/24, stroke 1.75. Avatars 24/32/40/56.
+  • Badges: 6px radius, 11px, weight 500.
+FORM ROUTING (hard rule, AP#15): 3+ fields → FullScreenForm; 1–2 actions →
+  BottomSheet. (So: the money sheet + add-player = FullScreenForm; a single
+  remove-confirm = ConfirmDialog/BottomSheet.)
+DETAIL PAGE (§16.14): hero card + collapsible sections; section headers show a
+  summary so state reads without expanding; destructive/secondary actions live in
+  an overflow, NOT as floating chrome.
+TYPOGRAPHY: Inter 24/20/17/15/13/11; event time 17 bold; labels 11 uppercase
+  tracking-wide.
+ELITE (§16): optimistic UI on per-row writes (pessimistic on cascading/bulk);
+  kindness microcopy (e.g. rollback = "Looks like that didn't go through. Try
+  again?"); accessibility (aria-label on every control, live region on state
+  change, ≥4.5:1 text contrast, keyboard nav); density-aware where lists are long.
+
+--------------------------------------------------------------------------------
+7. INVARIANTS THE DESIGN MUST NOT BREAK (test-enforced)
+--------------------------------------------------------------------------------
+  • All billed/paid/balance numbers come from family_balances (one source). Don't
+    design a surface that implies a second, separately-computed balance.
+  • Per-role hero contract: parent (View calendar + coach contact) / coach-not-
+    self (Message+Briefing) / coach-self (contact hidden) / admin
+    (Message+Briefing+contact). Keep it.
+  • Payment status one source; if you show an amount AND a dot, both derive from
+    the same balance + LABEL the scope (all-seasons family vs this-season).
+  • Coaches don't see money actions/amounts (privacy lean) — confirm or override.
+  • 150-LOC per component (drives the PlayerRow split in S7).
+
+--------------------------------------------------------------------------------
+8. THE DELIVERABLE WE NEED BACK (so CC can "build exactly")
+--------------------------------------------------------------------------------
+A committed .txt (your render+spec doc) containing, per surface in §5:
+  (1) WIREFRAME per role (admin/coach/parent) + per state (default/empty/loading/
+      error/optimistic/destructive-confirm). ASCII or described layout is fine —
+      CC implements pixels from your spec + §6 tokens.
+  (2) COMPONENT SPEC: element tree, which --as-* token per element, exact COPY
+      (titles, labels, button text, empty-state lines, rollback microcopy),
+      interaction (tap → what), and the 44px/aria requirements.
+  (3) DATA each surface reads/writes (CC maps to hooks/RPCs; you name the fields
+      conceptually, e.g. "show family balance, labeled 'this season'").
+  (4) Your RULING on each §4 fork (A–E), or "CC lean confirmed."
+  (5) A BUILD ORDER: the PR sequence (e.g. PR-1 Manage Roster read+remove, PR-2
+      add-player, PR-3 money sheet, PR-4 deposit capture…) with dependencies, so
+      CC ships incrementally behind the §15 auto-merge flow.
+Per §0.8 (CLAUDE.md): where a spec says "build X," include the literal layout/copy
+  so CC locates the insertion point and applies it — not a description to
+  interpret. CC will ask if exact copy is missing rather than improvise.
+
+--------------------------------------------------------------------------------
+9. OPEN QUESTIONS FOR FRANK (please answer so the architect can lock §4)
+--------------------------------------------------------------------------------
+  Q1  Deposit/plan: do you want the dated "due June 22" to actually REMIND
+      parents this build (C2), or is recording the balance enough for now (C1)?
+  Q2  "Delete from roster": for the never-accepted ports — hard-delete them
+      entirely (gone), or keep them as inactive (recoverable)? CC lean: hard-
+      delete the never-accepted, inactivate real leavers.
+  Q3  Should coaches see dollar AMOUNTS on the roster, or just the colored dot?
+      (CC lean: dot only; money is admin-only.)
+  Q4  Where does "Manage roster" live — its own screen, or an edit mode on the
+      team page? (CC lean: edit mode on the team page.)
+  Q5  Should the roster row show the amount/deposit state inline for admin (e.g.
+      "deposit · $400 due Jun 22"), or keep the row clean and put money only in
+      the player money sheet? (CC lean: a compact inline amount for admin.)
+
+--------------------------------------------------------------------------------
+10. OUT OF SCOPE (don't render)
+--------------------------------------------------------------------------------
+  Coach payouts/comp · per-player GAME stats (forbidden 2026) · Stripe/real
+  collection (money is recorded, not charged) · multi-org config editors ·
+  tournament rosters · i18n beyond string-extractability.
+
+================================================================================
+END — reply with the renders+specs .txt; CC builds the locked sequence.
+================================================================================
