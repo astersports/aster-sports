@@ -84,7 +84,7 @@ Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, 
 
 **Live environment:**
 - App: https://astersports.app
-- Repo: github.com/astersports/aster-sports (private; org move 2026-06-11 — was LegacyHoopers)
+- Repo: github.com/astersports/aster-sports (public; org move 2026-06-11 — was LegacyHoopers)
 - Supabase project: `vrwwpsbfbnveawqwbdmj`
 - Admin: admin@legacyhoopers.org (user_id: `1e06a3d4-769b-42c0-b90b-92787410ee5a`, org_id: `e3e95e21-3571-4e9a-985a-d5d01480d4a6`)
 - Local path: `~/aster-sports` | branch: `main`
