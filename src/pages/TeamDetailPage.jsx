@@ -20,6 +20,7 @@ import TeamDetailHeroSlot from '../components/roster/TeamDetailHeroSlot';
 import TeamDetailOverflowMenu from '../components/roster/TeamDetailOverflowMenu';
 import TeamAchievements from '../components/roster/TeamAchievements';
 import RosterSection from '../components/roster/RosterSection';
+import StaffSection from '../components/roster/StaffSection';
 import TeamSwitcher from '../components/roster/TeamSwitcher';
 import TeamHeatmap from '../components/gameday/TeamHeatmap';
 import UpcomingEvents from '../components/roster/UpcomingEvents';
@@ -129,6 +130,10 @@ export default function TeamDetailPage() {
           sortBy={sortOrder} setSortBy={setSortOrder}
           lastFetchedAt={lastFetchedAt} onRefresh={handleRefresh} />
       )}
+
+      {/* PR-2 Part B: Staff (coaches + comp). Admin manages; coach read-only +
+          own comp; parents don't reach it (isStaff gate on activeRole). */}
+      {isStaff(role) && <StaffSection team={team} />}
 
       {/* PR C / Obs 1 / anti-pattern #51 — TeamPlayerStats mount REMOVED.
           Live-scoring isn't a real Aster Sports feature yet; mount was
