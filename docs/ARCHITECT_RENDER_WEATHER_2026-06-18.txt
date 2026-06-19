@@ -1,0 +1,179 @@
+==============================================================================
+ARCHITECT -> CC : RENDER + RULINGS , WEATHER UX LAYER (parent-delight build)
+Date 2026-06-18. Answers CC's SPEC + RENDER REQUEST
+(ARCHITECT_SPEC_REQUEST_WEATHER_2026-06-18.txt). Renders R-1..R-6, ratifies R-7.
+Self-contained per CLAUDE.md 11.8 rule-6 (decisions arrive as files, not chat prose).
+Frank's ruling (BUILD, foundation-first, "cool parent" delight) is the frame.
+All rulings verified against shipped renders. Evidence cited inline.
+
+[Committed to the repo by CC 2026-06-19 for the durable record + cross-lane
+visibility (the render arrived as an upload; this is the verbatim artifact).
+NOTE: R-4's token verification was against the HTML mockups, not src/index.css —
+CC filed the correction in docs/CC_VERIFICATION_WEATHER_RENDER_2026-06-18.txt
+(VF-1): the rain banner reuses the shipped SEVERITY_TOKENS.info
+(--as-info / --as-info-soft), not --as-cobalt/--as-card/color-mix.]
+==============================================================================
+
+0. RULING ACKNOWLEDGED + ONE BLOCKER CORRECTED (Rule 5 flag, stated first)
+   The engagement reframe is endorsed. Indoor basketball has low weather stakes
+   operationally, but a weather glance is a real parent-delight touch and it sits
+   under the Nike-Run-Club engagement benchmark (CLAUDE.md 4). Build it well.
+
+   BLOCKER CORRECTED: CC's R-4 leaned --as-info-soft (#EFF6FF) with
+   --as-warning-soft (#FEF3C7) as the alternative, and asserted both "MUST be an
+   existing token." Neither exists. Verified against every shipped render: the
+   production palette has NO info, NO warning, and NO soft/tint variant tokens.
+   Ruling to either would force a hardcoded hex, which is an anti-pattern
+   violation. R-4 below is re-grounded on the system that actually ships.
+   [CC VF-1 correction: this is itself inverted — the architect's corpus was the
+   HTML mockups, not src/index.css. --as-info-soft #EFF6FF DOES ship (index.css:36)
+   and IS used app-wide. See the CC verification doc. The INTENT below (info tier,
+   friendly) is right; the concrete tokens are --as-info / --as-info-soft.]
+
+------------------------------------------------------------------------------
+1. VERIFICATION (what the architect checked, so CC builds on fact not the spec)
+------------------------------------------------------------------------------
+   Token vocabulary (CREATE_PROGRAM_TEAM_RENDER.html :root, authoritative):
+     --as-navy #1a1a2e, --as-cobalt #4a8fd4, --as-cobalt-dark #3070b0,
+     --as-green #1f9d57, --as-red #c0392b, --as-amber (UI semantic), --as-violet,
+     --as-surface #eef1f6, --as-card #ffffff, --as-border #dfe5ee,
+     --as-border-2 #eef1f5, --as-text #151924, --as-text-2 #475467,
+     --as-muted #5b6676. NO info/warning/soft tokens anywhere.
+     [CC VF-1: this is the MOCKUP vocabulary, not the shipped app. The React app
+     ships the CLAUDE.md §3 semantic palette: --as-info/-soft, --as-warning/-soft,
+     --as-danger/-soft, --as-bg-card, etc. --as-cobalt/--as-card have ZERO hits in
+     src/. Build against src/index.css.]
+   Soft-tint convention (HOME, PROGRAMS, SETTINGS, CREATE_PROGRAM renders):
+     color-mix(in srgb, var(--token) 13%, #fff). 13% is the house tint.
+     [CC VF-1: mockup-only. The shipped app uses SOLID --as-*-soft tokens, not
+     color-mix (one page scrim aside). Use --as-info-soft.]
+   Severity system (SETTINGS_S9_NOTIFICATIONS_RENDER.html:74, authoritative):
+     .sev.info  = var(--as-cobalt) ; .sev.warn = var(--as-amber) ; .sev.crit = var(--as-red)
+     => "friendly heads-up, not alarm" maps to the INFO tier.
+     [CC VF-1: the SHIPPED severity system is src/lib/alerts/severityTokens.js:
+     info = {bg: var(--as-info-soft), border/text: var(--as-info)}. Reuse it.]
+   Backdrop: rgba(0,0,0,0.3) is the only rgba in the corpus (AP-compliant).
+   Form primitives: BottomSheet and FullScreenForm are the documented FORM split
+     (AP#15, gated on control count). A read-only weather glance is neither.
+   Note (not blocking): the spec cites AP#7 and AP#27. Those numbers do not appear
+     in the handoff corpus the architect can see (they may live in the master
+     index). The intent behind both is sound and is preserved below.
+
+------------------------------------------------------------------------------
+2. R-1 , POPOVER SURFACE PRIMITIVE
+------------------------------------------------------------------------------
+   RULING: (a) lightweight inline popover. Approve CC lean.
+   - BottomSheet / FullScreenForm are the FORM vocabulary (AP#15). This payload is
+     a read-only disclosure with zero controls. Routing it through a form primitive
+     overloads the vocabulary and drops a heavy surface on a two-line payload.
+   - Do NOT create a new shared <Disclosure> primitive. One consumer does not earn
+     an abstraction. Promote at the third instance, not the first. Keep the popover
+     local to WeatherPopover.jsx.
+   - Anchored to the trigger, opens below, flips above if it would clip the
+     viewport bottom on mobile. No backdrop dimming (it is a glance, not a modal).
+
+------------------------------------------------------------------------------
+3. R-2 , POPOVER CONTENT
+------------------------------------------------------------------------------
+   RULING: one glanceable card, three lines max.
+     Line 1: [Lucide condition icon] + condition label (e.g. "Partly cloudy")
+     Line 2: matched-hour temp, the same value already on the rail, large
+     Line 3: day rain chance, "{n}% chance of rain"
+   - Reject the surrounding-3-hours option. That is a forecast strip, too much for a
+     delight glance and it pushes toward edge-of-coverage fabrication.
+   - If day rain% is unavailable (hourly-only path), OMIT line 3. Never render "0%".
+   - No location string in this surface. A null location renders nothing here.
+
+------------------------------------------------------------------------------
+4. R-3 , POPOVER TRIGGER + A11Y
+------------------------------------------------------------------------------
+   RULING: the existing rail indicator (EventCard {icon}{temp} on the facts line)
+   becomes the trigger. Keep it where it is. Parents' eyes already land there.
+   - Hit area >=44px via invisible padding around the small visible glyph.
+   - It is a <button> (focusable, Enter/Space activates), not a div with onClick.
+   - aria-label: "Weather for {event title}: {label}, {temp} degrees". Spell out
+     "degrees", screen readers mangle the ring glyph.
+   - Dismiss on outside-tap and Esc. Return focus to the trigger on close.
+   - When there is no forecast for the row, render nothing (no trigger, no empty
+     ring). The trigger only exists when there is something to disclose.
+
+------------------------------------------------------------------------------
+5. R-4 , RAIN BANNER TONE + TOKEN (re-grounded)
+------------------------------------------------------------------------------
+   RULING: INFO tier. Frank's "friendly heads-up, not alarm" = info tier.
+   - Accent (icon, and an optional 3px left border): the info color.
+   - Soft background: the info soft background.
+     [CC VF-1 concrete tokens: background var(--as-info-soft); accent var(--as-info);
+     reuse SEVERITY_TOKENS.info from src/lib/alerts/severityTokens.js. Do NOT use
+     --as-cobalt / --as-card / color-mix (they do not ship).]
+   - Icon: Lucide cloud-rain (or umbrella), stroke-width 1.75.
+   - Reject amber (the WARN tier) and red (critical) — they read as alarms.
+   - Copy tone: friendly, plain, action-light, no alarm words. No em dashes.
+     Approved templates (CC picks one, keeps the day named):
+       "Looks like rain Saturday. Might want to leave a few minutes early."
+       "Rain likely Saturday. Pack a jacket for the trip."
+     Banned: "PRECIPITATION ALERT", "WARNING", anything all-caps or urgent.
+
+------------------------------------------------------------------------------
+6. R-5 , RAIN BANNER PLACEMENT + THRESHOLD + DISMISSAL
+------------------------------------------------------------------------------
+   RULING:
+   - Surface: HOME only. Schedule is a scanning surface where a banner competes with
+     the list. Home is the "what's coming up" surface where a single heads-up belongs.
+     (Frank may override to "both"; if so, schedule copy attaches to the next-event
+     header only, never repeated per row.)
+   - Scope: the NEXT upcoming event only. One banner, one event, one heads-up.
+   - Threshold: precipitation_probability_max >= 50 for that event's date.
+     Named constant RAIN_BANNER_THRESHOLD_PCT = 50 in lib/constants.js.
+   - Dismissal: session-dismissible via sessionStorage, keyed by event id.
+     Key: rainbanner:dismissed:{eventId}.
+   - Never fabricate: no daily coverage, no coords, or fetch fail => no banner.
+
+------------------------------------------------------------------------------
+7. R-6 , FORECAST WINDOW CONSTANT
+------------------------------------------------------------------------------
+   RULING: WEATHER_FORECAST_WINDOW_DAYS = 10 in lib/constants.js, as the OUTER
+   product window. Each layer self-limits to its own data coverage and returns null
+   past it: hourly indicator + popover temp = forecast_days=7 (null beyond 7d);
+   daily rain banner uses the daily endpoint (extends past 7). Add a code comment:
+   "Outer product window. Hourly layers self-limit to ~7d and return null beyond;
+   do not 'fix' that into fabrication."
+
+------------------------------------------------------------------------------
+8. R-7 , SEQUENCE RATIFICATION
+------------------------------------------------------------------------------
+   RATIFIED. Foundation first.
+   - PR-1 (foundation): wmo.js single source, WeatherContext (one useWeather call
+     set), coordsForEvent.js, repoint the 5 consumers, AP#43 test. GO to build.
+   - PR-2 (WeatherPopover): builds on R-1, R-2, R-3.
+   - PR-3 (RainAlertBanner): builds on R-4, R-5.
+   - PR-4 (forecastWindow): builds on R-6.
+   One PR per prompt, one fix per PR, <=150 LOC each, var(--as-*) only, never
+   fabricate. Do not start PR-2 until PR-1 is open and verified.
+
+   PR-1 caution: grep-confirm the 5 consumer call sites + line numbers before
+   editing; do not trust pasted line numbers. Collapsing 5 independent useWeather
+   calls into one context is the goal; the existing sessionStorage cache already
+   dedupes, so the net is fewer fetches, no behavior loss. App-only change, no
+   schema, no RLS, no money path, so R-7 is the only gate PR-1 needs.
+
+------------------------------------------------------------------------------
+9. BUILD GUARDRAILS (CC holds these on every PR)
+------------------------------------------------------------------------------
+   - var(--as-*) tokens only. No hardcoded hex (team_color from DB excepted).
+   - Soft backgrounds via the shipped --as-*-soft tokens [CC VF-1: not color-mix].
+   - 44px minimum tap targets. Lucide icons, stroke-width 1.75.
+   - <=150 LOC per file. Targeted str_replace edits, no full rewrites.
+   - Never fabricate: out of window, no coords, or fetch fail renders nothing.
+   - Friendly microcopy, no alarm words, no em dashes.
+
+------------------------------------------------------------------------------
+10/11. CC PROMPT (PR-1) + QUEUE
+------------------------------------------------------------------------------
+   PR-1 prompt delivered (built + merged, PR #1074). PR-2/PR-3/PR-4 queued, one at
+   a time after the prior PR is open and verified. (Manus subsequently authored the
+   PR-2/3/4 build specs in docs/WEATHER_UX_BUILD_SPECS_PR24_2026-06-18.md, matching
+   these rulings.)
+==============================================================================
+END RENDER + RULINGS.
+==============================================================================
