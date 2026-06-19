@@ -74,10 +74,12 @@ npm run lint && npm run build && echo "PASS: lint + build clean"
 
 Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, Google Sheets, email/text, and spreadsheets with one mobile-first platform.
 
+**Owner:** Olive Juice Inc (DBA Aster Sports). The platform is a separate legal entity from any tenant. Full ownership, product, agency, repo, and domain map: `docs/STRUCTURE.md` (canonical).
+
 **Design benchmark:** Linear (information density), Apple Calendar (schedule visualization), Nike Run Club (engagement), iMessage (messaging feel), Stripe Dashboard (financial clarity). **NOT** TeamSnap. **NOT** a default Tailwind template.
 
-**Organization #1:** Legacy Hoopers LLC — Westchester, NY AAU youth basketball, grades 2–5.
-- Co-founders: Frank Samaritano (Program Director) + Kenny Lane (Coaching Director)
+**Pilot tenant (Organization #1):** Legacy Hoopers LLC, Westchester NY AAU youth basketball, grades 2-5. A separate company from Aster Sports; the first tenant on the platform.
+- Legacy Hoopers co-founders: Frank Samaritano (Program Director) + Kenny Lane (Coaching Director). Kenny is part of Legacy Hoopers only, not Aster Sports.
 - Assistant coach: Darien Gonzalez (paid per session)
 
 **Live environment:**
