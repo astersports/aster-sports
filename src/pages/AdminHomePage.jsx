@@ -9,6 +9,7 @@ import { useWeatherContext } from '../context/WeatherContext';
 import { useAdminNeedsYou } from '../hooks/useAdminNeedsYou';
 import { useParentComingUp } from '../hooks/useParentComingUp';
 import HomeShell from '../components/home/HomeShell';
+import RainAlertBanner from '../components/weather/RainAlertBanner';
 import HomeGreeting from '../components/home/HomeGreeting';
 import NeedsYouSection from '../components/home/NeedsYouSection';
 import ComingUpSection from '../components/home/ComingUpSection';
@@ -55,6 +56,7 @@ export default function AdminHomePage() {
   return (
     <HomeShell
       greeting={<HomeGreeting name={name} sublabel={sublabel} />}
+      alert={<RainAlertBanner key={comingUp?.id} event={comingUp} />}
       needsYou={(
         <NeedsYouSection
           {...needsYou}
