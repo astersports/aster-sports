@@ -73,7 +73,10 @@ describe('EventCard — SD-15 coverage badges at every density', () => {
           rsvpCount={{ going: 8, denominator: 10 }} />
       </MemoryRouter>
     );
-    expect(container.textContent).toContain('☀️ 74°');
+    // The conditions icon is now a separately-sized span (enlarged glyph,
+    // 2026-06-19) so icon+temp are adjacent without a literal space — assert
+    // whitespace-agnostically, same normalization as the coverage line above.
+    expect(container.textContent.replace(/\s+/g, '')).toContain('☀️74°');
   });
 
   it('zero-coverage cards stay quiet at compact (no amber noise)', () => {
