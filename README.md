@@ -3,7 +3,10 @@
 Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, Google Sheets, email/text, and spreadsheets with one mobile-first platform.
 
 **Live:** https://astersports.app
-**Org #1:** Legacy Hoopers LLC — Westchester, NY AAU youth basketball, grades 2–5
+**Owner:** Olive Juice Inc (DBA Aster Sports)
+**Pilot tenant:** Legacy Hoopers LLC, Westchester NY AAU youth basketball, grades 2-5
+
+> Aster Sports (the platform and company) is separate from Legacy Hoopers (a basketball org that is the pilot tenant inside the app). Full ownership, product, agency, repo, and domain map: [`docs/STRUCTURE.md`](./docs/STRUCTURE.md).
 
 ## Stack
 
@@ -17,7 +20,7 @@ Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, 
 ## Quickstart
 
 ```bash
-git clone git@github.com:LegacyHoopers/aster-sports.git
+git clone git@github.com:astersports/aster-sports.git
 cd aster-sports
 npm install
 cp .env.example .env   # then fill in VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
@@ -57,6 +60,7 @@ git log --oneline HEAD..origin/main   # behind?
 
 | | |
 |---|---|
+| **Ownership + product + repo structure** | [`docs/STRUCTURE.md`](./docs/STRUCTURE.md) |
 | **Source of truth for everything** | [`CLAUDE.md`](./CLAUDE.md) — design tokens, schema, anti-patterns, workflow |
 | Live planning + status | [`docs/EMBER_PENDING_LEDGER.md`](./docs/EMBER_PENDING_LEDGER.md) |
 | Current state-of-affairs | [`docs/STATE_OF_AFFAIRS_L99_v6.md`](./docs/STATE_OF_AFFAIRS_L99_v6.md) |
@@ -80,4 +84,4 @@ These are full-detail in [`CLAUDE.md`](./CLAUDE.md) §0 and §11 — short list 
 
 ## License
 
-Proprietary — Legacy Hoopers LLC.
+Proprietary, Olive Juice Inc (DBA Aster Sports).
