@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Mail, MessageSquare, Phone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useHomeRole } from '../../hooks/useHomeRole';
 import { isSparseRsvp } from '../../hooks/useSparseRsvp';
-import InviteButton from './InviteButton';
+import GuardianRow from './GuardianRow';
 import PlayerRowActions from './PlayerRowActions';
 import { paymentSignal } from '../../lib/roster/paymentSignal';
 
@@ -112,28 +111,6 @@ export default function PlayerRow({ player, teamColor, isLast, isMyChild }) {
             : guardians.map((g) => <GuardianRow key={g.id} guardian={g} role={role} />)}
         </div>
       )}
-    </div>
-  );
-}
-
-function GuardianRow({ guardian, role }) {
-  const name = `${guardian.firstName || ''} ${guardian.lastName || ''}`.trim() || 'Guardian';
-  const canInvite = role === 'admin' && guardian.email && !guardian.userId;
-  const linked = guardian.email && guardian.userId;
-  const iconBtn = { width: 44, height: 44, borderRadius: '50%', backgroundColor: 'var(--as-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' };
-  const spacer = <div style={{ width: 44, height: 44, flexShrink: 0 }} />;
-  const stop = (e) => e.stopPropagation();
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 36 }}>
-      <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: 'var(--as-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
-      <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-        {guardian.phone ? <a href={`tel:${guardian.phone}`} onClick={stop} aria-label="Call" style={iconBtn}><Phone size={14} strokeWidth={1.75} color="var(--as-text-secondary)" /></a> : spacer}
-        {guardian.phone ? <a href={`sms:${guardian.phone}`} onClick={stop} aria-label="Text" style={iconBtn}><MessageSquare size={14} strokeWidth={1.75} color="var(--as-text-secondary)" /></a> : spacer}
-        {guardian.email ? <a href={`mailto:${guardian.email}`} onClick={stop} aria-label="Email" style={iconBtn}><Mail size={14} strokeWidth={1.75} color="var(--as-text-secondary)" /></a> : spacer}
-        {canInvite ? <span onClick={stop}><InviteButton guardianEmail={guardian.email} /></span>
-          : linked ? <span style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, color: 'var(--as-success)' }} title="Account linked">✓</span>
-          : spacer}
-      </div>
     </div>
   );
 }
