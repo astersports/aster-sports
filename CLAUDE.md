@@ -143,7 +143,7 @@ Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, 
   --as-gold-soft:      #FBF3DC;
   --as-gold-text:      #8F6708;
 
-  /* ─── Brand (Ember defaults — overridden per org at runtime) ─── */
+  /* ─── Brand (platform defaults — overridden per org at runtime) ─── */
   --as-header:         #151525;
   --as-accent:         #C9952E;
   --as-accent-hover:   #D4A843;
@@ -187,7 +187,10 @@ Every table includes `org_id` FK → organizations. All RLS policies scope to us
 ### Branding Per Org
 `brand_colors` (jsonb) on organizations table. Applied by AuthContext on login.
 
-**LoginPage MUST reset brand tokens to Ember defaults on mount** so the login always shows dark navy regardless of cached org colors.
+**LoginPage MUST reset brand tokens to platform defaults on mount** so the login always shows the platform default (navy header + gold accent) regardless of cached org colors.
+
+### Tenant Data Boundary (no tenant facts in platform code or doctrine)
+Tenant-specific values (team names, team colors, season names, competition-type display labels such as "League Play", staff names, "Futures Academy" naming) live in the org's database row and org config. They are never hardcoded in platform components and never asserted as universal rules in this doctrine. The platform reads them from the org (organizations.brand_colors, teams.team_color, competition_type, etc.). Section 10 (Legacy Hoopers Reference) is the PILOT tenant's example config, not platform law. Tenant #2 (St Patrick) will carry different values on every line.
 
 ### User Roles
 | Role | Access |
@@ -470,7 +473,9 @@ total), high-ROI when it surfaces drift.
 
 ---
 
-## 10. LEGACY HOOPERS REFERENCE
+## 10. LEGACY HOOPERS REFERENCE (PILOT TENANT EXAMPLE, NOT PLATFORM LAW)
+
+> Organization #1, the pilot tenant. These values live in the org's DB row and config, not in platform code. See §4 "Tenant Data Boundary." Tenant #2 (St Patrick) will differ on every line. Shown here as a concrete reference for pilot work.
 
 ### Teams (oldest to youngest)
 | Team | Age | Circuit | Practice | Sort |
@@ -1426,7 +1431,7 @@ trade-off for last-resort error capture reliability.
 
 ### 16.11 First impressions
 
-- Login: cobalt #4a8fd4 + phoenix mark (ELITE-49)
+- Login: platform default brand (navy header #151525 + gold accent #C9952E), constellation-arrow mark. Tenant colors like LH cobalt #4a8fd4 apply at runtime AFTER login, never on the login screen. (phoenix.webp was deleted post-rebrand per AP #51.)
 - First-time tour: 3 dismissible tooltips on first home visit
 - "What's new" changelog: 3-line summary once per shipped feature
 - Empty states with brand voice
