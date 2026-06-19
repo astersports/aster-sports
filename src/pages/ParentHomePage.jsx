@@ -12,6 +12,7 @@ import { useParentNeedsYou } from '../hooks/useParentNeedsYou';
 import { useParentComingUp } from '../hooks/useParentComingUp';
 import { useEventDraftStatus } from '../hooks/useEventDraftStatus';
 import HomeShell from '../components/home/HomeShell';
+import RainAlertBanner from '../components/weather/RainAlertBanner';
 import HomeGreeting from '../components/home/HomeGreeting';
 import NeedsYouSection from '../components/home/NeedsYouSection';
 import ComingUpSection from '../components/home/ComingUpSection';
@@ -86,6 +87,7 @@ export default function ParentHomePage() {
       greeting={(
         <HomeGreeting name={name} kids={kids} sublabel={orgName} />
       )}
+      alert={<RainAlertBanner key={comingUp?.id} event={comingUp} />}
       needsYou={offSeason ? null : <NeedsYouSection {...needsYou} onNavigate={navigate} />}
       comingUp={offSeason ? null : (
         <ComingUpSection

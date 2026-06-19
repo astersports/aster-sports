@@ -44,6 +44,9 @@ export const WEATHER_TZ = 'America/New_York';
 // Outer product window for surfacing weather UX (parish parity, R-6). Hourly
 // layers self-limit to ~7d and return null beyond — see forecastWindow.js.
 export const WEATHER_FORECAST_WINDOW_DAYS = 10;
+// Rain/snow banner fires when the next event's daily precip probability is at
+// or above this (R-5b). Covers snow + storms too (the bigger driving impact).
+export const RAIN_BANNER_THRESHOLD_PCT = 50;
 
 export function buildTitle(type, opponent) {
   if ((type === 'game' || type === 'tournament') && opponent) return `vs. ${opponent}`;
