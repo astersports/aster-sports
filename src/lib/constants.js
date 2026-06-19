@@ -41,6 +41,9 @@ export const MEMBER_TYPES = ['roster', 'futures_academy'];
 // lat/lon) are a separate multi-tenant item — not built yet.
 export const WEATHER_DEFAULT_COORDS = [41.03, -73.76];
 export const WEATHER_TZ = 'America/New_York';
+// Outer product window for surfacing weather UX (parish parity, R-6). Hourly
+// layers self-limit to ~7d and return null beyond — see forecastWindow.js.
+export const WEATHER_FORECAST_WINDOW_DAYS = 10;
 
 export function buildTitle(type, opponent) {
   if ((type === 'game' || type === 'tournament') && opponent) return `vs. ${opponent}`;
