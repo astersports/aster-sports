@@ -1,7 +1,7 @@
 # CLAUDE Doctrine History (archive)
 
 Last updated: 2026-06-19. This file holds historical / build-tracking content
-extracted from `CLAUDE.md` during the doctrine-refresh slim (Pass B / B1) so the
+extracted from `CLAUDE.md` during the doctrine-refresh slim (Pass B / B1 + B2) so the
 live doctrine carries rules, not dated history. **Nothing here is a live rule.**
 Each block is reachable from `CLAUDE.md` via a pointer stub of the form:
 `Moved to docs/archive/CLAUDE_DOCTRINE_HISTORY.md → "<heading>"`. The headings
@@ -156,3 +156,58 @@ Cross-references that previously cited AP #59:
   pre-phase audit gate principle remains.
 
 See §4.AQ for the policy lock + Wave 2.C close.
+
+---
+
+## §11 ANTI-PATTERN ORIGIN CASES
+
+Provenance blocks moved out of CLAUDE.md §11 in doctrine Pass B2 (2026-06-19). The live rule bodies remain in CLAUDE.md; only the dated origin/recurrence/promotion provenance moved here. Pointers in CLAUDE.md reference these sub-headings by name.
+
+### AP #52 origin case
+
+   Empirical evidence (A.4 investigation 2026-05-22):
+   - Edit with parent absolute path → modifies parent only (worktree
+     unchanged)
+   - Edit with worktree absolute path → modifies worktree only (parent
+     unchanged)
+   - 10-second wait test: no silent revert detected
+   - Audit at investigation close: 9 git stashes existed in parent
+     checkout, of which 6 are explicitly marked as agent-leakage from
+     2026-05-21 and 2026-05-22 sessions. The prose discipline broke
+     on its registration day (PR #473) despite explicit prompt
+     instructions.
+
+   Origin: 2026-05-21 PR #431 registered #52 as candidate. Initial
+   refinement registered 2026-05-22 AM via PR #465. Empirical
+   investigation 2026-05-22 PM confirmed the tool is path-honest;
+   failure mode is agent input construction. CI gate proposed (see
+   companion PR + EMBER_PENDING_LEDGER tracking).
+
+### AP #54 origin case
+
+Origin: PRs #275/#276/#277 (anti-pattern #15 footnote — caught 2026-05-19).
+Recurrence: PRs #439, #440, #441 (2026-05-21 — same slip class, same
+session). Closure: PR #442 (2026-05-21 — explicit prompt held, PR shipped
+ready in same burst).
+
+Promoted 2026-05-22: 21 consecutive same-MCP-burst holds across two
+sessions — 2026-05-21 (PRs #444-#457, 14 holds) + 2026-05-22 (PRs
+#458-#464, 7 holds). Mechanism reliable, discipline locked.
+
+### AP #58 origin case
+
+Promoted 2026-05-25 after third multi-batch audit with synthesis
+discipline catching cross-cutting patterns:
+- 2026-05-21 L99 platform audit (14 batches): Pattern ALPHA #36 cascade
+  grew 7→25+→55+ across batches, justified a platform-wide sweep PR +
+  audit test instead of per-surface fixes
+- 2026-05-24 AM L99 compose-briefing audit (Batches A-F): PATTERN ALPHA
+  (#37 ordering) + PATTERN BETA (auth discipline) registered and locked
+  in §4.AF
+- 2026-05-24 PM L99 compose-briefing Phase 3 (Batches G/H1/H2/I):
+  PATTERN GAMMA candidate (AP #36 destructured-default) evaluated, did
+  NOT lock (only 1 real instance survived synthesis after 3 H2 false
+  positives); PATTERN ALPHA/BETA reconfirmed as non-recurring. The
+  synthesis gate caught a 75% false-positive yield in Batch H2 before
+  shipping, validating the "lock only at 3+ real instances post-
+  synthesis" heuristic.

@@ -590,23 +590,7 @@ to prevent accumulation.
    computed at agent session start and applied mechanically, not
    remembered attentionally.
 
-   Empirical evidence (A.4 investigation 2026-05-22):
-   - Edit with parent absolute path → modifies parent only (worktree
-     unchanged)
-   - Edit with worktree absolute path → modifies worktree only (parent
-     unchanged)
-   - 10-second wait test: no silent revert detected
-   - Audit at investigation close: 9 git stashes existed in parent
-     checkout, of which 6 are explicitly marked as agent-leakage from
-     2026-05-21 and 2026-05-22 sessions. The prose discipline broke
-     on its registration day (PR #473) despite explicit prompt
-     instructions.
-
-   Origin: 2026-05-21 PR #431 registered #52 as candidate. Initial
-   refinement registered 2026-05-22 AM via PR #465. Empirical
-   investigation 2026-05-22 PM confirmed the tool is path-honest;
-   failure mode is agent input construction. CI gate proposed (see
-   companion PR + EMBER_PENDING_LEDGER tracking).
+   Origin + empirical evidence: docs/archive/CLAUDE_DOCTRINE_HISTORY.md → "AP #52 origin case."
 
 53. **Session-level diff audits after high-output sessions (CANDIDATE —
 promote on third instance with stable findings rate).**
@@ -658,14 +642,7 @@ CI" is now structurally true since branch-protection required-approval
 was relaxed 2026-06-19; this amendment is about the arming call timing,
 not the merge gate.)
 
-Origin: PRs #275/#276/#277 (anti-pattern #15 footnote — caught 2026-05-19).
-Recurrence: PRs #439, #440, #441 (2026-05-21 — same slip class, same
-session). Closure: PR #442 (2026-05-21 — explicit prompt held, PR shipped
-ready in same burst).
-
-Promoted 2026-05-22: 21 consecutive same-MCP-burst holds across two
-sessions — 2026-05-21 (PRs #444-#457, 14 holds) + 2026-05-22 (PRs
-#458-#464, 7 holds). Mechanism reliable, discipline locked.
+Origin + recurrence + promotion history: docs/archive/CLAUDE_DOCTRINE_HISTORY.md → "AP #54 origin case."
 
 55. **Agents must use actual PR# from create_pull_request response
     (CANDIDATE — promote on third instance).**
@@ -762,21 +739,7 @@ pattern-continuation section referencing prior batches' patterns by name
 (ALPHA, BETA, GAMMA, etc.). New patterns get registered with letter
 names in the same TXT for downstream batches to reference.
 
-**Promoted 2026-05-25** after third multi-batch audit with synthesis
-discipline catching cross-cutting patterns:
-- 2026-05-21 L99 platform audit (14 batches): Pattern ALPHA #36 cascade
-  grew 7→25+→55+ across batches, justified a platform-wide sweep PR +
-  audit test instead of per-surface fixes
-- 2026-05-24 AM L99 compose-briefing audit (Batches A-F): PATTERN ALPHA
-  (#37 ordering) + PATTERN BETA (auth discipline) registered and locked
-  in §4.AF
-- 2026-05-24 PM L99 compose-briefing Phase 3 (Batches G/H1/H2/I):
-  PATTERN GAMMA candidate (AP #36 destructured-default) evaluated, did
-  NOT lock (only 1 real instance survived synthesis after 3 H2 false
-  positives); PATTERN ALPHA/BETA reconfirmed as non-recurring. The
-  synthesis gate caught a 75% false-positive yield in Batch H2 before
-  shipping, validating the "lock only at 3+ real instances post-
-  synthesis" heuristic.
+**Promoted 2026-05-25** after third multi-batch audit with synthesis discipline catching cross-cutting patterns. Promotion evidence (3 dated multi-batch audits): docs/archive/CLAUDE_DOCTRINE_HISTORY.md → "AP #58 origin case."
 
 59. **RETIRED 2026-05-29.** Superseded by Frank's "remove the capacity
 discipline" directive after Wave 2.C close. The original AP #59
