@@ -1,0 +1,65 @@
+DOCTRINE REFRESH — PASS A (accuracy + tenant boundary)
+Date: 2026-06-19
+Branch: docs/claude-md-refresh-pass-a
+Scope: CLAUDE.md only (plus this handoff txt). No src/ changes. No schema.
+Guard: does NOT trip ledger-reconcile-guard (keys on docs/AUDIT_*, docs/*_DESIGN_SPEC.md,
+docs/CC_SESSION_HANDOFF_*, docs/STATE_OF_AFFAIRS_L99_*; none match this filename), so no
+EMBER_PENDING_LEDGER touch is required.
+
+WHY THIS PASS
+The doctrine refresh is driven as two legible passes so every change is a readable diff and
+no hard-won rule is dropped silently in a single blind rewrite.
+  - Pass A (this PR): accuracy + tenant-boundary fixes. Surgical, zero live-state guesswork.
+  - Pass B (next, after A is live): the structural slim — extract history / origin-cases /
+    retired anti-patterns / dated wave tables into an archive the doc points to, compress the
+    anti-pattern catalog to rules-plus-pointer, and reconcile the three reality-dependent
+    rules (§15 auto-merge mechanism, §11.7 webhook "interim" workflow, §5 stale schema table).
+    Pass B reads PLATFORM_PRIORITIES.md first so it does not break the §17.x cross-references
+    the anti-patterns lean on.
+
+THE FIVE EDITS (all targeted str_replace, OLD matched exactly per §14)
+
+EDIT 1 — §3 brand token comment
+  OLD: /* ─── Brand (Ember defaults — overridden per org at runtime) ─── */
+  NEW: /* ─── Brand (platform defaults — overridden per org at runtime) ─── */
+  Rationale: present-tense behavior label; the defaults are the platform's, not a tenant's.
+
+EDIT 2 — §4 LoginPage reset line
+  OLD: LoginPage MUST reset brand tokens to Ember defaults on mount ... dark navy ...
+  NEW: LoginPage MUST reset brand tokens to platform defaults on mount ... platform default
+       (navy header + gold accent) ...
+  Rationale: describes current runtime behavior; "Ember" is stale brand naming.
+
+EDIT 3 — §4 new "Tenant Data Boundary" subsection (inserted before ### User Roles)
+  Adds the explicit rule: tenant-specific values (team names, colors, seasons, competition-type
+  display labels, staff names, "Futures Academy" naming) live in the org DB row / config, are
+  never hardcoded in platform components, and are never asserted as universal rules in doctrine.
+  Section 10 is the pilot tenant's example config, not platform law.
+
+EDIT 4 — §10 header reframe
+  OLD: ## 10. LEGACY HOOPERS REFERENCE
+  NEW: ## 10. LEGACY HOOPERS REFERENCE (PILOT TENANT EXAMPLE, NOT PLATFORM LAW)
+       + a blockquote pointing at §4 Tenant Data Boundary and noting Tenant #2 (St Patrick)
+       will differ on every line.
+
+EDIT 5 — §16.11 login first impression
+  OLD: - Login: cobalt #4a8fd4 + phoenix mark (ELITE-49)
+  NEW: platform default brand (navy header #151525 + gold accent #C9952E), constellation-arrow
+       mark; tenant colors like LH cobalt #4a8fd4 apply at runtime AFTER login, never on the
+       login screen; phoenix.webp deleted post-rebrand per AP #51.
+  Rationale: the login screen shows platform default, not a tenant color; phoenix mark is gone.
+
+EDIT 6 — sweep for remaining stale present-tense brand labels
+  grep -n "Ember default" CLAUDE.md after Edits 1–2 → zero remaining occurrences.
+  Untouched by design (archive doctrine protects filenames + the record): the header lineage
+  note, any filename, any historical/origin reference, archive pointers. Only present-tense
+  behavior descriptions were updated.
+
+VERIFICATION
+  - git diff: CLAUDE.md only (9 insertions, 4 deletions) + this handoff txt. src/ untouched.
+  - §0 checklist: src/ not modified, so warm-palette / invented-token / hardcoded-#FFFFFF /
+    150-LOC / lint+build checks are unaffected relative to main.
+  - Doc still reads coherently end to end after the five edits.
+
+NEXT
+  Pass B delivered after Pass A is live on Vercel.
