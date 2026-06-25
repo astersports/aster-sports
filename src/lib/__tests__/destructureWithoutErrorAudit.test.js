@@ -15,10 +15,12 @@
 // full src/ + supabase/functions/ tree and pinning the baseline.
 //
 // Detection:
-//   (A) `const { ..., data, ... } = await (supabase|sb|sbClient|client)
-//       .(from|rpc)(...)` where the destructure block does NOT contain
-//       `error`. Catches `const { data } = await sb.from(...)...`,
-//       `const { data: rows = [] } = await ...`, etc.
+//   (A) `(const|let|var) { ..., data, ... } = await (supabase|sb|sbClient|
+//       client).(from|rpc)(...)` where the destructure block does NOT contain
+//       `error`. Catches BOTH the default form `const { data: rows = [] } =
+//       await ...` AND the bare form `const { data } = await sb.from(...)...`
+//       (the bare form was the class breadth grep structurally missed — see
+//       PLATFORM_AUDIT_DEEP_2026-06-25 §0). `let`/`var` bindings included.
 //   (B) `.then(({ data }) => ...)` (and `.then(({ data: foo }) => ...)`)
 //       on a chain that originates from a supabase/sb/sbClient/.from/.rpc
 //       call within the prior 200 chars. Detects the lambda-shape silent-
@@ -47,12 +49,14 @@ const IGNORE_FILE_RE = /\.test\.(js|jsx|ts)$/;
 // PRs that fix existing sites lower this number in the same PR (visible in
 // review). Mirrors `edgeFunctionMirrorAudit.test.js` baseline-lowering
 // pattern.
-const BASELINE_VIOLATIONS = 32;
+const BASELINE_VIOLATIONS = 19;
 
-// Pattern A — `const { ...data... } = await (supabase|sb|sbClient|client)
-// .(from|rpc)(...)` with no `error` in the destructure block.
+// Pattern A — `(const|let|var) { ...data... } = await (supabase|sb|sbClient|
+// client).(from|rpc)(...)` with no `error` in the destructure block. Covers
+// both the `{ data = [] }` default form and the bare `{ data }` form, and
+// all three binding keywords.
 const AWAIT_DESTRUCTURE_RE =
-  /\bconst\s*\{([^}]*?)\}\s*=\s*await\s+(supabase|sb|sbClient|client)\s*\.\s*(from|rpc)\s*\(/g;
+  /\b(?:const|let|var)\s*\{([^}]*?)\}\s*=\s*await\s+(supabase|sb|sbClient|client)\s*\.\s*(from|rpc)\s*\(/g;
 
 // Pattern B — `.then(({ data ... }) => ...)` on a supabase chain.
 // Anchored on the destructure shape; we verify the supabase origin via

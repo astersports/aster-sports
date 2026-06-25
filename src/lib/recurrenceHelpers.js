@@ -3,8 +3,17 @@
 // season end. Fallback: 12 weeks (84 days) out when seasonEndDate is
 // missing or already past the start date.
 //
-// All inputs and outputs are YYYY-MM-DD strings. Dates are
-// constructed as local-midnight (no Z) to avoid timezone drift.
+// All inputs and outputs are YYYY-MM-DD strings. Dates are constructed as
+// local-midnight (no Z); read them back with the LOCAL getters too. Using
+// toISOString().slice(0,10) here was off-by-one in positive-UTC-offset
+// browsers (local-midnight maps to the previous UTC day).
+function toLocalIsoDate(d) {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export function computeDefaultUntil(startDate, pattern, seasonEndDate) {
   const start = new Date(`${startDate}T00:00:00`);
   const step = pattern === 'biweekly' ? 14 : 7;
@@ -17,10 +26,10 @@ export function computeDefaultUntil(startDate, pattern, seasonEndDate) {
         last = new Date(cursor);
         cursor.setDate(cursor.getDate() + step);
       }
-      return last.toISOString().slice(0, 10);
+      return toLocalIsoDate(last);
     }
   }
   const fallback = new Date(start);
   fallback.setDate(fallback.getDate() + 84);
-  return fallback.toISOString().slice(0, 10);
+  return toLocalIsoDate(fallback);
 }

@@ -26,9 +26,10 @@ export function useEventRsvpCounts(activities) {
   }, [activities]);
 
   useEffect(() => {
+    let cancelled = false;
     if (!stableKey) {
-      Promise.resolve().then(() => setSummary({}));
-      return;
+      Promise.resolve().then(() => { if (!cancelled) setSummary({}); });
+      return () => { cancelled = true; };
     }
     const pairs = stableKey.split(',').map((p) => {
       const idx = p.indexOf(':');
@@ -47,6 +48,7 @@ export function useEventRsvpCounts(activities) {
       supabase.from('event_rsvps').select('event_id, response').in('event_id', eventIds),
       supabase.from('roster_members').select('team_id').in('team_id', teamIds).is('left_at', null),
     ]).then(([rsvpRes, rosterRes]) => {
+      if (cancelled) return;
       if (rsvpRes.error) { console.warn('useEventRsvpCounts (rsvps):', rsvpRes.error.message); }
       if (rosterRes.error) { console.warn('useEventRsvpCounts (roster):', rosterRes.error.message); }
       // F-9 (audit 2026-06-12): EITHER failure aborts — computing counts
@@ -72,6 +74,7 @@ export function useEventRsvpCounts(activities) {
       });
       setSummary(next);
     });
+    return () => { cancelled = true; };
   }, [stableKey, version]);
 
   const refetch = useCallback(() => setVersion((v) => v + 1), []);

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { computeSeasonStats, EMPTY_STATS } from './useSeasonFinancialsCompute';
 
 // §4.C Sprint D — shared source of truth for season financial state.
 // Pulls accounts (names/metadata) + the family_balances VIEW for an
@@ -36,8 +37,6 @@ import { supabase } from '../lib/supabase';
 // as PR #241's useAlertEvaluator fix (anti-pattern #43). Fix: derive
 // `isStale` in render from a (orgId,seasonId,guardianId) key vs. the
 // last fetched key; visible `loading` is `loading || isStale`.
-
-const EMPTY_STATS = { billed: 0, paid: 0, fees: 0, net: 0, outstanding: 0, familiesOwing: 0, pct: 0 };
 
 function keyFor(orgId, seasonId, guardianId) {
   if (!orgId || !seasonId) return null;
@@ -112,35 +111,7 @@ export function useSeasonFinancials(orgId, seasonId, guardianId = null) {
   // short-circuit to EMPTY_STATS so consumers don't see prior-key data.
   const { balances, byAccount, stats } = useMemo(() => {
     if (isStale) return { balances: {}, byAccount: {}, stats: EMPTY_STATS };
-    let billed = 0; let paid = 0; let fees = 0; let outstanding = 0; let familiesOwing = 0;
-    const bal = {};
-    const by = {};
-    balanceRows.forEach((r) => {
-      const billedC = Number(r.billed_cents) || 0;
-      const netPaidC = Number(r.net_paid_cents) || 0;
-      const b = Number(r.balance_cents) || 0;
-      bal[r.account_id] = b;
-      // byAccount exposes the view's per-account money so display surfaces
-      // (FamilyBalanceList, F-2) read billed/net_paid from the view instead
-      // of the raw season_fee/discount columns STEP 2 will zero.
-      by[r.account_id] = { billed: billedC, netPaid: netPaidC, balance: b };
-      billed += billedC;
-      paid += netPaidC;
-      fees += Number(r.total_fees_cents) || 0;
-      outstanding += b;
-      if (b > 0) familiesOwing += 1;
-    });
-    return {
-      balances: bal,
-      byAccount: by,
-      stats: {
-        billed, paid, fees,
-        net: paid - fees,
-        outstanding,
-        familiesOwing,
-        pct: billed > 0 ? Math.round((paid / billed) * 100) : 0,
-      },
-    };
+    return computeSeasonStats(balanceRows);
   }, [balanceRows, isStale]);
 
   return {

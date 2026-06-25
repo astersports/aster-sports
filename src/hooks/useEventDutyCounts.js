@@ -21,13 +21,15 @@ export function useEventDutyCounts(activities) {
   }, [activities]);
 
   useEffect(() => {
+    let cancelled = false;
     if (!stableKey) {
-      Promise.resolve().then(() => setCounts({}));
-      return;
+      Promise.resolve().then(() => { if (!cancelled) setCounts({}); });
+      return () => { cancelled = true; };
     }
     const ids = stableKey.split(',');
     supabase.from('event_duties').select('event_id, duty_name, claimed_by_name, guardian_id').in('event_id', ids)
       .then(({ data, error }) => {
+        if (cancelled) return;
         if (error) { console.warn('useEventDutyCounts:', error.message); return; }
         if (!data) return;
         const map = {};
@@ -39,6 +41,7 @@ export function useEventDutyCounts(activities) {
         });
         setCounts(map);
       });
+    return () => { cancelled = true; };
   }, [stableKey, version]);
 
   const refetch = useCallback(() => setVersion((v) => v + 1), []);

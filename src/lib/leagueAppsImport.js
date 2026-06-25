@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { normalizeMethod, parseDollars } from './leagueAppsImportHelpers';
 
 export function parseLeagueAppsData(raw) {
   let records;
@@ -56,30 +57,17 @@ export function parseLeagueAppsData(raw) {
   return Array.from(families.values());
 }
 
-function parseDollars(val) {
-  if (typeof val === 'number') return Math.round(val * 100);
-  const cleaned = String(val).replace(/[$,]/g, '');
-  const n = parseFloat(cleaned);
-  return isNaN(n) ? 0 : Math.round(n * 100);
-}
-
-function normalizeMethod(m) {
-  const lower = (m || '').toLowerCase();
-  if (lower.includes('zelle')) return 'zelle';
-  if (lower.includes('venmo')) return 'venmo';
-  if (lower.includes('cash')) return 'cash';
-  if (lower.includes('check')) return 'check';
-  if (lower.includes('stripe') || lower.includes('card') || lower.includes('credit')) return 'stripe';
-  return 'other';
-}
-
 export async function importToFinancials(families, orgId, seasonId, userId) {
   const results = { created: 0, skipped: 0, errors: [] };
 
-  const { data: guardians } = await supabase
+  // AP #36: a swallowed error here empties the dedup maps below, so EVERY
+  // family re-inserts on a re-run — duplicate guardians + re-posted fee/payment
+  // transactions (money path). Fail the import instead of deduping against [].
+  const { data: guardians, error: guardiansErr } = await supabase
     .from('guardians')
     .select('id, first_name, last_name, email, phone')
     .eq('org_id', orgId);
+  if (guardiansErr) throw new Error(`Could not load existing guardians for de-duplication: ${guardiansErr.message}`);
 
   const byEmail = new Map();
   const byPhone = new Map();

@@ -23,9 +23,15 @@ export default function StepDetails({ eventType, data, onChange, orgId, org }) {
     // Phase 1 audit P1-7 — archived_at filter (tournaments archived rows
     // should not surface in the Create/Edit wizard tournament picker).
     supabase.from('tournaments').select('id, name').eq('org_id', orgId).is('archived_at', null).in('status', ['planned', 'scheduled', 'in_progress']).order('start_date')
-      .then(({ data: t }) => setTournaments(t || []));
+      .then(({ data: t, error: tErr }) => {
+        if (tErr) { console.error('StepDetails tournaments:', tErr.message); return; }
+        setTournaments(t || []);
+      });
     supabase.from('opponents').select('id, name').eq('org_id', orgId).order('name')
-      .then(({ data: o }) => setOpponents(o || []));
+      .then(({ data: o, error: oErr }) => {
+        if (oErr) { console.error('StepDetails opponents:', oErr.message); return; }
+        setOpponents(o || []);
+      });
   }, [orgId]);
   const setHomeAway = (val) => {
     onChange({

@@ -1,7 +1,6 @@
 import { createPortal } from 'react-dom';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/useToast';
 import { useAuth } from '../../context/AuthContext';
 import StepType from './StepType';
@@ -13,6 +12,7 @@ import { buildSaveDiff, EMPTY_FORM, eventToForm } from './wizardForm';
 import { useCreateActivity } from '../../hooks/useCreateActivity';
 import { useUpdateActivity } from '../../hooks/useUpdateActivity';
 import { useConflictCheck } from '../../hooks/useConflictCheck';
+import { useEditEventPrefill } from '../../hooks/useEditEventPrefill';
 
 const STEPS = ['Type', 'Team', 'When', 'Details']; const EDIT_STEPS = ['When', 'Details'];
 export default function CreateActivityWizard({ orgId, editEvent, editMode = 'single', onClose, onCreated }) {
@@ -28,40 +28,9 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
   const selectType = (type) => { setForm((f) => ({ ...f, eventType: type })); setStep(1); };
   const selectTeam = (id) => { setForm((f) => ({ ...f, teamId: id })); setStep(2); };
 
-  // On edit, load recurrence (pattern + until) from sibling dates.
-  // Phase 1 audit P1-2 (docs/AUDIT_PHASE1_WIRING_2026-05-16.md):
-  // org_id added as defense-in-depth; parent_event_id isolation is
-  // practically sufficient but the canonical pattern requires org scope.
-  useEffect(() => {
-    if (!isEdit || !editEvent?.parent_event_id || !orgId) return;
-    supabase.from('events').select('start_at')
-      .eq('org_id', orgId)
-      .eq('parent_event_id', editEvent.parent_event_id)
-      .order('start_at', { ascending: true })
-      .then(({ data }) => {
-        if (!data || data.length < 2) return;
-        const days = Math.round((new Date(data[1].start_at) - new Date(data[0].start_at)) / 86400000);
-        const pattern = days === 14 ? 'biweekly' : 'weekly';
-        const until = data[data.length - 1].start_at.slice(0, 10);
-        setForm((f) => ({ ...f, recurrence: { pattern, until } }));
-      });
-  }, [isEdit, editEvent?.parent_event_id, orgId]);
+  // On edit, prefill recurrence + existing volunteer slots (extracted hook).
+  useEditEventPrefill({ isEdit, editEvent, orgId, setForm });
 
-  // On edit, load existing volunteer slots into the DutyEditor.
-  useEffect(() => {
-    if (!isEdit || !editEvent?.id) return;
-    supabase.from('event_duties').select('*').eq('event_id', editEvent.id)
-      .then(({ data }) => {
-        if (!data || data.length === 0) return;
-        const grouped = {};
-        data.forEach((d) => {
-          if (!grouped[d.duty_name]) grouped[d.duty_name] = { duty_name: d.duty_name, slots_needed: 0, claimed: 0 };
-          grouped[d.duty_name].slots_needed += 1;
-          if (d.claimed_by_name || d.guardian_id) grouped[d.duty_name].claimed += 1;
-        });
-        setForm((f) => ({ ...f, duties: Object.values(grouped) }));
-      });
-  }, [isEdit, editEvent?.id]);
   const handleSave = async () => {
     let result;
     const diff = isEdit ? buildSaveDiff({ editEvent, form, editMode }) : null;
