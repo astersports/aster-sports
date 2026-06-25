@@ -178,3 +178,88 @@ Q5. Rebuild lanes for legacy-hoopers + st-patricks-armonk: Claude Code now (Manu
     retired as a build lane), or stay Manus until cutover?
 Q6. Should the canonical doc stay aster-sports/docs/STRUCTURE.md, or move to a neutral home
     now that astersports-web is co-equal (not "just the marketing site")?
+
+=========================================================================================
+ADDITIONAL GOVERNANCE SECTIONS (added 2026-06-25 per operator: "what else should be in there")
+[G]=grounded, [V]=verify, [OWNER]=operator/counsel must fill before publishing.
+=========================================================================================
+
+10. VENDOR / SERVICE INVENTORY  (each line needs a billing owner + access list — [OWNER])
+- GitHub — org `astersports`, 5 repos; Claude Code is the sole code-author lane. [G]
+- Vercel — team "Aster Sports" (team_95cqArODGT4Ub8nQ5lKWqGY4); project `aster-sports`
+  (prj_peID30eF61qubU90e1TVvM1kikuP) hosts .app + .co web; registrar for .io/.app/.co. [G]
+- Railway — hosts astersports.io (astersports-web), project `insightful-insight`; persistent
+  server for the raster/SSE workload. [G]
+- Supabase — studio `eyitivulszubtdfpsbdx`; app `vrwwpsbfbnveawqwbdmj`; legacy-hoopers
+  `kxhtoilxikllzzjevdnt`. [G]
+- Anthropic (Print Studio vision LLM) · Replicate (SAM2 + LaMa) · Stripe (billing/credits,
+  Architect-scoped) · Resend (transactional email) · PostHog (analytics, project 421610) ·
+  Sentry (errors, javascript-react) · Google Workspace (email astersports.co + OAuth IdP). [G]
+- Apple Developer — iOS submission [V — access pending]. Squarespace — Legacy Hoopers CURRENT
+  site (being replaced). eCatholic — St Patrick CURRENT site [V] (being replaced; no access).
+  Manus — LEGACY deploy/runtime, RETIRING (astersports-web already off it). [G]
+- [OWNER] add billing-account owner + who-has-access per vendor before publishing.
+
+11. DATA & DATABASES
+- Three Supabase projects (§10); tenant data org-scoped via RLS. [G]
+- Money/ledger invariants (studio): SUM(credit_ledger.delta)==tenants.creditBalance per tenant;
+  deduct/grant idempotent on (refId,reason); never bill a no-op. (Reconciled live 2026-06-25.) [G]
+- Backups + a TESTED restore per project: [V] — confirm, don't assume. Retention/residency: [OWNER].
+
+12. SECRETS & CREDENTIALS GOVERNANCE
+- Categories (never in repo/logs; env-based, boot fail-fast where supported): session/JWT secret,
+  Stripe keys, Replicate token, CRON_SECRET, Anthropic key, Supabase service-role + URL/anon keys,
+  Google OAuth client id/secret, Railway API token, Resend key. [G]
+- Storage: Railway env (studio), Vercel env (app), Supabase `app_secrets` where used. Rotation plan
+  + access list per secret: [OWNER].
+
+13. SECURITY & MULTI-TENANT ISOLATION
+- RLS org-scoping is the spine (current_user_org_id); cross-tenant isolation tests + impersonation
+  audit before onboarding. Dependabot criticals/highs = 0 gate. Secret scanning on. SSRF + resource
+  guards (studio). Auth: Google OAuth→own JWT (studio); Supabase Auth (app). [G]
+
+14. PRIVACY, COMPLIANCE & MINORS   *** highest-priority gap ***
+- The app handles YOUTH (minor) data → COPPA / verifiable-parental-consent + state youth-privacy
+  obligations. [V with counsel] — settle BEFORE non-pilot onboarding. [G that this applies]
+- Sub-processors to DISCLOSE: Supabase, Replicate, Anthropic, Stripe, Resend, PostHog, Sentry,
+  Google, Vercel, Railway. Publish: privacy policy + sub-processor list + terms + DPA. [counsel]
+- Open privacy item: PostHog server-side GeoIP enrichment (project 421610) not yet disabled.
+
+15. ACCESS & ROLES (human + agent)
+- Lanes: CC (sole code author), Architect (design/review/ratify), Frank (operator — confirms
+  money/flips, relays). Super-admin: platform_admins (studio, live); cross-org app role is
+  design-first (docs/ARCHITECT_DECISION_REQUEST_2026-06-25_cross_org_superadmin.txt). [G]
+- Who holds creds for GitHub org / Vercel / Railway / Supabase×3 / Google Workspace / Apple /
+  Stripe: [OWNER] enumerate before publishing.
+
+16. OBSERVABILITY & INCIDENT RESPONSE
+- Sentry + PostHog in both apps. Money-path/auth alerting: [V]. Rollback = revert the offending PR
+  + redeploy (never fix-forward on broken main); post-deploy smoke (studio: /api/studio/posture). [G]
+
+17. CI/CD & DEPLOY GOVERNANCE
+- Every repo: branch off main → PR → green CI → merge; never commit to main. Routine auto-merges on
+  green; money/auth/schema HOLD for Architect (§2.4). Auto-deploy from main (Railway/Vercel).
+- Required checks are the gate (studio: typecheck+tests + money-path-integration on real Postgres;
+  app: lint-test-build + e2e + ledger/anti-pattern guards). [G]
+
+18. TENANT LIFECYCLE
+- Onboard: org row + branding (organizations.brand_colors) + user_roles + the onboarding-readiness
+  gate (astersports-web CLAUDE.md §7: billing tested, privacy published, isolation verified, ledger
+  reconciled, backups, alerting, Dependabot 0). Next tenant: St Patrick (Armonk). Offboard + data
+  export: [OWNER/counsel]. [G]
+
+19. BRAND & NAMING CANON
+- Mark: constellation-arrow, gold #C9952E on navy #151525 (platform default); tenant brand applies
+  at runtime from organizations.brand_colors, never hardcoded. No user-facing "Skyfire/Ember/Vela".
+  Always disambiguate the 3 "Legacy Hoopers" meanings (§1). [G]
+
+20. DOCUMENT GOVERNANCE
+- Canonical home: aster-sports/docs/STRUCTURE.md (this plan revises it on ratification). On conflict
+  the canonical doc wins. Update via PR + Architect ratification; version by date. Published copies /
+  READMEs LINK to the canonical doc — never fork its content (one source of truth). [G]
+
+21. GLOSSARY
+- Olive Juice Inc (incorporated parent) · Aster Sports (DBA) · the app (aster-sports SaaS,
+  astersports.app) · portal (a surface in astersports-web: hub / Print Studio / tech packs) ·
+  tenant (an org row in the app) · Legacy Hoopers (LLC / tenant / repo — name which) · lane
+  (CC / Architect / Frank).
