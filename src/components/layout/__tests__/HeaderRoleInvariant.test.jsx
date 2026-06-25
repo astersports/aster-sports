@@ -114,6 +114,31 @@ describe('Header — per-role invariant (anti-pattern #43)', () => {
     expect(container.querySelector('[aria-label="Switch role view"]')).not.toBeNull();
   });
 
+  it('parent: NO "Back to Aster Sports" hub link', () => {
+    authRef.current = { role: 'parent', org: null, orgName: null };
+    homeRoleRef.current = { activeRole: 'parent', isViewingAs: false, canSwitchRoles: false };
+    const { container } = renderHeader();
+    expect(container.querySelector('[aria-label="Back to Aster Sports"]')).toBeNull();
+  });
+
+  it('coach: NO "Back to Aster Sports" hub link', () => {
+    authRef.current = { role: 'coach', org: null, orgName: null };
+    homeRoleRef.current = { activeRole: 'coach', isViewingAs: false, canSwitchRoles: false };
+    const { container } = renderHeader();
+    expect(container.querySelector('[aria-label="Back to Aster Sports"]')).toBeNull();
+  });
+
+  it('admin: "Back to Aster Sports" hub link IS rendered, opens the hub safely', () => {
+    authRef.current = { role: 'admin', org: null, orgName: null };
+    homeRoleRef.current = { activeRole: 'admin', isViewingAs: false, canSwitchRoles: true };
+    const { container } = renderHeader();
+    const link = container.querySelector('[aria-label="Back to Aster Sports"]');
+    expect(link).not.toBeNull();
+    expect(link.getAttribute('href')).toBe('https://astersports.io/');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+  });
+
   it('Bell button REMOVED (Q2 routing fix): no Notifications aria-label', () => {
     authRef.current = { role: 'admin', org: null, orgName: null };
     homeRoleRef.current = {
