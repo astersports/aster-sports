@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { defaultPeriod, formatPeriodLabel, formatSubject, periodIsoBounds } from '../digestPeriod';
 
-// Helper: format YYYY-MM-DD for a Date in NY tz, matching how
-// digestPeriod normalizes to local Mon–Sun bounds.
+// Helper: format YYYY-MM-DD for a Date — the period bounds carry the ET
+// calendar date anchored at noon UTC, so the UTC slice is the ET date.
 function ymd(d) {
   return d.toISOString().slice(0, 10);
+}
+// UTC weekday of the noon-UTC anchor (matches the ET calendar weekday).
+function utcDay(d) {
+  return d.getUTCDay();
 }
 
 describe('defaultPeriod (D2)', () => {
@@ -13,8 +17,17 @@ describe('defaultPeriod (D2)', () => {
   it('Mon-Wed → current week (this Monday)', () => {
     const tuesday = new Date('2026-05-12T12:00:00Z'); // Tue
     const { start, end } = defaultPeriod(tuesday);
-    expect(start.getDay()).toBe(1); // Monday
-    expect(end.getDay()).toBe(0);   // Sunday
+    expect(utcDay(start)).toBe(1); // Monday
+    expect(utcDay(end)).toBe(0);   // Sunday
+    expect(ymd(start)).toBe('2026-05-11');
+    expect(ymd(end)).toBe('2026-05-17');
+  });
+
+  // ET-anchor regression: late Sunday-night ET = Monday UTC. The window must
+  // be computed from the ET weekday (Sunday → next week), not the UTC one.
+  it('Sun 11pm ET (=Mon 03:00 UTC) → next week, not the UTC-Monday week', () => {
+    const sunNightEt = new Date('2026-05-11T03:00:00Z'); // Sun 23:00 ET, May 10
+    const { start, end } = defaultPeriod(sunNightEt);
     expect(ymd(start)).toBe('2026-05-11');
     expect(ymd(end)).toBe('2026-05-17');
   });

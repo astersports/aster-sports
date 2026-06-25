@@ -20,6 +20,7 @@ import {
 import { buildSignoffSection } from '../buildSignoffSection';
 import { detectConflicts, groupEventsByTeam } from './coachRoundupHelpers';
 import { buildOrgContext } from '../buildOrgContext';
+import { etDayEndUtc } from './etWindow';
 
 export async function resolveCoachRoundup({ coachUserId, dateRange }, { supabase } = {}) {
   if (!coachUserId) throw new Error('Missing coachUserId');
@@ -46,7 +47,7 @@ export async function resolveCoachRoundup({ coachUserId, dateRange }, { supabase
       .select('id, team_id, start_at, end_at, opponent, location, sub_location, title')
       .in('team_id', teamIds)
       .gte('start_at', dateRange.start)
-      .lte('start_at', `${dateRange.end}T23:59:59Z`);
+      .lte('start_at', etDayEndUtc(dateRange.end));
     if (evErr) throw evErr;
     events = evRows || [];
   }

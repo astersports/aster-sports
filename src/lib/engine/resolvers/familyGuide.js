@@ -23,6 +23,7 @@ import { buildSignoffSection } from '../buildSignoffSection';
 import { detectConflicts, groupEventsByKid } from './familyGuideHelpers';
 import { fetchTeamCoaches } from './familyGuideCoaches';
 import { buildOrgContext } from '../buildOrgContext';
+import { etDayEndUtc } from './etWindow';
 
 export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly }, { supabase } = {}) {
   if (!parentUserId) throw new Error('Missing parentUserId');
@@ -107,7 +108,7 @@ export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly },
         .select('id, team_id, start_at, end_at, opponent, location, sub_location, title, event_type, is_scrimmage')
         .in('team_id', teamIds)
         .gte('start_at', dateRange.start)
-        .lte('start_at', `${dateRange.end}T23:59:59Z`);
+        .lte('start_at', etDayEndUtc(dateRange.end));
       if (evErr) throw evErr;
       events = evRows || [];
     }
