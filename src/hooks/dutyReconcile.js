@@ -37,9 +37,13 @@ export async function reconcileEventDuties(eventId, formDuties) {
     for (let i = have; i < keep; i++) toInsert.push({ event_id: eventId, duty_name: name });
   });
 
-  // Duties removed entirely in the editor: delete all their rows.
+  // Duties removed entirely in the editor: delete only their UNCLAIMED rows.
+  // Per the header contract, a claimed slot (a parent already signed up) is
+  // never destroyed — even when the duty type is dropped from the wizard.
   Object.keys(byName).forEach((name) => {
-    if (!desiredNames.has(name)) byName[name].forEach((r) => toDelete.push(r.id));
+    if (!desiredNames.has(name)) {
+      byName[name].filter((r) => !isClaimed(r)).forEach((r) => toDelete.push(r.id));
+    }
   });
 
   if (toDelete.length) {
