@@ -69,3 +69,8 @@ verify_jwt = false
 [functions.feedback-token-handler]
 verify_jwt = false
 
+# AAU IA Build Pass 1 (BUILD SPEC v3 §3, DR-A=A1) — scores ingest writer.
+# Shared-secret auth via app_secrets.ingest_secret (AP #31/#33).
+[functions.ingest-game-results]
+verify_jwt = false
+
