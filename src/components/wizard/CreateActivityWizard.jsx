@@ -38,7 +38,8 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
       .eq('org_id', orgId)
       .eq('parent_event_id', editEvent.parent_event_id)
       .order('start_at', { ascending: true })
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) { console.error('CreateActivityWizard recurrence:', error.message); return; }
         if (!data || data.length < 2) return;
         const days = Math.round((new Date(data[1].start_at) - new Date(data[0].start_at)) / 86400000);
         const pattern = days === 14 ? 'biweekly' : 'weekly';
@@ -51,7 +52,8 @@ export default function CreateActivityWizard({ orgId, editEvent, editMode = 'sin
   useEffect(() => {
     if (!isEdit || !editEvent?.id) return;
     supabase.from('event_duties').select('*').eq('event_id', editEvent.id)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) { console.error('CreateActivityWizard duties:', error.message); return; }
         if (!data || data.length === 0) return;
         const grouped = {};
         data.forEach((d) => {

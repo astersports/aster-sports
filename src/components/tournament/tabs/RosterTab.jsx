@@ -10,10 +10,11 @@ export default function RosterTab({ tournament, teamFilter }) {
     if (!tournament?.id) return;
     let cancelled = false;
     (async () => {
-      const { data } = await supabase.from('tournament_rosters')
+      const { data, error } = await supabase.from('tournament_rosters')
         .select('id, roster_status, player_id, team_id, players(id, first_name, last_name, jersey_number), teams(id, name, team_color, sort_order)')
         .eq('tournament_id', tournament.id);
       if (cancelled) return;
+      if (error) { console.error('RosterTab rosters:', error.message); setLoading(false); return; }
       const byTeam = new Map();
       for (const r of (data || [])) {
         if (!r.teams || !r.players) continue;

@@ -76,10 +76,14 @@ function normalizeMethod(m) {
 export async function importToFinancials(families, orgId, seasonId, userId) {
   const results = { created: 0, skipped: 0, errors: [] };
 
-  const { data: guardians } = await supabase
+  // AP #36: a swallowed error here empties the dedup maps below, so EVERY
+  // family re-inserts on a re-run — duplicate guardians + re-posted fee/payment
+  // transactions (money path). Fail the import instead of deduping against [].
+  const { data: guardians, error: guardiansErr } = await supabase
     .from('guardians')
     .select('id, first_name, last_name, email, phone')
     .eq('org_id', orgId);
+  if (guardiansErr) throw new Error(`Could not load existing guardians for de-duplication: ${guardiansErr.message}`);
 
   const byEmail = new Map();
   const byPhone = new Map();
