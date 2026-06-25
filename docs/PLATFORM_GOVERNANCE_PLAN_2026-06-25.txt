@@ -34,15 +34,23 @@ agreed shape before it's built.
 -----------------------------------------------------------------------------------------
 Legend: [G]=grounded this session, [V]=VERIFY (operator/architect confirm).
 
-DOMAINS — EXACTLY THREE (operator-confirmed 2026-06-25): astersports.io (web/portals),
-astersports.app (the app), astersports.co (email, Google Workspace). There is NO
-astersports.com — it is NOT part of this company; do not reference it anywhere.
+DOMAINS — EXACTLY THREE (operator-confirmed 2026-06-25): astersports.io, astersports.app,
+astersports.co. There is NO astersports.com — NOT part of this company; do not reference it.
+
+VERCEL-VERIFIED 2026-06-25 (team "Aster Sports" team_95cqArODGT4Ub8nQ5lKWqGY4, via MCP):
+- One Vercel project: `aster-sports` (prj_peID30eF61qubU90e1TVvM1kikuP, Vite, Node 24).
+  Domains attached: astersports.app (+www), astersports.co (+www), + *.vercel.app aliases.
+  => astersports.app is registered + hosted on Vercel [G]. astersports.co's WEB is also
+     attached to this Vercel project (it resolves to the app), while its EMAIL is Google
+     Workspace (MX) [G] — so .co is BOTH (email primary, web points at the app).
+- No astersports-web Vercel project exists in the team => astersports.io is NOT on Vercel
+  (it's on Railway, verified earlier this session) [G]. .io registrar = Vercel per operator [G].
 
 | Property | Domain | Registrar | Host (now) | Host (intended) | Build lane |
 |---|---|---|---|---|---|
-| Aster Sports marketing + Print Studio + portals | astersports.io | Vercel [V] | **Railway** [G] | Railway | Claude Code [G] |
-| Aster Sports Management App (SaaS) | astersports.app | Vercel [V] | **Vercel** [G] | **Railway** [V-intent] | Claude Code [G] |
-| Operator email (NOT a website) | astersports.co | — | Google Workspace [G] | — | — |
+| Aster Sports marketing + Print Studio + portals | astersports.io | Vercel [G] | **Railway** [G] | Railway | Claude Code [G] |
+| Aster Sports Management App (SaaS) | astersports.app | **Vercel** [G] | **Vercel** [G] | **Railway** [V-intent] | Claude Code [G] |
+| Operator email + .co web | astersports.co | Vercel [G] | Google Workspace (email) + Vercel aster-sports project (web) [G] | — | — |
 | Legacy Hoopers (current live) | legacyhoopers.org | Squarespace [G] | **Squarespace** [G] | rebuild → framework (Railway?) [V] | rebuild lane TBD [V] |
 | St Patrick Armonk (current live) | (parish domain) | — | **eCatholic** [G, operator] — no access | rebuild → publish-to-review → migrate [G] | rebuild lane TBD [V] |
 
@@ -157,9 +165,11 @@ CC LEAN: (i) as the spine (one DB = one truth) + (ii) for render parity, with (i
 -----------------------------------------------------------------------------------------
 9. OPEN QUESTIONS FOR THE ARCHITECT / OPERATOR
 -----------------------------------------------------------------------------------------
-Q1. Confirm the [V] registrar/host cells in §2 (esp. astersports.app registrar; the St Pat
-    current host: eCatholic vs manus.space vs split repo). [RESOLVED 2026-06-25: domains are
-    exactly three — .io/.app/.co; no astersports.com.]
+Q1. [MOSTLY RESOLVED 2026-06-25] Domains = exactly three (.io/.app/.co; no .com). Vercel-
+    verified: .app + .co on the Vercel `aster-sports` project; .io on Railway; registrars
+    Vercel. REMAINING [V]: the St Patrick CURRENT host — operator says eCatholic, STRUCTURE.md
+    §4/§6 says manus.space + the split repo stpatsweb1969/st-patricks-website. Reconcile
+    before the St Pat rebuild migrates.
 Q2. aster-sports → Railway: ratify as intended end-state, and name the trigger (now, or at
     a milestone). Until then it stays on Vercel.
 Q3. README standard (§5) + branch discipline (§6): approve as written?
