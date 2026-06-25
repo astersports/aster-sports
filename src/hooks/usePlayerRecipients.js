@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { ADMIN_BCC_EMAIL } from '../lib/briefings/queueComposedMessagesBuilders';
 
 // Player-scoped guardian recipients. Mirrors useTeamRecipients shape so
 // the same SendConfirmDialog primitive works without modification.
@@ -7,8 +8,6 @@ import { supabase } from '../lib/supabase';
 // it's already a real recipient.
 //
 // Returns: [{ guardian_id, email, name, children: [{first_name,last_name}], is_admin_copy? }]
-
-const ADMIN_BCC_EMAIL = 'olivejuiceinc1@gmail.com';
 
 export function usePlayerRecipients(playerId) {
   const [recipients, setRecipients] = useState([]);

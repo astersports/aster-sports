@@ -19,8 +19,7 @@ import { supabase } from './supabase';
 import { formatPeriodLabel } from './engine/digestPeriod';
 import { applyUnsubscribeUrls } from './unsubscribeUrl';
 import { buildContext, buildSlicesFromRecipients, renderSlice } from './digestSendHelpers';
-
-const ADMIN_BCC_EMAIL = 'olivejuiceinc1@gmail.com';
+import { ADMIN_BCC_EMAIL } from './briefings/queueComposedMessagesBuilders';
 
 export async function sendWeeklyDigest({
   orgId, period,

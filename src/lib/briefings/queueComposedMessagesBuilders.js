@@ -7,6 +7,10 @@
 
 import { renderSections, renderSectionsPlainText } from '../engine/composer';
 
+// Single source of the platform operator's BCC audit address (AP #7 — was
+// hardcoded in 5 send files). TODO(multi-tenant): derive per-org from
+// organizations.contact_email when St. Patrick onboards as tenant #2 — this
+// literal is the pilot operator's address and must not BCC tenant #2's mail.
 export const ADMIN_BCC_EMAIL = 'olivejuiceinc1@gmail.com';
 const HTML_OPEN = '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;padding:0 0 24px 0;">';
 const HTML_CLOSE = '</div>';

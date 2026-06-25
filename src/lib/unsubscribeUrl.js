@@ -13,9 +13,14 @@
 // pattern reference: rsvp-token-handler signed-link mint via RPC.
 
 import { supabase } from './supabase';
+import { ORG_WEBSITE_DEFAULT } from './constants';
 
 const HANDLER_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/unsubscribe-handler`;
-const ADMIN_BCC_FALLBACK_URL = 'https://www.legacyhoopers.org/';
+// Admin-BCC no-op anchor. De-duplicated to the shared ORG_WEBSITE_DEFAULT
+// constant (AP #7). TODO(multi-tenant): derive per-org from
+// organizations.website_url when tenant #2 onboards — this default is the
+// pilot tenant's site.
+const ADMIN_BCC_FALLBACK_URL = ORG_WEBSITE_DEFAULT;
 
 export function buildUnsubscribeUrl(token) {
   return `${HANDLER_BASE}?t=${encodeURIComponent(token)}`;
