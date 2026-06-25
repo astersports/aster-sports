@@ -70,7 +70,9 @@ export default function Header() {
             cross-org super-admin role lands (design-first per operator). */}
         {role === 'admin' && (
           <a
-            href="https://astersports.io"
+            href="https://astersports.io/"
+            target="_blank"
+            rel="noopener noreferrer"
             aria-label="Back to Aster Sports"
             className="w-11 h-11 flex items-center justify-center shrink-0 -ml-2"
             style={{ color: 'inherit' }}
