@@ -34,12 +34,15 @@ agreed shape before it's built.
 -----------------------------------------------------------------------------------------
 Legend: [G]=grounded this session, [V]=VERIFY (operator/architect confirm).
 
+DOMAINS — EXACTLY THREE (operator-confirmed 2026-06-25): astersports.io (web/portals),
+astersports.app (the app), astersports.co (email, Google Workspace). There is NO
+astersports.com — it is NOT part of this company; do not reference it anywhere.
+
 | Property | Domain | Registrar | Host (now) | Host (intended) | Build lane |
 |---|---|---|---|---|---|
 | Aster Sports marketing + Print Studio + portals | astersports.io | Vercel [V] | **Railway** [G] | Railway | Claude Code [G] |
 | Aster Sports Management App (SaaS) | astersports.app | Vercel [V] | **Vercel** [G] | **Railway** [V-intent] | Claude Code [G] |
 | Operator email (NOT a website) | astersports.co | — | Google Workspace [G] | — | — |
-| Sports-equipment co (separate; TM pending) | astersports.com | ? [V] | ? [V] | — | — |
 | Legacy Hoopers (current live) | legacyhoopers.org | Squarespace [G] | **Squarespace** [G] | rebuild → framework (Railway?) [V] | rebuild lane TBD [V] |
 | St Patrick Armonk (current live) | (parish domain) | — | **eCatholic** [G, operator] — no access | rebuild → publish-to-review → migrate [G] | rebuild lane TBD [V] |
 
@@ -154,8 +157,9 @@ CC LEAN: (i) as the spine (one DB = one truth) + (ii) for render parity, with (i
 -----------------------------------------------------------------------------------------
 9. OPEN QUESTIONS FOR THE ARCHITECT / OPERATOR
 -----------------------------------------------------------------------------------------
-Q1. Confirm the [V] registrar/host cells in §2 (esp. astersports.app registrar; whether
-    astersports.com is ours; the St Pat current host: eCatholic vs manus.space vs split repo).
+Q1. Confirm the [V] registrar/host cells in §2 (esp. astersports.app registrar; the St Pat
+    current host: eCatholic vs manus.space vs split repo). [RESOLVED 2026-06-25: domains are
+    exactly three — .io/.app/.co; no astersports.com.]
 Q2. aster-sports → Railway: ratify as intended end-state, and name the trigger (now, or at
     a milestone). Until then it stays on Vercel.
 Q3. README standard (§5) + branch discipline (§6): approve as written?
