@@ -14,9 +14,10 @@ export function useEventRideCounts(activities) {
   }, [activities]);
 
   useEffect(() => {
+    let cancelled = false;
     if (!stableKey) {
-      Promise.resolve().then(() => setCounts({}));
-      return;
+      Promise.resolve().then(() => { if (!cancelled) setCounts({}); });
+      return () => { cancelled = true; };
     }
     const ids = stableKey.split(',');
     Promise.all([
@@ -24,6 +25,7 @@ export function useEventRideCounts(activities) {
       supabase.from('event_ride_claims').select('event_id, seats_requested, status').in('event_id', ids).in('status', ['pending', 'confirmed']),
       supabase.from('event_ride_requests').select('event_id, seats_needed, status').in('event_id', ids).eq('status', 'open'),
     ]).then(([offersRes, claimsRes, requestsRes]) => {
+      if (cancelled) return;
       if (offersRes.error) { console.error('useEventRideCounts offers:', offersRes.error.message); return; }
       if (claimsRes.error) { console.error('useEventRideCounts claims:', claimsRes.error.message); return; }
       if (requestsRes?.error) { console.error('useEventRideCounts requests:', requestsRes.error.message); return; }
@@ -45,8 +47,10 @@ export function useEventRideCounts(activities) {
       }
       setCounts(map);
     }).catch((err) => {
+      if (cancelled) return;
       console.error('useEventRideCounts network error:', err);
     });
+    return () => { cancelled = true; };
   }, [stableKey, version]);
 
   const refetch = useCallback(() => setVersion((v) => v + 1), []);
