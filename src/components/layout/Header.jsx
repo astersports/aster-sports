@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, Settings } from 'lucide-react';
+import { ArrowLeft, Eye, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useHomeRole } from '../../hooks/useHomeRole';
@@ -12,7 +12,7 @@ import RoleSwitcherSheet from '../RoleSwitcherSheet';
 // /account, duplicating the settings cog with mismatched user expectation.)
 
 export default function Header() {
-  const { org, orgName } = useAuth();
+  const { org, orgName, role } = useAuth();
   // activeRole is for label DISPLAY only — permissions use
   // useAuth().role (see RequireAuth.jsx). Do not branch behavior on
   // activeRole; if you need permission-aware Header logic, read
@@ -64,6 +64,20 @@ export default function Header() {
           color: 'var(--as-text-on-dark)',
         }}
       >
+        {/* Admin-only: jump back to the Aster Sports hub (astersports.io).
+            Gated on the real permission role (useAuth().role), so parents /
+            coaches never see an agency-hub link. Interim gate until the
+            cross-org super-admin role lands (design-first per operator). */}
+        {role === 'admin' && (
+          <a
+            href="https://astersports.io"
+            aria-label="Back to Aster Sports"
+            className="w-11 h-11 flex items-center justify-center shrink-0 -ml-2"
+            style={{ color: 'inherit' }}
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </a>
+        )}
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <img
             src={org?.logo_url || '/aster-mark.svg'}
