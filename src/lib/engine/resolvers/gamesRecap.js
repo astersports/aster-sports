@@ -19,7 +19,7 @@ import { fetchSignatureCoaches } from './signatureCoaches';
 import { fetchSeasonToDate, seasonPillText } from './seasonToDate';
 
 
-const EVENT_SELECT = 'id, team_id, event_type, start_at, location, opponent, teams ( id, name, team_color, org_id )';
+const EVENT_SELECT = 'id, team_id, event_type, start_at, location, location_id, opponent, teams ( id, name, team_color, org_id ), locations ( id, name )';
 
 export async function resolveGamesRecap({ eventIds, pilotOnly }, { supabase, now = new Date() } = {}) {
   if (!Array.isArray(eventIds) || !eventIds.length) throw new Error('Missing eventIds');
@@ -47,7 +47,7 @@ export async function resolveGamesRecap({ eventIds, pilotOnly }, { supabase, now
     .filter((e) => resultByEvent.has(e.id))
     .map((e) => {
       const gr = resultByEvent.get(e.id);
-      return { team_id: e.team_id, event_type: e.event_type, team_name: e.teams?.name || ORG_NAME_DEFAULT, team_color: e.teams?.team_color || null, opponent: e.opponent, venue: e.location || null, start_at: e.start_at, our_score: gr.our_score, opponent_score: gr.opponent_score, result: gr.result, day_label: dayLabel(e.start_at) };
+      return { team_id: e.team_id, event_type: e.event_type, team_name: e.teams?.name || ORG_NAME_DEFAULT, team_color: e.teams?.team_color || null, opponent: e.opponent, venue: e.locations?.name || e.location || null, start_at: e.start_at, our_score: gr.our_score, opponent_score: gr.opponent_score, result: gr.result, day_label: dayLabel(e.start_at) };
     })
     .sort((a, b) => String(a.start_at).localeCompare(String(b.start_at)));
   if (!games.length) throw new Error('No published results among selected games');
