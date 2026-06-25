@@ -57,6 +57,9 @@ end;
 $$;
 revoke execute on function public.set_game_results_org_id() from public;
 revoke execute on function public.set_game_results_org_id() from anon;
+-- Trigger function — not callable directly via the REST RPC surface
+-- (closes advisor 0029; the trigger still fires with the table's privileges).
+revoke execute on function public.set_game_results_org_id() from authenticated;
 
 drop trigger if exists trg_game_results_org_id on public.game_results;
 create trigger trg_game_results_org_id
