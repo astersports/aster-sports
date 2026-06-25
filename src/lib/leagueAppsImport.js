@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { normalizeMethod, parseDollars } from './leagueAppsImportHelpers';
 
 export function parseLeagueAppsData(raw) {
   let records;
@@ -54,23 +55,6 @@ export function parseLeagueAppsData(raw) {
     }
   }
   return Array.from(families.values());
-}
-
-function parseDollars(val) {
-  if (typeof val === 'number') return Math.round(val * 100);
-  const cleaned = String(val).replace(/[$,]/g, '');
-  const n = parseFloat(cleaned);
-  return isNaN(n) ? 0 : Math.round(n * 100);
-}
-
-function normalizeMethod(m) {
-  const lower = (m || '').toLowerCase();
-  if (lower.includes('zelle')) return 'zelle';
-  if (lower.includes('venmo')) return 'venmo';
-  if (lower.includes('cash')) return 'cash';
-  if (lower.includes('check')) return 'check';
-  if (lower.includes('stripe') || lower.includes('card') || lower.includes('credit')) return 'stripe';
-  return 'other';
 }
 
 export async function importToFinancials(families, orgId, seasonId, userId) {
