@@ -20,22 +20,40 @@ export function useHasUnread() {
       .from('message_reads').select('channel_key, last_read_at')
       .eq('user_id', user.id);
     if (readsErr) { console.error('[useHasUnread] reads:', readsErr.message); return; }
-    // The nav badge is a coarse "anything new since I last read?" signal. There
-    // is no `global_last_check` row — markRead (useUnreadCounts) writes one
-    // last_read_at per channel_key. Use the user's MAX last_read_at as the
-    // high-water mark so the badge clears once every channel has been read.
-    const highWater = (reads || [])
-      .map((r) => r.last_read_at)
-      .filter(Boolean)
-      .reduce((max, t) => (t > max ? t : max), '2020-01-01');
+    // markRead (useUnreadCounts) writes one last_read_at per channel_key
+    // (announcements / team-<id> / dm-<id>). Compare each channel's NEWEST
+    // non-self message against THAT channel's last_read_at — a MAX-across-
+    // channels high-water mark misses unread in a channel read less recently
+    // and disagrees with ChannelList's per-channel dot. Fallback '2020-01-01'
+    // for a channel with no read row. RLS scopes messages to channels this
+    // user can see; limit covers normal volume (a long-dormant channel beyond
+    // it is, by definition, already read).
+    const readMap = {};
+    (reads || []).forEach((r) => { readMap[r.channel_key] = r.last_read_at; });
 
-    const { count, error: countErr } = await supabase.from('messages')
-      .select('*', { count: 'exact', head: true })
+    const { data: msgs, error: msgErr } = await supabase.from('messages')
+      .select('channel, team_id, dm_thread_id, created_at')
       .eq('org_id', orgId)
       .neq('sender_id', user.id)
-      .gt('created_at', highWater);
-    if (countErr) { console.error('[useHasUnread] count:', countErr.message); return; }
-    setHasUnread((count || 0) > 0);
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (msgErr) { console.error('[useHasUnread] messages:', msgErr.message); return; }
+
+    const channelKeyOf = (m) => (
+      m.channel === 'announcement' ? 'announcements'
+        : m.channel === 'dm' ? `dm-${m.dm_thread_id}`
+          : `team-${m.team_id}`
+    );
+
+    const seen = new Set();
+    let unread = false;
+    for (const m of msgs || []) {
+      const key = channelKeyOf(m);
+      if (seen.has(key)) continue; // desc order → first per key is the newest
+      seen.add(key);
+      if (m.created_at > (readMap[key] || '2020-01-01')) { unread = true; break; }
+    }
+    setHasUnread(unread);
   }, [user, orgId]);
 
   useEffect(() => { Promise.resolve().then(check); }, [check]);

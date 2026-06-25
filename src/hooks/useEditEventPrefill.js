@@ -11,11 +11,13 @@ export function useEditEventPrefill({ isEdit, editEvent, orgId, setForm }) {
   // practically sufficient but the canonical pattern requires org scope.
   useEffect(() => {
     if (!isEdit || !editEvent?.parent_event_id || !orgId) return;
+    let cancelled = false;
     supabase.from('events').select('start_at')
       .eq('org_id', orgId)
       .eq('parent_event_id', editEvent.parent_event_id)
       .order('start_at', { ascending: true })
       .then(({ data, error }) => {
+        if (cancelled) return;
         if (error) { console.error('useEditEventPrefill recurrence:', error.message); return; }
         if (!data || data.length < 2) return;
         const days = Math.round((new Date(data[1].start_at) - new Date(data[0].start_at)) / 86400000);
@@ -23,13 +25,16 @@ export function useEditEventPrefill({ isEdit, editEvent, orgId, setForm }) {
         const until = data[data.length - 1].start_at.slice(0, 10);
         setForm((f) => ({ ...f, recurrence: { pattern, until } }));
       });
+    return () => { cancelled = true; };
   }, [isEdit, editEvent?.parent_event_id, orgId, setForm]);
 
   // Existing volunteer slots into the DutyEditor.
   useEffect(() => {
     if (!isEdit || !editEvent?.id) return;
+    let cancelled = false;
     supabase.from('event_duties').select('*').eq('event_id', editEvent.id)
       .then(({ data, error }) => {
+        if (cancelled) return;
         if (error) { console.error('useEditEventPrefill duties:', error.message); return; }
         if (!data || data.length === 0) return;
         const grouped = {};
@@ -40,5 +45,6 @@ export function useEditEventPrefill({ isEdit, editEvent, orgId, setForm }) {
         });
         setForm((f) => ({ ...f, duties: Object.values(grouped) }));
       });
+    return () => { cancelled = true; };
   }, [isEdit, editEvent?.id, setForm]);
 }

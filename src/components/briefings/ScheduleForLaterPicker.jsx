@@ -37,19 +37,24 @@ function toEtParts(iso) {
 }
 
 // Interpret { date, time } as ET wall-clock and return the UTC ISO instant.
-// DST-safe: derive the ET→UTC offset for that wall-clock by formatting a
-// noon-UTC probe on the same date back into ET.
+// DST-safe by candidate round-trip: ET is UTC-4 (EDT) or UTC-5 (EST). A single
+// noon-UTC offset probe can be an hour off for wall-clock times on the far side
+// of the 2am DST switch, so instead try BOTH offsets and keep the candidate
+// whose UTC instant formats back to exactly the requested {date,time}. On the
+// fall-back duplicated hour (both match) -4 wins (the earlier instant); in the
+// spring-forward gap (neither matches — that wall-clock doesn't exist) default
+// to the -4 interpretation.
 function fromEtParts(date, time) {
   if (!date || !time) return null;
   const [y, m, d] = date.split('-').map(Number);
   const [hh, mi] = time.split(':').map(Number);
   if ([y, m, d, hh, mi].some(Number.isNaN)) return null;
-  const probe = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
-  const etHour = Number(
-    new Intl.DateTimeFormat('en-US', { timeZone: ET_TZ, hour: '2-digit', hour12: false }).format(probe),
-  );
-  const offsetHours = 12 - (etHour === 24 ? 0 : etHour); // 4 (EDT) / 5 (EST)
-  return new Date(Date.UTC(y, m - 1, d, hh + offsetHours, mi, 0)).toISOString();
+  for (const offsetHours of [4, 5]) {
+    const iso = new Date(Date.UTC(y, m - 1, d, hh + offsetHours, mi, 0)).toISOString();
+    const back = toEtParts(iso);
+    if (back.date === date && back.time === time) return iso;
+  }
+  return new Date(Date.UTC(y, m - 1, d, hh + 4, mi, 0)).toISOString();
 }
 
 function validate(iso) {
