@@ -247,13 +247,15 @@ export function isEasternDST(year, month, day, localHour) {
   if (month < 3 || month > 11) return false;
   if (month > 3 && month < 11) return true;
   if (month === 3) {
-    const firstDay = new Date(year, 2, 1).getDay();
+    // UTC-anchored weekday of Mar 1 (date-only; getUTCDay is the guard-legal
+    // form — calendarMathAudit R12. Same answer as a local-anchored getDay).
+    const firstDay = new Date(Date.UTC(year, 2, 1)).getUTCDay();
     const secondSunday = firstDay === 0 ? 8 : 14 - firstDay + 1;
     if (day > secondSunday) return true;
     if (day < secondSunday) return false;
     return localHour >= 2;
   }
-  const firstDay = new Date(year, 10, 1).getDay();
+  const firstDay = new Date(Date.UTC(year, 10, 1)).getUTCDay();
   const firstSunday = firstDay === 0 ? 1 : 7 - firstDay + 1;
   if (day < firstSunday) return true;
   if (day > firstSunday) return false;
