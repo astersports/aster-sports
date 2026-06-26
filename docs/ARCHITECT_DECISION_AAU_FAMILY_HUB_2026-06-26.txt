@@ -1,0 +1,205 @@
+================================================================================
+ARCHITECT DECISION — AAU FAMILY HUB (FAMILY VIEW + PAID PROFILE + CONTAINMENT)
+astersports-web / aster-sports · 2026-06-26 · Architect → CC (relayed by Frank) · L99
+In reply to: AAU_HUB_FAMILY_VIEW_CHALLENGE_2026-06-26 (CC, PR #131)
+================================================================================
+HEADLINE: Most of this is ratified and green to build. ONE correction is
+  load-bearing and non-negotiable: a PAYWALL IS NOT A CHILD-SAFETY GATE. §7.2's
+  claim that "the paywall answers" claim-verification (Q1) over-collapses two
+  independent gates. Adding a specific identified CHILD — their identity, their
+  film, per-child notification targeting — requires GUARDIAN VERIFICATION, which
+  is separate from and additional to payment. Everything else follows from that.
+
+This is a money-path AND a minors'-data surface, so I'm holding the sensitive parts
+for the right contracts and green-lighting the safe, demoable majority now.
+
+--------------------------------------------------------------------------------
+A. RATIFIED — GREEN TO BUILD (CC's leans accepted)
+--------------------------------------------------------------------------------
+D-FV1 (b) — family hub as a PUBLIC family-scoped view IN aster-sports, served by
+  anon-safe SECDEF RPCs (the get_public_* pattern legacy-hoopers already ships);
+  astersports.io AAU page LINKS into it. ACCEPTED. Reconciles with #125: #125 said
+  "the AAU section is the hub" — this refines WHERE the hub UI is served (the app,
+  where the Supabase data + 90% of the UX already live) vs where it's MARKETED
+  (the .io AAU page links in). Data topology unchanged and reinforced: aster-sports
+  Supabase = single source of truth; do NOT re-implement the data layer in the
+  astersports-web MySQL/Drizzle stack (that's the two-sources trap). Good catch.
+
+D-FV3 (B) — division/pool/bracket JUNCTION tables (tournament_divisions,
+  division_pools/pool_teams, bracket_slots), not a jsonb blob. ACCEPTED. This is the
+  queryable standings substrate; jsonb is the dead-config trap. Architect-scoped
+  schema → design-review the migration, owner applies. DRAFT THIS NOW (see §E).
+
+D-FV4 (ii) — rule-driven standings engine: a pure standings(games, rules) function
+  reading circuit_rules (cap + head-to-head + N-way tiebreak), fixture-tested.
+  ACCEPTED. The rules table is already seeded (Zero Gravity cap=20); scales to St
+  Patrick + other circuits; pure-with-injected-IO is testable.
+
+D-FV5 (R) — hybrid predictor: a DETERMINISTIC scenario engine enumerates the
+  (small) remaining-outcome space, applies D-FV4, returns the TRUE odds % + clinch/
+  elimination logic; the LLM only NARRATES "what has to happen," never does the
+  math. ACCEPTED — same principle as the density ruling: deterministic core owns the
+  number, AI narrates. This is the only version that won't embarrass us on a
+  tiebreaker.
+
+D-FV6 — subscriber push fan-out for the three factual events (schedule change,
+  score update, game final), reusing send-push; editorial recaps stay on the admin
+  Radar. ACCEPTED, with one distinction baked in: TEAM-level push ("Team X's game is
+  final") rides the open subscription; per-CHILD targeting ("your child #5…") rides
+  the guardian gate in §B. Content is public-factual; targeting granularity follows
+  the verification line.
+
+D-FV8 — the public/private DATA-CLASSIFICATION line: public (anon SECDEF) =
+  tournament factual state (schedule, scores, standings, bracket, odds, PII-
+  stripped); private = child identity, film, targeting. ACCEPTED as a classification.
+  The line is right. What crossing it REQUIRES is §B.
+
+--------------------------------------------------------------------------------
+B. THE CORRECTION — D-FV2 + §7.2 : PAYWALL ≠ CHILD-SAFETY GATE
+--------------------------------------------------------------------------------
+CC's own §2/D-FV2 sub-lean had the right instinct ("OPEN for public tracking; GATED
+before anything family-private"). But §7.2 then says the PAYWALL is that gate ("Q1
+ANSWERED by 7.2"). That over-collapses two independent things:
+
+  - PAYMENT proves someone has a card. It does NOT prove the child they're adding is
+    theirs. A paid container CONTAINS the data; it does not VERIFY the adult↔child
+    relationship — and because "contained" makes the data private, it's actually
+    LESS auditable, not more.
+  - Failure mode this enables: an adult pays (card passes), selects a team from the
+    scraped inventory, pins jersey #5 to "their kid" (who isn't), uploads "film"
+    containing that child, and receives that child's where-and-when. The paywall
+    stopped none of it.
+
+So Q1 is RE-OPENED. The gate for child-private data is GUARDIAN VERIFICATION,
+orthogonal to payment. The good news: the platform ALREADY HAS the primitive —
+claim_guardian_by_email() SECDEF + player_guardians(relationship,is_primary) +
+parent_context_v (doc §2.6). The authority is the PROGRAM'S ROSTER (the program that
+runs the team holds the guardian emails). So the corrected model:
+
+  TIER 1 — PUBLIC TRACKING (free, open): subscribe to any scraped team to follow its
+    PUBLIC data (schedule, scores, standings, odds) + TEAM-level push. No child
+    identity. This is D-FV2 option (2): a family_subscriptions row, org-agnostic.
+    Open claim is FINE here — it's following a team's already-public facts.
+  TIER 2 — CHILD-PRIVATE (verified, then paid): adding a specific child's IDENTITY,
+    uploading FILM of them, or per-CHILD targeting requires a VERIFIED GUARDIAN LINK
+    via the existing claim_guardian authority — confirmed against the program's
+    roster, NOT a credit card. Available ONLY for teams the platform has roster +
+    guardian authority over (Legacy, St Patrick — programs we run). 
+
+THE INVARIANT (write it into the entitlement code):
+    canAccessChildData(user, child) = hasPaidEntitlement(user) AND
+                                      isVerifiedGuardian(user, child)
+  BOTH, independently. The paid check must NEVER imply guardianship; the guardian
+  check must never be satisfiable by payment.
+
+CROSS-PROGRAM (Q2): build the family_subscriptions spine org-agnostic (cheap future-
+  proofing) so cross-program PUBLIC tracking "just works" later WITHOUT the full
+  multi-org auth refactor (option 3) now. But note: for a team in a program we do
+  NOT run, there is NO guardian-verification authority — so cross-program CHILD data
+  stays unavailable (public-tracking-only) until a verification path exists. That's
+  not a limitation to engineer around; it's the safety boundary.
+
+--------------------------------------------------------------------------------
+C. FILM (D-FV7) — TRACK 2, AND GATED ON A REAL POSTURE (not just "later + private")
+--------------------------------------------------------------------------------
+Carving film off as a later, lowest-dependency track: ACCEPTED. "Private profile-
+scoped bucket": necessary, NOT sufficient. Before a single frame is uploaded, ALL of:
+  1. GUARDIAN GATE (§B): only a verified guardian may upload film tied to a child.
+  2. THE MULTI-MINOR REALITY (CC didn't surface this): "game film" contains MANY
+     minors — teammates AND opponents, none of whom consented to sit in a commercial
+     cloud bucket processed by an AI sub-processor. Design for it: MINIMIZE raw
+     retention (process → keep only the claimed child's clips → discard/expire the
+     raw multi-child footage), no broadcast, hard deletion-on-demand.
+  3. JERSEY-OCR ONLY, explicitly NO FACIAL RECOGNITION of minors. The feature is
+     object/number detection (the jersey number), not biometric face-matching.
+     Keep it that way — never add face recognition of children.
+  4. SUB-PROCESSOR / CONSENT POSTURE: the AI clip service (Replicate or similar)
+     becomes a sub-processor receiving video of minors — needs a DPA + an explicit
+     guardian consent flow before upload. CC already flagged this; reinforcing it as
+     a hard precondition, not a checklist item.
+  5. RETENTION + DELETION: film must not outlive the relationship; a guardian can
+     delete it; expiry is default-on.
+Film does NOT proceed on "later" alone — it proceeds when §B (verification) is live
+AND 1–5 are designed. Until then, not a line of upload code.
+
+--------------------------------------------------------------------------------
+D. MONEY / ENTITLEMENT (D-FV9, Q7) — SHAPE ENDORSED, LOGIC HELD
+--------------------------------------------------------------------------------
+SHAPE: (c) freemium over (b) per-family — free public hub for reach; ONE paid family
+  account unlocking the (verified) child layer across all their teams. ENDORSED — it
+  matches "single source of truth for all their kids" and puts the COMMERCIAL paywall
+  on the public/contained line. Q7: paid hub = an ENTITLEMENT on the existing
+  identity, NOT a second login system. ENDORSED (AP#42).
+HELD:
+  - PRICING / tier / trial = Frank's commercial call. I don't set numbers.
+  - The ENTITLEMENT LOGIC + Stripe webhook handling is money-path → architect review
+    before any billing code merges (the H1 ledger-invariant lens: idempotent,
+    balance/entitlement derived, no double-grant on webhook retry).
+  - Stripe live keys being wired ≠ billing live. The paid-profile entitlement gate
+    stays HELD; no agent flips it; Frank sets the money path.
+  - The §B invariant is the meeting point of money and safety: entitlement and
+    guardianship are SEPARATE checks. Do not let the billing work quietly become the
+    child-data gate.
+
+--------------------------------------------------------------------------------
+E. ANSWER TO FRANK'S QUESTION — SPLIT, NOT WHOLE
+--------------------------------------------------------------------------------
+"Hold for the render, or draft the Track-0 schema (division/pool/bracket + the paid-
+profile/containment tables)?" → SPLIT:
+  ✅ DRAFT NOW: the D-FV3 standings schema (tournament_divisions, division_pools/
+     pool_teams, bracket_slots). It's well-scoped, non-money, non-child-data, and
+     unblocks the standings engine + predictor + the demoable v1. Draft the migration
+     for design review; do NOT apply (owner applies).
+  ⛔ HOLD: the paid-profile / containment / child-link / film-media tables. That
+     schema ENCODES THE TRUST MODEL — if it's drafted before §B is ratified, it bakes
+     in the paywall-as-gate error. Lock the corrected D-FV2 (the verified-guardian
+     child-link contract) + the D-FV9 entitlement contract FIRST, then draft those
+     tables so the schema expresses "verified guardian" and "entitlement," separably.
+
+--------------------------------------------------------------------------------
+F. MILESTONE RE-SCOPE (cleaner + safer than Q5)
+--------------------------------------------------------------------------------
+v1 (fast, safe, marketable) = the PUBLIC team-tracking hub: track a TEAM, live
+  scores, division standings (rule-driven), bracket + AI-narrated odds, TEAM-level
+  push. NO child-identity pin, NO film, NO paywall-as-safety. This is Tracks 0–1
+  shorn of the child layer — it ships the selling point and demos cleanly.
+THEN (after §B verification + §D entitlement are ratified) = the verified PAID FAMILY
+  PROFILE: pin your (verified) child, per-child targeting, then film (Track 2 with §C).
+This honors Frank's full family-centric vision; it just sequences the child-data layer
+behind its safety + money contracts instead of shipping it on a paywall.
+
+--------------------------------------------------------------------------------
+G. RENDER — DEFERRED BY DESIGN (will follow the lock)
+--------------------------------------------------------------------------------
+I'm NOT rendering the "add your kid / upload film" flow yet — on purpose. Rendering a
+friendly UI for child-claim + film BEFORE the verification model is locked would put a
+welcoming face on the exact gap I'm flagging. Once §B is ratified I'll render the
+family hub with VERIFICATION-FIRST claim built into the flow (so safety is the
+designed path, not a retrofit). I'll happily render the PUBLIC v1 hub (team tracking +
+standings + predictor + push) now if you want a visual for the demoable milestone —
+that part has no child-data gap to design around.
+
+--------------------------------------------------------------------------------
+H. HOLDS (standing)
+--------------------------------------------------------------------------------
+- Schema (D-FV3 + later tables) → design-review before apply; owner applies; no MCP
+  apply by agents.
+- Paid-profile entitlement + Stripe → architect money-path review before merge;
+  Frank sets pricing + flips; live keys ≠ live billing.
+- Child-data features (identity pin / film / per-child push) → HELD for the §B
+  verified-guardian contract.
+- Film → HELD for §C (verification + consent/DPA + minimization + jersey-OCR-only +
+  deletion).
+- No *_LIVE flips by agents.
+
+--------------------------------------------------------------------------------
+I. FILING
+--------------------------------------------------------------------------------
+Drive: aster-sports/ + astersports-web/ + _platform-wide. Cross-refs: #125 (AAU brief),
+#131 (this), the AAU hub spec, the org-structure spec (the credit/entitlement lens),
+claim_guardian_by_email (the verification primitive this leans on).
+================================================================================
+END — green on the public hub + standings + predictor + push; paywall corrected to
+NOT be the child-safety gate (verified guardianship is); draft D-FV3 now, hold the
+child/paid/film schema for the §B+§D lock; render follows verification.
+================================================================================

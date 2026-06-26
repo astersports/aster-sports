@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AAU Hub — verified family claim flow (R3 render)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0d15; --card:#131825; --card2:#171d2c; --ink:#eef1f8; --dim:#9aa3b6;
+    --mut:#6b7488; --line:#222a39; --line2:#2c3548;
+    --g2:#E8902A; --g3:#F6CC55; --grad:linear-gradient(100deg,#E0631C,#E8902A,#F6CC55,#FBD56B);
+    --cobalt:#4a8fd4; --green:#54c98a; --gtrust:#5ec98e;
+    --disp:"Space Grotesk",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif; --mono:"Space Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#05070c;color:var(--ink);font-family:var(--body);line-height:1.5;-webkit-font-smoothing:antialiased}
+  :focus-visible{outline:2px solid var(--g3);outline-offset:2px}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 22px}
+  .grad-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .top{position:sticky;top:0;z-index:40;background:rgba(5,7,12,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .top .wrap{display:flex;align-items:center;gap:13px;height:54px;flex-wrap:wrap}
+  .top b{font-family:var(--disp);font-weight:700;font-size:16px}
+  .top .tag{font-size:12px;color:var(--mut);font-family:var(--mono)}
+  .scene{padding:40px 0}
+  .slabel{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--g3)}
+  .anno{font-size:14px;color:var(--dim);margin:6px 0 24px;max-width:730px}
+
+  .flow{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  .step{flex:0 0 300px;max-width:300px}
+  .stephead{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+  .num{width:26px;height:26px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:13px;color:#1a1206;background:var(--grad)}
+  .num.lock{background:#2a3346;color:var(--mut)}
+  .num.trust{background:var(--gtrust);color:#06210f}
+  .stitle{font-family:var(--disp);font-weight:600;font-size:14px}
+  .stitle small{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);font-weight:400;margin-top:1px}
+
+  .card{border:1px solid var(--line2);border-radius:15px;background:var(--bg);overflow:hidden}
+  .cpad{padding:16px 15px}
+  .gate{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding:8px 13px;border-bottom:1px solid var(--line)}
+  .gate.verify{color:var(--gtrust);background:rgba(94,201,142,.06)}
+  .gate.pay{color:var(--g3);background:rgba(246,204,85,.05)}
+  .gate svg{width:12px;height:12px}
+
+  label.fl{display:block;font-size:11px;color:var(--dim);margin:0 0 5px}
+  .inp{width:100%;background:var(--card2);border:1px solid var(--line2);border-radius:9px;padding:10px 12px;color:var(--ink);font-size:13px;font-family:var(--body)}
+  .inp.ro{color:var(--mut)}
+  .hint{font-size:11px;color:var(--mut);margin-top:8px;line-height:1.5}
+  .btn{width:100%;margin-top:13px;border:none;border-radius:10px;padding:11px;font-family:var(--disp);font-weight:600;font-size:13.5px;color:#1a1206;background:var(--grad);cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid var(--line2);color:var(--dim)}
+  .btn.trust{background:var(--gtrust);color:#06210f}
+
+  .verified{display:flex;align-items:center;gap:10px;border:1px solid rgba(94,201,142,.35);background:rgba(94,201,142,.08);border-radius:11px;padding:11px 12px}
+  .verified .vi{width:30px;height:30px;border-radius:50%;background:var(--gtrust);color:#06210f;display:grid;place-items:center;flex:0 0 auto}
+  .verified .vi svg{width:16px;height:16px}
+  .verified .vt{font-size:12.5px;font-weight:600}
+  .verified .vt small{display:block;color:var(--gtrust);font-weight:400;font-size:10.5px;font-family:var(--mono)}
+
+  .kid{display:flex;align-items:center;gap:11px;border:1px solid var(--line2);border-radius:11px;background:var(--card);padding:11px 12px;margin-top:11px}
+  .kid .av{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#1d2840,#16203a);border:1px solid var(--line2);display:grid;place-items:center;font-family:var(--disp);font-weight:700;color:var(--cobalt);flex:0 0 auto}
+  .kid .kn{flex:1}
+  .kid .kn .n{font-weight:600;font-size:13.5px}
+  .kid .kn .s{font-size:11px;color:var(--mut);font-family:var(--mono)}
+  .pinbtn{font-family:var(--mono);font-size:11px;color:var(--g3);border:1px solid #5a4a25;border-radius:7px;padding:5px 9px;background:rgba(246,204,85,.05)}
+
+  .price{display:flex;align-items:baseline;gap:6px;margin:2px 0 4px}
+  .price .amt{font-family:var(--disp);font-weight:700;font-size:26px}
+  .price .per{font-size:12px;color:var(--mut);font-family:var(--mono)}
+  .free{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);padding:8px 0;border-bottom:1px solid var(--line)}
+  .free svg{width:14px;height:14px;color:var(--green);flex:0 0 auto}
+  .feat{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:7px 0}
+  .feat svg{width:14px;height:14px;color:var(--g3);flex:0 0 auto}
+
+  .toggle-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+  .toggle-row:first-child{border-top:none}
+  .toggle-row .tt{flex:1;font-size:12.5px;font-weight:500}
+  .toggle-row .tt small{display:block;color:var(--mut);font-size:10.5px;font-weight:400}
+  .tog{width:36px;height:21px;border-radius:999px;background:var(--grad);position:relative;flex:0 0 auto}
+  .tog::after{content:"";position:absolute;top:2px;right:2px;width:17px;height:17px;border-radius:50%;background:#1a1206}
+  .tog.off{background:#2a3346}.tog.off::after{right:auto;left:2px;background:#5a6577}
+
+  .arrow{align-self:center;color:var(--line2);flex:0 0 auto}
+  .arrow svg{width:26px;height:26px}
+  @media(max-width:980px){.arrow{transform:rotate(90deg)}}
+
+  .invariant{max-width:760px;margin:30px auto 0;border:1px solid var(--line2);border-radius:14px;background:linear-gradient(180deg,rgba(94,201,142,.05),transparent),var(--card2);padding:18px 20px}
+  .invariant .h{display:flex;align-items:center;gap:9px;font-family:var(--disp);font-weight:600;font-size:15px;margin-bottom:9px}
+  .invariant .h svg{width:18px;height:18px;color:var(--gtrust)}
+  .invariant p{font-size:13.5px;color:var(--dim);margin:0;line-height:1.6}
+  .invariant b{color:var(--ink);font-weight:600}
+  .invariant .two{display:flex;gap:14px;margin-top:14px;flex-wrap:wrap}
+  .invariant .g{flex:1;min-width:200px;border:1px solid var(--line);border-radius:10px;padding:11px 13px;background:var(--card)}
+  .invariant .g .gl{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+  .invariant .g.v .gl{color:var(--gtrust)} .invariant .g.p .gl{color:var(--g3)}
+  .invariant .g .gd{font-size:12px;color:var(--dim)}
+
+  footer{padding:30px 0 60px;text-align:center;color:var(--mut);font-size:12px;border-top:1px solid var(--line);margin-top:40px;font-family:var(--mono)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 7l8 6 8-6" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M5 12l5 5L20 6" fill="none" stroke="currentColor" stroke-width="2.6"/></symbol>
+  <symbol id="lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="bell" viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 21h4" stroke="currentColor" stroke-width="2"/></symbol>
+</svg>
+
+<div class="top"><div class="wrap">
+  <b class="grad-text">Aster Sports</b>
+  <span class="tag">R3 — verified family claim flow · verification-FIRST · safety-sensitive · L99</span>
+</div></div>
+
+<section class="scene"><div class="wrap">
+  <div class="slabel">R3 — adding your kid: prove guardianship → then the child → then the paid layer</div>
+  <p class="anno">The order is the safety design, not a funnel. A child never appears until guardianship is confirmed against the program roster. Payment is a separate gate placed AFTER verification, at the child layer — it can't stand in for guardianship, and guardianship can't be bought. Both are checked live, every time the child layer is opened.</p>
+
+  <div class="flow">
+
+    <!-- STEP 1 — VERIFY (first) -->
+    <div class="step">
+      <div class="stephead"><span class="num trust">1</span><span class="stitle">Confirm you're the guardian<small>verification — first, always</small></span></div>
+      <div class="card">
+        <div class="gate verify"><svg><use href="#shield"/></svg>Guardianship check</div>
+        <div class="cpad">
+          <label class="fl">Email your program has on file</label>
+          <input class="inp" value="parent@email.com" readonly>
+          <button class="btn trust">Send confirmation link</button>
+          <p class="hint">We match this against your team's roster and email a confirmation link. Confirming the link proves you're a guardian of record. No child is shown until this passes.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow"><svg><use href="#arrow"/></svg></div>
+
+    <!-- STEP 2 — CHILD APPEARS (only now) -->
+    <div class="step">
+      <div class="stephead"><span class="num trust">2</span><span class="stitle">Now pin your player<small>unlocked by verification</small></span></div>
+      <div class="card">
+        <div class="gate verify"><svg><use href="#check"/></svg>Verified guardian</div>
+        <div class="cpad">
+          <div class="verified">
+            <span class="vi"><svg><use href="#check"/></svg></span>
+            <span class="vt">Confirmed for the Carter family<small>matched on Legacy Hoopers roster</small></span>
+          </div>
+          <div class="kid">
+            <span class="av">JC</span>
+            <span class="kn"><span class="n">Jordan Carter</span><span class="s">10U Black · #12</span></span>
+            <span class="pinbtn">+ pin</span>
+          </div>
+          <p class="hint">Only players whose roster guardian-email you just confirmed appear here. The verified link is durable — it stays even if a subscription lapses.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow"><svg><use href="#arrow"/></svg></div>
+
+    <!-- STEP 3 — PAID CHILD LAYER (separate, after) -->
+    <div class="step">
+      <div class="stephead"><span class="num">3</span><span class="stitle">The family profile<small>paid — the child layer only</small></span></div>
+      <div class="card">
+        <div class="gate pay"><svg><use href="#lock"/></svg>Separate gate · entitlement</div>
+        <div class="cpad">
+          <div class="free"><svg><use href="#check"/></svg>Following teams + division standings &amp; odds — <b style="color:var(--ink);margin-left:3px">always free</b></div>
+          <div style="padding-top:9px">
+            <div class="price"><span class="amt grad-text">$—</span><span class="per">/ season · price TBD</span></div>
+            <div class="feat"><svg><use href="#check"/></svg>Pin your kids across every team they play</div>
+            <div class="feat"><svg><use href="#bell"/></svg>Per-child alerts (their games, their stat lines)</div>
+            <div class="feat"><svg><use href="#lock"/></svg>Film + AI jersey clips (when it launches)</div>
+          </div>
+          <button class="btn">Start family profile</button>
+          <button class="btn ghost">Maybe later — keep following free</button>
+          <p class="hint">Paying unlocks the child layer for a <b>verified</b> guardian. It never grants guardianship. Lapse it and your verified links stay — access just pauses until you resume.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow"><svg><use href="#arrow"/></svg></div>
+
+    <!-- STEP 4 — PER-CHILD CONTROLS -->
+    <div class="step">
+      <div class="stephead"><span class="num trust">4</span><span class="stitle">Jordan's notifications<small>verified + active</small></span></div>
+      <div class="card">
+        <div class="gate verify"><svg><use href="#check"/></svg>Guardian ✓ · entitlement ✓</div>
+        <div class="cpad">
+          <div class="toggle-row"><span class="tt">Game reminders<small>before each of Jordan's games</small></span><span class="tog"></span></div>
+          <div class="toggle-row"><span class="tt">Final + stat line<small>Jordan's box score when posted</small></span><span class="tog"></span></div>
+          <div class="toggle-row"><span class="tt">Film ready<small>when AI clips are cut to #12</small></span><span class="tog off"></span></div>
+          <p class="hint">These exist only behind the live AND-gate. If either check fails, this surface closes.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- THE INVARIANT, IN PLAIN LANGUAGE -->
+  <div class="invariant">
+    <div class="h"><svg><use href="#shield"/></svg>Two independent locks on your kid's data</div>
+    <p>Your child's identity, alerts, and film live behind <b>two separate gates that are each checked every time the page opens</b> — and one can never substitute for the other:</p>
+    <div class="two">
+      <div class="g v"><div class="gl">Lock 1 — guardianship</div><div class="gd">We confirm you're a guardian of record with your program. Durable, and it can't be bought.</div></div>
+      <div class="g p"><div class="gl">Lock 2 — family profile</div><div class="gd">A paid account unlocks the child layer for a verified guardian. It never grants guardianship.</div></div>
+    </div>
+  </div>
+
+  <p class="anno" style="margin-top:22px">Verification is step 1 because it's the real protection — the paywall proves a card, not a parent. The flow is built so a child literally cannot surface before the roster confirms you, and the paid layer is a distinct, later, independently-evaluated gate. That's the rendered embodiment of <span style="font-family:var(--mono);font-size:12px;color:var(--g3)">canAccessChildData = verifiedGuardian AND paidEntitlement</span>.</p>
+</div></section>
+
+<footer><div class="wrap">
+  R3 render only — verified family claim flow. Verification-first by design.<br>
+  Pricing is Frank's; the entitlement webhook stays held for the money-path review; film stays held for the §C posture.
+</div></footer>
+</body>
+</html>

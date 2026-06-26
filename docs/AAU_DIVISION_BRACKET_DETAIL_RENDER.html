@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AAU Hub — division / bracket detail (R2 render)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0d15; --card:#131825; --card2:#171d2c; --ink:#eef1f8; --dim:#9aa3b6;
+    --mut:#6b7488; --line:#222a39; --line2:#2c3548;
+    --g2:#E8902A; --g3:#F6CC55; --grad:linear-gradient(100deg,#E0631C,#E8902A,#F6CC55,#FBD56B);
+    --cobalt:#4a8fd4; --live:#3ad29a; --green:#54c98a; --red:#ff6a5d;
+    --disp:"Space Grotesk",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif; --mono:"Space Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#05070c;color:var(--ink);font-family:var(--body);line-height:1.5;-webkit-font-smoothing:antialiased}
+  :focus-visible{outline:2px solid var(--g3);outline-offset:2px}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 22px}
+  .grad-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .top{position:sticky;top:0;z-index:40;background:rgba(5,7,12,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .top .wrap{display:flex;align-items:center;gap:13px;height:54px;flex-wrap:wrap}
+  .top b{font-family:var(--disp);font-weight:700;font-size:16px}
+  .top .tag{font-size:12px;color:var(--mut);font-family:var(--mono)}
+  .scene{padding:40px 0}
+  .slabel{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--g3)}
+  .anno{font-size:14px;color:var(--dim);margin:6px 0 22px;max-width:720px}
+
+  .phone{max-width:444px;margin:0 auto;border:1px solid var(--line2);border-radius:18px;overflow:hidden;background:var(--bg);box-shadow:0 40px 90px -40px rgba(224,99,28,.28)}
+  .dhead{padding:20px 16px 15px;background:radial-gradient(700px 240px at 85% -20%,rgba(232,144,42,.12),transparent)}
+  .dhead .ey{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:#cbb98f}
+  .dhead h1{font-family:var(--disp);font-weight:700;font-size:23px;margin:4px 0 0}
+  .dhead .meta{font-size:12px;color:var(--dim);margin-top:5px;display:flex;gap:8px;flex-wrap:wrap}
+  .chip{font-family:var(--mono);font-size:10.5px;border:1px solid var(--line2);border-radius:6px;padding:2px 7px;color:var(--dim)}
+
+  /* slicer pills */
+  .slicers{display:flex;gap:7px;padding:11px 14px 4px;flex-wrap:wrap}
+  .pill{font-size:12px;font-weight:600;padding:7px 12px;border-radius:999px;border:1px solid var(--line2);background:var(--card);color:var(--dim)}
+  .pill.on{border-color:var(--g2);color:#1a1206;background:var(--grad)}
+
+  .body{padding:6px 14px 22px}
+  .seclbl{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin:18px 0 9px}
+  .seclbl .ln{height:1px;background:var(--line);flex:1}
+
+  .pool{border:1px solid var(--line);border-radius:13px;background:var(--card);overflow:hidden;margin-bottom:12px}
+  .ptop{display:flex;align-items:center;justify-content:space-between;padding:11px 13px 9px}
+  .ptop .pn{font-family:var(--disp);font-weight:600;font-size:14px}
+  .capnote{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-family:var(--mono);color:var(--g3);background:rgba(246,204,85,.08);border:1px solid rgba(246,204,85,.2);padding:3px 7px;border-radius:6px}
+  table{width:100%;border-collapse:collapse}
+  th{font-family:var(--mono);font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);font-weight:400;text-align:right;padding:6px 11px;border-top:1px solid var(--line)}
+  th.l{text-align:left}
+  td{padding:9px 11px;font-size:12.5px;border-top:1px solid var(--line);text-align:right;font-family:var(--mono)}
+  td.l{text-align:left;font-family:var(--body)}
+  .rk{color:var(--mut);width:18px}
+  .tn{font-weight:600}
+  tr.me td{background:rgba(74,143,212,.09)} tr.me .tn{color:#bcd8f3}
+  .advrow td{padding:0}
+  .adv{display:flex;align-items:center;gap:8px;font-size:9.5px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--green);padding:5px 11px;background:rgba(84,201,138,.06)}
+  .adv .ln{height:1px;background:rgba(84,201,138,.3);flex:1}
+  .foottag{padding:7px 11px;font-size:9.5px;color:var(--mut);font-family:var(--mono);border-top:1px solid var(--line);display:flex;align-items:center;gap:6px}
+  .foottag svg{width:11px;height:11px;color:var(--green)}
+
+  /* bracket (vertical, mobile-honest) */
+  .bracket{border:1px solid var(--line);border-radius:13px;background:var(--card);padding:6px 13px 12px}
+  .rd{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:12px 0 7px}
+  .match{border:1px solid var(--line2);border-radius:10px;background:var(--card2);overflow:hidden;margin-bottom:8px}
+  .mside{display:flex;align-items:center;gap:9px;padding:9px 11px}
+  .mside+.mside{border-top:1px solid var(--line)}
+  .seed{font-family:var(--mono);font-size:10px;color:var(--mut);width:30px;flex:0 0 auto}
+  .mside .nm{flex:1;font-size:13px;font-weight:600}
+  .mside .sc{font-family:var(--mono);font-size:13px;font-weight:700}
+  .mside.win .nm{color:#fff} .mside.win .sc{color:var(--g3)}
+  .mside.win .seed{color:var(--g3)}
+  .mside.me .nm{color:#bcd8f3}
+  .mside.tbd .nm,.mside.tbd .seed{color:var(--mut);font-weight:400;font-style:italic}
+  .mwhen{padding:6px 11px;font-size:10.5px;color:var(--dim);font-family:var(--mono);display:flex;align-items:center;gap:6px;border-top:1px solid var(--line);background:rgba(0,0,0,.15)}
+  .mwhen svg{width:11px;height:11px;color:var(--g2)}
+  .adv-to{font-size:9.5px;color:var(--mut);font-family:var(--mono);text-align:center;padding:1px 0 6px}
+  .champ{text-align:center;padding:10px;border:1px dashed #5a4a25;border-radius:10px;color:var(--g3);font-family:var(--disp);font-weight:600;font-size:13px;margin-top:4px}
+
+  /* odds detail */
+  .odds{border:1px solid var(--line2);border-radius:13px;overflow:hidden;background:linear-gradient(180deg,rgba(232,144,42,.06),transparent),var(--card2)}
+  .oh{display:flex;align-items:center;gap:14px;padding:15px 15px 11px}
+  .gauge{width:74px;height:74px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;background:conic-gradient(var(--g3) 0% 82%, #232a39 82% 100%);position:relative}
+  .gauge::before{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--card2)}
+  .gauge .v{position:relative;font-family:var(--mono);font-weight:700;font-size:20px}
+  .oh .ot{flex:1}
+  .oh .ot .lbl{font-size:12px;color:var(--dim)}
+  .oh .ot .big{font-family:var(--disp);font-weight:700;font-size:17px;margin-top:2px}
+  .oh .ot .sub{font-size:11px;color:var(--mut);font-family:var(--mono);margin-top:3px}
+  .scen{border-top:1px solid var(--line);padding:11px 15px}
+  .scen .h{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:8px}
+  .cond{display:flex;align-items:flex-start;gap:9px;padding:6px 0;font-size:12.5px}
+  .cond .ic{width:18px;height:18px;border-radius:5px;flex:0 0 auto;display:grid;place-items:center;margin-top:1px}
+  .cond .ic.in{background:rgba(84,201,138,.14);color:var(--green)}
+  .cond .ic.out{background:rgba(255,106,93,.13);color:var(--red)}
+  .cond .ic svg{width:11px;height:11px}
+  .cond b{font-weight:600}
+  .cond .x{color:var(--dim)}
+  .prov{display:flex;align-items:center;gap:6px;padding:10px 15px 13px;font-size:10.5px;color:var(--mut);font-family:var(--mono);border-top:1px solid var(--line)}
+  .prov svg{width:12px;height:12px;color:var(--green)}
+
+  footer{padding:30px 0 60px;text-align:center;color:var(--mut);font-size:12px;border-top:1px solid var(--line);margin-top:40px;font-family:var(--mono)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="pin" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.3" fill="currentColor"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M5 12l5 5L20 6" fill="none" stroke="currentColor" stroke-width="2.6"/></symbol>
+  <symbol id="x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.6"/></symbol>
+  <symbol id="clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+</svg>
+
+<div class="top"><div class="wrap">
+  <b class="grad-text">Aster Sports</b>
+  <span class="tag">R2 — division / bracket detail render · full board (Option A) · for Frank / CC · L99</span>
+</div></div>
+
+<section class="scene"><div class="wrap">
+  <div class="slabel">R2 — the predictor's home: standings · bracket · odds detail</div>
+  <p class="anno">The full-division detail surface. Because OQ6 is ruled Option A, every team's record here is the COMPLETE board — including games between teams we don't run — so 1st/2nd, the advance line, and the odds are computed on the real division, not just our games. Cap + tiebreakers come from the one engine; the predictor only narrates exact math.</p>
+
+  <div class="phone">
+    <div class="dhead">
+      <div class="ey">ZG NY Hoop Festival · live</div>
+      <h1>10U Boys · <span class="grad-text">Division A</span></h1>
+      <div class="meta"><span class="chip">Zero Gravity rules</span><span class="chip">cap +20</span><span class="chip">top 2 of each pool → bracket</span></div>
+    </div>
+
+    <div class="slicers">
+      <span class="pill on">Standings</span>
+      <span class="pill">Bracket</span>
+      <span class="pill">Schedule</span>
+    </div>
+
+    <div class="body">
+      <!-- POOL STANDINGS (multi-pool) -->
+      <div class="seclbl">Pool standings <span class="ln"></span></div>
+
+      <div class="pool">
+        <div class="ptop"><span class="pn">Pool A</span><span class="capnote">cap +20</span></div>
+        <table>
+          <thead><tr><th class="l" colspan="2">Team</th><th>W–L</th><th>DIFF*</th></tr></thead>
+          <tbody>
+            <tr class="me"><td class="rk">1</td><td class="l tn">10U Black</td><td>3–0</td><td>+38</td></tr>
+            <tr><td class="rk">2</td><td class="l tn">Gravity Force</td><td>2–1</td><td>+24</td></tr>
+            <tr class="advrow"><td colspan="4"><div class="adv">▲ advance to bracket<span class="ln"></span></div></td></tr>
+            <tr><td class="rk">3</td><td class="l tn">NY Jayhawks</td><td>2–1</td><td>+19</td></tr>
+            <tr><td class="rk">4</td><td class="l tn">Shore Hoops</td><td>0–3</td><td>−41</td></tr>
+          </tbody>
+        </table>
+        <div class="foottag"><svg><use href="#check"/></svg>2-way tie → head-to-head · Jayhawks &amp; Force split, Force +5 diff</div>
+      </div>
+
+      <div class="pool">
+        <div class="ptop"><span class="pn">Pool B</span><span class="capnote">cap +20</span></div>
+        <table>
+          <thead><tr><th class="l" colspan="2">Team</th><th>W–L</th><th>DIFF*</th></tr></thead>
+          <tbody>
+            <tr><td class="rk">1</td><td class="l tn">Riverside Elite</td><td>3–0</td><td>+44</td></tr>
+            <tr><td class="rk">2</td><td class="l tn">CT Hoops</td><td>2–1</td><td>+12</td></tr>
+            <tr class="advrow"><td colspan="4"><div class="adv">▲ advance to bracket<span class="ln"></span></div></td></tr>
+            <tr><td class="rk">3</td><td class="l tn">Metro Stars</td><td>1–2</td><td>−8</td></tr>
+            <tr><td class="rk">4</td><td class="l tn">Coastal Thunder</td><td>0–3</td><td>−48</td></tr>
+          </tbody>
+        </table>
+        <div class="foottag"><svg><use href="#check"/></svg>Full board — these teams never play us, scraped into division_games</div>
+      </div>
+
+      <!-- BRACKET -->
+      <div class="seclbl">Bracket <span class="ln"></span></div>
+      <div class="bracket">
+        <div class="rd">Semifinals · Sun 11:00a</div>
+
+        <div class="match">
+          <div class="mside win me"><span class="seed">A1</span><span class="nm">10U Black</span><span class="sc">—</span></div>
+          <div class="mside"><span class="seed">B2</span><span class="nm">CT Hoops</span><span class="sc">—</span></div>
+          <div class="mwhen"><svg><use href="#pin"/></svg>Court 3 · Sun 11:00a</div>
+        </div>
+        <div class="adv-to">winner → Final</div>
+
+        <div class="match">
+          <div class="mside"><span class="seed">B1</span><span class="nm">Riverside Elite</span><span class="sc">—</span></div>
+          <div class="mside"><span class="seed">A2</span><span class="nm">Gravity Force</span><span class="sc">—</span></div>
+          <div class="mwhen"><svg><use href="#pin"/></svg>Court 1 · Sun 11:00a</div>
+        </div>
+        <div class="adv-to">winner → Final</div>
+
+        <div class="rd">Final · Sun 1:30p</div>
+        <div class="match">
+          <div class="mside tbd"><span class="seed">SF1</span><span class="nm">Winner SF1</span><span class="sc">—</span></div>
+          <div class="mside tbd"><span class="seed">SF2</span><span class="nm">Winner SF2</span><span class="sc">—</span></div>
+          <div class="mwhen"><svg><use href="#pin"/></svg>Center Court · Sun 1:30p</div>
+        </div>
+        <div class="champ">🏆 Division A Champion</div>
+      </div>
+
+      <!-- ODDS / CLINCH DETAIL -->
+      <div class="seclbl">Bracket odds — 10U Black <span class="ln"></span></div>
+      <div class="odds">
+        <div class="oh">
+          <div class="gauge"><span class="v grad-text">82%</span></div>
+          <div class="ot">
+            <div class="lbl">Chance of making the bracket</div>
+            <div class="big">In strong position</div>
+            <div class="sub">1 pool game left · 4 outcomes remain</div>
+          </div>
+        </div>
+        <div class="scen">
+          <div class="h">What has to happen</div>
+          <div class="cond"><span class="ic in"><svg><use href="#check"/></svg></span><div><b>Beat CT Hoops</b> Sat — you clinch Pool A outright. <span class="x">In.</span></div></div>
+          <div class="cond"><span class="ic in"><svg><use href="#check"/></svg></span><div><b>Lose, but Gravity Force loses too</b> — you hold 2nd on differential. <span class="x">In.</span></div></div>
+          <div class="cond"><span class="ic in"><svg><use href="#check"/></svg></span><div><b>Lose by ≤ 14 while Force wins</b> — head-to-head keeps you 2nd. <span class="x">In.</span></div></div>
+          <div class="cond"><span class="ic out"><svg><use href="#x"/></svg></span><div><b>Lose by 15+ and Force wins big</b> — Force takes 2nd on differential. <span class="x">Out.</span></div></div>
+        </div>
+        <div class="prov"><svg><use href="#check"/></svg>3 of 4 remaining outcomes advance you (82%). Odds + every clinch line are exact — enumerated, not estimated. Wording is AI.</div>
+      </div>
+    </div>
+  </div>
+  <p class="anno" style="margin-top:18px">Standings/bracket/odds all read one SECDEF public RPC (published-only, cap-applied). The "Out" line is shown as plainly as the "In" lines — the predictor doesn't flatter; it states the exact math.</p>
+</div></section>
+
+<footer><div class="wrap">
+  R2 render only — division / bracket detail. Records the full-board standings Option A unlocks.<br>
+  Standings rule-driven (circuit_rules); bracket fills as seeds resolve; odds deterministic, AI narrates.
+</div></footer>
+</body>
+</html>

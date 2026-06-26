@@ -1,0 +1,178 @@
+// Parser coverage for the AAU TourneyMachine ingest (src/lib/aau/parseTournament.js).
+// Runs against real captured Tournament.aspx / Division.aspx snippets (trimmed
+// fixtures) so the parse contract is locked against actual TM HTML shape, not a
+// synthetic mock. The edge function (supabase/functions/aau-ingest-tournament)
+// uses the byte-near-identical Deno mirror _parse.ts (AP #30).
+
+/* global process */
+import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import {
+  getGameStatus,
+  isPlaceholderTeam,
+  normalizeName,
+  parseDivision,
+  parseDivisionGames,
+  parseDivisionList,
+  parseDivisionTeams,
+  parseGameDate,
+  parseScore,
+  parseTournamentDates,
+  parseTournamentName,
+} from '../parseTournament.js';
+
+const FIX = join(process.cwd(), 'src/lib/aau/__tests__');
+const tournamentHtml = readFileSync(join(FIX, 'tournament.fixture.html'), 'utf8');
+const divisionHtml = readFileSync(join(FIX, 'division.fixture.html'), 'utf8');
+
+describe('Tournament.aspx parsing', () => {
+  it('parses the real tournament name from the h1 (not the generic title)', () => {
+    expect(parseTournamentName(tournamentHtml)).toBe('Zero Gravity NY Grand Finale');
+  });
+
+  it('falls back through title then to a generic label', () => {
+    expect(parseTournamentName('<title>SportsEngine Tourney</title>')).toBe('Tournament');
+    expect(parseTournamentName('<title>My Cup</title>')).toBe('My Cup');
+    expect(parseTournamentName('')).toBe('Tournament');
+  });
+
+  it('parses the date window (min/max M/D/YYYY) as ISO date-only strings', () => {
+    expect(parseTournamentDates(tournamentHtml)).toEqual({
+      startDate: '2026-06-26',
+      endDate: '2026-06-28',
+    });
+  });
+
+  it('discovers divisions (IDDivision + name) in document order, de-duped', () => {
+    const divs = parseDivisionList(tournamentHtml);
+    expect(divs.length).toBe(3);
+    expect(divs[0]).toEqual({
+      externalDivisionKey: 'h2026062416582521129cbe8a63f1049',
+      name: 'Boys - 2nd/3rd',
+    });
+    expect(divs.map((d) => d.name)).toEqual(['Boys - 2nd/3rd', 'Boys - 4th', 'Boys - 5th']);
+    // every key is unique
+    expect(new Set(divs.map((d) => d.externalDivisionKey)).size).toBe(3);
+  });
+});
+
+describe('Division.aspx team parsing', () => {
+  it('extracts the real (IDTeam-linked) teams with external keys + pool', () => {
+    const teams = parseDivisionTeams(divisionHtml);
+    expect(teams.map((t) => t.displayName)).toEqual([
+      'CT Northstars',
+      'High Rise - Will',
+      'Pelham Hustle',
+      'LI All Stars',
+    ]);
+    for (const t of teams) {
+      expect(t.externalTeamKey).toMatch(/^h[a-f0-9]+$/);
+      expect(t.pool).toBe('National Orange');
+    }
+    // unique external keys
+    expect(new Set(teams.map((t) => t.externalTeamKey)).size).toBe(4);
+  });
+});
+
+describe('Division.aspx game parsing', () => {
+  const games = parseDivisionGames(divisionHtml, new Date('2026-06-27T20:00:00Z'));
+
+  it('parses one row per game id, de-duped, with the [PBG]# id', () => {
+    const ids = games.map((g) => g.externalGameId);
+    expect(ids).toContain('P3');
+    expect(ids).toContain('P9');
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const id of ids) expect(id).toMatch(/^[PBG]\d+/);
+  });
+
+  it('marks scheduled games (no scores) and a played game as final with scores', () => {
+    const scheduled = games.find((g) => g.externalGameId === 'P3');
+    expect(scheduled.homeScore).toBeNull();
+    expect(scheduled.awayScore).toBeNull();
+    expect(scheduled.status).toBe('scheduled');
+
+    const played = games.find((g) => g.externalGameId === 'P9');
+    expect(played.homeName).toBe('CT Northstars');
+    expect(played.awayName).toBe('Pelham Hustle');
+    expect(played.homeScore).toBe(41);
+    expect(played.awayScore).toBe(33);
+    expect(played.status).toBe('final');
+  });
+
+  it('parses start_at into a UTC ISO timestamp (Eastern → UTC, +4h DST)', () => {
+    const p3 = games.find((g) => g.externalGameId === 'P3');
+    // "Sat 06/27/26 10:45 AM" ET (EDT, +4) → 14:45 UTC
+    expect(p3.startAt).toBe('2026-06-27T14:45:00.000Z');
+  });
+
+  it('flags bracket-placeholder sides so the caller can skip them', () => {
+    const bracket = games.find((g) => /^B\d/.test(g.externalGameId));
+    if (bracket) {
+      // bracket rows reference seed placeholders, not real teams
+      expect(bracket.homePlaceholder || bracket.awayPlaceholder).toBe(true);
+    }
+    // P-rows between real teams are not placeholders
+    const p3 = games.find((g) => g.externalGameId === 'P3');
+    expect(p3.homePlaceholder).toBe(false);
+    expect(p3.awayPlaceholder).toBe(false);
+  });
+});
+
+describe('parseDivision (combined)', () => {
+  it('returns teams, games, and the distinct pool set', () => {
+    const { teams, games, pools } = parseDivision(divisionHtml, new Date('2026-06-27T20:00:00Z'));
+    expect(teams.length).toBe(4);
+    expect(games.length).toBeGreaterThanOrEqual(5);
+    expect(pools).toEqual(['National Orange']);
+  });
+});
+
+describe('pure helpers', () => {
+  it('parseScore: numeric → int, empty/non-numeric → null', () => {
+    expect(parseScore('41')).toBe(41);
+    expect(parseScore('0')).toBe(0);
+    expect(parseScore('')).toBeNull();
+    expect(parseScore('  ')).toBeNull();
+    expect(parseScore('-')).toBeNull();
+    expect(parseScore(null)).toBeNull();
+  });
+
+  it('isPlaceholderTeam: seed/bracket labels are placeholders, real names are not', () => {
+    expect(isPlaceholderTeam('Bracket Winner B1')).toBe(true);
+    expect(isPlaceholderTeam('National Orange 2nd Place')).toBe(true);
+    expect(isPlaceholderTeam('Loser of P3')).toBe(true);
+    expect(isPlaceholderTeam('Pool A Seed 1')).toBe(true);
+    expect(isPlaceholderTeam('TBD')).toBe(true);
+    expect(isPlaceholderTeam('')).toBe(true);
+    expect(isPlaceholderTeam('CT Northstars')).toBe(false);
+    expect(isPlaceholderTeam('High Rise - Will')).toBe(false);
+  });
+
+  it('parseGameDate: ET datetime → UTC; date-only / junk → null', () => {
+    // EDT (+4): 10:45 AM ET → 14:45 UTC
+    expect(parseGameDate('Sat 06/27/26 10:45 AM').toISOString()).toBe('2026-06-27T14:45:00.000Z');
+    // EST (+5) in January: 1:00 PM ET → 18:00 UTC
+    expect(parseGameDate('1/10/2026 1:00 PM').toISOString()).toBe('2026-01-10T18:00:00.000Z');
+    expect(parseGameDate('Sat 06/27/26')).toBeNull();
+    expect(parseGameDate('')).toBeNull();
+    expect(parseGameDate(null)).toBeNull();
+  });
+
+  it('getGameStatus: scores→final, in-window→live, else scheduled', () => {
+    const start = new Date('2026-06-27T14:45:00Z');
+    expect(getGameStatus(start, true, new Date('2026-06-27T16:00:00Z'))).toBe('final');
+    // 20 min after tip, unscored → live
+    expect(getGameStatus(start, false, new Date('2026-06-27T15:05:00Z'))).toBe('live');
+    // 3h after tip, unscored → scheduled (past window, still no score)
+    expect(getGameStatus(start, false, new Date('2026-06-27T18:00:00Z'))).toBe('scheduled');
+    // before tip, unscored → scheduled
+    expect(getGameStatus(start, false, new Date('2026-06-27T10:00:00Z'))).toBe('scheduled');
+    expect(getGameStatus(null, false, new Date())).toBe('scheduled');
+  });
+
+  it('normalizeName: case/space-insensitive', () => {
+    expect(normalizeName('  CT   Northstars ')).toBe('ct northstars');
+    expect(normalizeName(null)).toBe('');
+  });
+});

@@ -74,3 +74,9 @@ verify_jwt = false
 [functions.ingest-game-results]
 verify_jwt = false
 
+# AAU standings-backbone ingest writer — scrapes a public TourneyMachine
+# tournament into tournament_divisions / tournament_division_teams /
+# division_games. Shared-secret auth via app_secrets.ingest_secret (AP #31/#33).
+[functions.aau-ingest-tournament]
+verify_jwt = false
+

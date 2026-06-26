@@ -1,0 +1,96 @@
+================================================================================
+DECISION REQUEST — OQ6 : WHERE DO DIVISION GAMES LIVE (standings games source)
+aster-sports · 2026-06-26 · CC → Architect (relayed by Frank) · PR #1103 · L99
+In reply to: ARCHITECT_REVIEW_FAMILY_TRUST_SCHEMA §5 ("send OQ6's actual options")
+================================================================================
+WHY THIS DOC: your §5 steer was "the standings RPC should QUERY events WHERE
+  tournament_division_id = X joined to game_results, NOT a separate division_games
+  store." You flagged you were steering from my one-line description and asked for
+  the actual options if they differ. They differ on ONE load-bearing fact, so here
+  they are with the fact made explicit. (Per §11.8: a decision the architect must
+  make is a durable doc, not a chat line.)
+
+--------------------------------------------------------------------------------
+THE FACT YOUR STEER's PREMISE MISSES
+--------------------------------------------------------------------------------
+"Query events by tournament_division_id" returns ONLY games OUR org plays. A full
+division (e.g. "5th Grade Girls, Pool A", 6 teams) is mostly teams we don't run, and
+its standings require EVERY game in the pool — including games between two teams we
+don't run (e.g. "NY Jayhawks vs Shore Hoops").
+
+Grounded against #1101:
+  - events rows exist only for OUR games (events.team_id REFERENCES teams = our teams;
+    011 / 003). There is NO events row for an opponent-vs-opponent game — we're not in it.
+  - game_results is our-team-centric too (event_id -> our event; opponent stored as a
+    single opponent ref/text). No row exists for two external teams.
+  - The AAU scraper (#1102 DISCOVER) pulls the WHOLE TourneyMachine division board —
+    all games incl. opponent-vs-opponent — so the DATA is available at ingest; it just
+    has nowhere in the current schema to land.
+
+So: query-events-by-column gives a CORRECT-BUT-PARTIAL standings (our team's games
+only). For our own team's W-L that's fine; for "show me the 5th-grade-girls B division
+standings / who's in 1st" (the operator's explicit ask) it's wrong — every other team
+shows only the subset of their games that happened to be against us.
+
+--------------------------------------------------------------------------------
+OPTIONS
+--------------------------------------------------------------------------------
+OPTION A — division_games table (one games source per division, keyed to the
+  standings unit tournament_division_teams):
+    division_games(id, org_id, tournament_division_id, tournament_pool_id?,
+      home_div_team_id -> tournament_division_teams, away_div_team_id -> ...,
+      home_score, away_score, status, start_at, external_game_id UNIQUE per division,
+      event_id? -> events  -- set when one side is ours, links back to our event)
+  - The scraper writes ALL division games here (ours + opponent-vs-opponent),
+    idempotent on (tournament_division_id, external_game_id).
+  - Our games ALSO keep their events/game_results row (unchanged) for the app's
+    schedule/RSVP/score-entry flows; division_games.event_id back-links them so a
+    published-score edit in the app reflects into the standings source (one write,
+    one mirror — define which is authoritative; CC lean: our score authoritative from
+    game_results, mirrored into division_games on publish).
+  - The standings RPC reads division_games WHERE tournament_division_id = X AND
+    status = final; the D-FV4 engine applies cap + tiebreakers.
+  REQUIRES: the new table + RLS + the scraper writing it + the mirror-on-publish.
+
+OPTION B — events-only, your §5 steer, accept partial standings:
+  - Query events by tournament_division_id + game_results; show standings for OUR
+    games only; render other teams' records as partial / "vs us only."
+  REQUIRES: nothing new. But it cannot show true division standings or a real
+  bracket-qualification picture for a division we don't fully play — which guts the
+  predictor (D-FV5) and the "monitor the division" selling point.
+
+OPTION C — events-only NOW, division_games LATER:
+  - Ship B for v1 (our team's record on the public hub), add A when the "monitor the
+    whole division + predictor" milestone is built.
+  REQUIRES: B now; A later. Risk: the predictor + "which division places 1st/2nd"
+  is exactly the operator's headline ask, so "later" may be very soon.
+
+--------------------------------------------------------------------------------
+CC LEAN
+--------------------------------------------------------------------------------
+OPTION A. The operator's directive is explicitly "show the division standings +
+predict who makes the bracket" — that REQUIRES every game in the division, which is
+structurally unavailable from events alone. The scraper already fetches the whole
+board, so A is mostly a landing table + the idempotent write we already do for
+ingest-game-results. A is NOT a denormalized projection of data we already have (your
+drift/dead-config concern) — it is the ONLY home for games that exist nowhere else
+(opponent-vs-opponent). Our own games stay single-sourced in game_results and mirror
+in on publish, so there's no two-sources-of-truth on OUR scores.
+
+If you'd still prefer B/C for v1 scope reasons, that's a legitimate milestone call —
+but the "partial standings" limitation should be a deliberate, labeled choice, not a
+surprise when the division view renders every external team with a 1-game record.
+
+--------------------------------------------------------------------------------
+KNOCK-ON IF OPTION A
+--------------------------------------------------------------------------------
+- The D-FV3 standings schema (#1103) gets one more table (division_games); the events
+  columns from OQ1 stay (they scope OUR games + the back-link).
+- The public standings RPC reads division_games (not events) — resolves OQ3's source.
+- The D-FV4 engine is unchanged (it already takes a generic games array).
+- The scraper INGEST phase (#1102) gains: write division_games for the whole board.
+================================================================================
+END — OQ6: events-only is correct-but-partial (no opponent-vs-opponent games exist
+in events); CC lean OPTION A (division_games as the one division games source). If B/C
+for v1 scope, make the partial-standings limit a labeled choice.
+================================================================================
