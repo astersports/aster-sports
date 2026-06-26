@@ -288,3 +288,26 @@ BUILD-UNBLOCK UPDATE 2026-06-26 (architect R1/R4/R5 confirmed, R6 ruled, R2/R3 r
   hub (R1) + division detail (R2). STEP 3: build the verified claim flow (R3). HELD:
   Stripe webhook (money-path review), film (§C). FRANK: second-parent sub; past_due grace.
 ================================================================================
+
+================================================================================
+SCHEMA APPLIED 2026-06-26 (owner-approved "Approved" -> MCP-applied to prod)
+================================================================================
+Applied migrations (mirrors in supabase/migrations/):
+  20260626152633_aau_standings_substrate          (5 standings tables + division_games + events cols)
+  20260626152720_aau_family_trust_schema          (3 trust tables + gate helpers + trigger)
+  20260626152747_get_public_tournament_standings  (public RPC, UNION our+external games)
+  20260626152932_aau_trigger_fn_execute_lockdown  (advisor hygiene: trigger fns not caller-executable)
+Verified post-apply:
+  - R5 apply-check PASSES: can_access_child shows the live guardians JOIN (g.user_id = p_user).
+  - RLS enabled on all 9 new tables; explicit per-command policies (AP #20).
+  - RPC smoke: returns null for a non-public/absent division, no error.
+  - Security advisors: the only WARNs on new objects are intentional SECDEF-executable
+    (the public RPC is anon-executable by design; is_entitled/can_access_child are
+    authenticated + caller-scoped). Trigger-fn warnings cleared by the lockdown migration.
+STATUS: STEP 1 substrate is LIVE. Next CC build (no further schema needed):
+  - public hub (R1) + division/bracket detail (R2) wired to get_public_tournament_standings
+    + the computeStandings engine.
+  - the verified claim flow (R3) on the trust schema.
+HELD unchanged: Stripe webhook (writes family_entitlements) -> money-path review; film -> §C.
+FRANK: second-parent subscription; past_due grace.
+================================================================================

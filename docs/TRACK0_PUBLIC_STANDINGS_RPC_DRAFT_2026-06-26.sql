@@ -62,7 +62,10 @@ AS $fn$
     JOIN public.tournament_division_teams me  ON me.tournament_division_id = d.id AND me.team_id = e.team_id
     LEFT JOIN public.tournament_division_teams opp
       ON opp.tournament_division_id = d.id
-     AND lower(btrim(opp.display_name)) = lower(btrim(e.opponent))   -- [VERIFY] name match; prefer opponent_id if present
+     AND (                                                            -- prefer opponent_id (events has it), else normalized name
+           (e.opponent_id IS NOT NULL AND opp.opponent_id = e.opponent_id)
+        OR (e.opponent_id IS NULL AND lower(btrim(opp.display_name)) = lower(btrim(e.opponent)))
+         )
     WHERE gr.our_score IS NOT NULL AND gr.opponent_score IS NOT NULL
   ),
   ext_games AS (   -- (2) EXTERNAL games: division_games (external-vs-external), final only
