@@ -1,0 +1,146 @@
+================================================================================
+ARCHITECT REVIEW — TRACK-1 FAMILY TRUST SCHEMA (Tier-1 / Tier-2 / Entitlement)
+aster-sports · 2026-06-26 · Architect → CC (relayed by Frank) · PR #1103 · L99
+In reply to: TRACK1_FAMILY_TRUST_SCHEMA_DRAFT_2026-06-26.sql (held, design-review)
+================================================================================
+VERDICT: APPROVED IN SHAPE — strong, faithful to the ratified contract. ONE REQUIRED
+  change before apply (a live guardianship re-check in can_access_child), one
+  recommended hardening, and TQ1–4 ruled. Still HELD for owner-apply + the money-path
+  webhook review. Nothing here merges/applies on my say — owner applies.
+
+--------------------------------------------------------------------------------
+1. WHAT'S RIGHT (approve as-is)
+--------------------------------------------------------------------------------
+- The three stacked enforcements are exactly what I asked for: (1) family_children FK
+  to player_guardians (can't link a child without the relationship), (2) the BEFORE
+  trigger asserting the linked guardian's user_id = this user, which fires for EVERY
+  writer incl. service_role (RLS doesn't catch service_role — this is the "structural,
+  not app-level" guarantee), (3) own-rows RLS. Defense in depth, correct.
+- Tier-1 family_subscriptions has NO child column → following a public team is
+  structurally incapable of leaking child data. Right.
+- family_entitlements is a physically separate, webhook-only table (no authenticated
+  write policy; SELECT-own only) → payment state can't be self-claimed. Right.
+- AP#23/#57 hygiene: REVOKE EXECUTE on the gate helpers FROM PUBLIC + anon, then GRANT
+  to authenticated/service_role — child data is never anon. SECURITY DEFINER + SET
+  search_path = public on the functions/trigger. All correct.
+- The pin-vs-access SPLIT is elegant and intentional: creating the verified link
+  requires guardianship (trigger); ACCESSING child data requires guardianship AND
+  current entitlement (the gate). So the durable link is free to establish and a
+  subscription toggle flips access without re-pinning. Keep it. (If you ever want the
+  literal act of pinning gated behind payment, that's a UI/RPC funnel choice — NOT a
+  safety requirement; the schema correctly makes the DATA gate the real boundary.)
+
+--------------------------------------------------------------------------------
+2. REQUIRED CHANGE — can_access_child() must LIVE-re-verify the guardian claim
+--------------------------------------------------------------------------------
+The gap: can_access_child() re-evaluates ENTITLEMENT live, but treats GUARDIANSHIP as
+established-once. It joins family_children → player_guardians and checks the player,
+but it does NOT re-assert that the guardian is STILL claimed by this user. So if the
+guardian claim is later revoked or REASSIGNED (guardians.user_id set NULL, or re-claimed
+by a different user B after A pinned the child), A's family_children row persists and
+can_access_child(A, player) still returns true. A keeps access after losing the claim.
+
+The FK CASCADE already handles the player_guardians-row-DELETED case (good) — but not
+the user_id-CHANGED case. For a child-safety gate, BOTH halves of the AND must be
+live-evaluated, not just entitlement. Fix (one JOIN):
+
+    CREATE OR REPLACE FUNCTION public.can_access_child(p_user uuid, p_player_id uuid)
+    RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $fn$
+      SELECT public.is_entitled(p_user)
+         AND EXISTS (
+           SELECT 1
+           FROM public.family_children fc
+           JOIN public.player_guardians pg ON pg.id = fc.player_guardian_id
+           JOIN public.guardians        g  ON g.id  = pg.guardian_id
+                                          AND g.user_id = p_user        -- <<< live claim re-check
+           WHERE fc.user_id   = p_user
+             AND pg.player_id = p_player_id
+         );
+    $fn$;
+
+This doesn't weaken "guardianship is durable" — the family_children ROW still persists;
+what becomes live is ACCESS. Normal case (claim stable): no change. Edge case (claim
+revoked/reassigned): access cuts immediately, fail-closed — the correct direction.
+Make this change before apply.
+
+--------------------------------------------------------------------------------
+3. RECOMMENDED HARDENING — scope the gate helpers to the caller
+--------------------------------------------------------------------------------
+is_entitled(p_user) and can_access_child(p_user, p_player_id) are SECURITY DEFINER and
+EXECUTE-granted to authenticated, so any authenticated user can call them with ARBITRARY
+p_user — a relationship-probing side channel ("is user X a guardian of child Y?",
+boolean). Close it: an authenticated caller may only evaluate the gate for THEMSELVES;
+service_role may evaluate for anyone (server-side film/push authorization needs that).
+e.g. inside each function, require `p_user = (SELECT auth.uid()) OR (SELECT auth.role())
+= 'service_role'` (use the idiom you prefer). Minor, but it's a child-data gate — answer
+"can I", not "can arbitrary X". Recommended, not a blocker.
+
+--------------------------------------------------------------------------------
+4. TQ1–TQ4 — RULINGS
+--------------------------------------------------------------------------------
+TQ1  CONFIRMED-GUARDIAN SIGNAL → CONFIRMED: claim-link (guardians.user_id IS NOT NULL =
+     email-confirmed claim) is sufficient; do NOT additionally require is_primary. Your
+     reasoning is right — a verified second parent (is_primary=false) is a real guardian
+     and must not be locked out; is_primary is "primary contact," not "who may access."
+     The §2 live re-check is what makes this safe over time: a guardian relationship that
+     is later removed (FK CASCADE) or whose claim is reassigned (the new JOIN) cuts access
+     automatically. So: claim-link = the signal, is_primary irrelevant to access, access
+     re-verified live.
+
+TQ2  ENTITLEMENT GRANULARITY → per-USER is fine for v1 (confirmed); the schema doesn't
+     preclude a later family-group/household entitlement (you'd add a group concept and
+     have is_entitled() check group membership). Two things for FRANK (commercial, not
+     mine): (i) per-user means a verified SECOND parent of the same kid needs their OWN
+     subscription to see the data — knowingly accept that for v1, or plan household
+     sharing; (ii) is_entitled() currently treats 'past_due' as NOT entitled (access cuts
+     the moment a payment fails) — decide if you want a past_due GRACE window instead.
+     Both are pricing/packaging calls; the schema supports either.
+
+TQ3  WEBHOOK DERIVATION (money-path, HELD) → schema SHAPE supports an idempotent handler
+     (status enum + current_period_end + stripe ids + UNIQUE(user_id) for upsert).
+     CONFIRMED shape. For when the handler is built (HELD for the money-path review):
+     guard against OUT-OF-ORDER Stripe delivery (Stripe doesn't guarantee order) — apply
+     an event only if it's newer than stored. Consider adding a last-applied marker
+     (stripe_event_id + event_ts) so the upsert is idempotent AND order-safe, derive
+     status from the Stripe object (never trust the client), the way the ledger derives
+     balance. Handler stays HELD; the shape is good to build against.
+
+TQ4  FILM GATE SIGNATURE → can_access_child(user, player) is the RIGHT per-player gate
+     for the future film path (upload + read). CONFIRMED. Two reminders: (i) film is
+     gated on can_access_child() PLUS the §C posture (multi-minor minimization,
+     jersey-OCR only / NO facial recognition of minors, sub-processor DPA + consent,
+     retention/deletion) — held. (ii) can_access_child authorizes the uploader↔THEIR-kid
+     relationship; the raw film still contains OTHER minors (teammates/opponents) the gate
+     can't authorize — which is exactly why §C's minimize-raw-retention (keep the claimed
+     child's clips, discard the rest) is load-bearing, not optional.
+
+--------------------------------------------------------------------------------
+5. OQ6 (division_games store) — STEER (send the options if they differ)
+--------------------------------------------------------------------------------
+OQ6 isn't in this file, so I'm steering from your one-line description ("the
+division_games store → unblocks the public standings RPC"). Principle: since OQ1 put
+tournament_division_id as a column on events, the public standings RPC should QUERY
+events WHERE tournament_division_id = X (+ published) joined to game_results, applying
+the cap + tiebreakers from the D-FV4 engine — NOT a separate materialized
+division_games table. A denormalized store only earns its place if there's a real
+performance need, which there isn't at this scale; a stored projection re-introduces the
+drift/dead-config risk. So: query-by-column, no separate store, unless you have a
+specific reason — in which case send me OQ6's actual options and I'll rule on them.
+
+--------------------------------------------------------------------------------
+6. STATUS / HELD
+--------------------------------------------------------------------------------
+- Apply §2 (required) + ideally §3 (recommended) → then the trust schema is apply-ready
+  (owner applies; no agent MCP-apply).
+- The Stripe webhook that writes family_entitlements stays HELD for the money-path review
+  before any billing merges; live keys ≠ live billing; Frank sets pricing + flips.
+- Film tables HELD for §C.
+- TQ2's two product calls (second-parent entitlement; past_due grace) are Frank's.
+- No *_LIVE flips by agents.
+FILING: aster-sports/docs + _platform-wide. Cross-refs: the ratification (§2 contract),
+the family-hub ruling, claim_guardian_by_email.
+================================================================================
+END — trust schema approved in shape; REQUIRED: live guardian re-check in
+can_access_child; TQ1 claim-link-sufficient; TQ2 per-user-v1 (+2 Frank calls); TQ3 shape
+confirmed, handler held; TQ4 signature confirmed; OQ6 query-by-column steer.
+================================================================================

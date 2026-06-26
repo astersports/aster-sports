@@ -152,12 +152,16 @@ SECURITY DEFINER
 STABLE
 SET search_path = public
 AS $fn$
-  SELECT EXISTS (
-    SELECT 1 FROM public.family_entitlements e
-    WHERE e.user_id = p_user
-      AND e.status IN ('active','trialing')
-      AND (e.current_period_end IS NULL OR e.current_period_end > now())
-  );
+  -- Caller-scoping (architect review §3): an authenticated caller may only ask about
+  -- THEMSELVES; service_role may ask about anyone (server-side film/push authz). Closes
+  -- the relationship-probing side channel. Fail-closed: unauthorized probe -> false.
+  SELECT (p_user = (SELECT auth.uid()) OR (SELECT auth.role()) = 'service_role')
+     AND EXISTS (
+       SELECT 1 FROM public.family_entitlements e
+       WHERE e.user_id = p_user
+         AND e.status IN ('active','trialing')
+         AND (e.current_period_end IS NULL OR e.current_period_end > now())
+     );
 $fn$;
 
 CREATE OR REPLACE FUNCTION public.can_access_child(p_user uuid, p_player_id uuid)
@@ -167,13 +171,23 @@ SECURITY DEFINER
 STABLE
 SET search_path = public
 AS $fn$
-  -- BOTH, independently: verified guardianship AND current entitlement.
-  SELECT public.is_entitled(p_user)
+  -- Caller-scoping (architect review §3): authenticated asks only about itself;
+  -- service_role may ask about anyone (server-side film/push authz).
+  SELECT (p_user = (SELECT auth.uid()) OR (SELECT auth.role()) = 'service_role')
+     -- BOTH halves of the gate live (architect review §2 REQUIRED):
+     --   current entitlement (is_entitled) AND a guardian STILL claimed by this user.
+     --   The added guardians JOIN with g.user_id = p_user re-checks the claim live, so a
+     --   REASSIGNED/REVOKED claim (user_id changed, not just the row deleted) cuts access
+     --   immediately, fail-closed. The family_children ROW still persists (guardianship
+     --   durable); only ACCESS goes live.
+     AND public.is_entitled(p_user)
      AND EXISTS (
        SELECT 1
        FROM public.family_children fc
        JOIN public.player_guardians pg ON pg.id = fc.player_guardian_id
-       WHERE fc.user_id = p_user
+       JOIN public.guardians        g  ON g.id  = pg.guardian_id
+                                      AND g.user_id = p_user        -- live claim re-check (REQUIRED)
+       WHERE fc.user_id   = p_user
          AND pg.player_id = p_player_id
      );
 $fn$;
@@ -263,4 +277,36 @@ COMMIT;
 -- TQ4  FILM (HELD, Track 2): the film bucket + media tables gate on can_access_child()
 --      PLUS the §C posture. Confirm can_access_child() is the right gate signature for
 --      the future film upload path (per-player), so the gate is settled before §C design.
+-- ============================================================================
+
+-- ============================================================================
+-- ARCHITECT REVIEW APPLIED 2026-06-26 (architectreviewfamilytrustschema.txt)
+-- ============================================================================
+-- VERDICT: approved in shape. The two review items are now APPLIED above:
+--   REQUIRED (§2): can_access_child() now JOINs guardians ... AND g.user_id = p_user,
+--     so guardianship is re-verified LIVE -- a reassigned/revoked claim cuts access
+--     fail-closed, while the family_children row stays (guardianship durable).
+--   RECOMMENDED (§3): is_entitled() + can_access_child() now scope to the caller
+--     (p_user = auth.uid() OR auth.role() = 'service_role') -- no relationship-probing
+--     side channel; service_role retains server-side authz for film/push.
+--
+-- TQ RULINGS (architect):
+--   TQ1 CONFIRMED: claim-link (guardians.user_id IS NOT NULL) is the verified signal;
+--       do NOT require is_primary. The §2 live re-check makes this safe over time.
+--   TQ2 per-USER entitlement is fine for v1. TWO PRODUCT CALLS ARE FRANK'S, not built:
+--       (i) a verified SECOND parent of the same kid needs their OWN subscription to see
+--           data -- accept for v1, or plan household sharing later (schema supports both);
+--       (ii) is_entitled() currently treats 'past_due' as NOT entitled (access cuts the
+--           moment a payment fails) -- Frank may want a past_due GRACE window instead.
+--       Both are pricing/packaging calls; left as-is pending Frank.
+--   TQ3 CONFIRMED shape; the Stripe webhook handler stays HELD for the money-path review.
+--       When built: guard OUT-OF-ORDER Stripe delivery (apply only if newer); consider a
+--       last-applied marker (stripe_event_id + event_ts) so the upsert is idempotent AND
+--       order-safe; derive status from the Stripe object, never the client.
+--   TQ4 CONFIRMED: can_access_child(user, player) is the right per-player film gate. Film
+--       stays HELD for §C (minimize raw multi-minor retention is load-bearing: the gate
+--       authorizes uploader<->THEIR kid; raw film still contains other minors it can't).
+--
+-- STATUS: with §2+§3 applied, the trust schema is APPLY-READY (owner applies; no agent
+--   MCP-apply). family_entitlements webhook HELD for money-path review. Film HELD for §C.
 -- ============================================================================
