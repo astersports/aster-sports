@@ -1,0 +1,141 @@
+================================================================================
+CC → ARCHITECT : AAU FAMILY HUB — STATE + WHAT'S AWAITING YOUR RATIFICATION
+2026-06-26 · Claude Code (build lane) → Architect (relayed by Frank) · L99
+================================================================================
+Re: your ruling ARCHITECT_DECISION_AAU_FAMILY_HUB_2026-06-26 (reply to CC #131).
+This is the build lane's read-back + the open items that gate the next step. Two
+PRs are open and HELD for you; nothing has been applied or merged.
+
+--------------------------------------------------------------------------------
+1. YOUR RULING — RECEIVED, ACCEPTED, FILED
+--------------------------------------------------------------------------------
+Filed verbatim at aster-sports/docs/ARCHITECT_DECISION_AAU_FAMILY_HUB_2026-06-26.txt
+(also referenced from astersports-web #131). The load-bearing correction is
+accepted without reservation and is now the build invariant, not a footnote:
+
+    canAccessChildData(user, child) = hasPaidEntitlement(user)
+                                      AND isVerifiedGuardian(user, child)
+    -- BOTH, independently. Payment never implies guardianship; guardianship is
+    -- never satisfiable by payment.
+
+My §7.2 (paywall-answers-claim-verification) was the error; it is withdrawn.
+Guardianship verifies against the PROGRAM ROSTER via the existing primitive
+(claim_guardian_by_email + player_guardians + parent_context_v), available only
+for teams we run (Legacy, St Patrick). Scraped teams from programs we don't run =
+public-tracking-only, no child data. That's the boundary, recorded as such.
+
+--------------------------------------------------------------------------------
+2. WHAT CC HAS DRAFTED (the one piece you green-lit to build now)
+--------------------------------------------------------------------------------
+PR aster-sports #1103 (DRAFT, held) carries:
+  - The ruling, filed (above).
+  - docs/TRACK0_STANDINGS_SCHEMA_DRAFT_2026-06-26.sql — the ratified D-FV3
+    division/pool/bracket substrate, as a DESIGN-REVIEW ARTIFACT in docs/. It is
+    NOT a live migration and is NOT applied; at apply time the owner moves it to
+    supabase/migrations/ with the production version prefix (AP #21). Non-money,
+    non-child-data. Grounded against the live schema @ #1101.
+
+  Tables proposed:
+    tournament_divisions        (advance_count = top-N to bracket; circuit -> the
+                                 seeded circuit_rules for tiebreakers)
+    tournament_division_teams   (the STANDINGS UNIT — team_id XOR opponent_id XOR
+                                 scraped-name, because a division is mostly teams
+                                 we don't run)
+    tournament_pools + pool_teams   (round-robin sets)
+    bracket_slots               (rounds + advancement pointers + event link for
+                                 where/when the bracket game is)
+    events.tournament_division_id / tournament_pool_id  (nullable; scopes a game
+                                 to a division/pool so standings are a join)
+  RLS: STAFF-only (authenticated, org-scoped, explicit WITH CHECK per AP #20).
+  Anon hub exposure deferred to a SECDEF get_public_* RPC shipped with the engine,
+  matching get_public_team_schedule (revoke public+anon, then grant).
+
+--------------------------------------------------------------------------------
+3. OPEN QUESTIONS — NEED YOUR CALL BEFORE THE SCHEMA IS APPLIED
+--------------------------------------------------------------------------------
+(Full text inline at the bottom of the draft .sql; summarized here.)
+
+  OQ1  GAME->DIVISION LINK: nullable columns on events (tournament_division_id,
+       tournament_pool_id) vs a tournament_game_divisions join table.
+       CC lean: columns-on-events (1:1, simplest).
+
+  OQ2  STANDINGS-UNIT IDENTITY: tournament_division_teams allows
+       team_id XOR opponent_id XOR name-only.
+       CC lean: keep the 3-way identity — the scraper often has only a name, and
+       opponents is curated org data we may not want to flood with every external
+       team. Confirm.
+
+  OQ3  PUBLIC EXPOSURE MECHANISM: SECDEF get_public_tournament_standings(...) RPC
+       (CC lean — matches get_public_team_schedule, bakes in published-only +
+       cap-applied shape) vs opening anon table SELECT gated by org_is_public_listed.
+
+  OQ4  championship_scenarios (hand-authored narrative rows already in prod): the
+       D-FV5 deterministic predictor supersedes it. Deprecate post-predictor, or
+       keep as an editorial-override surface? CC lean: keep short-term, mark for
+       review once the predictor ships. No change to it in this migration.
+
+  OQ5  advance_count default = 2 (top-2 advance). Per-division configurable.
+       Confirm 2 is the right platform default.
+
+--------------------------------------------------------------------------------
+4. THE D-FV2 CONTRACT THAT GATES THE HELD TABLES (your ratification needed)
+--------------------------------------------------------------------------------
+CC will NOT draft the paid-profile / child-link / film tables until the
+verified-guardian contract is ratified, so the schema expresses "verified
+guardian" and "entitlement" as SEPARATE columns/checks (never one standing in for
+the other). What CC needs from you to draft that next layer safely:
+
+  (a) The isVerifiedGuardian source of truth: confirm it is the existing
+      claim_guardian (guardian.user_id linked + player_guardians row), checked
+      against the program roster — NOT a new verification system.
+  (b) family_subscriptions (TIER 1 public tracking) shape: org-agnostic key
+      (guardian/user_id + team identity), open claim, public data only. Confirm
+      this is separate from the TIER 2 child link.
+  (c) The child-link row (TIER 2): does pinning a specific child create a row that
+      REFERENCES the existing player_guardians verification (so it's
+      un-creatable without the verified link), or a parallel table that JOINs to
+      it? CC lean: reference/enforce, not parallel (AP #42).
+  (d) Entitlement representation (D-FV9): a separate entitlement check, derived
+      from Stripe, that the canAccessChildData() AND-gate reads independently —
+      confirm it must never be the same column/flag as the guardian check.
+
+--------------------------------------------------------------------------------
+5. HELD / MONEY-PATH (standing, per your ruling §D + §H)
+--------------------------------------------------------------------------------
+  - Schema (D-FV3 + later) -> design-review before apply; owner applies; no agent
+    MCP-apply.
+  - Paid-profile entitlement + Stripe -> architect money-path review before any
+    billing code merges; Frank sets pricing + flips; live keys != live billing.
+  - Child-data / film -> held for §B (verified guardian) + §C (film posture:
+    multi-minor minimization, jersey-OCR only / NO facial recognition of minors,
+    sub-processor DPA + consent, retention/deletion).
+  - No *_LIVE flips by agents.
+
+--------------------------------------------------------------------------------
+6. BUILD SEQUENCE FROM HERE (proposed; you re-order)
+--------------------------------------------------------------------------------
+  STEP 1 (ready on your OK): apply D-FV3 schema (owner applies after your OQ
+         answers) -> CC drafts D-FV4 rule-driven standings engine (pure,
+         fixture-tested, reads circuit_rules) + the SECDEF public standings RPC.
+  STEP 2: D-FV5 deterministic bracket predictor (enumerate remaining-outcome
+         space, apply D-FV4) + LLM narration; D-FV6 subscriber push for
+         schedule/score/final (team-level).
+  STEP 3 (after §4 ratified): TIER-1 family_subscriptions, then TIER-2 verified
+         child link + entitlement gate (money-path review).
+  TRACK 2 (parallel, after §C posture): parent film + AI jersey clips.
+
+CC can also draft the D-FV4 standings ENGINE now (pure code, depends only on the
+schema SHAPE, not its application) if you'd rather review schema + engine
+together. Say the word and it's the next artifact.
+
+--------------------------------------------------------------------------------
+7. ONE QUESTION BACK TO YOU
+--------------------------------------------------------------------------------
+You offered to render the PUBLIC v1 hub (team tracking + standings + AI-narrated
+odds + push — no child-data gap). Frank, relay your yes/no: a rendered public v1
+gives the demoable visual now while the child/paid layer follows its contracts.
+
+================================================================================
+END — two PRs held for you: aster-sports #1103 (ruling + D-FV3 schema draft),
+astersports-web #131 (challenge + paid-profile addendum). Nothing applied/merged.
+================================================================================
