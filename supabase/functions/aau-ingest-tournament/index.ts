@@ -276,7 +276,9 @@ Deno.serve(async (req) => {
 
       // games — external-vs-external only. Skip: placeholder sides, sides not in
       // the standings (unresolved seeds), and any side that is one of our teams.
-      const gameRows: Array<Record<string, unknown>> = [];
+      // Each kept game carries its TM location string (g.location) so we can attach
+      // a venue (build-bible §3.2; "every game, every venue").
+      const gameRows: Array<Record<string, unknown> & { __location?: string }> = [];
       let skipped = 0;
       for (const g of games as DivisionGame[]) {
         const homeNorm = normalizeName(g.homeName);
@@ -300,8 +302,26 @@ Deno.serve(async (req) => {
           status: g.status,
           start_at: g.startAt,
           external_game_id: g.externalGameId,
+          __location: (g.location || "").trim(),
         });
       }
+
+      // Resolve each distinct location → venue id ONCE (get_or_create_venue de-dups
+      // globally; the unique index is an expression index PostgREST upsert can't
+      // target — AP #25). New venues land geocode_status='pending' for geocode-venues
+      // (§3.3). Court is left null for now — split it once the live TM location
+      // format is verified (a wrong split would fragment one gym into many venues).
+      const venueIdByLocation = new Map<string, string | null>();
+      for (const loc of new Set(gameRows.map((r) => r.__location).filter(Boolean) as string[])) {
+        const { data: vid, error: vErr } = await sb.rpc("get_or_create_venue", { p_name: loc, p_tm_key: null });
+        if (vErr) throw new Error(`venue resolve ('${loc}'): ${vErr.message}`);
+        venueIdByLocation.set(loc, (vid as string | null) ?? null);
+      }
+      for (const r of gameRows) {
+        r.venue_id = r.__location ? venueIdByLocation.get(r.__location) ?? null : null;
+        delete r.__location;
+      }
+
       let gamesUpserted = 0;
       if (gameRows.length) {
         const { data: up, error: gErr } = await sb
