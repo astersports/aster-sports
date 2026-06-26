@@ -1,0 +1,125 @@
+AAU FAMILY HUB — PER-TAB FLOW + DATA-QUALITY REVIEW
+Date: 2026-06-26 · Author: Claude Code (build lane) · For: Architect, relayed by Frank
+Context: operator walked the live astersports.io/aau hub (12 screenshots) and flagged
+"the film for Charlie isn't playing, and they never played those teams, but the data is
+wired — let's clean up each tab so it flows and makes sense." This doc grounds each tab
+against its actual data source and names the forks for the architect.
+
+================================================================================
+0. THE HEADLINE FINDING (the thing to decide first)
+================================================================================
+The hub is, today, the **single-team "Aster AAU 11U Girls" site** — which IS Charlie's
+Legacy Hoopers 11U Girls team, renamed. EVERY content tab except Standings reads ONE
+team's data from the legacy tRPC/scraper path (LiveScores, History, Records, Film hero,
+Mission, Locations). That data is RICH and REAL for Charlie's team (12-7, Champions at
+Chase, Finalists at Rumble, Final Four at Girls Nationals, 24.1 PPG).
+
+The NEW cross-program backbone (the standings substrate + public RPCs I built + the 9
+ingested spring tournaments) powers ONLY the Standings tab today. So there are TWO data
+systems side by side, and they don't agree:
+
+  - tRPC/scraper (team-scoped): Chase for the Chain = 4-0, CHAMPIONS.
+  - backbone get_public_team_season (division_games): Chase for the Chain = 3-0.
+
+The 3-0 vs 4-0 gap is structural: division_games stores external-vs-external games and
+the backbone has no bracket/championship-placement notion yet, so the title game +
+"Champions" badge that the legacy scraper captured aren't in the backbone. This is AP #63
+(same concept, two sources, divergent) — the dominant bug pattern — now visible to Frank.
+
+DECISION NEEDED (D-HUB1): which source is the lens, per concept?
+  CC LEAN: keep the rich tRPC team data as the source for the kid whose team it already
+  covers (Charlie), and use the backbone as the source for cross-program kids (Rowan) +
+  the generic Standings browse. Then make the SELECTED KID pick which source/team each tab
+  reads — the kid is the lens (operator's stated direction). Long-term, fold the legacy
+  scraper's placement/score richness INTO the backbone so there's one source; near-term,
+  route per kid.
+
+================================================================================
+1. PER-TAB REVIEW (data source · real vs fabricated · issue · fix)
+================================================================================
+
+MY KIDS  [the lens — correct shape, mixed data]
+  Source: curated pilotKids.ts (Charlie + Rowan) + (held, not deployed) the new
+    get_public_team_season RPC (migration applied to prod; frontend on the branch).
+  Real?  The kid identities are real. The "ZG NY Hoop Festival · Pool Play" card is
+    CURATED placeholder. "Charlie's Film" reels are FABRICATED (see Film).
+  Fix: this is where the kid is selected; it should drive every other tab. The real
+    season list I wired (Charlie's 4 ZG tournaments with real W-L) replaces the curated
+    card — HELD pending D-HUB1 (it currently shows 3-0 where History shows 4-0).
+
+LIVE SCORES  [real, single-team]
+  Source: trpc.games.list (legacy scraper). Real game log for Charlie's team.
+  Issue: hardcoded to the one team; Rowan absent. No divisionId on the game shape.
+  Fix: scope by selected kid (needs the kid→team thread + Rowan's games, which only the
+    backbone has today).
+
+STANDINGS  [real, cross-program, generic]
+  Source: backbone public RPCs (the 9 ingested tournaments). REAL + correct (cap-20 on ZG).
+  Issue: generic browse, not kid-scoped; the page hero still says "Aster AAU 11U Girls."
+  Fix (easy): selecting a kid auto-opens THEIR division + highlights their team (I added
+    the focusKey hook for this).
+
+HISTORY  [real, single-team, the RICHEST surface]
+  Source: trpc.games.list. Shows placements (Champions/Finalists/Final Four) + per-
+    tournament records. This is the GROUND TRUTH for Charlie's team and beats the backbone.
+  Issue: single-team; Rowan absent. This is the data the backbone should eventually match.
+  Fix: keep for Charlie; give Rowan the equivalent from the backbone (no placement yet).
+
+RECORDS  [real, single-team, hardcoded]
+  Source: trpc.leaderboard.get — hardcoded to one team server-side (PPG, opp PPG, streak,
+    "+31 vs Showtime Elite"). Real for Charlie.
+  Fix: add a teamId param so it can compute for the selected kid; Rowan needs backbone PPG.
+
+FILM  [BROKEN + FABRICATED — highest-priority cleanup]
+  Source: hardcoded. Featured "Birdie Buckets" = a Google-Drive video that DOESN'T PLAY
+    on-device. The per-kid reels (Scoring Clinic "vs Castle", Fast-Break "vs Teal",
+    Three-Point "vs New Paltz") are FABRICATED — Charlie never played those teams; the
+    opponent names were invented. The AI play-by-play text is from real video analysis,
+    but it's stapled to fake matchups.
+  Fix (no architect needed on the "stop fabricating" part):
+    (a) Drop the invented opponents — present as "AI-analyzed highlights" with NO fake
+        "vs X", or ground each clip to a real opponent from the schedule.
+    (b) Fix video hosting: the Drive link doesn't stream on iOS; per-kid clips need a real
+        storage path (the clips live in the legacy-hoopers app's storage today). FORK
+        D-HUB2: where does film get hosted/served for the .io hub?
+
+LOCATIONS  [real-ish, program-level]
+  Source: hardcoded 3 gyms (St Patrick's, Rippowam, Westchester CC) — Aster/Legacy venues.
+  Issue: program-level, not child; Rowan's Chris Ward venues differ.
+  Fix: scope to the selected kid's program (needs per-program venue data — deferred).
+
+MISSION  [program-level, naming drift]
+  Source: hardcoded "Aster AAU" mission + program details ("11U Girls · AAU Zero Gravity
+    Tri-State"). Says "Aster AAU" while the kid's program is "Legacy Hoopers."
+  Fix: per-program mission, or drop from the kid-lens (program-level, low priority).
+
+================================================================================
+2. CROSS-CUTTING ISSUES
+================================================================================
+A. NAMING: the hub says "Aster AAU 11U Girls" everywhere; Charlie's program is "Legacy
+   Hoopers," Rowan's is "Chris Ward." The lens should show the KID's real program name.
+B. KID-LENS NOT THREADED: only My Kids knows the selected kid. Hero + every tab still
+   show the one hardcoded team. Need a selected-child context at the hub root.
+C. ROWAN HAS NO REAL DATA outside My Kids: every tRPC tab is Charlie's team. Rowan's real
+   data exists ONLY in the backbone (his Chris Ward Green records ARE ingested).
+D. FABRICATION: the film is the only place with invented facts. Remove it — the hub's
+   credibility is "exact, not estimated" (the standings provenance line). Fake film
+   undercuts that.
+
+================================================================================
+3. RECOMMENDED CLEANUP SEQUENCE (CC lean; architect ratifies D-HUB1/2)
+================================================================================
+1. De-fabricate Film NOW (no fork): remove invented opponents; present AI highlights
+   honestly; mark video that can't stream. (Clear, ship immediately on ratification.)
+2. Thread a selected-child context from My Kids → hero + tabs (the kid is the lens).
+3. Per-kid source routing (D-HUB1): Charlie's content tabs keep the rich tRPC team data;
+   Rowan's read the backbone; Standings auto-scopes to the kid's division either way.
+4. Backbone enrichment (the real fix for 3-0 vs 4-0): capture bracket/championship results
+   so placement ("Champions") and the title game land in the backbone — then the backbone
+   can be the single source and the legacy scraper retires.
+5. Film hosting (D-HUB2): decide where .io serves per-kid clips before wiring real video.
+
+HELD pending this review: the real-data My Kids season list + get_public_team_season
+frontend (committed to the branch, NOT deployed) — it's correct for Rowan and the cross-
+program path, but for Charlie it currently shows 3-0 where History shows the truer 4-0, so
+it waits on D-HUB1.
