@@ -1,0 +1,245 @@
+AAU PARENT HUB — REDESIGN BRIEF + ARCHITECT INSTRUCTIONS
+Date: 2026-06-26 · Author: Claude Code (build lane) · For: Architect, relayed by Frank
+Purpose: define the FULL vision of the paid, parent-first AAU hub so the architect can rule
+         on the redesign — IA, data model, real-time, film/AI, monetization, child-safety —
+         and tell us where we're heading. This is a REDESIGN of the live hub, not a patch.
+Host: THE WEB — astersports.io/aau — deploys on RAILWAY (astersports-web repo). The app
+      (astersports.app, aster-sports repo) is Vercel; the WEB hub is Railway. One backbone:
+      the aster-sports Supabase (public, org-gated RPCs).
+Companion docs (already filed): AAU_FAMILY_HUB_ARCHITECT_REVIEW_2026-06-26.txt (build state +
+      D-HUB1..5), AAU_HUB_TAB_REVIEW_2026-06-26.txt (per-tab). This brief supersedes their
+      framing with the full paid-parent-hub vision.
+
+================================================================================
+1. THE VISION (operator, verbatim intent 2026-06-26)
+================================================================================
+The ultimate PARENT HUB for AAU. A parent arrives, pays ~$20/month, and gets a complete,
+real-time command center for their kid(s)' basketball life across every tournament and
+program they play in. The defining loop, in the operator's words:
+
+  "The parent comes in, pays $20 a month, uploads a LINK — that link is for a tournament.
+   It's broken down by gender, gender-division, grade, then team. Once they select the
+   team (or teams) they ASSIGN A KID — and that's when the PORTAL opens up: real-time games,
+   real-time scores, a full write-up on the division and the bracket divisions depending on
+   how the brackets line up — the percentages, the AI predictions — everything. A complete
+   parent hub for tracking, accordion-style details, everything a parent wants to monitor
+   scores. They can upload their personal highlights for each game; the AI watches the
+   videos and breaks down the video highlights (who scored, the plays) and ties them to the
+   game. Does it need a redesign? What are we missing?"
+
+The organizing primitive is the FAMILY/PARENT, not the team or org. One account → every
+kid → every game → everywhere they play, including programs we don't run. This is the
+marketed, paid product.
+
+================================================================================
+2. THE COMPLETE USER JOURNEY (the flow to design for)
+================================================================================
+  STEP 1 — SIGN UP + PAY. Parent creates an account and subscribes (~$20/mo). Payment
+    unlocks the parent's ability to claim kids + see child-private surfaces (NOT a child-
+    safety gate by itself — see §8).
+  STEP 2 — UPLOAD A TOURNAMENT LINK. Parent pastes a TourneyMachine link. The hub ingests
+    it into the backbone (the generalized scraper already exists + is hardened) and it
+    appears in the directory. SELF-SERVE ingest is new (today the operator ingests).
+  STEP 3 — BROWSE THE BREAKDOWN. The tournament expands hierarchically:
+        GENDER (Boys / Girls)
+          → DIVISION / GRADE (e.g. "Boys - 8th", "Girls - 5th")
+            → TEAM (e.g. "Chris Ward Basketball Green", "Legacy Hoopers")
+    The parent drills gender → grade → team.
+  STEP 4 — SELECT TEAM(S) + ASSIGN A KID. Parent picks their kid's team (or teams — a kid
+    can be on more than one; a parent has more than one kid) and assigns the kid to it.
+    This SUBSCRIBES the family to that team and is the claim that opens child-private views.
+  STEP 5 — THE PORTAL OPENS (the live command center). For each assigned kid/team:
+      • REAL-TIME games + scores (live, refreshing as the tournament plays).
+      • A FULL WRITE-UP on the kid's DIVISION + the BRACKET, structured by how the brackets
+        line up (pool → bracket → placement).
+      • PERCENTAGES + AI PREDICTIONS — exact bracket-advancement odds (enumerated, the
+        engine exists) with AI narration of "what has to happen."
+      • ACCORDION-STYLE details — everything a parent wants to monitor, expandable per
+        game / per division / per bracket.
+  STEP 6 — FILM + AI BREAKDOWN. Parent uploads their OWN highlight videos per game. The AI
+    WATCHES the video and breaks it down — plays, who scored, attributed to the kid's jersey
+    — and ties the clips to the game/score. Per-child, private.
+
+================================================================================
+3. INFORMATION ARCHITECTURE (the breakdown the hub renders)
+================================================================================
+The TourneyMachine structure the backbone already captures maps cleanly to the IA:
+  TOURNAMENT (name, dates, circuit)
+   └─ DIVISION  (TM divisions encode GENDER + GRADE, e.g. "Boys - 8th", "Girls - 5th")
+       ├─ POOL(s)        (round-robin sets — pool_teams)
+       ├─ TEAM(s)        (tournament_division_teams — the standings unit)
+       └─ BRACKET        (seeding + advancement — bracket_slots; NOT yet ingested)
+  GAME (division_games — external-vs-external; pool + bracket games)
+
+So the parent's drill (gender → grade/division → team → kid) is a navigation over data we
+already model — EXCEPT bracket structure + placement (see §5/§10). The hub should present
+this as: pick gender → pick grade/division → pick team → assign kid → live portal.
+
+================================================================================
+4. WHAT'S ALREADY BUILT (grounded — the redesign builds on this)
+================================================================================
+  • Backbone substrate: tournament_divisions / _division_teams / _pools / pool_teams /
+    bracket_slots(table exists, unpopulated) / division_games (external-only). LIVE.
+  • Generalized TM ingest (aau-ingest-tournament) — discovery-driven, idempotent,
+    SSRF-hardened, secret-gated. LIVE (operator-run today; not yet parent-self-serve).
+  • Our-team scraper (aau-scrape-tournament → game_results) — hardened, DARK.
+  • Rule-driven standings engine (cap + circuit tiebreakers) + deterministic bracket
+    predictor (EXACT odds via enumeration; AI narrates only). LIVE.
+  • Public RPCs: directory, division standings, team-season. LIVE, anon, org-gated.
+  • Spring season ingested: 9 tournaments, 256 divisions, 2,214 teams, 3,207 games.
+  • Hub UI on Railway: Standings browse + a "My Kids" pilot (curated; real-data version
+    held). LIVE.
+  • Trust schema (DARK): family_subscriptions / family_children / family_entitlements +
+    is_entitled() / can_access_child() (live-guardian gate). Built, not wired.
+
+================================================================================
+5. WHAT THE REDESIGN ADDS / CHANGES (gap between today and the vision)
+================================================================================
+Today the hub is a SINGLE-TEAM site ("Aster AAU 11U Girls") repurposed, with the parent
+view bolted on. The vision is a PARENT-FIRST, MULTI-TOURNAMENT, MULTI-KID, PAID, SELF-SERVE
+hub. The redesign is real. Concretely it adds:
+
+  A. PARENT ACCOUNT + AUTH on the .io hub (today it's anon/public). Sign-up, session, the
+     parent's saved kids + subscriptions. [NEW — the .io hub has no auth today.]
+  B. PAID ENTITLEMENT — Stripe ~$20/mo → family_entitlements. Gates claiming kids +
+     child-private surfaces. [HELD money path — operator sets pricing.]
+  C. SELF-SERVE INGEST — the parent pastes a link and it ingests. Needs: rate-limit + abuse
+     controls (scraper already SSRF/secret-hardened, but parent-triggered = new exposure),
+     de-dup against already-ingested tournaments, and a "scanning…" UX. [NEW flow.]
+  D. THE DRILL-DOWN IA — gender → grade/division → team → assign kid — as the primary
+     navigation, replacing the single-team tabs. [REDESIGN of the shell.]
+  E. CLAIM / ASSIGN A KID — the subscription + child link (family_children → player_
+     guardians, verified). Opens child-private views. [HELD trust schema — needs wiring +
+     the verified-guardian contract.]
+  F. REAL-TIME — repeated ingest during a live tournament (cron / on-demand refresh) so
+     scores update live. Today ingest is one-shot, operator-run, no cron. [NEW: scheduling.]
+  G. BRACKET STRUCTURE + PLACEMENT — populate bracket_slots from TM + capture placement
+     (Champions/Finalist) so the "full write-up on the division and the bracket divisions"
+     + accurate percentages render. This also fixes the 4-0-vs-3-0 source conflict (the
+     backbone currently lacks bracket/placement). [NEW ingest depth — D-HUB3.]
+  H. FILM + AI BREAKDOWN — parent uploads per-game video → AI watches → per-play, per-jersey
+     breakdown tied to the game. Reuse candidate: the studio's Replicate AI (already wired
+     in astersports-web for image work) for video. [NEW + privacy-heavy — Track 2.]
+  I. ACCORDION DETAIL UX — per-division / per-bracket / per-game expandable detail, the
+     "command center" feel. [REDESIGN of the presentation.]
+
+================================================================================
+6. DATA MODEL — what's there vs. what's needed
+================================================================================
+  HAVE: tournaments, tournament_divisions (gender+grade), tournament_division_teams,
+    tournament_pools, pool_teams, division_games, circuit_rules; the trust schema (dark);
+    the public RPCs.
+  NEED:
+    • Parent identity on .io (auth) + a parent↔kids↔subscriptions read model.
+    • family_subscriptions wired to a (tournament_division_team) the parent selected.
+    • bracket_slots populated + a per-(division_team) PLACEMENT field (champion/finalist/…)
+      so standings + write-ups are complete and one source can win (retire the legacy
+      scraper — see D-HUB1/D-HUB3).
+    • a video/media schema (per game × player/jersey) + AI-breakdown output (plays,
+      attribution) — net-new; privacy posture first.
+    • ingest scheduling (cron) + a parent-initiated ingest entrypoint with abuse controls.
+
+================================================================================
+7. REAL-TIME + AI (already partly solved)
+================================================================================
+  • SCORES: the ingest already produces final + scheduled + live game states; making it
+    real-time = scheduling repeated ingests for an active tournament (cron during the event)
+    + a hub poll/subscribe. The pieces exist; the cadence is the work.
+  • PERCENTAGES / PREDICTIONS: the deterministic predictor is built and EXACT (enumerates
+    remaining outcomes; applies the circuit's cap + tiebreakers). AI only narrates. This is
+    a differentiator and already real — it just needs bracket structure (§5G) to be complete
+    through the playoffs, not only pool play.
+  • WRITE-UPS: AI narration over the exact standings/odds (the provenance line "exact, not
+    estimated; wording is AI" must stay).
+
+================================================================================
+8. MONETIZATION + CHILD-SAFETY (the load-bearing invariant — unchanged)
+================================================================================
+  canAccessChildData = hasPaidEntitlement AND isVerifiedGuardian — evaluated LIVE.
+  • PUBLIC (no pay, no claim): the tournament's FACTUAL state — standings, scores, brackets,
+    odds, the directory/drill-down. Anyone can browse.
+  • PAID + VERIFIED (claim a specific kid): child-private surfaces — the kid's name attached
+    to a card, per-child film, notification targeting, the "my kids" command center.
+  A paywall is NOT a child-safety gate: payment unlocks the PRODUCT; verified guardianship
+  (claim against the roster, durable + FK/trigger-enforced) is the SAFETY gate; lapse of
+  either suspends access. Film of minors is the most sensitive surface — sub-processor +
+  consent posture designed BEFORE any real per-child frames flow.
+
+================================================================================
+9. WHAT WE'RE MISSING / RISKS (the operator's question: "what are we missing?")
+================================================================================
+  1. AUTH on the .io hub — there is none today; the whole paid/claim flow needs it. Biggest
+     net-new piece. (Single-org-per-user is also a current platform blocker for multi-program
+     parents — must be solved for the cross-program promise.)
+  2. BRACKET + PLACEMENT ingest — without it the "full bracket write-up + percentages
+     through the playoffs" and the "Champions" badge can't be grounded (today only pool play
+     + external games are captured; this is the 4-0-vs-3-0 gap).
+  3. REAL-TIME cadence — ingest scheduling for live tournaments (cron) isn't wired (the
+     reaper/scheduler discipline from the platform applies).
+  4. FILM/VIDEO is NET-NEW end to end — storage, a video↔game↔jersey schema, the AI
+     video-breakdown pipeline (vs. the existing image studio), per-child privacy. Highest
+     effort + highest privacy risk. Should be a parallel track, not on the critical path.
+  5. SELF-SERVE INGEST abuse surface — parent-triggered scraping needs rate-limits +
+     de-dup + cost controls (TM fetches, AI calls).
+  6. SOURCE-OF-TRUTH reconciliation — the legacy single-team tRPC vs the cross-program
+     backbone must converge (D-HUB1) or the hub shows two truths.
+  7. MONEY PATH — Stripe entitlement + the $20/mo product is held for the operator + money-
+     path review.
+  8. DATA QUALITY — no fabrication (the current Film tab invents opponents; kill that). The
+     hub's credibility is "exact, not estimated."
+
+================================================================================
+10. DOES IT NEED A REDESIGN? — CC ASSESSMENT
+================================================================================
+YES. The current hub is a single-team marketing site with a parent view bolted on; the
+vision is a parent-first, paid, multi-tournament, self-serve command center. The DATA +
+ENGINE are ~70-80% there (substrate, ingest, standings, predictor, public RPCs — all real
+and live). The REDESIGN is mostly the SHELL + the PARENT LAYER: auth, entitlement, the
+drill-down IA, claim/assign, real-time cadence, bracket depth, and (parallel) film/AI.
+Recommended shape: keep the backbone + engine; rebuild the .io shell around the parent +
+the gender→grade→team→kid drill; gate child-private behind pay+claim; add bracket/placement
+depth to the ingest; treat film/AI as Track 2 behind the privacy posture.
+
+================================================================================
+11. DECISIONS FOR THE ARCHITECT (consolidated)
+================================================================================
+Carried from the prior review (still open):
+  D-HUB1 — per-kid source-of-truth routing now, or converge on the enriched backbone.
+  D-HUB2 — film hosting + de-fabricate the current Film tab now (no fork).
+  D-HUB3 — backbone enrichment: bracket_slots + placement (and later box-score/PPG).
+  D-HUB4 — per-program brand (drop hub-wide "Aster AAU").
+  D-HUB5 — Rowan's "Champions": which bracket grounds it.
+New for the redesign:
+  D-RDX1 — AUTH model for the .io hub: Supabase Auth on the parent (own account), or
+    reuse the app's identity? Single-org-per-user must be solved for multi-program parents.
+    CC LEAN: Supabase Auth on the .io hub, parent-scoped, decoupled from any tenant org.
+  D-RDX2 — SELF-SERVE INGEST: let paying parents trigger ingest of a pasted TM link
+    (with rate-limit/de-dup/abuse controls), or keep ingest operator/cron-only and parents
+    only SELECT from already-ingested tournaments? CC LEAN: parent pastes → on-demand
+    ingest, gated to entitled accounts, behind the hardened scraper + a rate limiter.
+  D-RDX3 — REAL-TIME cadence: cron-poll active tournaments (which/when), on-demand refresh,
+    or both? CC LEAN: cron during a tournament's date window + a manual refresh.
+  D-RDX4 — CLAIM/VERIFY a kid: how does "assign a kid" verify guardianship for child-private
+    surfaces (claim_guardian_by_email against the program roster vs. open self-assert for
+    public-only)? CC LEAN: open self-select for PUBLIC tracking; verified-guardian gate
+    before ANYTHING child-private (name-on-card, film). The §8 invariant.
+  D-RDX5 — FILM/AI scope + privacy: confirm Track 2 (after the substrate/portal), reuse the
+    studio's Replicate pipeline for video, and design the minors'-video sub-processor +
+    consent posture BEFORE any upload. CC LEAN: yes — Track 2, posture first.
+  D-RDX6 — REDESIGN sequencing: rebuild the .io shell around the parent now, or ship the
+    kid-lens incrementally on the current shell first? CC LEAN: incremental kid-lens on real
+    data first (fast, de-risks), then the full parent-account + paid + self-serve shell.
+
+================================================================================
+12. OPEN QUESTIONS FOR THE ARCHITECT
+================================================================================
+  Q1: Auth on .io — Supabase Auth parent accounts (D-RDX1)? And the single-org-per-user
+      blocker — solve now for multi-program parents?
+  Q2: Self-serve ingest — parents trigger it (D-RDX2), or select-only?
+  Q3: Bracket + placement depth — in scope for v1 (needed for the bracket write-up +
+      "Champions" + playoff percentages)?
+  Q4: Real-time cadence — cron window + manual refresh (D-RDX3)?
+  Q5: Claim/verify — verified-guardian gate before child-private; public stays open (D-RDX4)?
+  Q6: Film/AI — confirm Track 2 + reuse the studio Replicate pipeline + privacy-first (D-RDX5)?
+  Q7: Sequencing — incremental kid-lens first, then the full paid parent shell (D-RDX6)?
+  Q8: Money — $20/mo product + Stripe entitlement: operator + money-path review timing?
