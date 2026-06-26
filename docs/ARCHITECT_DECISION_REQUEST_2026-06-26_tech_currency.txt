@@ -1,0 +1,210 @@
+================================================================================
+ARCHITECT DECISION REQUEST — AAU TRACKING HUB: TECHNOLOGY-CURRENCY FORKS
+aster-sports / astersports-web (.io / Railway) · 2026-06-26
+CC (build lane) → Architect, relayed by Frank · L99 · §11.8 rule 6
+Re: AAU_TRACKING_HUB_FULL_BUILD_SPEC ("Build Bible", architect, 2026-06-26)
+================================================================================
+
+PURPOSE
+  The Build Bible closed the six FOUNDATION gaps from CC's prior review — identity
+  spine (§16.A), bracket/placement ingest (§16.B), film pipeline (§16.C) — and
+  reframed the product sharply (C1: $20/mo PER ACCOUNT for a TRACKING SERVICE; the
+  kid is an optional overlay). The architecture is buildable. This doc does NOT
+  re-open scope. It raises the ONE question Frank asked next: "are we using the
+  latest and greatest?" On three axes the spec is solid-but-conservative in exactly
+  the places where the 10/10 experience is won or lost. Each is a fork the architect
+  + Frank should rule on BEFORE Phase 2 / Track 2 locks. Phases 0–1 are NOT blocked
+  by any of this and should proceed (Phase 0 film de-fabrication is immediate).
+
+  Format per fork: REQUEST · CONTEXT/EVIDENCE · OPTIONS (each with REQUIREMENTS) ·
+  CC LEAN (AP #39 — committed, architect/Frank decide).
+
+  HOLDS unchanged: owner applies migrations; money path = architect review + Frank
+  flips; child data = Supabase backbone ONLY; film = §C posture; no Stripe / minor
+  data on merge.
+
+================================================================================
+TECH-1 — REAL-TIME LIVENESS + iOS PUSH INSTALL REALITY
+================================================================================
+REQUEST
+  (a) Do we add Supabase Realtime for the in-app live view, or rely on the spec's
+      cron-poll alone? (b) How do we handle the iOS web-push install wall — the
+      headline "push me my kid's score" feature does not fire on iPhone unless the
+      PWA is installed to the home screen?
+
+CONTEXT / EVIDENCE
+  • Build Bible §3.5 specs liveness as a cron that polls TourneyMachine (60s while a
+    game is live, 300s idle) and §9 fans out VAPID web-push on change. That is the
+    correct way to PULL from TM (we are bounded by TM's own scorekeeper-entry rate
+    regardless — "near-real-time" is honest). But the spec has no mechanism to PUSH
+    a DB change to an ALREADY-OPEN app: a parent watching the live view would still
+    wait up to a poll interval / pull-to-refresh. The modern pattern is two-half:
+    cron pulls TM → writes our DB → Supabase Realtime pushes the row change to open
+    clients over a websocket (instant tick) AND VAPID wakes closed apps. The spec
+    has the second half, not the first.
+  • iOS constraint [GROUNDED — Apple platform rule, iOS 16.4+]: web-push from a PWA
+    fires ONLY when the user has "Add to Home Screen"-installed the PWA. A parent who
+    just visits astersports.io in Safari gets NO push. The Build Bible (§2.7, §9.3)
+    specs VAPID/`push_subscriptions` as if it works on first visit; in reality the
+    entire notification value prop is gated on an install-conversion step the doc
+    never mentions. This is the single biggest gap between the spec's promise and
+    iPhone reality for the headline feature.
+
+OPTIONS
+  O1  Realtime + PWA-install-prompt (recommended). Add Supabase Realtime
+      subscriptions to the live/dashboard surfaces (open-app instant updates) on top
+      of the existing poll→DB write. For push: ship PWA with a deliberate, well-timed
+      "Add to Home Screen so we can alert you" prompt woven into the track/claim flow
+      (not a cold banner). Accept that push reach = install rate.
+      REQUIREMENTS: enable Realtime publication on the live game tables; client
+      subscription wiring; an install-prompt UX with conversion instrumentation
+      (measure install rate — it decides whether O3 becomes necessary).
+  O2  Poll-only, no Realtime (spec as written). Cheapest; in-app freshness = poll
+      interval; push still gated on install. REQUIREMENTS: none beyond the spec.
+      Risk: "real-time scores" reads as "refresh to update" — undercuts the headline.
+  O3  Native app (or native push shell) for the notification tier. A thin native
+      wrapper (or React Native) to get reliable background push without the install
+      wall. REQUIREMENTS: a second client codebase / wrapper, app-store presence,
+      build+release pipeline. Heavy; likely a v2 unlock, not v1.
+
+CC LEAN: O1 for v1 — Realtime is low-cost and a real "the number ticks while I watch"
+  win; PWA + an aggressive, honest install prompt is the pragmatic push path. Go in
+  eyes-open that O3 (native) is the probable v2 unlock IF the install-conversion
+  instrumentation shows parents won't install. Decide v1=O1 now; gate O3 on measured
+  install rate, not on assumption.
+
+================================================================================
+TECH-2 — FILM / AI PIPELINE: MODEL + VIDEO DELIVERY
+================================================================================
+REQUEST
+  (a) Do we build the §16.C breakdown as the specced SAM2-segmentation + jersey-OCR
+      + hand-rolled play-extraction chain, or as a multimodal video-understanding
+      model grounded on the known box score? (b) Do we host minors' film on raw
+      Supabase Storage + signed mp4 URLs, or on a real video platform (Mux /
+      Cloudflare Stream)?
+
+CONTEXT / EVIDENCE
+  • §16.C step 3 specs vision as SAM2 segmentation → jersey-number OCR → play
+    extraction, "reuse the Print Studio Replicate plumbing." Two issues:
+    - That is a 2023-era CV chain and the MOST brittle thing in the build. Stitching
+      segmentation + OCR + heuristic play-logic is exactly what fails the §16.C-step-4
+      reconciliation ("extracted plays MUST sum to the box score") — the failure mode
+      is a wrong/invented number about a MINOR, the one place we cannot ship fabrication.
+    - The 2026 state of the art is a multimodal video-understanding model that watches
+      the clip with the KNOWN box score + roster passed as grounding context, and emits
+      a timestamped, grounded breakdown. The box score becomes the anchor that PREVENTS
+      fabrication by construction, not a fragile post-hoc check on a 4-stage pipeline.
+      Jersey-OCR-only / NO face-recognition stays the §C privacy posture either way —
+      we just reach it with a far stronger, simpler model.
+    - "Reuse the Print Studio Replicate plumbing" conflates apparel-IMAGE infra with
+      VIDEO (frames + time + audio). The reuse framing undersells the build.
+  • §16.C step 2 / step 5 specs hosting as PRIVATE Supabase Storage + short-TTL signed
+    URLs to an mp4. [GROUNDED — operator report this session]: the CURRENT demo film
+    (a Google-Drive mp4) "doesn't play on iOS." That is not a storage problem — it is a
+    TRANSCODING/DELIVERY problem. iOS Safari needs HLS / adaptive-bitrate to play inline.
+    Raw signed-mp4-from-object-storage reproduces the exact failure we already have.
+    The latest-and-greatest for gated, minor-private, must-play-on-iOS video is a video
+    platform — Mux or Cloudflare Stream — which gives HLS/ABR (plays on iOS), signed +
+    expiring playback tokens (the minor-privacy gate), thumbnails, for cents per clip.
+
+OPTIONS
+  O1  Multimodal-video-model + video-platform (recommended). Breakdown = a video-
+      understanding model grounded on the box score + roster; reconcile-or-hold stays
+      the §16.C-step-4 discipline. Hosting = Mux or Cloudflare Stream with signed
+      playback, behind the can_access_child live gate.
+      REQUIREMENTS: choose the video model + sub-processor (DPA + §C consent before
+      ANY minor frame is processed — unchanged hold); pick Mux vs Cloudflare Stream
+      (cost + signed-URL + retention/delete capability sign-off); the consent→upload→
+      vision→reconcile→gated-deliver→retain shape from §16.C is preserved.
+  O2  SAM2 + OCR + Supabase Storage (spec as written). REQUIREMENTS: the 4-stage
+      Replicate chain + signed-mp4 plumbing + an iOS transcode step bolted on to make
+      it play. Risk: brittle reconciliation; iOS playback still unsolved without
+      transcoding; most-sensitive surface (minor) on the least-reliable pipeline.
+  O3  Hybrid — model for the breakdown, Supabase Storage for hosting. Gets the
+      breakdown right but leaves the iOS-playback problem unsolved; not recommended
+      (it keeps the proven-broken delivery path).
+
+CC LEAN: O1, with a hard caveat — this is Track 2, GATED, behind Frank's child-data
+  deletion + consent sign-off and the §C posture; nothing here merges near a minor's
+  data without that. But when it IS built, build it on 2026 tech (grounded video model
+  + a real video platform), not a 2023 CV chain + raw object storage. The de-fabrication
+  of the CURRENT demo film (RC3) is SEPARATE and IMMEDIATE (Phase 0) and needs none of
+  this — remove the invented opponents now, regardless of this fork.
+
+================================================================================
+TECH-3 — TOURNEYMACHINE DATA-SOURCE RISK (the unaddressed foundation)
+================================================================================
+REQUEST
+  The ENTIRE paid data layer — the directory of 2,214 teams / 256 divisions / 9
+  tournaments, the standings, and the real-time scores — is SCRAPED from
+  TourneyMachine. We are about to charge $20/mo on top of it. What is our conscious
+  posture on that dependency's terms-of-service / durability / legal exposure?
+
+CONTEXT / EVIDENCE
+  • Build Bible §3 builds ingest entirely on scraping TM (the spec even validates the
+    paste-a-link host == tourneymachine and rejects others). The doc treats TM as a
+    free, stable, permission-granted substrate. It never names that (a) scraping may
+    violate TM's ToS, (b) a paid product reselling scraped third-party data carries
+    legal/contractual exposure, and (c) TM can change structure or block us and take
+    the core value prop down with no recourse. §16.D's "self-healing ingest" addresses
+    structure CHANGES but not the access/permission/legal axis.
+  • This is a BUSINESS/durability fork, not a code fork — but it is foundational: every
+    paid plane (B and C) stands on this single scraped source. Worth a deliberate call
+    now, while the surface is small, not after we have paying subscribers depending on it.
+
+OPTIONS
+  O1  Accept-and-monitor (eyes-open). Proceed on scraping for v1; document the risk;
+      add polite-scraper discipline (rate-limit, identify, cache, no load abuse);
+      monitor for TM blocking. REQUIREMENTS: a written risk acceptance + scraper-
+      etiquette guardrails. Fastest; leaves the exposure live.
+  O2  Seek a data relationship / partnership with TourneyMachine (or the circuits —
+      Zero Gravity et al.) for sanctioned access. REQUIREMENTS: an outreach/BD effort
+      (Frank); possibly an API or data-share agreement. Slower; removes the exposure;
+      could become a moat.
+  O3  Diversify / reduce single-source dependence. Treat TM as one of several sources;
+      where we run the program (Legacy, etc.) our OWN game_results are authoritative
+      and need no scrape. REQUIREMENTS: a source-abstraction in ingest; our-program
+      data prioritized; external-only data clearly labeled provenance. Reduces but
+      does not eliminate the exposure.
+
+CC LEAN: O1 for v1 timing (don't block the build) BUT with the risk WRITTEN DOWN and
+  accepted by Frank explicitly, plus scraper etiquette — AND start O2 outreach in
+  parallel, because a sanctioned source is the difference between a feature and a
+  durable, defensible paid product. This is a Frank/business call; CC's role is only
+  to surface that the foundation is currently unowned.
+
+================================================================================
+SECONDARY — NOT FORKS, BUT NOT IN THE SPEC (fold into the relevant phase)
+================================================================================
+  S1  OFFLINE-FIRST AT THE GYM. Parents are on 1 bar of LTE in cinderblock gyms. The
+      §4 navigation headline + the §6 TODAY view must work offline: a service worker
+      caches the day's schedule + venue ADDRESSES so Directions resolve with no signal
+      (the address is the §4.1 fallback — it has to be on-device). Phase 1/2 UI concern.
+  S2  SELF-SERVE "PASTE ANY LINK" (the §3.4 fast-follow) wants an LLM EXTRACTION layer
+      that normalizes messy arbitrary-tournament HTML into the schema, validated
+      against bracket/box-score structure — brittle field-mapping won't survive
+      non-TM sites. This is how "paste any link" becomes real (vs. TM-only).
+  S3  ACCESSIBILITY. The platform CLAUDE.md (§16.4) makes a11y table-stakes; the Build
+      Bible has no a11y line. Every new .io surface carries the same bar (aria, live
+      regions, contrast, keyboard, reduced-motion).
+  S4  COST / RATE OBSERVABILITY. Real-time polling × many tournaments + geocoding +
+      video AI run unattended. Add cost/rate guardrails + alerting before those loops
+      go live (ties to the §3.3 cost cap, §3.4 rate limit — make them observable).
+
+================================================================================
+WHAT CC RECOMMENDS PROCEDURALLY
+================================================================================
+  • Phases 0–1 of the Build Bible proceed NOW — none of TECH-1/2/3 blocks them, and
+    Phase 0 film de-fabrication (RC3) is immediate and fork-independent.
+  • TECH-1 (v1 = Realtime + PWA-install-prompt) wants a ruling before Phase 2 wiring.
+  • TECH-2 (video model + video platform) wants a ruling before Track 2 — and stays
+    behind the existing child-data/consent holds regardless.
+  • TECH-3 is a Frank/business call to make explicitly now, while the surface is small.
+  • S1–S4 fold into their phases; flagged so they're not silently dropped.
+
+ONE LINE: the Build Bible's architecture is right and buildable; the remaining gap to
+  10/10 is technology currency in three places — add Realtime + own the iOS-push
+  install reality (TECH-1), build film on a grounded video model + a real video
+  platform not a 2023 CV chain + raw storage (TECH-2), and consciously own the
+  TourneyMachine data-source dependency the whole paid product stands on (TECH-3).
+================================================================================
