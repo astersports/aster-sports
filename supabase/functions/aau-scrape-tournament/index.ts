@@ -11,14 +11,18 @@
 //     confirmed team_ids and POST to ingest-game-results (Bearer = app_secrets.ingest_secret).
 //     `commit` false = dry preview of the exact payload.
 //
-// Step-0 verified: TM returns 200 to Supabase Edge egress. Auth: commit path requires the
-// ingest_secret as Bearer; discover/preview are read-only and open (full operator-auth is
-// the cross-project step 4, held for architect review). Deployed DARK — no cron yet.
+// Step-0 verified: TM returns 200 to Supabase Edge egress. Auth: EVERY path (discover,
+// preview, ingest) requires the ingest_secret as Bearer. DISCOVER is NOT open — it uses a
+// service-role (RLS-bypassing) client to read org-internal teams and triggers server-side
+// fetches, so leaving it open leaked cross-org teams and was an SSRF open proxy (PR review).
+// The fetch target is also host-restricted to TourneyMachine. Deployed DARK — no cron yet.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 const BASE = "https://tourneymachine.com/Public/Results/";
+// SSRF guard: any caller-supplied tourney_url must live on this host (else build from id_tournament).
+const TM_HOST = "https://tourneymachine.com/";
 const GAME_ID = /^[PBG]\d+/;
 
 const cors = {
@@ -54,13 +58,14 @@ function isEasternDST(y: number, mo: number, d: number, h: number): boolean {
   if (mo < 3 || mo > 11) return false;
   if (mo > 3 && mo < 11) return true;
   if (mo === 3) {
-    const first = new Date(y, 2, 1).getDay();
+    // UTC-anchored weekday of Mar 1 (date-only; getUTCDay is the guard-legal form — same answer).
+    const first = new Date(Date.UTC(y, 2, 1)).getUTCDay();
     const secondSun = first === 0 ? 8 : 14 - first + 1;
     if (d > secondSun) return true;
     if (d < secondSun) return false;
     return h >= 2;
   }
-  const first = new Date(y, 10, 1).getDay();
+  const first = new Date(Date.UTC(y, 10, 1)).getUTCDay();
   const firstSun = first === 0 ? 1 : 7 - first + 1;
   if (d < firstSun) return true;
   if (d > firstSun) return false;
@@ -124,16 +129,37 @@ Deno.serve(async (req) => {
   let body: any;
   try { body = await req.json(); } catch { return json({ error: "invalid JSON" }, 400); }
   const orgId: string = body.org_id;
-  const alias: string = body.team_alias ?? "legacy";
-  const link: string = body.tourney_url ?? (body.id_tournament ? `${BASE}Tournament.aspx?IDTournament=${body.id_tournament}` : "");
+  // Alias is operator-confirmed and NEVER auto-guessed — no "legacy" default (a wrong/missing
+  // alias would silently scrape another org's games). Required on every path.
+  const alias: string = typeof body.team_alias === "string" ? body.team_alias.trim() : "";
   const mapping: Record<string, string> | undefined = body.mapping;
   const commit: boolean = body.commit === true;
   if (!orgId) return json({ error: "org_id required" }, 400);
+  if (!alias) return json({ error: "team_alias required (operator-confirmed; not defaulted)" }, 400);
+
+  // Build the TM URL server-side from id_tournament; a raw tourney_url must be on the TM host
+  // (no open proxy / SSRF — DISCOVER triggers server-side fetches).
+  let link = "";
+  if (body.id_tournament) {
+    link = `${BASE}Tournament.aspx?IDTournament=${encodeURIComponent(String(body.id_tournament))}`;
+  } else if (typeof body.tourney_url === "string" && body.tourney_url.startsWith(TM_HOST)) {
+    link = body.tourney_url;
+  } else if (body.tourney_url) {
+    return json({ error: `tourney_url must be on ${TM_HOST}` }, 400);
+  }
   if (!link) return json({ error: "tourney_url or id_tournament required" }, 400);
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+  // Auth gate — EVERY path requires the ingest_secret. DISCOVER reads org-internal teams via
+  // the service-role (RLS-bypassing) client and triggers server-side fetches; not safe open.
+  const presented = req.headers.get("Authorization")?.replace(/^Bearer\s+/, "") ?? "";
+  const { data: sec, error: sErr } = await sb.from("app_secrets").select("value").eq("name", "ingest_secret").maybeSingle();
+  if (sErr) return json({ error: `secret read: ${sErr.message}` }, 500);
+  if (!sec?.value) return json({ error: "app_secrets.ingest_secret not set" }, 500);
+  if (presented !== sec.value) return json({ error: "Unauthorized" }, 401);
 
   // 1. overview → resolve IDTournament + auto-discover division links
   const ov = await fetchText(link);
@@ -181,12 +207,15 @@ Deno.serve(async (req) => {
     });
   }
 
-  // INGEST — build games[] with confirmed team_ids
+  // INGEST — build games[] with confirmed team_ids. Every mapped team_id MUST belong to org_id
+  // (teamList is already org-scoped) — a foreign id would cross-link another org's events.
+  const orgTeamIds = new Set(teamList.map((t) => t.id));
   const games: any[] = [];
   const skipped: any[] = [];
   for (const d of divisions) {
     const teamId = mapping[d.divisionId];
     if (!teamId) { skipped.push({ divisionId: d.divisionId, division: d.division, reason: "no team mapped" }); continue; }
+    if (!orgTeamIds.has(teamId)) { skipped.push({ divisionId: d.divisionId, division: d.division, reason: "mapped team_id not in org" }); continue; }
     for (const g of d.games) {
       if (!g.startAt) { skipped.push({ gameId: g.gameId, reason: "unparseable date" }); continue; }
       games.push({
@@ -202,13 +231,7 @@ Deno.serve(async (req) => {
 
   if (!commit) return json({ mode: "preview", id_tournament: idt, count: games.length, skipped, games });
 
-  // commit: Bearer must equal app_secrets.ingest_secret; forward the same payload to ingest-game-results
-  const presented = req.headers.get("Authorization")?.replace(/^Bearer\s+/, "") ?? "";
-  const { data: sec, error: sErr } = await sb.from("app_secrets").select("value").eq("name", "ingest_secret").maybeSingle();
-  if (sErr) return json({ error: `secret read: ${sErr.message}` }, 500);
-  if (!sec?.value) return json({ error: "app_secrets.ingest_secret not set" }, 500);
-  if (presented !== sec.value) return json({ error: "Unauthorized (commit requires ingest_secret Bearer)" }, 401);
-
+  // commit: forward the same payload to ingest-game-results (request already authed at the top gate).
   const resp = await fetch(`${SUPABASE_URL}/functions/v1/ingest-game-results`, {
     method: "POST",
     headers: { Authorization: `Bearer ${sec.value}`, "Content-Type": "application/json" },
