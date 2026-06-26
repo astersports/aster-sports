@@ -1,7 +1,7 @@
 // aau-ingest-tournament — generalized AAU TourneyMachine ingest writer.
 //
 // Populates the "standings backbone" (tournament_divisions /
-// tournament_division_teams / division_games / tournament_pools) from a public
+// tournament_division_teams / tournament_pools / pool_teams / division_games) from a public
 // TourneyMachine tournament so the astersports.io/aau hub can render real
 // tournaments. PUBLIC tournament data only — no child/PII/money tables touched.
 //
@@ -132,9 +132,16 @@ Deno.serve(async (req) => {
   if (divisionList.length === 0) {
     return json({ error: "no divisions discovered on Tournament.aspx", tournamentName, divisions: [] }, 422);
   }
+  // Fail fast BEFORE any write: tournaments.start_date/end_date are NOT NULL, so
+  // an unparseable date window must surface as a clean 4xx, not a 500 on insert.
+  if (!startDate || !endDate) {
+    return json({ error: "could not parse a start/end date window from Tournament.aspx", tournamentName, divisions: [] }, 422);
+  }
 
-  // ── tournaments row: match-or-create on (org_id, name) ──────────────────────
-  // No external_tournament_key column exists, so match by name within the org
+  // ── tournaments row: match-or-create on (org_id, name, start_date) ───────────
+  // No external_tournament_key column exists. Match within the org by name AND
+  // start_date so same-named events in different seasons (Zero Gravity reuses
+  // names year to year) resolve to distinct tournaments instead of colliding
   // (idempotent without a schema change — AP #21, no migration).
   let tournamentId: string;
   {
@@ -143,6 +150,7 @@ Deno.serve(async (req) => {
       .select("id")
       .eq("org_id", orgId)
       .eq("name", tournamentName)
+      .eq("start_date", startDate)
       .maybeSingle();
     if (selErr) return json({ error: `tournament select: ${selErr.message}` }, 500);
     if (existing) {
@@ -245,6 +253,27 @@ Deno.serve(async (req) => {
       const teamIdByName = new Map<string, string>();
       for (const r of dtRows || []) teamIdByName.set(normalizeName(r.display_name as string), r.id as string);
 
+      // pool membership — the parser tags each team with its pool name; persist
+      // it to pool_teams so pool-scoped standings can render from the DB shape
+      // (tournament_division_teams carries no pool column). Also lets a game be
+      // tagged to its pool when both sides share one (pool play); cross-pool
+      // bracket games stay pool_id NULL.
+      const poolNameByTeam = new Map<string, string>();
+      for (const t of teams) if (t.pool) poolNameByTeam.set(normalizeName(t.displayName), normalizeName(t.pool));
+      const poolTeamRows: Array<Record<string, unknown>> = [];
+      for (const t of teams) {
+        if (!t.pool) continue;
+        const poolId = poolIdByName.get(normalizeName(t.pool));
+        const teamId = teamIdByName.get(normalizeName(t.displayName));
+        if (poolId && teamId) poolTeamRows.push({ org_id: orgId, tournament_pool_id: poolId, tournament_division_team_id: teamId });
+      }
+      if (poolTeamRows.length) {
+        const { error: ptErr } = await sb
+          .from("pool_teams")
+          .upsert(poolTeamRows, { onConflict: "tournament_pool_id,tournament_division_team_id" });
+        if (ptErr) throw new Error(`pool_teams upsert: ${ptErr.message}`);
+      }
+
       // games — external-vs-external only. Skip: placeholder sides, sides not in
       // the standings (unresolved seeds), and any side that is one of our teams.
       const gameRows: Array<Record<string, unknown>> = [];
@@ -257,10 +286,13 @@ Deno.serve(async (req) => {
         const homeId = teamIdByName.get(homeNorm);
         const awayId = teamIdByName.get(awayNorm);
         if (!homeId || !awayId) { skipped++; continue; }
+        const homePool = poolNameByTeam.get(homeNorm);
+        const awayPool = poolNameByTeam.get(awayNorm);
+        const poolId = homePool && homePool === awayPool ? poolIdByName.get(homePool) ?? null : null;
         gameRows.push({
           org_id: orgId,
           tournament_division_id: divisionId,
-          tournament_pool_id: null,
+          tournament_pool_id: poolId,
           home_division_team_id: homeId,
           away_division_team_id: awayId,
           home_score: g.homeScore,
@@ -285,6 +317,7 @@ Deno.serve(async (req) => {
         externalDivisionKey: div.externalDivisionKey,
         teams: teamRows.length,
         pools: pools.length,
+        poolMemberships: poolTeamRows.length,
         gamesParsed: games.length,
         gamesUpserted,
         gamesSkipped: skipped,
