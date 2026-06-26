@@ -291,3 +291,85 @@ COMMIT;
 --      the cleanest engine/predictor input, and the scraper already pulls the whole
 --      division board. Flagged for the architect; NOT built in this draft.
 -- ============================================================================
+
+-- ============================================================================
+-- OQ6 RULED: OPTION A (external-only model) — division_games table
+-- (ARCHITECT response R6, 2026-06-26). Added below for owner-apply with the rest.
+-- ============================================================================
+-- Authority model (the part that must be right): division_games holds
+-- EXTERNAL-vs-EXTERNAL games ONLY. Our games stay authoritative in
+-- game_results/events; the public standings RPC UNIONs (our games scoped by
+-- tournament_division_id) + (external games here) before feeding the engine. So
+-- every game has exactly ONE source — no mirror job, no conflict rule, no drift,
+-- and our official score can never be shadowed by a scraped one. Both sides
+-- reference tournament_division_teams (the standings units, by resolved identity)
+-- so the engine groups consistently.
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS public.division_games (
+  id                      uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id                  uuid NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  tournament_division_id  uuid NOT NULL REFERENCES public.tournament_divisions(id) ON DELETE CASCADE,
+  tournament_pool_id      uuid REFERENCES public.tournament_pools(id) ON DELETE SET NULL,
+  home_division_team_id   uuid NOT NULL REFERENCES public.tournament_division_teams(id) ON DELETE CASCADE,
+  away_division_team_id   uuid NOT NULL REFERENCES public.tournament_division_teams(id) ON DELETE CASCADE,
+  home_score              integer,
+  away_score              integer,
+  status                  text NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled','live','final')),
+  start_at                timestamptz,
+  external_game_id        text,                                  -- TM game id; scraper idempotency
+  created_at              timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT division_games_distinct CHECK (home_division_team_id <> away_division_team_id),
+  CONSTRAINT division_games_extkey_unique UNIQUE (tournament_division_id, external_game_id)
+);
+CREATE INDEX IF NOT EXISTS idx_division_games_division ON public.division_games (tournament_division_id, status);
+
+-- EXTERNAL-only enforcement: neither side may be one of OUR teams. A standings unit
+-- is "ours" iff its tournament_division_teams.team_id IS NOT NULL. Our games belong in
+-- game_results/events, never here. Trigger (fires for every writer incl. service_role).
+CREATE OR REPLACE FUNCTION public.assert_division_game_external()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $fn$
+DECLARE ours int;
+BEGIN
+  SELECT count(*) INTO ours
+  FROM public.tournament_division_teams tdt
+  WHERE tdt.id IN (NEW.home_division_team_id, NEW.away_division_team_id)
+    AND tdt.team_id IS NOT NULL;
+  IF ours > 0 THEN
+    RAISE EXCEPTION 'division_games is external-vs-external only; a game involving one of our teams belongs in game_results/events (game %)', NEW.external_game_id;
+  END IF;
+  RETURN NEW;
+END;
+$fn$;
+DROP TRIGGER IF EXISTS trg_division_game_external ON public.division_games;
+CREATE TRIGGER trg_division_game_external
+  BEFORE INSERT OR UPDATE ON public.division_games
+  FOR EACH ROW EXECUTE FUNCTION public.assert_division_game_external();
+
+-- RLS: same posture as the rest of the standings substrate — STAFF/service-role write
+-- (the scraper ingests via the authenticated cross-program path, still its own review),
+-- NO anon write; public READ is via get_public_tournament_standings only.
+ALTER TABLE public.division_games ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS division_games_select ON public.division_games;
+CREATE POLICY division_games_select ON public.division_games
+  FOR SELECT TO authenticated USING (org_id = public.current_user_org_id());
+DROP POLICY IF EXISTS division_games_insert ON public.division_games;
+CREATE POLICY division_games_insert ON public.division_games
+  FOR INSERT TO authenticated WITH CHECK (public.user_has_role_in_org(org_id, ARRAY['admin'::text,'coach'::text]));
+DROP POLICY IF EXISTS division_games_update ON public.division_games;
+CREATE POLICY division_games_update ON public.division_games
+  FOR UPDATE TO authenticated USING (public.user_has_role_in_org(org_id, ARRAY['admin'::text,'coach'::text]))
+  WITH CHECK (public.user_has_role_in_org(org_id, ARRAY['admin'::text,'coach'::text]));
+DROP POLICY IF EXISTS division_games_delete ON public.division_games;
+CREATE POLICY division_games_delete ON public.division_games
+  FOR DELETE TO authenticated USING (public.user_has_role_in_org(org_id, ARRAY['admin'::text,'coach'::text]));
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.division_games TO authenticated, service_role;
+
+NOTIFY pgrst, 'reload schema';
+COMMIT;
+-- OQ6 RESOLVED -> the D-FV3 standings substrate is now COMPLETE and apply-ready.
+-- ============================================================================

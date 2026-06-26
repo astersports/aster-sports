@@ -1,0 +1,117 @@
+================================================================================
+ARCHITECT — AAU FAMILY HUB MASTER SPEC: R1/R4/R5 CONFIRMS + R6 (OQ6) RULING
+aster-sports · 2026-06-26 · Architect → CC (relayed by Frank) · PR #1103 · L99
+In reply to: AAU_FAMILY_HUB_BUILD_SPEC_2026-06-26.txt
+================================================================================
+Design confirmed end-to-end. This clears the gating items (R5 → owner can apply the
+trust schema; R6 → standings RPC can finalize). Renders R2 (division/bracket detail)
+and R3 (verified claim flow) delivered alongside. Holds unchanged: Stripe webhook →
+money-path review; film → §C; TQ2's two calls → Frank.
+
+--------------------------------------------------------------------------------
+R1 — PUBLIC v1 HUB RENDER → CONFIRMED as the build target.
+--------------------------------------------------------------------------------
+Build it as rendered (track team · cap-applied standings + "top 2 advance" line ·
+odds gauge WITH the "math exact, wording AI" provenance line · push toggles · the
+"verified family profile" footer note). One small build note, not a revision: the
+provenance line is load-bearing — keep it visible on the odds anywhere odds appear,
+not just the v1 card (it's what makes the predictor honest). Buildable as soon as the
+standings RPC lands.
+
+--------------------------------------------------------------------------------
+R4 — SUBSCRIPTION / SETTINGS SHAPE → CONFIRMED.
+--------------------------------------------------------------------------------
+FullScreenForm (AP#15, 3+ controls): the Tier-1 follow list + per-team notify toggles
+(schedule/score/final) + a READ-ONLY entitlement state row. One requirement: the
+entitlement state is DISPLAY-ONLY here — it reflects family_entitlements (webhook-
+owned), the user never writes it from settings (matches the no-authenticated-write
+policy). "Manage subscription" is a link out to the billing portal, not an in-app
+mutation. Otherwise light; shape approved.
+
+--------------------------------------------------------------------------------
+R5 — TRUST-SCHEMA FIXES → CONFIRMED; owner may apply.
+--------------------------------------------------------------------------------
+The two fixes match intent. So there's an unambiguous target, the applied migration
+must show exactly:
+  §2 (REQUIRED) — can_access_child() joins guardians live:
+        JOIN public.guardians g ON g.id = pg.guardian_id AND g.user_id = p_user
+     so a revoked/reassigned claim cuts access at read time (both halves of the AND
+     are live; the family_children row still persists — durable link, live access).
+  §3 (RECOMMENDED) — is_entitled() + can_access_child() reject an arbitrary p_user
+     from authenticated callers: evaluate only for p_user = auth.uid() unless the
+     caller is service_role (closes the relationship-probing side channel).
+APPLY CHECK (for the owner, at apply time): confirm the migration's can_access_child
+shows that guardians JOIN with `g.user_id = p_user`, and the two gate helpers carry
+the caller-scope guard. If either differs, hold and send it. With those present, this
+is apply-ready — owner applies (docs/ → supabase/migrations/, prod prefix, AP#21).
+
+--------------------------------------------------------------------------------
+R6 — OQ6 (division games source) → RULE: OPTION A (division_games table).
+--------------------------------------------------------------------------------
+WHY A, not B/C. The fact you surfaced is decisive: opponent-vs-opponent games have no
+events row and no game_results row, so "query events by tournament_division_id" yields
+standings built only from games WE played in. That isn't a smaller version of the
+feature — it's a WRONG one: every external team's record is understated (only their
+games against us count), so 1st/2nd, the advance line, and the predictor's odds are
+all computed on a false board. A predictor that publishes "78% to make the bracket"
+off partial standings is confidently wrong — the exact failure D-FV5's deterministic-
+truth principle exists to prevent. The operator's headline ask (true division
+standings + a real predictor) is unbuildable without the full board. So:
+  - B (events-only/partial) is rejected for any surface that shows division standings
+    or odds — it would publish wrong numbers.
+  - If a faster v1 is ever wanted, the HONEST smaller scope is to ship tracking +
+    schedule + live scores WITHOUT division standings/predictor — never wrong
+    standings. But A is cheap enough (the engine already eats a generic games array)
+    that there's no reason to defer it. Build A.
+
+AUTHORITY MODEL (the part that needs to be right). A scraper-fed division_games table
+risks becoming a SECOND source of truth for OUR games (which also live in
+game_results) → drift (scraped 50-48 vs our official 50-49). Pin it so each game has
+exactly ONE source:
+  PREFERRED (a): division_games holds EXTERNAL-vs-EXTERNAL games ONLY. Our games stay
+     authoritative in game_results/events. The standings RPC UNIONs (our games scoped
+     by tournament_division_id) + (external games from division_games), then feeds the
+     engine. No game lives in two places → no mirror job, no conflict rule, no drift,
+     and our official score can never be shadowed by the scraper. The read is a UNION
+     instead of one SELECT — cheap, and worth the hard one-source guarantee.
+  ACCEPTABLE FALLBACK (b) [your lean — whole board in division_games, our games
+     mirrored in, game_results wins on publish]: workable, but it reintroduces a
+     mirror step + a conflict-resolution rule + a drift surface (a lagging/failed
+     mirror publishes a stale scraped score for our own game). Only take (b) if you
+     have a concrete reason the single-table read outweighs that; default is (a).
+  EITHER WAY: division_games rows reference tournament_division_teams (the standings
+     units, by resolved_key) for both sides — not raw teams/opponents — so the engine
+     groups consistently. And division_games inherits the standings posture: staff/
+     service-role WRITE only (the scraper ingests via the authenticated path — that
+     cross-program ingestion auth is still its own standing review), NO anon write,
+     public READ only via get_public_tournament_standings.
+
+→ STEP 1 can finalize: add division_games (model (a) preferred) to the Track-0 schema,
+  owner applies, CC drafts get_public_tournament_standings UNION-ing the two sources
+  into the engine.
+
+--------------------------------------------------------------------------------
+RENDERS DELIVERED
+--------------------------------------------------------------------------------
+R2  Division/bracket detail — multi-pool standings, the bracket (rounds + advancement
+    + where/when), and the odds/clinch detail surface. (Built on A: the standings shown
+    are the FULL division board, which is the whole point of ruling A.)
+R3  Verified family-profile claim flow — verification-FIRST: prove guardianship, THEN
+    the child appears, THEN the paid child layer. The paywall sits at the child layer,
+    never in front of verification. Rendered as the designed path.
+
+--------------------------------------------------------------------------------
+HELD (unchanged) / FRANK
+--------------------------------------------------------------------------------
+- Stripe webhook (writes family_entitlements) → money-path review before billing
+  merges; live keys ≠ live billing; Frank prices + flips.
+- Film (Track 2) → §C posture.
+- All schema → owner applies; no agent MCP-apply.
+- FRANK's two calls (TQ2): second-parent subscription (own sub vs household sharing);
+  past_due = cut now vs grace window. Schema supports either; say the word.
+FILING: aster-sports/docs + cross-ref #1103, #131, the build spec.
+================================================================================
+END — R1/R4/R5 confirmed (trust schema apply-ready), R6 = Option A with the external-
+only/UNION authority model, R2 + R3 rendered. Track 0 + Track 1 unblocked; webhook +
+film held.
+================================================================================

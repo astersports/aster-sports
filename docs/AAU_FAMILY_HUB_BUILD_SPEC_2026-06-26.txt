@@ -264,3 +264,27 @@ rule OQ6 (R6), and deliver renders R2/R3 (+ confirm R1, shape R4) — then CC bu
 Track 0 (standings RPC) and Track 1 (public hub + verified claim) while the webhook +
 film stay held for their money/privacy gates.
 ================================================================================
+
+================================================================================
+BUILD-UNBLOCK UPDATE 2026-06-26 (architect R1/R4/R5 confirmed, R6 ruled, R2/R3 rendered)
+(ARCHITECT_RESPONSE_BUILD_SPEC_R1_R6_2026-06-26.txt)
+================================================================================
+- R1 PUBLIC v1 HUB: CONFIRMED as build target. Build note: keep the "math exact,
+  wording AI" provenance line visible ANYWHERE odds appear, not just the v1 card.
+- R4 SETTINGS: CONFIRMED. FullScreenForm; entitlement state is DISPLAY-ONLY (reflects
+  family_entitlements, webhook-owned); "Manage subscription" links OUT to billing, no
+  in-app mutation.
+- R5 TRUST SCHEMA: CONFIRMED apply-ready. Owner apply-check: can_access_child shows the
+  guardians JOIN with g.user_id = p_user; both gate helpers carry the caller-scope guard.
+- R6 OQ6: RULED OPTION A (external-only). division_games holds EXTERNAL-vs-EXTERNAL only;
+  our games stay authoritative in game_results; the public RPC UNIONs the two -> one
+  source per game, no mirror/drift. B (events-only) REJECTED for any standings/odds
+  surface (publishes wrong numbers). NOW BUILT: division_games table appended to the
+  Track-0 schema; get_public_tournament_standings drafted
+  (docs/TRACK0_PUBLIC_STANDINGS_RPC_DRAFT_2026-06-26.sql).
+- R2/R3 RENDERS: delivered (division/bracket detail; verification-first claim flow).
+- STATUS: Track-0 standings substrate COMPLETE + apply-ready; trust schema apply-ready.
+  STEP 1 ready: owner applies both schemas -> RPC + the engine go live -> build the public
+  hub (R1) + division detail (R2). STEP 3: build the verified claim flow (R3). HELD:
+  Stripe webhook (money-path review), film (§C). FRANK: second-parent sub; past_due grace.
+================================================================================
