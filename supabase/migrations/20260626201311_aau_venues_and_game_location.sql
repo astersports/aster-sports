@@ -16,8 +16,10 @@
 -- Shared public facility addresses. Intentionally NO org_id: a gym is the same
 -- place across orgs, and venues are de-duped GLOBALLY (a director tracking teams
 -- from several programs sees one "Westchester County Center", not one per org).
--- Not sensitive — public read; reads go through SECDEF RPCs (§2.9). Writes are
--- service_role only (no anon/auth write policy ⇒ denied by RLS).
+-- Not sensitive (facility names/addresses only — no PII, no org scoping), so reads
+-- are PUBLIC: the venues_read_all policy below permits direct anon/auth SELECT, and
+-- the hub's SECDEF RPCs read it too. Writes are service_role only (no anon/auth write
+-- policy ⇒ denied by RLS).
 create table if not exists public.venues (
   id              uuid primary key default gen_random_uuid(),
   name            text not null,
@@ -48,7 +50,7 @@ alter table public.venues enable row level security;
 drop policy if exists venues_read_all on public.venues;
 create policy venues_read_all on public.venues for select using (true);
 -- No write policy ⇒ only service_role (which bypasses RLS) can insert/update venues,
--- i.e. the ingest + geocode edge functions. Public read flows through SECDEF RPCs.
+-- i.e. the ingest + geocode edge functions. Reads are public by design (above).
 
 -- ── 2.2  per-game location on the external-game store ───────────────────────
 -- division_games holds EXTERNAL-vs-external games (our own games stay authoritative
