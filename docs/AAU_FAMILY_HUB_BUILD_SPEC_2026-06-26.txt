@@ -1,0 +1,266 @@
+================================================================================
+AAU FAMILY HUB — MASTER BUILD SPEC (for architect feedback + rendering)
+aster-sports / astersports-web · 2026-06-26 · CC → Architect (relayed by Frank) · L99
+================================================================================
+PURPOSE: one consolidated, durable doc the architect reads end-to-end to (1) give
+  feedback on the full design, (2) rule the one open schema fork (OQ6), and (3)
+  deliver the RENDERS CC needs to build each surface. Everything below is grounded
+  against main @ #1101 (file:line where it matters) or is an explicit [DECISION].
+  Nothing here is applied/merged; all schema is held for owner-apply. This rolls up:
+  the challenge (#131), the ruling, the ratification, the trust-schema review, and
+  the three draft artifacts in PR #1103.
+
+This doc is the single source for the build. The per-artifact files (standings
+schema, trust schema, engine, OQ6) are the deep references; this is the map.
+
+================================================================================
+PART 1 — THE PRODUCT (what we're building, in full)
+================================================================================
+A public, FAMILY-CENTRIC basketball hub. The organizing primitive is the FAMILY,
+not the org or the team. Marketed as: "one account, every kid, every game,
+everywhere they play."
+
+The parent journey:
+  1. TRACK (free, public): a parent opens the AAU hub and follows any team that the
+     tournament scrape already discovered — their kid's team(s), a rival, a whole
+     division. They get that team's PUBLIC data: schedule, live scores, division
+     standings, bracket + AI-narrated odds, and push when a score/schedule/final
+     lands. No login required to view; a free account to follow + get push. NO child
+     identity anywhere on this surface.
+  2. CLAIM (verified, paid): to add THEIR kid — pin a specific child, get per-child
+     notifications, and (later) upload film — the parent must be a VERIFIED GUARDIAN
+     (confirmed against the program roster) AND hold a paid family entitlement. The
+     two are independent gates; neither substitutes for the other.
+  3. FILM (later track): a verified guardian uploads their own game film; AI clips
+     highlights to their child's jersey number. Held behind a full minors'-privacy
+     posture.
+
+The flexibility the operator asked for: pick 5th-grade-girls + 8th-grade-boys; or
+compare 5th-grade-girls A vs B vs C divisions side by side. Simple but flexible.
+
+The standings/predictor the operator asked for: show the division standings (with
+the circuit's tiebreaker rules applied — e.g. Zero Gravity caps any win at +20,
+2-way ties = head-to-head, 3-way = point differential), show who's in 1st/2nd, who
+advances to the bracket, where/when the bracket games are, and an AI predictor of
+the odds of making the bracket — with the math exact and only the wording AI.
+
+================================================================================
+PART 2 — ARCHITECTURE & DATA TOPOLOGY
+================================================================================
+WHERE IT LIVES [RATIFIED D-FV1(b)]: a PUBLIC, family-scoped view IN the aster-sports
+  app (where the Supabase data + ~90% of the reusable UX already live), served by
+  anon-safe SECDEF public RPCs (the get_public_* pattern legacy-hoopers already
+  ships). astersports.io's AAU page LINKS into it. The data layer is NOT
+  re-implemented in the astersports-web MySQL/Drizzle stack.
+
+SINGLE SOURCE OF TRUTH: the aster-sports Supabase project (vrwwpsbfbnveawqwbdmj).
+
+DATA CLASSIFICATION [RATIFIED D-FV8]:
+  PUBLIC (anon SECDEF RPC, PII-stripped): the tournament's factual state — schedule,
+    scores, division standings, bracket, AI odds.
+  CONTAINED (auth + verified guardian + paid): a specific child's identity, per-child
+    notifications, uploaded film. Visible only inside the verified family profile.
+
+THE CHILD-SAFETY INVARIANT [RATIFIED, load-bearing]:
+    canAccessChildData(user, child) = hasPaidEntitlement(user)
+                                      AND isVerifiedGuardian(user, child)
+  evaluated LIVE at read time. Guardianship is DURABLE (the link persists, FK + trigger
+  enforced); entitlement is CURRENT (a lapse suspends access while the link remains).
+  A paywall is NOT a child-safety gate — verified guardianship is. The two are
+  physically separate columns; neither is satisfiable by the other.
+
+THREE BUILD TRACKS:
+  TRACK 0  Standings spine (non-money, non-child-data): division/pool/bracket schema +
+           the rule-driven standings engine + the public standings RPC. Unblocks the
+           demoable public v1.
+  TRACK 1  Family hub + live data: the public family view, the family-claim/subscription
+           model, the bracket predictor + AI odds, subscriber push.
+  TRACK 2  Film (parallel, last): parent upload + AI jersey clips. Held for the privacy
+           posture (§C).
+
+================================================================================
+PART 3 — DECISION LEDGER (complete status)
+================================================================================
+RATIFIED (build-ready in shape):
+  D-FV1(b)  Hub = public family view in aster-sports; .io links in.            RATIFIED
+  D-FV3(B)  Division/pool/bracket JUNCTION tables (not jsonb).                  RATIFIED
+  D-FV4(ii) Rule-driven standings engine reading circuit_rules.                RATIFIED + BUILT
+  D-FV5(R)  Deterministic predictor + LLM narration (math exact, words AI).    RATIFIED
+  D-FV6     Subscriber push for schedule/score/final (team-level public).      RATIFIED
+  D-FV8     Public vs contained data classification.                           RATIFIED
+  D-FV2     Family-claim: Tier-1 open public follow; Tier-2 verified child.    RATIFIED
+  D-FV9     Per-user Stripe entitlement, separate from guardianship.           RATIFIED (shape)
+
+SCHEMA OQ RULINGS (standings substrate):
+  OQ1  Game->division link = columns on events (1:1).                          RESOLVED
+  OQ2  Standings unit = 3-way identity (team/opponent/name) + resolved_key.    RESOLVED (applied)
+  OQ3  Public exposure = SECDEF RPC; engine applies cap (one source).          RESOLVED
+  OQ4  championship_scenarios -> narrative only once predictor ships.          RESOLVED
+  OQ5  advance_count default 2; predictor requires confirmed value or TBD.     RESOLVED
+  OQ6  Division games SOURCE (opponent-vs-opponent has no events row).         *** OPEN — needs ruling ***
+
+TRUST-SCHEMA TQ RULINGS:
+  TQ1  Verified signal = email-confirmed claim (guardians.user_id); no is_primary. RESOLVED
+  TQ2  Per-user entitlement v1. TWO PRODUCT CALLS ARE FRANK'S:                  *** FRANK ***
+         (i) second parent of same kid needs own subscription, or plan sharing;
+         (ii) past_due = cut access now, or add a grace window.
+  TQ3  Webhook shape confirmed; handler HELD for money-path review.            RESOLVED (held)
+  TQ4  can_access_child(user, player) is the film gate signature.              RESOLVED
+
+ARCHITECT REVIEW OF TRUST SCHEMA — both items APPLIED:
+  §2 REQUIRED: can_access_child re-verifies the guardian claim LIVE.           APPLIED
+  §3 RECOMMENDED: gate helpers scoped to caller (no probing side channel).     APPLIED
+
+================================================================================
+PART 4 — SCHEMA (full inventory; drafts in PR #1103, NOT applied)
+================================================================================
+All schema is a design-review artifact in docs/; owner applies after this review
+(moves to supabase/migrations with the prod version prefix per AP #21). RLS uses the
+existing helpers (current_user_org_id, user_has_role_in_org); SECDEF gate helpers
+follow AP #23/#57 (revoke PUBLIC+anon, then grant). All five standings tables + the
+three trust tables carry org_id or user_id and have explicit per-command policies
+with WITH CHECK on writes (AP #20).
+
+--- TRACK 0: STANDINGS SUBSTRATE (docs/TRACK0_STANDINGS_SCHEMA_DRAFT_2026-06-26.sql)
+  tournament_divisions      a division within one tournament. advance_count (top-N to
+                            bracket), circuit (-> circuit_rules tiebreakers), grade/gender.
+  tournament_division_teams THE STANDINGS UNIT. team_id XOR opponent_id XOR scraped name;
+                            generated resolved_key = id-or-normalized-name; UNIQUE per
+                            division so a team can't split its standings; promotion-safe.
+  tournament_pools          a pool within a division ("Pool A").
+  pool_teams                membership of a standings unit in a pool.
+  bracket_slots             playoff structure: round, slot_index, seed_source,
+                            division_team_id (fills as it resolves), event_id (the
+                            scheduled bracket game = where/when), advances_to_slot_id.
+  events.tournament_division_id / tournament_pool_id   nullable; scopes OUR games.
+  [OPEN OQ6] division_games  the games SOURCE for standings — see Part 8. The engine
+                            already consumes a generic games array; this is purely where
+                            the full division board (incl. opponent-vs-opponent) lands.
+
+--- TRACK 1: FAMILY TRUST (docs/TRACK1_FAMILY_TRUST_SCHEMA_DRAFT_2026-06-26.sql)
+  family_subscriptions  TIER 1. user_id + 3-way team identity, org-agnostic, open follow.
+                        notify_schedule/score/final. NO child column at all -> following a
+                        team is structurally incapable of leaking child data.
+  family_children       TIER 2. user_id + player_guardian_id (FK to the verified link).
+                        BEFORE trigger asserts the linked guardian's user_id = this user
+                        (email-confirmed claim) -> un-creatable without verified guardianship,
+                        enforced for EVERY writer incl. service_role. Guardianship durable.
+  family_entitlements   D-FV9. Stripe-derived (status active/trialing/past_due/canceled/
+                        inactive + current_period_end + stripe ids), UNIQUE(user_id),
+                        webhook-written only (no authenticated write policy).
+  is_entitled(user)                live entitlement check, caller-scoped.
+  can_access_child(user, player)   is_entitled AND verified-guardian-re-checked-LIVE;
+                        caller-scoped; the ONLY place the two gates combine; the film/
+                        per-child gate.
+
+================================================================================
+PART 5 — THE STANDINGS ENGINE (D-FV4) — BUILT, GREEN
+================================================================================
+src/lib/standings/computeStandings.js + tiebreakers.js (pure, AP #27). ONE source for
+both the standings table and the D-FV5 predictor (AP #63). Reads circuit_rules (first
+real consumer of point_differential_cap — closes the §16.16 dead-config flag). 9 vitest
+fixtures pass: the +20 cap, 2-way head-to-head, 3-way point-diff fall-through, advance
+flag, advanceCount=null withholds odds. Inputs: teams[], games[{aId,bId,aScore,bScore}],
+rules{pointDiffCap, tiebreakers}, advanceCount. Output: ranked rows with rank + advances.
+
+================================================================================
+PART 6 — BUILD SEQUENCE (what unblocks what)
+================================================================================
+STEP 1 [blocked on OQ6 + owner-apply]: finalize the standings schema (apply OQ6) ->
+       owner applies Track-0 schema -> CC drafts the SECDEF public standings RPC
+       (get_public_tournament_standings) that the engine reads.
+STEP 2: D-FV5 deterministic bracket predictor (enumerate remaining outcomes, apply the
+       engine, return true odds % + clinch/elim) + LLM narration; D-FV6 subscriber push
+       (game_final + score_updated triggers -> send-push fan-out to subscribers).
+STEP 3 [trust schema apply-ready now]: owner applies the trust schema -> CC builds the
+       Tier-1 follow UI + the VERIFIED Tier-2 claim flow (verification-first). The Stripe
+       webhook that writes family_entitlements stays HELD for the money-path review +
+       Frank's pricing/flip.
+TRACK 2 [held]: film upload + AI jersey clips, after the §C privacy posture.
+
+================================================================================
+PART 7 — WHAT CC NEEDS FROM THE ARCHITECT (feedback + RENDERS to build)
+================================================================================
+This is the operative section. CC builds from renders; please deliver:
+
+R1  PUBLIC v1 HUB — already rendered (AAU_FAMILY_HUB_V1_RENDER.html). CONFIRM it as the
+    build target, or send revisions. (Track team, division standings with cap shown +
+    "top 2 advance" line, bracket-odds gauge with provenance line, push toggles, the
+    "verified family profile" footer note.) No child-data gap; CC can build this now once
+    the standings RPC lands.
+
+R2  DIVISION / BRACKET DETAIL — NOT yet rendered. Needed: (a) the full division standings
+    table (multi-pool), (b) the bracket view (rounds + advancement + where/when), (c) the
+    odds/clinch detail surface. These are the predictor's home. Please render.
+
+R3  VERIFIED FAMILY-PROFILE CLAIM FLOW — NOT yet rendered, and deliberately deferred by
+    you until the trust schema locked (now reviewed + fixes applied). Needed:
+    verification-FIRST claim (prove guardianship via the email-confirmed claim, THEN pin
+    the child), the per-child notification controls, and the paywall placement (free
+    public follow vs paid child layer). This is the most safety-sensitive surface; please
+    render with verification as the designed path, not a retrofit.
+
+R4  SUBSCRIPTION / SETTINGS surface — the follow list (Tier-1), per-team notify toggles,
+    and the account/entitlement state. Light, but please confirm shape (a FullScreenForm
+    per AP#15 if 3+ controls).
+
+R5  FEEDBACK on the trust schema's structural enforcement (you approved in shape; the §2
+    live re-check + §3 caller-scoping are applied) — confirm the applied SQL matches your
+    intent so the owner can apply.
+
+R6  RULE OQ6 (Part 8) — the last schema fork; it determines the standings RPC's FROM
+    clause, so STEP 1 can't finalize without it.
+
+================================================================================
+PART 8 — OPEN DECISION: OQ6 (division games source)
+================================================================================
+(Full detail in docs/OQ6_DIVISION_GAMES_DECISION_2026-06-26.txt.)
+THE FACT: opponent-vs-opponent games have NO events row (events.team_id = our teams
+  only) and no game_results row (our-team-centric). So "query events by
+  tournament_division_id" yields CORRECT-BUT-PARTIAL standings (our games only) — every
+  external team shows only its games against us. The scraper already pulls the whole
+  division board; it just has nowhere to land.
+OPTIONS: A) division_games table (one games source per division, scraper writes the whole
+  board; our scores stay authoritative in game_results and mirror in on publish) —
+  CC LEAN. B) events-only / accept partial standings. C) B now, A later.
+NEEDED: rule A / B / C. A is required for true division standings + the predictor (the
+  operator's headline ask); B/C are legitimate v1-scope calls IF the partial-standings
+  limit is a labeled, deliberate choice.
+
+================================================================================
+PART 9 — HELD (standing)
+================================================================================
+- ALL schema -> design-review (this doc) before apply; OWNER applies; no agent MCP-apply.
+- family_entitlements Stripe webhook -> architect money-path review before any billing
+  merges; Frank sets pricing + flips; live Stripe keys != live billing.
+- FILM (Track 2) -> held for the §C posture: verified-guardian gate + multi-minor
+  minimization (keep the claimed child's clips, discard the rest) + jersey-OCR only / NO
+  facial recognition of minors + sub-processor DPA + consent + retention/deletion.
+- TQ2's two product calls (second-parent subscription; past_due grace) -> FRANK.
+- No *_LIVE flips by agents.
+
+================================================================================
+PART 10 — ARTIFACT INDEX
+================================================================================
+PRs:
+  astersports-web #131  the family-hub challenge + paid-profile addendum (held).
+  aster-sports   #1103  ruling + ratification + render + standings schema + engine +
+                        trust schema + OQ6 decision (held; this build bundle).
+  (#125, #1100 merged: the AAU hub brief + the earlier decision record.)
+Docs (aster-sports/docs/):
+  ARCHITECT_DECISION_AAU_FAMILY_HUB_2026-06-26.txt        the ruling
+  ARCHITECT_RATIFICATION_AAU_FAMILY_2026-06-26.txt        OQ + D-FV2 ratification
+  ARCHITECT_REVIEW_FAMILY_TRUST_SCHEMA_2026-06-26.txt     trust-schema review
+  AAU_FAMILY_HUB_V1_RENDER.html                            the public v1 render
+  TRACK0_STANDINGS_SCHEMA_DRAFT_2026-06-26.sql             D-FV3 schema (apply-ready bar OQ6)
+  TRACK1_FAMILY_TRUST_SCHEMA_DRAFT_2026-06-26.sql          trust schema (apply-ready)
+  OQ6_DIVISION_GAMES_DECISION_2026-06-26.txt               the open fork
+  src/lib/standings/{computeStandings,tiebreakers}.js + tests   the engine (built)
+  AAU_FAMILY_HUB_BUILD_SPEC_2026-06-26.txt                 THIS doc
+
+================================================================================
+THE ASK, IN ONE LINE: confirm the design + apply the trust-schema fixes review (R5),
+rule OQ6 (R6), and deliver renders R2/R3 (+ confirm R1, shape R4) — then CC builds
+Track 0 (standings RPC) and Track 1 (public hub + verified claim) while the webhook +
+film stay held for their money/privacy gates.
+================================================================================
