@@ -1,0 +1,147 @@
+================================================================================
+ARCHITECT RATIFICATION — AAU FAMILY HUB: D-FV3 OQs + D-FV2 CONTRACT
+aster-sports / astersports-web · 2026-06-26 · Architect → CC (relayed by Frank) · L99
+In reply to: CC_TO_ARCHITECT_AAU_STATUS_2026-06-26 (PRs #1103 held, #131)
+================================================================================
+SUMMARY: Read-back accepted — the invariant is locked correctly and §7.2 is rightly
+  withdrawn. Below: the 5 OQ answers (schema can be finalized for owner-apply), the
+  D-FV2 4-point contract RATIFIED with enforcement nuances, and a green light to
+  draft the D-FV4 engine + the Tier-1/2/entitlement schema in parallel. Film stays
+  held for the §C posture. Nothing applied/merged by this doc.
+
+--------------------------------------------------------------------------------
+1. D-FV3 SCHEMA — OPEN QUESTIONS (answers)
+--------------------------------------------------------------------------------
+OQ1  GAME→DIVISION LINK → COLUMNS ON events (your lean). A game belongs to exactly
+     one division/pool (or one bracket slot) — it's inherently 1:1, so nullable
+     tournament_division_id + tournament_pool_id on events is correct; a join table
+     would only earn its keep if a game could span divisions, which never happens.
+     Keep bracket games scoped via bracket_slots.event_id (not a column), as drafted.
+
+OQ2  STANDINGS-UNIT IDENTITY → KEEP THE 3-WAY XOR (team_id XOR opponent_id XOR name),
+     with three guards, because name-as-key is fragile (scraper variance: "NY
+     Jayhawks" vs "New York Jayhawks"):
+       (i)  normalize the name (trim/case/whitespace) before it's the identity;
+       (ii) UNIQUE(division, resolved_identity) so the same team can't appear twice
+            (once as name, once as opponent_id) and split its own standings;
+       (iii) a promotion path: a name-only row can later be reconciled to an
+            opponent_id/team_id without losing its games.
+     The standings engine groups by RESOLVED identity (id if present, else
+     normalized name). ESCALATION (don't build now, name it): if name-collisions
+     prove painful, the clean fix is a `scraped_teams` entity table (stable IDs for
+     external teams) rather than living on names forever — that keeps the curated
+     `opponents` table un-flooded (your stated worry) while giving every unit a
+     stable key. For v1 the guarded 3-way XOR is fine.
+
+OQ3  PUBLIC EXPOSURE → SECDEF get_public_tournament_standings(...) RPC (your lean),
+     strongly. It matches get_public_team_schedule/_records, bakes in published-only
+     + cap-applied + column-projected + PII-stripped, and keeps the tables locked
+     (revoke anon/public, grant the RPC). Do NOT open anon table SELECT — that
+     exposes raw shape and is harder to evolve safely.
+
+OQ4  championship_scenarios → NO CHANGE in this migration (your lean). Direction:
+     once the D-FV5 deterministic predictor ships, DEPRECATE or DEMOTE these to pure
+     NARRATIVE COLOR — do NOT keep them as an override of qualification math. A
+     hand-authored "what has to happen" that can contradict the exact predictor is
+     the same two-sources-of-truth risk D-FV5 exists to kill. Editorial value, if
+     any, lives as separated narrative, never as a math override.
+
+OQ5  advance_count default = 2 → FINE as the column default, WITH a guard: the D-FV5
+     predictor must treat advance_count as REQUIRED-CONFIRMED per division before it
+     publishes a qualification % or clinch/elim claim. A silent default of 2 driving
+     odds for a division that actually advances top-4 would be confidently wrong —
+     exactly the embarrassment D-FV5 avoids. If unconfirmed: show standings, label
+     advancement "TBD," withhold the odds. The default is a schema convenience, not
+     a license to predict on an unconfirmed rule.
+
+→ With these, the D-FV3 schema is ready for owner-apply (owner moves the draft from
+  docs/ to supabase/migrations/ with the prod prefix; agents do not MCP-apply).
+
+--------------------------------------------------------------------------------
+2. D-FV2 VERIFIED-GUARDIAN CONTRACT — RATIFIED (the 4 points + nuances)
+--------------------------------------------------------------------------------
+(a) isVerifiedGuardian SOURCE OF TRUTH → CONFIRMED: the existing claim_guardian
+    (guardian.user_id linked + player_guardians row), checked against the PROGRAM
+    ROSTER — no new verification system (AP#42). Nuance: require a confirmed
+    relationship (is_primary or an equivalent confirmed flag), and it's only
+    resolvable for teams WE RUN (Legacy, St Patrick) — that's where roster authority
+    exists. Off-platform scraped teams have no authority → no child link (your
+    boundary, confirmed).
+
+(b) family_subscriptions (TIER 1) → CONFIRMED SEPARATE from the Tier-2 child link.
+    Shape: org-agnostic (user_id + team identity, using the SAME 3-way identity model
+    as OQ2 so you can follow any scraped team), open claim, PUBLIC data + team-level
+    push only. Hard property: a Tier-1 subscription ALONE can expose ZERO child data.
+    Following a team ≠ claiming a child.
+
+(c) CHILD-LINK ROW (TIER 2) → CONFIRMED: REFERENCE/ENFORCE, not parallel (AP#42).
+    The child-link FKs to the verified player_guardians relationship, so it is
+    UN-CREATABLE without the verified link — guardianship is enforced STRUCTURALLY at
+    the DB, not just in app code. Critical nuance on lapse:
+      - GUARDIANSHIP is DURABLE (the verified relationship doesn't expire) → the
+        child-link row persists.
+      - ENTITLEMENT is CURRENT (a subscription can lapse) → ACCESS to the paid child
+        layer (film, per-child targeting) is the LIVE AND-gate evaluated at READ
+        time, not a one-time check at row creation. A lapsed subscription SUSPENDS
+        access even though the verified child-link row remains.
+    So: child-link persists; access = canAccessChildData() evaluated live.
+
+(d) ENTITLEMENT REPRESENTATION (D-FV9) → CONFIRMED: a SEPARATE entitlement state,
+    Stripe-derived (active/past_due/canceled), read INDEPENDENTLY by the AND-gate —
+    never the same column/flag as the guardian check. Money-path discipline: the
+    entitlement derived from Stripe webhooks must be IDEMPOTENT (webhook retries
+    don't double-grant), derived/read the way the credit ledger derives balance, and
+    the entitlement logic gets the architect money-path review BEFORE billing merges.
+
+→ This contract is ratified, so CC may now DRAFT (not apply) the Tier-1
+  family_subscriptions + Tier-2 verified-child-link + entitlement-representation
+  schema as a design-review artifact, expressing (a)–(d) — guardianship and
+  entitlement as physically separate, the child-link FK-enforced. I want to review
+  that the enforcement is structural, not just app-level. FILM tables stay HELD for
+  the §C posture (multi-minor minimization, jersey-OCR only / no facial recognition,
+  sub-processor DPA + consent, retention/deletion).
+
+--------------------------------------------------------------------------------
+3. MOMENTUM — DRAFT D-FV4 NOW: YES
+--------------------------------------------------------------------------------
+Green light to draft the D-FV4 standings engine now, in parallel. It's a pure
+function reading circuit_rules, fixture-tested, depending only on the schema SHAPE
+(now stable) — not its application. Writing it against the shape is the best way to
+validate the shape (it'll surface any gap before apply). Review schema + engine
+together. No money/child-data/prod touched.
+
+--------------------------------------------------------------------------------
+4. SEQUENCE (ratified, lightly tightened)
+--------------------------------------------------------------------------------
+  STEP 1  D-FV3 schema → owner applies (after OQ answers, above) ‖ CC drafts D-FV4
+          engine NOW + the SECDEF public standings RPC. [unblocked]
+  STEP 2  D-FV5 deterministic predictor (+ advance_count-confirmed guard, OQ5) + LLM
+          narration ‖ D-FV6 team-level subscriber push (schedule/score/final).
+  STEP 3  TIER-1 family_subscriptions (draft now, per §2b) → TIER-2 verified child
+          link + entitlement gate (schema draft now per §2; APPLY + billing held for
+          the money-path review + Frank's pricing/flip).
+  TRACK 2 Film — held for §C posture; not a line of upload code until then.
+
+--------------------------------------------------------------------------------
+5. HELD (standing)
+--------------------------------------------------------------------------------
+- Schema → design-review before apply; owner applies; no agent MCP-apply.
+- Paid entitlement + Stripe → architect money-path review before any billing merges;
+  Frank sets pricing + flips; live keys ≠ live billing.
+- Child-data/film → held for §B verified guardian + §C film posture.
+- No *_LIVE flips by agents.
+
+--------------------------------------------------------------------------------
+6. RENDER
+--------------------------------------------------------------------------------
+Delivering the PUBLIC v1 hub render alongside this (team tracking + rule-driven
+division standings + deterministic AI-narrated odds + push) — the safe, demoable
+surface, no child-data gap. The verified family-profile/film render follows the §2
+schema lock so the claim flow is rendered verification-first.
+
+FILING: aster-sports/docs + _platform-wide. Cross-refs: #1103, #131, the family-hub
+ruling, claim_guardian_by_email (the verification primitive).
+================================================================================
+END — OQs answered (schema apply-ready), D-FV2 contract ratified w/ structural
+enforcement + lapse rule, D-FV4 + Tier-1/2 schema cleared to DRAFT, film held.
+================================================================================

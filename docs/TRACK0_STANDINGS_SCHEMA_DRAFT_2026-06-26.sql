@@ -88,9 +88,16 @@ CREATE TABLE IF NOT EXISTS public.tournament_division_teams (
   seed                    integer,                                                 -- pool seed once standings settle
   sort_order              integer NOT NULL DEFAULT 0,
   created_at              timestamptz NOT NULL DEFAULT now(),
+  -- Architect OQ2 guard: identity = id-if-present, else normalized name. Generated
+  -- so a name-only row and an opponent_id row can't split one team's standings, and
+  -- so PROMOTION (later setting team_id/opponent_id on a name-only row) regenerates
+  -- the key while the row's PK is unchanged — its games (FK to this id) are preserved.
+  resolved_key            text GENERATED ALWAYS AS (
+                            COALESCE(team_id::text, opponent_id::text, lower(btrim(display_name)))
+                          ) STORED,
   -- at most ONE local identity; both NULL = external-by-name only:
   CONSTRAINT tdt_one_identity CHECK (num_nonnulls(team_id, opponent_id) <= 1),
-  CONSTRAINT tournament_division_teams_unique UNIQUE (tournament_division_id, display_name)
+  CONSTRAINT tournament_division_teams_resolved_unique UNIQUE (tournament_division_id, resolved_key)
 );
 CREATE INDEX IF NOT EXISTS idx_tdt_division
   ON public.tournament_division_teams (tournament_division_id, sort_order);
@@ -239,4 +246,48 @@ COMMIT;
 -- OQ5  advance_count default = 2 (top-2 advance) matches Frank's directive; some
 --      divisions advance top-1 or a wildcard. It's a per-division column so it's
 --      configurable — confirm 2 is the right default.
+-- ============================================================================
+
+-- ============================================================================
+-- RATIFICATION UPDATE 2026-06-26 (architect) -- the OQs above are now ANSWERED.
+-- (ARCHITECT_RATIFICATION_AAU_FAMILY_2026-06-26.txt section 1)
+-- ============================================================================
+-- OQ1 RESOLVED: columns on events (1:1). Bracket games scoped via
+--      bracket_slots.event_id, not a column. (As drafted, section 6.)
+-- OQ2 RESOLVED: keep the 3-way XOR WITH the three guards, now APPLIED in the
+--      tournament_division_teams table above: (i) name normalized via
+--      lower(btrim(...)) inside the generated resolved_key; (ii)
+--      UNIQUE(division, resolved_key) so a team can't appear twice and split its
+--      standings; (iii) promotion path preserved (PK stable on promote; games
+--      keyed to the row id survive). Escalation NAMED, not built: a scraped_teams
+--      entity table for stable external ids if names get messy. Engine groups by
+--      resolved identity (computeStandings.js).
+-- OQ3 RESOLVED: SECDEF get_public_tournament_standings(...) RPC (drafted with the
+--      engine); tables stay locked, no anon SELECT. "Cap-applied" lives in the
+--      rules the RPC returns; the JS engine APPLIES the cap so the standings table
+--      and the D-FV5 predictor compute from ONE source (AP #63). The RPC returns
+--      raw published games + teams + rules; it does NOT re-rank in SQL.
+-- OQ4 RESOLVED: no change here. Direction: once D-FV5 ships, deprecate / demote
+--      championship_scenarios to pure narrative color, never a math override.
+-- OQ5 RESOLVED: advance_count default 2 is fine; the PREDICTOR (engine) treats it
+--      as required-confirmed per division before publishing odds -- unconfirmed ->
+--      show standings, advancement "TBD", withhold odds (advanceCount=null ->
+--      advances=null in computeStandings).
+--
+-- NEW -- OQ6 (surfaced by writing the engine against this shape): full division
+--      standings need EVERY game in the division, including opponent-vs-opponent
+--      games. Those have no events row (we aren't in them) and no game_results row
+--      (it is our-team-centric: team_id + opponent). So the events-scoped link in
+--      section 6 covers OUR games only; the rest of the scraped division board has
+--      nowhere to land. The engine already takes a generic games array (aId/bId/
+--      scores), so the gap is purely STORAGE. Options:
+--        (a) a division_games table keyed to the standings unit
+--            (tournament_division_id, home_div_team_id, away_div_team_id, scores,
+--            status, external_game_id) holding ALL division games; our games mirror
+--            into it (or it becomes the single game source for standings).
+--        (b) game_results for our games + a thin external_division_games table for
+--            opponent-vs-opponent; engine unions them.
+--      CC lean: (a) -- one games source per division keyed to the standings unit is
+--      the cleanest engine/predictor input, and the scraper already pulls the whole
+--      division board. Flagged for the architect; NOT built in this draft.
 -- ============================================================================
