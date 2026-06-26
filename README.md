@@ -12,10 +12,12 @@ Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, 
 
 | Layer | Tech |
 |---|---|
-| Frontend | React 18 · Tailwind · Vite |
+| Frontend | React 19 · Tailwind CSS 4 · Vite 8 |
 | Auth + DB | Supabase (Postgres + Auth + Realtime + RLS + Storage) |
 | Hosting | Vercel (auto-deploy from `main`) |
 | Email | Resend (via Supabase Edge Functions) |
+
+> Hosting note: Vercel today; migrates to **Railway later** (platform charter register item A — a deploy-platform swap only, the Supabase backend is unchanged; sequenced last, after astersports-web + St Patrick prove the pattern, never mid pilot-onboarding).
 
 ## Quickstart
 
@@ -67,7 +69,7 @@ git log --oneline HEAD..origin/main   # behind?
 | Components | `src/components/` (≤150 LOC each) |
 | Hooks | `src/hooks/` |
 | Pages | `src/pages/` |
-| Migrations | `supabase/migrations/` (~171 migration files / 179 registered — consult the directory) |
+| Migrations | `supabase/migrations/` (275 migration files as of 2026-06 — consult the directory for the canonical count) |
 | Edge functions | `supabase/functions/` |
 | Historical / superseded docs | `docs/archive/` |
 
