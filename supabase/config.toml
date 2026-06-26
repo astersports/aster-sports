@@ -80,6 +80,13 @@ verify_jwt = false
 [functions.aau-ingest-tournament]
 verify_jwt = false
 
+# AAU hub Screen 01 — PUBLIC self-serve paste-to-track. No caller secret: this IS the
+# public surface (a parent pastes a TourneyMachine link). It reads ingest_secret
+# server-side and invokes aau-ingest-tournament. verify_jwt false so anon can call it
+# (AP #31); abuse controls (host allowlist, rate cap, dedup) live in the function body.
+[functions.aau-submit-tournament]
+verify_jwt = false
+
 # AAU hub build spec §3.3 — batch geocoder for the venues table. Shared-secret auth
 # via app_secrets.ingest_secret (Bearer); reads app_secrets.google_geocoding_key.
 # verify_jwt false so the gateway lets the shared-secret request through (AP #31).
