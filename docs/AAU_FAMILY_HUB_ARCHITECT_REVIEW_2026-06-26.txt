@@ -21,7 +21,7 @@ Two products, one backbone (Frank, verbatim intent 2026-06-26):
 
 Pilot family (Frank's own kids, operator-directed, consent not at issue):
   • Charlie — #5, Legacy Hoopers, Girls 5th (→ 6th in fall). [GROUNDED: real team in data]
-  • Rowan  — #21, Chris Ward Green, Boys 8th (plays up into 9th; → 9th next year).
+  • Rowan  — #21, Chris Ward Green, Boys 8th (SPRING = 8TH ONLY per operator; → 9th next yr).
              [GROUNDED: real team in data]
 Cross-program is the whole point: Charlie (Legacy) and Rowan (Chris Ward) are DIFFERENT
 programs; the hub unifies them under one parent.
@@ -106,12 +106,14 @@ Both kids' real teams resolve in the ingested data, so the hub CAN be live (not 
     Legacy tRPC (Source A) adds: Chase 4-0 CHAMPIONS, Rumble CT 3-2 FINALISTS,
       Girls Nationals 3-1 FINAL FOUR — placements the backbone lacks.
 
-  ROWAN → display_name "Chris Ward Basketball Green", divisions "Boys - 8th" + "Boys - 9th"
-    (his team plays up). Competitive at 8th (Hoop Festival 2-1 +27; Empire State 2-1 +13),
-    tougher at 9th. Rowan exists ONLY in Source B — the legacy tRPC has no Chris Ward.
+  ROWAN → display_name "Chris Ward Basketball Green", division "Boys - 8th"
+    (SPRING = 8TH ONLY per operator 2026-06-26 — the same display name also appears in
+    "Boys - 9th" divisions, but that is NOT Rowan's spring team; scope to 8th). His real
+    8th-grade spring: Chase 2-1, Metro 0-3, Rumble NY 1-2, Empire State 2-1 (+13), Hoop
+    Festival 2-1 (+27). Rowan exists ONLY in Source B — the legacy tRPC has no Chris Ward.
     NOTE: operator said "Rowan's team won the Jun 15-16 tournament"; the backbone shows
-    2-1 pool at the Jun 14-15 Hoop Festival Boys-8th. Either a specific bracket win not
-    captured, or a different event. FLAG for operator: which game/bracket = the title?
+    2-1 pool at the Jun 14-15 Hoop Festival Boys-8th. A bracket win there isn't captured
+    in division_games yet. FLAG for operator: which game/bracket = the title? (D-HUB5)
 
 Naming note: Charlie's club is "Legacy Hoopers" in TM but the hub hero/brand says
 "Aster AAU 11U Girls." The org's internal team names ("11U Girls") differ from the TM
