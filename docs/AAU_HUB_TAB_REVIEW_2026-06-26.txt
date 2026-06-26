@@ -39,8 +39,8 @@ DECISION NEEDED (D-HUB1): which source is the lens, per concept?
 ================================================================================
 
 MY KIDS  [the lens — correct shape, mixed data]
-  Source: curated pilotKids.ts (Charlie + Rowan) + (uncommitted) the new
-    get_public_team_season RPC.
+  Source: curated pilotKids.ts (Charlie + Rowan) + (held, not deployed) the new
+    get_public_team_season RPC (migration applied to prod; frontend on the branch).
   Real?  The kid identities are real. The "ZG NY Hoop Festival · Pool Play" card is
     CURATED placeholder. "Charlie's Film" reels are FABRICATED (see Film).
   Fix: this is where the kid is selected; it should drive every other tab. The real

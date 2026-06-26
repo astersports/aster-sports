@@ -1,4 +1,5 @@
--- AAU family hub: a team's spring season across tournaments — powers the real-data
+-- AAU family hub: a team's season across the loaded public tournaments (no date
+-- filter — returns every non-archived public tournament the team is in) — powers the real-data
 -- kid view (each kid → their team's per-tournament record + the division to drill
 -- into). AP #21 mirror of the prod-applied migration. Public, org_is_public_listed-
 -- gated. p_team_name is an ILIKE; p_division_like narrows by division (e.g. '%Girls%'
