@@ -80,6 +80,12 @@ verify_jwt = false
 [functions.aau-ingest-tournament]
 verify_jwt = false
 
+# AAU hub build spec §3.3 — batch geocoder for the venues table. Shared-secret auth
+# via app_secrets.ingest_secret (Bearer); reads app_secrets.google_geocoding_key.
+# verify_jwt false so the gateway lets the shared-secret request through (AP #31).
+[functions.geocode-venues]
+verify_jwt = false
+
 # AAU hub build spec step 2 — our-team tournament scraper → ingest-game-results.
 # EVERY path (discover/preview/ingest) authenticates with the ingest_secret in
 # the function body, so verify_jwt must be false (AP #31).
