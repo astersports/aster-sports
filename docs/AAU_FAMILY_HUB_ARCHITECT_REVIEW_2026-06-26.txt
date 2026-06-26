@@ -1,0 +1,236 @@
+AAU FAMILY HUB — FULL BUILD STATE + ARCHITECT DECISION REVIEW
+Date: 2026-06-26 · Author: Claude Code (build lane) · For: Architect, relayed by Frank
+Status: comprehensive review. Standings backbone + kid-view pilot are LIVE; the kid-lens
+        reconciliation + film are the open work. Decisions D-HUB1..D-HUB5 await ratification.
+Read order: §1 model → §2 shipped → §3 the core data problem → §5 per-tab → §7 decisions.
+Companion (superset of): docs/AAU_HUB_TAB_REVIEW_2026-06-26.txt (the per-tab pass).
+Grounding: [GROUNDED] = verified against prod (file:line / query / live deploy). 2026-06-26.
+
+================================================================================
+1. THE MODEL (operator-locked)
+================================================================================
+Two products, one backbone (Frank, verbatim intent 2026-06-26):
+  • THE APP — astersports.app (aster-sports repo, Vercel) — program management +
+    registration, per TENANT. Program-level.
+  • THE WEB — astersports.io/aau (astersports-web repo, Railway) — the cross-program
+    PARENT HUB. The organizing primitive is the FAMILY, not the org/team. One parent →
+    every kid → every game → everywhere they play, INCLUDING programs we don't run.
+  • ONE BACKBONE — the aster-sports Supabase (project vrwwpsbfbnveawqwbdmj). The .io/aau
+    hub is a THIN PUBLIC CONSUMER reading anon, org-gated public RPCs (the same pattern
+    the legacy-hoopers site uses). No data clone, no second source of truth.
+
+Pilot family (Frank's own kids, operator-directed, consent not at issue):
+  • Charlie — #5, Legacy Hoopers, Girls 5th (→ 6th in fall). [GROUNDED: real team in data]
+  • Rowan  — #21, Chris Ward Green, Boys 8th (plays up into 9th; → 9th next year).
+             [GROUNDED: real team in data]
+Cross-program is the whole point: Charlie (Legacy) and Rowan (Chris Ward) are DIFFERENT
+programs; the hub unifies them under one parent.
+
+Child-safety invariant (load-bearing, from the architect's prior ruling):
+  canAccessChildData = hasPaidEntitlement AND isVerifiedGuardian — evaluated live.
+  A paywall is NOT a child-safety gate. PUBLIC = the tournament's factual state
+  (standings/scores/brackets). PRIVATE = anything tied to a specific child's identity
+  (a child's name on a card, film, notification targeting). All child-data/trust tables
+  ship DARK today.
+
+================================================================================
+2. WHAT'S SHIPPED + LIVE  [GROUNDED against main + the live deploys]
+================================================================================
+Backbone (aster-sports):
+  • #1103 — standings substrate (tournament_divisions / _division_teams / _pools /
+    pool_teams / division_games, external-vs-external, trigger-enforced) + the rule-driven
+    standings engine (computeStandings + circuit tiebreakers + deterministic predictBracket;
+    odds EXACT via enumeration, AI only narrates) + public RPCs (get_public_tournament_
+    directory, get_public_tournament_standings) + the generalized TourneyMachine ingest
+    (aau-ingest-tournament). MERGED + deployed.
+  • #1102 — the our-team scraper (aau-scrape-tournament → game_results via ingest-game-
+    results). Security-hardened (every path secret-gated; SSRF host guard; org-ownership
+    check; no alias default — 4 review findings closed; verified on the live deploy).
+    MERGED + deployed DARK (no cron).
+  • #1104 — this review set + get_public_team_season RPC mirror. MERGED.
+
+Hub UI (astersports-web, Railway):
+  • #131 — the Standings hub on astersports.io/aau (directory → division → live standings +
+    bracket odds). MERGED + deployed.
+  • #132 — the "My Kids" kid-view PILOT (Charlie + Rowan cards, curated). MERGED + deployed.
+
+Ingested spring season [GROUNDED query 2026-06-26]: 9 tournaments with real data —
+256 divisions, 2,214 teams, 3,207 games. Circuits stamped: 7 Zero Gravity (cap +20 via
+circuit_rules), 1 WPCYO Spring League (League Play, no cap), 1 BBallshootout (no cap).
+The engine applies the per-game ±20 cap correctly (operator-confirmed rule:
+"20 points per game on the +/- for playoff brackets; metrics/averages uncapped").
+
+HELD (committed to the astersports-web branch, NOT deployed): the real-data My Kids view
+(get_public_team_season + a per-kid season list that drills into live standings) — held
+because it surfaces the §3 conflict for Charlie. See §7 D-HUB1.
+
+================================================================================
+3. THE CORE ARCHITECTURAL PROBLEM — TWO DATA SOURCES, ONE CONCEPT (AP #63)
+================================================================================
+The .io/aau hub today runs on TWO data systems that don't reconcile:
+
+  SOURCE A — the LEGACY tRPC/scraper (astersports-web's own server + scraper.ts).
+    Scope: ONE team ("Aster AAU 11U Girls" = Charlie's Legacy 11U Girls team).
+    Powers: Live Scores, History, Records, the hero stat bar, Film hero, Mission, Locations.
+    Quality: RICH + REAL — full game log, PLACEMENTS (Champions/Finalists/Final Four),
+    PPG/opponent-PPG, streaks. This is the better data for the team it covers.
+
+  SOURCE B — the NEW cross-program BACKBONE (aster-sports Supabase public RPCs).
+    Scope: ALL programs/tournaments ingested (incl. Rowan's Chris Ward; the 9 tournaments).
+    Powers: the Standings tab + (held) the real-data My Kids view.
+    Quality: REAL but THINNER — division_games is external-vs-external game results only;
+    it has NO bracket/placement notion and NO box-score/PPG. It is the ONLY source that
+    has Rowan (cross-program) and the full cross-program standings.
+
+They disagree. Example [GROUNDED]:
+    ZG Chase for the Chain NY, Charlie's Legacy Girls-5th:
+      Source A (tRPC/History tab): 4-0, CHAMPIONS.
+      Source B (get_public_team_season): 3-0.
+    The gap is the bracket/championship game + the placement badge, which the legacy
+    scraper captured (game_results) but the backbone's division_games does not yet model.
+
+This is AP #63 (same concept, divergent source/scope) — the platform's dominant bug
+pattern — now visible to the operator on screen. It is the central thing to resolve.
+
+================================================================================
+4. REAL-DATA GROUNDING — the kids ARE in the backbone  [GROUNDED query 2026-06-26]
+================================================================================
+Both kids' real teams resolve in the ingested data, so the hub CAN be live (not curated):
+
+  CHARLIE → display_name "Legacy Hoopers", division "Girls - 5th".
+    Backbone get_public_team_season (per-game-capped):
+      Chase for the Chain (Apr 12):  3-0  (+47)
+      NY Metro Showdown   (Apr 19):  1-2  (-25)
+      Rumble for the Ring CT (May 17): 2-1 (-6)
+      NY Hoop Festival    (Jun 14):  1-2  (+1)
+    Legacy tRPC (Source A) adds: Chase 4-0 CHAMPIONS, Rumble CT 3-2 FINALISTS,
+      Girls Nationals 3-1 FINAL FOUR — placements the backbone lacks.
+
+  ROWAN → display_name "Chris Ward Basketball Green", divisions "Boys - 8th" + "Boys - 9th"
+    (his team plays up). Competitive at 8th (Hoop Festival 2-1 +27; Empire State 2-1 +13),
+    tougher at 9th. Rowan exists ONLY in Source B — the legacy tRPC has no Chris Ward.
+    NOTE: operator said "Rowan's team won the Jun 15-16 tournament"; the backbone shows
+    2-1 pool at the Jun 14-15 Hoop Festival Boys-8th. Either a specific bracket win not
+    captured, or a different event. FLAG for operator: which game/bracket = the title?
+
+Naming note: Charlie's club is "Legacy Hoopers" in TM but the hub hero/brand says
+"Aster AAU 11U Girls." The org's internal team names ("11U Girls") differ from the TM
+display name ("Legacy Hoopers"), which is also WHY the backbone treats Legacy as an
+EXTERNAL team (it isn't in the org's `teams` name set) and thus HAS Charlie's games in
+division_games. Good for the hub; worth noting for the source reconciliation.
+
+================================================================================
+5. PER-TAB REVIEW (data source · real vs fabricated · the fix)
+================================================================================
+MY KIDS  — the lens. Kid identities real; curated tournament card + film today. The held
+  real-data version replaces the card with the §4 records and drills into live standings.
+LIVE SCORES — Source A, real, single-team; Rowan absent. Needs kid→team scoping + Rowan
+  (only Source B has him).
+STANDINGS — Source B, real, cross-program, CORRECT (cap-20 on ZG). Generic browse today;
+  easy win = selecting a kid auto-opens THEIR division + highlights their team (focusKey
+  hook already added in the held branch).
+HISTORY — Source A, real, single-team, the RICHEST surface (placements + records). Ground
+  truth for Charlie; beats Source B. Rowan absent.
+RECORDS — Source A, real, hardcoded to one team server-side (PPG/streak/"+31 vs Showtime
+  Elite"). Needs a teamId param to scope; Rowan needs Source-B-derived stats (thinner).
+FILM — BROKEN + FABRICATED (top priority, no fork needed to fix the fabrication):
+  • "Birdie Buckets" featured video = a Google-Drive link that DOESN'T stream on iOS.
+  • The per-kid reels say "vs Castle / vs Teal / vs New Paltz" — INVENTED opponents Charlie
+    never played. The AI play-by-play text is from real video analysis, but stapled to
+    fake matchups. This is the only fabrication in the hub and it undercuts the product's
+    "exact, not estimated" credibility (the standings provenance line).
+LOCATIONS — hardcoded 3 Aster/Legacy gyms; program-level; Rowan's Chris Ward venues differ.
+MISSION — hardcoded "Aster AAU" mission; naming drift vs the kid's real program.
+
+================================================================================
+6. THE KID-LENS (operator's stated direction)
+================================================================================
+Operator: "all the sections should be child-specific unless we select a different team or
+section." Today only My Kids knows the selected kid; the hero + every other tab show the
+one hardcoded team. To deliver the lens we need a SINGLE selected-child context at the hub
+root that the sections consume (no parallel system — My Kids is the only selection point).
+Each section then reads the kid's team/division/program. This is straightforward once
+D-HUB1 (which SOURCE answers per section, per kid) is decided.
+
+================================================================================
+7. DECISIONS FOR THE ARCHITECT  (each: REQUEST · EVIDENCE · OPTIONS · CC LEAN)
+================================================================================
+D-HUB1 — SOURCE OF TRUTH per concept (the load-bearing fork).
+  REQUEST: which source answers each tab, given Source A is richer for Charlie's team and
+    Source B is the only cross-program source (Rowan)?
+  EVIDENCE: §3 (4-0 vs 3-0), §4 (Rowan only in B).
+  OPTIONS:
+    (1) Per-kid routing NOW: Charlie's content tabs read the rich Source A; Rowan's read
+        Source B; Standings auto-scopes either way. Ships the lens fast; two code paths.
+    (2) Backbone-only: make Source B the single source for everyone; requires enriching B
+        with bracket/placement + box-score (see D-HUB3) before it matches A. Cleaner end
+        state; more build before Charlie's tabs look as good as today.
+    (3) Status quo (team site + separate Standings): no kid lens. Rejected — contradicts
+        the model.
+  CC LEAN: (1) now → (2) as the convergence target. Route per kid this week so the lens
+    ships on real data; in parallel enrich the backbone (D-HUB3) until it can be the one
+    source and the legacy scraper retires. Avoids a long dark period and AP #63 churn.
+
+D-HUB2 — FILM HOSTING + the fabrication fix.
+  REQUEST: (a) remove the fabricated film NOW (no fork); (b) where does .io serve real
+    per-kid clips?
+  EVIDENCE: §5 Film. Clips currently live in the legacy-hoopers app's storage; the .io
+    featured video is an unplayable Drive link.
+  OPTIONS for (b): (i) Supabase Storage on the backbone (one home, public-read for public
+    clips, gated for child-private per the invariant); (ii) keep clips in the per-program
+    app + serve via signed URL; (iii) defer real video, ship AI-breakdown cards only.
+  CC LEAN: do (a) immediately regardless. For (b): (i) Supabase Storage on the backbone —
+    one source, fits the public/private gate; film is Track 2 (privacy posture first per
+    the prior ruling), so (iii) AI-breakdown-only is the honest interim.
+
+D-HUB3 — BACKBONE ENRICHMENT (the real fix for 4-0 vs 3-0).
+  REQUEST: capture bracket results + placement (Champions/Finalist/…) and, eventually,
+    box-score/PPG in the backbone so Source B can match Source A.
+  EVIDENCE: §3. division_games skips bracket placeholders + has no placement/box-score.
+  OPTIONS: (1) extend the ingest to record bracket_slots + a final placement per
+    division-team; (2) also ingest box scores where TM exposes them (PPG).
+  CC LEAN: (1) first (placement is what's visibly wrong); (2) later (PPG is nice-to-have).
+
+D-HUB4 — NAMING / BRAND per program.
+  REQUEST: the hub says "Aster AAU 11U Girls" everywhere; the lens should show the kid's
+    real program ("Legacy Hoopers", "Chris Ward"). Pick the per-program brand source.
+  CC LEAN: drive hero + section brand from the selected kid's program; "Aster AAU" was the
+    single-team artifact, not the family-hub brand.
+
+D-HUB5 — ROWAN'S "CHAMPIONS" (data integrity).
+  REQUEST: operator says Rowan won the Jun 15-16 tournament; the backbone shows 2-1 pool.
+    Which game/bracket is the title, or is it a different event? (Don't render "Champions"
+    until grounded — the no-fabrication rule.)
+  CC LEAN: confirm with operator; surface real record until placement is captured (D-HUB3).
+
+================================================================================
+8. HELD ITEMS (unchanged from the prior ruling — listed for completeness)
+================================================================================
+  • Money path — Stripe/entitlement; operator sets pricing/flips. DARK.
+  • Film privacy posture — minors' video is the most sensitive surface; sub-processor +
+    consent designed BEFORE any real per-child frames flow. Track 2.
+  • Child-data trust schema — family_subscriptions / family_children / family_entitlements
+    + is_entitled() / can_access_child() (live-guardian gate) exist but ship DARK pending
+    the verified-guardian + entitlement contracts.
+
+================================================================================
+9. RECOMMENDED BUILD SEQUENCE (CC lean; architect ratifies)
+================================================================================
+  1. De-fabricate Film NOW (D-HUB2a) — no fork; remove invented opponents + dead video.
+  2. Thread the selected-child context (My Kids → hero + tabs) — the lens.
+  3. Per-kid source routing (D-HUB1 opt 1) — ship the lens on real data this week.
+  4. Backbone enrichment (D-HUB3) — bracket/placement, then PPG → converge to one source.
+  5. Per-program brand (D-HUB4) + film hosting (D-HUB2b) as they unblock.
+  Held (Track 2 / money): unchanged.
+
+================================================================================
+10. OPEN QUESTIONS FOR THE ARCHITECT
+================================================================================
+  Q1 (D-HUB1): per-kid routing now, or wait for a single enriched backbone?
+  Q2 (D-HUB2): film hosting — Supabase Storage on the backbone, or per-app + signed URL,
+     or AI-breakdown-only interim?
+  Q3 (D-HUB3): is bracket/placement capture in-scope now (it's what's visibly wrong), or
+     is the record (W-L) enough for v1?
+  Q4 (D-HUB4): confirm the family-hub brand follows the kid's program (drop "Aster AAU"
+     as the hub-wide brand)?
+  Q5 (D-HUB5): Rowan's "Champions" — which game/bracket, or different event?
