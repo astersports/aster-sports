@@ -1,0 +1,104 @@
+ARCHITECT DECISION REQUEST — cross-org super-admin (aster-sports)
+=================================================================
+From: Claude Code.  Date: 2026-06-25.  Relayed by: Frank.
+Status: DESIGN-FIRST (operator-directed). No code until the approach is ratified.
+Format: §11.8 rule 6 — request / context+evidence / options+requirements / labeled lean.
+
+-----------------------------------------------------------------------------------------
+REQUEST
+-----------------------------------------------------------------------------------------
+Decide how to grant frank@astersports.co a TRUE cross-org super-admin in aster-sports —
+an identity that can see and manage EVERY org (tenant), not just one — and how that
+interacts with the org-scoped RLS spine. This is the platform-operator role above all
+tenants (the agency view across Legacy Hoopers, St Patrick's, future orgs).
+
+-----------------------------------------------------------------------------------------
+CONTEXT / EVIDENCE (grounded)
+-----------------------------------------------------------------------------------------
+1. RLS spine is ORG-SCOPED. `current_user_org_id()` (SECURITY DEFINER) returns a SINGLE
+   `organization_id` from `user_roles` for `auth.uid()` LIMIT 1
+   (supabase/migrations/002_skyfire_foundation.sql:60-79). Every org table's RLS scopes
+   to that one org. Membership lives in `user_roles` (no org_members table); CLAUDE.md §5
+   warns: never reference current_user_org_id() inside a user_roles policy (recursion, AP#1).
+
+2. A `super_admin` ROLE VALUE ALREADY EXISTS but is ORG-SCOPED. Many policies check
+   `ur.role IN ('admin','super_admin')` (e.g. 20260527102922_pr6a_event_coach_assignments.sql:43,
+   20260522074242_*briefing_feedback*.sql:47, 20260516090736_audit_*.sql:27). That grants
+   ELEVATED rights WITHIN whichever org the user_roles row names — it does NOT cross orgs.
+   So "super_admin" today ≠ "platform operator across all orgs."
+
+3. user_roles is multi-org capable. Migration #0 (2026-05-29, per CLAUDE.md §4 note) lets a
+   user hold multiple user_roles rows (multiple orgs). But current_user_org_id() still
+   collapses to LIMIT 1, and there is no org-switcher in the app today.
+
+4. frank@astersports.co is NOT a user in this project. The pilot admin is
+   admin@legacyhoopers.org (user_id 1e06a3d4-…, org e3e95e21-…). The studio
+   (astersports-web) keeps its own separate identity (google:112712739941369414724) +
+   its own platform_admins table — the two apps do NOT share an identity store.
+
+5. Precedent in the sibling repo: astersports-web uses a dedicated `platform_admins` table
+   + a `superAdminProcedure` that checks it, decoupled from org membership. That pattern
+   (a platform-level allowlist OR'd into authorization) is the closest working model.
+
+-----------------------------------------------------------------------------------------
+OPTIONS
+-----------------------------------------------------------------------------------------
+OPTION A — Platform super-admin predicate OR'd into RLS (the "real" cross-org role).
+  WHAT: add `is_platform_super_admin()` (SECURITY DEFINER, reads a new `platform_admins`
+        allowlist table keyed by user_id; STABLE; search_path=public). OR it into the
+        USING (and WITH CHECK) of every org-scoped table policy:
+        `(organization_id = current_user_org_id() OR is_platform_super_admin())`.
+  REQUIREMENTS:
+   - New table `platform_admins(user_id uuid pk, created_at)`, RLS-locked, service-role/
+     SECDEF read only. REVOKE EXECUTE FROM PUBLIC *and* anon on the function (AP#23/#57).
+   - Touch ~39 org-scoped tables' policies (CLAUDE.md §4) — large, security-critical sweep.
+     Every cmd='ALL' policy must keep an explicit WITH CHECK (AP#20).
+   - App layer: a cross-org switcher / "all orgs" surfaces (the UI to USE the access).
+   - get_advisors clean (auth_rls_initplan: wrap auth.uid() in subselect — §5).
+   - Cross-org isolation tests + an impersonation audit (CLAUDE.md §6) so a normal admin
+     can never trip the predicate.
+  RISK: high (broadest RLS change in the app's history; a fail-open here exposes every
+        tenant). But it is the only option that delivers genuine "see/manage ALL orgs."
+
+OPTION B — Multi-org membership (no new platform concept).
+  WHAT: add frank@astersports.co a `user_roles` row (role 'super_admin' or 'admin') for
+        EACH org, + build an org-switcher so current_user_org_id() can target each.
+  REQUIREMENTS: org-switcher UI + a way to set the "active org" current_user_org_id reads;
+        one user_roles row per org (manual on each new org onboard).
+  RISK: medium. No RLS rewrite. BUT it is not "see ALL at once" — it's "switch between
+        orgs you're explicitly a member of," and it doesn't scale cleanly (every new org
+        needs a membership row). Doesn't match the "platform operator above tenants" intent.
+
+OPTION C — Defer; rely on per-app admin + the studio's platform console.
+  WHAT: no cross-org role in aster-sports now. Frank administers each org as that org's
+        admin (Option B's manual rows only where needed); the agency/platform view stays
+        in astersports-web.
+  REQUIREMENTS: none (or just add frank as admin of the orgs he needs, ad hoc).
+  RISK: low. But it doesn't satisfy the stated goal; revisit when a 2nd+ org is live and
+        the cross-org operator view is actually needed day-to-day.
+
+-----------------------------------------------------------------------------------------
+CC LEAN (AP#39 — committed)
+-----------------------------------------------------------------------------------------
+**Option A, but sequence it behind a real need + a hardening gate.** A is the only option
+that is a genuine cross-org super-admin, and the `platform_admins`-allowlist + SECDEF-
+predicate shape is proven in the sibling repo. HOWEVER, it is the single largest RLS
+change in aster-sports and the blast radius is "every tenant's data," so it must NOT ship
+as a quick add: it needs the §6 cross-org isolation tests + impersonation audit + a
+get_advisors pass as ship gates, and an app surface that actually uses the access. Until a
+second org is live and the cross-org operator view is a daily need, the pragmatic interim
+is Option C (Frank as org admin where needed) — which is what the new admin-only "Back to
+Aster Sports" header link already assumes (it gates on the org `admin` role).
+
+Concretely: ratify A as the target design; build it when the 2nd org (St Patrick's) goes
+live, as its own reviewed migration arc with the isolation-test gate. The header back-link
+interim gate (role==='admin') swaps to is_platform_super_admin() when A lands.
+
+-----------------------------------------------------------------------------------------
+OPEN QUESTIONS FOR THE ARCHITECT
+-----------------------------------------------------------------------------------------
+Q1. Target = Option A (ratify now, build at 2nd-org cutover), or build A this session?
+Q2. Should aster-sports and astersports-web eventually SHARE one platform_admins identity,
+    or stay separate allowlists per app? (They have separate identity stores today.)
+Q3. For A, does "manage" include WRITES across orgs (full CRUD) or read-only cross-org
+    visibility first? (Read-only-first materially shrinks the WITH CHECK surface.)
