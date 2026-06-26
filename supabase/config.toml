@@ -80,3 +80,9 @@ verify_jwt = false
 [functions.aau-ingest-tournament]
 verify_jwt = false
 
+# AAU hub build spec step 2 — our-team tournament scraper → ingest-game-results.
+# EVERY path (discover/preview/ingest) authenticates with the ingest_secret in
+# the function body, so verify_jwt must be false (AP #31).
+[functions.aau-scrape-tournament]
+verify_jwt = false
+
