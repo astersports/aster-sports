@@ -1,0 +1,207 @@
+ARCHITECT DECISION REQUEST — Tournament-link ingestion hub ("one link → three sites")
+Date: 2026-06-26
+Lane: CC (Claude Code), for Architect ratification, relayed by Frank
+Format: per §11.8 rule 6 — each decision carries REQUEST / EVIDENCE / OPTIONS+REQUIREMENTS / CC LEAN.
+
+====================================================================
+0. OPERATOR VISION (Frank, 2026-06-26, verbatim intent)
+====================================================================
+"Aster Sports App will have Legacy as a tenant where the practice schedule is set;
+the game schedule will be set from the SE Tourney tournament site via a link. We coded
+the Legacy Hoopers website to pull from the link based on grade, gender, and team name
+to get real-time updates. We need ONE location to add the tournament weblink, which then
+updates the AAU website, the Sports app, and the Legacy Hoopers website (when Legacy is
+the tenant). Dynamic and modern is the goal. We can use the AAU Basketball page as the
+main hub to upload the links that are distributed out."
+
+Restated as a target: a single operator entry point for a tournament link → the platform
+ingests that tournament's schedule + live scores → all three public surfaces (AAU site,
+Aster Sports app, Legacy Hoopers site) render the same data, kept current automatically.
+
+====================================================================
+1. VERIFIED CURRENT STATE (ground truth — file:line / live query)
+====================================================================
+All three surfaces were read this session; the platform DB was queried live
+(project vrwwpsbfbnveawqwbdmj). [GROUNDED] unless tagged [VERIFY].
+
+1.1 PLATFORM (aster-sports) — already models most of this
+- tournaments.tourney_url (text) EXISTS. Live query: 8 tournaments for org Legacy
+  Hoopers (e3e95e21-…); tourney_url is NULL on 7, set on 1 ("WPCYO Spring League 2026"
+  = https://setourney.app.link/0zodCbVw02b). So the "location to add the link" already
+  exists as a field; it is metadata only (nothing reads it to fetch).
+- Admin paste-import is SHIPPED: /admin/import-schedule (ImportSchedulePage.jsx;
+  useImportSchedule.js) → edge fn parse-tournament-schedule → events. The operator
+  PASTES TourneyMachine text; Claude extracts rows mapped to real teams (section header
+  "4th grade - 10u black" → "10U Black", etc.); preview/dedup/commit into events.
+- Scores writer SHIPPED but UNWIRED: edge fn ingest-game-results (PR #1094, merged HELD).
+  Accepts {org_id, games[]}; upserts game_results idempotently on (org_id,
+  external_game_id); opponents match-or-create; events match-ONLY (unmatched ⇒ review
+  flag, never a silent insert). NO caller exists in src/ — nothing produces games[].
+- game_results public read SHIPPED: get_public_team_records(p_team_id) → played+published
+  games only, gated by org_is_public_listed(org_id). Live: org is public_listing_enabled
+  = true; 11 teams; 91 published game_results.
+- tournament_pool_teams (live standings: current_wins/losses, point_differential, is_us)
+  EXISTS but has 0 rows for this org — never populated.
+- tournaments.schedule_status drives public map/visibility (draft/preliminary/final/live/
+  complete).
+
+1.2 LOCKED ARCHITECT DECISIONS (from shipped code comments)
+- DR-A = A1, "one writer per concern": schedule path (parse-tournament-schedule → events)
+  and scores path (ingest-game-results → game_results) are separate; TM is parsed once,
+  by the schedule path. (ingest-game-results/index.ts:1-9)
+- PASTE-ONLY, NOT URL-FETCH: "paste-only input (no URL fetch — TourneyMachine 403's
+  WebFetch); LLM extraction; client applies validation rules + dedup before commit."
+  (parse-tournament-schedule/index.ts:1-5). Reason: TM blocks automated fetch with 403.
+- F2 Phase 1 scores: shared-secret auth (app_secrets.ingest_secret), match-only events,
+  review-flag unmatched, idempotent upsert.
+
+1.3 THE TWO PUBLIC SITES — independent, not reading the platform
+- AAU site (astersports-web): server/scraper.ts fetches tourneymachine.com
+  /Public/Results/Division.aspx?IDTournament=…&IDDivision=… with a spoofed User-Agent,
+  parses HTML by regex, filters team name "legacy", 45s in-memory cache, NO DB writes.
+  Tournament IDs hardcoded in TOURNAMENT_REGISTRY. tRPC games.list / leaderboard.get.
+- Legacy prototype (legacy-hoopers): server/tournament.ts — same pattern, hardcoded
+  TOURNAMENTS array, scrapes TM Division pages, filters "Legacy", no persistence.
+- NEITHER has an upload UI; NEITHER reads the platform; BOTH duplicate the scrape.
+
+1.4 TWO EXTERNAL SOURCES, NOT ONE
+- tourneymachine.com — Zero Gravity AAU events (what both scrapers parse).
+- setourney.app — the one link actually stored (WPCYO / League Play). Different site;
+  the stored value is a Branch deep link (…app.link/…), likely resolving to an SPA. No
+  parser exists for it. Feasibility UNVERIFIED. [VERIFY]
+
+====================================================================
+2. THE GAP (current design vs. operator vision)
+====================================================================
+The vision is "paste a LINK → AUTO real-time updates across 3 sites." The shipped design
+is "paste TEXT → operator-reviewed commit, schedule only, one surface (the app)."
+Three concrete gaps:
+  G1. No automated fetch. tourney_url is stored but never fetched. The paste-only
+      decision (1.2) was made because TM 403's WebFetch.
+  G2. No scraper feeds ingest-game-results — scores never flow automatically; the writer
+      is built-but-unwired.
+  G3. No shared consumption. AAU + Legacy run their own scrapers; they do not read the
+      platform hub, so "one entry → three sites" is not in place.
+
+KEY OPENING [VERIFY]: the two public scrapers fetch tourneymachine.com directly with a
+browser User-Agent and appear to operate in production. The architect's 403 was against
+"WebFetch" (Claude's tool / a bare fetch). A server-side fetch with a real UA + headers
+from an edge function or a Railway cron MAY succeed where WebFetch failed. If it does,
+the paste-only constraint is liftable for TM, and ingest-game-results can be wired to a
+real scraper. This must be settled by a spike before any build — not assumed either way.
+
+====================================================================
+3. DECISIONS REQUESTED
+====================================================================
+
+--------------------------------------------------------------------
+D1 — Confirm the hub: platform = single source of truth; AAU + Legacy = thin read
+     consumers (retire their independent scrapers).
+--------------------------------------------------------------------
+EVIDENCE: §1.1 (platform already has events + game_results + tournament tables + public
+  read gates) vs §1.3 (two sites duplicate-scrape, persist nothing).
+OPTIONS:
+  (a) Platform is the hub. AAU + Legacy read platform public RPCs; their scrapers are
+      deleted. REQUIRES: a public read path for upcoming/live tournament games (see D5);
+      re-pointing both sites (Legacy is being rebuilt anyway; AAU swaps tRPC scraper for
+      a platform read).
+  (b) Status quo. Each site keeps its own scraper. REQUIRES: nothing, but the operator's
+      "one entry → three sites" never happens and three codebases drift.
+CC LEAN: (a). It is the charter's own model (platform = source of truth; public sites are
+  thin consumers) and the only option that satisfies the vision.
+
+--------------------------------------------------------------------
+D2 — Automation fork: keep paste-only, or wire an automated scraper feeding the existing
+     ingest-game-results (+ schedule), enabling "link → auto." Reopens the paste-only DR.
+--------------------------------------------------------------------
+EVIDENCE: §1.2 paste-only decision; §2 G1/G2 + the KEY OPENING [VERIFY]; ingest-game-
+  results already accepts exactly the games[] payload a scraper would produce.
+OPTIONS:
+  (a) Spike-then-wire. First a feasibility spike: can a server-side UA fetch read TM
+      Division pages reliably (and can setourney.app be read at all)? If yes for a source,
+      build a scheduled scraper (edge fn or Railway cron) that fetches → parses (port the
+      proven astersports-web parser) → POSTs games[] to ingest-game-results, and writes
+      schedule rows the same controlled way. Keep PASTE as the fallback for sources that
+      403/SPA. REQUIRES: the spike; a scraper component; cron; ingest_secret already set?
+      (verify app_secrets.ingest_secret populated).
+  (b) Keep paste-only. Operator pastes text per tournament; no auto-fetch. REQUIRES:
+      nothing new, but it is not "dynamic/real-time" and not "paste a link."
+  (c) Hybrid by source. Auto-fetch where feasible (likely TM/Zero Gravity); paste for the
+      rest (likely SE Tourney until its feasibility is known). REQUIRES: same as (a) but
+      scoped to the proven source first.
+CC LEAN: (c), starting with the spike from (a). Wire TM auto-ingest if the spike passes
+  (it is the source both existing scrapers already target); keep paste as the universal
+  fallback; treat SE Tourney as its own feasibility question. This honors "one writer per
+  concern" (the scraper feeds the existing writers) and only revisits paste-only for
+  sources we can actually fetch.
+
+--------------------------------------------------------------------
+D3 — Upload point ("AAU as the main hub to upload links"): where does the operator enter
+     the link, and where is it stored?
+--------------------------------------------------------------------
+EVIDENCE: tournaments.tourney_url already editable in the app
+  (TournamentFormSheet.jsx:65, "SE Tourney link"); AAU page lives in a DIFFERENT app
+  (astersports-web) on a DIFFERENT Supabase.
+OPTIONS:
+  (a) App admin is the single write surface (tourney_url already there + /admin/import-
+      schedule). AAU + Legacy are READ-ONLY surfaces. REQUIRES: nothing new for storage;
+      optionally surface a "manage tournaments" deep-link from the AAU admin.
+  (b) Add an upload control on the AAU page that writes into the platform. REQUIRES: a
+      cross-app authenticated write from astersports-web → aster-sports (RPC or shared
+      service); more surface area, second auth path.
+  (c) Both.
+CC LEAN: (a). The link field + import flow already live in the app where org auth + admin
+  roles exist. "AAU as hub" is best read as the AAU surface being the showcase that
+  displays the distributed data; the WRITE stays in the app to avoid a second cross-app
+  auth path. Confirm this interpretation.
+
+--------------------------------------------------------------------
+D4 — Live standings: populate tournament_pool_teams (during-tournament W/L + pool place)?
+--------------------------------------------------------------------
+EVIDENCE: table exists, 0 rows (§1.1). The public sites today render live pool standings
+  from their scrape; the platform has the table but no writer.
+OPTIONS:
+  (a) In scope for the scraper (D2): the same fetch that yields games[] also yields pool
+      standings → write tournament_pool_teams. REQUIRES: scraper parses standings; a
+      public read for it (D5).
+  (b) Defer to a phase 2; ship game_results-based records first.
+CC LEAN: (b) defer. Records (final W/L) are the higher-value, already-modeled surface;
+  live pool standings ride the same scraper later once D2 is proven.
+
+--------------------------------------------------------------------
+D5 — Public read exposure for UPCOMING/LIVE tournament games (not just played results).
+--------------------------------------------------------------------
+EVIDENCE: get_public_team_records returns played+published games only; upcoming games
+  live in events (schedule). The AAU/Legacy "this weekend / live" sections need upcoming.
+OPTIONS:
+  (a) Add get_public_team_schedule(p_team_id) (SECDEF, org_is_public_listed-gated, returns
+      upcoming events + tournament context), mirroring the existing public RPC pattern.
+      REQUIRES: one migration + grants; architect-scoped (schema).
+  (b) Reuse existing RLS public table reads (events_select_public) directly from the sites.
+      REQUIRES: confirm events_select_public exposes the needed columns to anon.
+CC LEAN: (a) a dedicated RPC — same proven pattern as get_public_team_records, keeps the
+  public contract explicit and the sites thin. (AP #40: prefer the dedicated contract.)
+
+====================================================================
+4. WHAT CC CAN BUILD IMMEDIATELY (sequencing under "hub first")
+====================================================================
+- NOT BLOCKED (build now): Legacy Hoopers Court Noir rebuild reading get_public_team_
+  records (historical records/standings) — verified, 91 real games. Live tournament feed
+  slots into the same pages once D2/D5 land.
+- ON D1+D5 ratify: add get_public_team_schedule RPC (migration) + re-point AAU + Legacy
+  reads to the platform.
+- ON D2 ratify: run the fetch-feasibility spike (TM UA fetch; SE Tourney) FIRST, report
+  back, then build the scraper → ingest-game-results wiring only for sources that pass.
+- Paste-only import stays as the always-available fallback regardless.
+
+====================================================================
+5. OUT OF SCOPE (this request)
+====================================================================
+- Money/billing, RSVP, briefings — untouched.
+- SE Tourney parser construction (gated on its feasibility spike under D2).
+- Retiring the astersports-web Express scraper (happens only after D1+D5 land and the AAU
+  page reads the platform).
+- The Legacy site's non-records pages (academy, locations, etc.) — separate rebuild track.
+
+END — awaiting ratification of D1–D5 (or a subset). CC will not reopen the paste-only
+decision (D2) or touch schema (D5) without sign-off.
