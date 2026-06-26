@@ -69,7 +69,13 @@ Deno.serve(async (req) => {
 
   // Geocoding key — absent is NOT an error (function is safe to wire before the key
   // is set; venues simply stay 'pending' and directions use the address fallback).
-  const apiKey = await getAppSecret(sb, "google_geocoding_key");
+  // A DB error fetching it returns a controlled JSON 500 (like the ingest_secret fetch).
+  let apiKey: string | null;
+  try {
+    apiKey = await getAppSecret(sb, "google_geocoding_key");
+  } catch (e) {
+    return json({ error: (e as Error).message }, 500);
+  }
   if (!apiKey) {
     return json({ skipped: "no_key", message: "app_secrets.google_geocoding_key is unset — venues remain pending; set the key to enable precise pins." });
   }
@@ -80,12 +86,12 @@ Deno.serve(async (req) => {
     if (Number.isFinite(body?.batch)) batch = Math.max(1, Math.min(100, Math.floor(body.batch)));
   } catch { /* empty body ok */ }
 
-  const { data: pending, error: selErr } = await sb
-    .from("venues")
-    .select("id, name, address, city, state, zip")
-    .eq("geocode_status", "pending")
-    .limit(batch);
-  if (selErr) return json({ error: `venues select: ${selErr.message}` }, 500);
+  // Atomically CLAIM a batch (pending → processing, FOR UPDATE SKIP LOCKED) so two
+  // concurrent runs never grab the same row → no double-billing. Stranded 'processing'
+  // rows (a crashed run) self-heal: claim_pending_venues reclaims them after a stale
+  // window. (build-bible §3.3; Copilot review #1109.)
+  const { data: pending, error: selErr } = await sb.rpc("claim_pending_venues", { p_batch: batch });
+  if (selErr) return json({ error: `claim venues: ${selErr.message}` }, 500);
   if (!pending || pending.length === 0) return json({ ok: 0, failed: 0, remaining: 0, message: "no pending venues" });
 
   let ok = 0, failed = 0, rateLimited = false;
@@ -122,15 +128,25 @@ Deno.serve(async (req) => {
       ok++;
     } else if (status === "ZERO_RESULTS" || status === "INVALID_REQUEST" || status === "NOT_FOUND") {
       // no usable result → mark failed; directions fall back to the address string
-      await sb.from("venues").update({ geocode_status: "failed", geocoded_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", v.id);
+      await sb.from("venues").update({ geocode_status: "failed", geocoded_at: new Date().toISOString() }).eq("id", v.id);
       failed++;
-    } else {
-      // OVER_QUERY_LIMIT / REQUEST_DENIED / 5xx → leave pending, backoff to next run
+    } else if (status === "OVER_QUERY_LIMIT" || status === "UNKNOWN_ERROR") {
+      // transient → stop the run; claimed-but-unprocessed rows self-heal via the
+      // stale-reclaim in claim_pending_venues on the next invocation.
       rateLimited = true;
       break;
+    } else {
+      // REQUEST_DENIED / unexpected → a PERMANENT config error (bad key, billing
+      // disabled, or the Geocoding API not enabled on the project). Surface loudly so
+      // the operator fixes it instead of the run looping + re-billing. Claimed rows
+      // self-heal via stale reclaim.
+      return json(
+        { error: `geocoding ${status ?? "error"} — likely a bad key, billing disabled, or the Geocoding API not enabled on the project`, ok, failed, status: status ?? null },
+        502,
+      );
     }
   }
 
-  const { count } = await sb.from("venues").select("id", { count: "exact", head: true }).eq("geocode_status", "pending");
+  const { count } = await sb.from("venues").select("id", { count: "exact", head: true }).in("geocode_status", ["pending", "processing"]);
   return json({ ok, failed, remaining: count ?? null, rateLimited });
 });
