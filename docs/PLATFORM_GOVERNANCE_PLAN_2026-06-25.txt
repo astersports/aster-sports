@@ -1,0 +1,265 @@
+PLATFORM GOVERNANCE PLAN — Olive Juice Inc / Aster Sports (all repos)
+=====================================================================
+From: Claude Code (CC).  Date: 2026-06-25.  Relayed by: Frank.
+Status: PLAN — for the Architect to ratify. On ratification: (a) revise the canonical
+  aster-sports/docs/STRUCTURE.md, (b) backfill README + working-agreement files across
+  the repos, (c) execute the roadmap (§7).
+Format: §11.8 — request / context+evidence / proposal / labeled lean / open questions.
+Companion canonical doc: aster-sports/docs/STRUCTURE.md (this plan reconciles + extends it;
+  several of its lines are now STALE — see §2 reconciliation).
+
+-----------------------------------------------------------------------------------------
+0. REQUEST
+-----------------------------------------------------------------------------------------
+Ratify ONE governance picture across all five `astersports` repos so that: (1) every repo
+self-documents (README + working agreement) and nobody writes to the wrong branch again;
+(2) the ownership → DBA → apps/portals → tenants structure is current and unambiguous;
+(3) the domain / registrar / host / build-lane map is correct (it drifted after the
+Manus→Railway migration); (4) the cross-surface "one source of truth" sync vision has an
+agreed shape before it's built.
+
+-----------------------------------------------------------------------------------------
+1. OWNERSHIP & LEGAL  [GROUNDED — STRUCTURE.md §1, confirmed by operator]
+-----------------------------------------------------------------------------------------
+- Olive Juice Inc — the incorporated parent company.
+- Aster Sports — a DBA of Olive Juice Inc (app + web-design/agency company; Frank-owned).
+- Legacy Hoopers LLC — a SEPARATE company (Westchester NY AAU youth basketball, grades
+  2-5); Frank is part-owner/program manager; Kenny Lane is LH-only.
+- "Legacy Hoopers" still means THREE things — always name which (STRUCTURE.md §8):
+  (1) Legacy Hoopers LLC (the org), (2) the Legacy Hoopers TENANT row in the app,
+  (3) the `legacy-hoopers` REPO (the website rebuild).
+
+-----------------------------------------------------------------------------------------
+2. DOMAIN / REGISTRAR / HOST / BUILD-LANE MAP  (reconciled with operator brain-dump)
+-----------------------------------------------------------------------------------------
+Legend: [G]=grounded this session, [V]=VERIFY (operator/architect confirm).
+
+DOMAINS — EXACTLY THREE (operator-confirmed 2026-06-25): astersports.io, astersports.app,
+astersports.co. There is NO astersports.com — NOT part of this company; do not reference it.
+
+VERCEL-VERIFIED 2026-06-25 (team "Aster Sports" team_95cqArODGT4Ub8nQ5lKWqGY4, via MCP):
+- One Vercel project: `aster-sports` (prj_peID30eF61qubU90e1TVvM1kikuP, Vite, Node 24).
+  Domains attached: astersports.app (+www), astersports.co (+www), + *.vercel.app aliases.
+  => astersports.app is registered + hosted on Vercel [G]. astersports.co's WEB is also
+     attached to this Vercel project (it resolves to the app), while its EMAIL is Google
+     Workspace (MX) [G] — so .co is BOTH (email primary, web points at the app).
+- No astersports-web Vercel project exists in the team => astersports.io is NOT on Vercel
+  (it's on Railway, verified earlier this session) [G]. .io registrar = Vercel per operator [G].
+
+| Property | Domain | Registrar | Host (now) | Host (intended) | Build lane |
+|---|---|---|---|---|---|
+| Aster Sports marketing + Print Studio + portals | astersports.io | Vercel [G] | **Railway** [G] | Railway | Claude Code [G] |
+| Aster Sports Management App (SaaS) | astersports.app | **Vercel** [G] | **Vercel** [G] | **Railway** [V-intent] | Claude Code [G] |
+| Operator email + .co web | astersports.co | Vercel [G] | Google Workspace (email) + Vercel aster-sports project (web) [G] | — | — |
+| Legacy Hoopers (current live) | legacyhoopers.org | Squarespace [G] | **Squarespace** [G] | rebuild → framework (Railway?) [V] | rebuild lane TBD [V] |
+| St Patrick Armonk (current live) | (parish domain) | — | **eCatholic** [G, operator] — no access | rebuild → publish-to-review → migrate [G] | rebuild lane TBD [V] |
+
+RECONCILIATION — STRUCTURE.md lines now STALE (fix on ratification):
+- §7 "build lanes": says astersports-web (+ the websites) are **Manus-built**. astersports-web
+  MIGRATED off Manus → Railway this session and is now **Claude-Code-built**. [G]
+- §4 domains: lists astersports.co under the app. Operator clarifies astersports.co is the
+  **email** domain (frank@astersports.co, Google Workspace), not an app surface. [G]
+- §4/§6: lists St Patrick live at `stpatchurch-m5he85hc.manus.space` + a split repo
+  `stpatsweb1969/st-patricks-website`. Operator now describes the current St Pat site as
+  managed via **eCatholic** (no access). These must be reconciled — manus.space vs eCatholic
+  vs the split repo — before the St Pat rebuild migrates. [V]
+
+-----------------------------------------------------------------------------------------
+3. PRODUCTS / PORTALS / TENANTS
+-----------------------------------------------------------------------------------------
+- Olive Juice Inc → DBA **Aster Sports** →
+  - **Aster Sports Management App** ("Aster Sports App") = the multi-tenant SaaS
+    (`aster-sports` repo, astersports.app). Apple App Store submission in progress
+    (operator has no console access yet). Tenants live as org rows:
+      • Legacy Hoopers — first/pilot tenant (rollout Fall 2026).
+      • St Patrick (Armonk) — planned future tenant.
+  - **Aster Sports Web** (`astersports-web` repo, astersports.io) = multiple PORTALS on
+    one platform: the Constellation marketing hub, **Print Studio** (fashion print), and
+    (planned) **tech packs** for the fashion company, plus an AAU showcase section.
+  - **Agency websites** Aster Sports builds for clients/tenants:
+      • `legacy-hoopers` — Legacy Hoopers website rebuild (replacing Squarespace).
+      • `st-patricks-armonk` — St Patrick parish website rebuild (replacing eCatholic).
+  - **Shared library** `aster-weather` (`@aster/weather`) — framework-agnostic weather
+    core + React icons, consumed by aster-sports AND astersports-web (git-dep off a tag).
+
+-----------------------------------------------------------------------------------------
+4. REPOSITORY REGISTER (the five repos)  [G — surveyed 2026-06-25]
+-----------------------------------------------------------------------------------------
+| Repo | Purpose | Domain/host | README | CLAUDE.md | Status |
+|---|---|---|---|---|---|
+| aster-sports | SaaS app | astersports.app / Vercel→Railway | YES | YES | live (pilot prep) |
+| astersports-web | hub + Print Studio + portals | astersports.io / Railway | **NO** | YES | live |
+| legacy-hoopers | LH website rebuild | (→ legacyhoopers.org) / TBD | **NO** | **NO** | rebuild |
+| st-patricks-armonk | St Pat website rebuild | (parish) / TBD | **NO** | **NO** | rebuild |
+| aster-weather | shared @aster/weather pkg | n/a (git-dep) | YES | **NO** | published pkg |
+(+ external: `stpatsweb1969/st-patricks-website` — split-out St Pat, NOT in the org;
+ reconciliation pending per STRUCTURE.md §6.)
+
+GAPS: 3 repos missing README (astersports-web, legacy-hoopers, st-patricks-armonk);
+      3 repos missing CLAUDE.md / working agreement (legacy-hoopers, st-patricks-armonk,
+      aster-weather) → these are the "wrong-branch mistake" exposure (no branch rules).
+
+-----------------------------------------------------------------------------------------
+5. PROPOSAL A — README STANDARD (every repo)
+-----------------------------------------------------------------------------------------
+Every repo README states, in this order:
+ 1. One-line "what this is" + which "Legacy Hoopers" meaning if relevant (§1).
+ 2. Live domain + host + registrar + build lane (from §2).
+ 3. Status (live / rebuild / package).
+ 4. Stack (one line).
+ 5. **Working agreement**: branch off `main`, NEVER commit to `main`, PR + green CI before
+    merge; auto-merge routine PRs on green (per the repo's CLAUDE.md if present).
+ 6. Link to the canonical aster-sports/docs/STRUCTURE.md.
+Repos with no CLAUDE.md (legacy-hoopers, st-patricks-armonk, aster-weather) carry the
+working agreement in the README until/unless a CLAUDE.md is added.
+
+-----------------------------------------------------------------------------------------
+6. PROPOSAL B — BRANCH / GOVERNANCE DISCIPLINE (prevent wrong-branch writes)
+-----------------------------------------------------------------------------------------
+- Single rule, all repos: feature branch off `main` → PR → green CI → merge. Never commit
+  to `main`. Routine auto-merges on green; money/auth/schema hold for Architect (§2.4).
+- Every repo declares the rule in README §5.5 (and CLAUDE.md where present).
+- Observed risk THIS session: the task framing assigned ONE branch name
+  (`claude/railway-whoami-vh67cj`) across all five repos, but real work correctly went to
+  descriptive per-change branches. Recommendation: drop the shared pre-assigned branch
+  name; each change names its own branch. A pre-assigned cross-repo branch invites
+  exactly the "wrote to the wrong branch" error.
+- CI guards stay the gate (each repo's CI blocks merge on red).
+
+-----------------------------------------------------------------------------------------
+7. PROPOSAL C — ROADMAP (sequenced, post-ratification)
+-----------------------------------------------------------------------------------------
+ R1. Backfill README (3 repos) + working-agreement sections — low risk, do first.
+ R2. Revise STRUCTURE.md to current truth (§2 reconciliation) — make it canonical again.
+ R3. St Patrick: finish rebuild → publish a review build → reconcile eCatholic/manus.space/
+     split-repo → migrate. (Operator wants to review the rebuild before cutover.)
+ R4. Legacy Hoopers website: finish rebuild → off Squarespace → framework (Railway?).
+ R5. aster-sports app → Railway (operator's intended host) — scope as its own migration
+     when triggered (mirrors the astersports-web Manus→Railway arc).
+ R6. Apple App Store submission for the app (operator gets console access).
+ R7. Add CLAUDE.md to the rebuild repos once their build lane is fixed.
+
+-----------------------------------------------------------------------------------------
+8. PROPOSAL D — CROSS-SURFACE "ONE SOURCE OF TRUTH" SYNC (vision → architecture)
+-----------------------------------------------------------------------------------------
+OPERATOR VISION: one tournament/schedule source that, when updated, live-propagates across
+every surface — the app (aster-sports), the marketing site (astersports.io), and the
+tenant/agency websites (legacy-hoopers, st-pat). "One tournament website live-pauses and
+updates the structure + scheduling on multiple things."
+EVIDENCE / PRECEDENT: `aster-weather` already proves the shared-code model (one package,
+many consumers). aster-sports already owns the canonical schedule/tournament DATA (Supabase
+`vrwwpsbfbnveawqwbdmj`, the tournaments/events tables + the comms engine).
+ARCHITECTURE OPTIONS (for the Architect to choose — design-first, not built yet):
+  (i)  Shared DATA source: the websites read the app's Supabase (RLS-scoped read views or a
+       public read API) so schedule/tournament state has ONE home (the app's DB). Cleanest
+       single-source; needs a safe public read surface.
+  (ii) Shared PACKAGE: extract a tournament/schedule render+fetch package (like
+       @aster/weather) consumed by app + sites. Good for render parity; still needs a data
+       source under it.
+  (iii)Publish/event propagation: app emits schedule changes (webhook/edge function) that
+       rebuild/refresh the static sites. Good for static hosts; more moving parts.
+CC LEAN: (i) as the spine (one DB = one truth) + (ii) for render parity, with (iii) only if
+  a site is statically hosted and can't read live. But this is an Architect design call —
+  flagged, not decided.
+
+-----------------------------------------------------------------------------------------
+9. OPEN QUESTIONS FOR THE ARCHITECT / OPERATOR
+-----------------------------------------------------------------------------------------
+Q1. [MOSTLY RESOLVED 2026-06-25] Domains = exactly three (.io/.app/.co; no .com). Vercel-
+    verified: .app + .co on the Vercel `aster-sports` project; .io on Railway; registrars
+    Vercel. REMAINING [V]: the St Patrick CURRENT host — operator says eCatholic, STRUCTURE.md
+    §4/§6 says manus.space + the split repo stpatsweb1969/st-patricks-website. Reconcile
+    before the St Pat rebuild migrates.
+Q2. aster-sports → Railway: ratify as intended end-state, and name the trigger (now, or at
+    a milestone). Until then it stays on Vercel.
+Q3. README standard (§5) + branch discipline (§6): approve as written?
+Q4. Sync architecture (§8): which option(s)? This gates a lot of future build.
+Q5. Rebuild lanes for legacy-hoopers + st-patricks-armonk: Claude Code now (Manus is being
+    retired as a build lane), or stay Manus until cutover?
+Q6. Should the canonical doc stay aster-sports/docs/STRUCTURE.md, or move to a neutral home
+    now that astersports-web is co-equal (not "just the marketing site")?
+
+=========================================================================================
+ADDITIONAL GOVERNANCE SECTIONS (added 2026-06-25 per operator: "what else should be in there")
+[G]=grounded, [V]=verify, [OWNER]=operator/counsel must fill before publishing.
+=========================================================================================
+
+10. VENDOR / SERVICE INVENTORY  (each line needs a billing owner + access list — [OWNER])
+- GitHub — org `astersports`, 5 repos; Claude Code is the sole code-author lane. [G]
+- Vercel — team "Aster Sports" (team_95cqArODGT4Ub8nQ5lKWqGY4); project `aster-sports`
+  (prj_peID30eF61qubU90e1TVvM1kikuP) hosts .app + .co web; registrar for .io/.app/.co. [G]
+- Railway — hosts astersports.io (astersports-web), project `insightful-insight`; persistent
+  server for the raster/SSE workload. [G]
+- Supabase — studio `eyitivulszubtdfpsbdx`; app `vrwwpsbfbnveawqwbdmj`; legacy-hoopers
+  `kxhtoilxikllzzjevdnt`. [G]
+- Anthropic (Print Studio vision LLM) · Replicate (SAM2 + LaMa) · Stripe (billing/credits,
+  Architect-scoped) · Resend (transactional email) · PostHog (analytics, project 421610) ·
+  Sentry (errors, javascript-react) · Google Workspace (email astersports.co + OAuth IdP). [G]
+- Apple Developer — iOS submission [V — access pending]. Squarespace — Legacy Hoopers CURRENT
+  site (being replaced). eCatholic — St Patrick CURRENT site [V] (being replaced; no access).
+  Manus — LEGACY deploy/runtime, RETIRING (astersports-web already off it). [G]
+- [OWNER] add billing-account owner + who-has-access per vendor before publishing.
+
+11. DATA & DATABASES
+- Three Supabase projects (§10); tenant data org-scoped via RLS. [G]
+- Money/ledger invariants (studio): SUM(credit_ledger.delta)==tenants.creditBalance per tenant;
+  deduct/grant idempotent on (refId,reason); never bill a no-op. (Reconciled live 2026-06-25.) [G]
+- Backups + a TESTED restore per project: [V] — confirm, don't assume. Retention/residency: [OWNER].
+
+12. SECRETS & CREDENTIALS GOVERNANCE
+- Categories (never in repo/logs; env-based, boot fail-fast where supported): session/JWT secret,
+  Stripe keys, Replicate token, CRON_SECRET, Anthropic key, Supabase service-role + URL/anon keys,
+  Google OAuth client id/secret, Railway API token, Resend key. [G]
+- Storage: Railway env (studio), Vercel env (app), Supabase `app_secrets` where used. Rotation plan
+  + access list per secret: [OWNER].
+
+13. SECURITY & MULTI-TENANT ISOLATION
+- RLS org-scoping is the spine (current_user_org_id); cross-tenant isolation tests + impersonation
+  audit before onboarding. Dependabot criticals/highs = 0 gate. Secret scanning on. SSRF + resource
+  guards (studio). Auth: Google OAuth→own JWT (studio); Supabase Auth (app). [G]
+
+14. PRIVACY, COMPLIANCE & MINORS   *** highest-priority gap ***
+- The app handles YOUTH (minor) data → COPPA / verifiable-parental-consent + state youth-privacy
+  obligations. [V with counsel] — settle BEFORE non-pilot onboarding. [G that this applies]
+- Sub-processors to DISCLOSE: Supabase, Replicate, Anthropic, Stripe, Resend, PostHog, Sentry,
+  Google, Vercel, Railway. Publish: privacy policy + sub-processor list + terms + DPA. [counsel]
+- Open privacy item: PostHog server-side GeoIP enrichment (project 421610) not yet disabled.
+
+15. ACCESS & ROLES (human + agent)
+- Lanes: CC (sole code author), Architect (design/review/ratify), Frank (operator — confirms
+  money/flips, relays). Super-admin: platform_admins (studio, live); cross-org app role is
+  design-first (docs/ARCHITECT_DECISION_REQUEST_2026-06-25_cross_org_superadmin.txt). [G]
+- Who holds creds for GitHub org / Vercel / Railway / Supabase×3 / Google Workspace / Apple /
+  Stripe: [OWNER] enumerate before publishing.
+
+16. OBSERVABILITY & INCIDENT RESPONSE
+- Sentry + PostHog in both apps. Money-path/auth alerting: [V]. Rollback = revert the offending PR
+  + redeploy (never fix-forward on broken main); post-deploy smoke (studio: /api/studio/posture). [G]
+
+17. CI/CD & DEPLOY GOVERNANCE
+- Every repo: branch off main → PR → green CI → merge; never commit to main. Routine auto-merges on
+  green; money/auth/schema HOLD for Architect (§2.4). Auto-deploy from main (Railway/Vercel).
+- Required checks are the gate (studio: typecheck+tests + money-path-integration on real Postgres;
+  app: lint-test-build + e2e + ledger/anti-pattern guards). [G]
+
+18. TENANT LIFECYCLE
+- Onboard: org row + branding (organizations.brand_colors) + user_roles + the onboarding-readiness
+  gate (astersports-web CLAUDE.md §7: billing tested, privacy published, isolation verified, ledger
+  reconciled, backups, alerting, Dependabot 0). Next tenant: St Patrick (Armonk). Offboard + data
+  export: [OWNER/counsel]. [G]
+
+19. BRAND & NAMING CANON
+- Mark: constellation-arrow, gold #C9952E on navy #151525 (platform default); tenant brand applies
+  at runtime from organizations.brand_colors, never hardcoded. No user-facing "Skyfire/Ember/Vela".
+  Always disambiguate the 3 "Legacy Hoopers" meanings (§1). [G]
+
+20. DOCUMENT GOVERNANCE
+- Canonical home: aster-sports/docs/STRUCTURE.md (this plan revises it on ratification). On conflict
+  the canonical doc wins. Update via PR + Architect ratification; version by date. Published copies /
+  READMEs LINK to the canonical doc — never fork its content (one source of truth). [G]
+
+21. GLOSSARY
+- Olive Juice Inc (incorporated parent) · Aster Sports (DBA) · the app (aster-sports SaaS,
+  astersports.app) · portal (a surface in astersports-web: hub / Print Studio / tech packs) ·
+  tenant (an org row in the app) · Legacy Hoopers (LLC / tenant / repo — name which) · lane
+  (CC / Architect / Frank).
