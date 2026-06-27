@@ -73,7 +73,10 @@ command-center #145; conflict radar #142; tracked-team schedule RPC #1115.)
   FRANK TO TEST: hub → Sign in → Google → back; then cross-device sync. If
   Google errors, it's provider config (vrwwpsbfbnveawqwbdmj → Auth → Providers →
   Google client id/secret; Auth → URL Configuration → Redirect URLs should
-  include the hub origin, a https://astersports.io/** wildcard is safest). Note:
+  list the EXACT hub callback URL(s) — e.g. https://astersports.io/aau plus any
+  staging origin; keep the allowlist narrow, NOT a domain wildcard (a wildcard
+  widens the blast radius of any open-redirect/XSS on the domain — security
+  review, Copilot on #1126). Note:
   earlier in the session Frank's dashboard screenshots showed a wrong project /
   wrong client values at one point — worth a re-confirm. CC cannot read provider
   secrets via MCP, so this gate is Frank's.
