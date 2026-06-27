@@ -46,15 +46,17 @@ export function stripHtml(html: string): string {
 
 /**
  * Normalize a team/division name for case- and space-insensitive matching.
- * Strips a leading bracket-seed prefix ("[1] Legacy Hoopers (NY)" → "legacy
- * hoopers (ny)") that TM stamps on BRACKET-game team cells but NOT on the
- * standings rows the team list is built from. Without the strip a bracket game
- * fails to resolve to a tournament_division_team id and the game is dropped —
- * the record-accuracy bug where a team that went 3–1 (incl. a bracket loss)
- * showed 2–0 (pool wins only). Matching-only; display names are untouched.
+ * Strips two TM-rendered team-cell annotations so a game resolves to its
+ * tournament_division_team id instead of being dropped at the !homeId/!awayId
+ * guard (the record-accuracy bug: a team that went 3–1 showed 2–0):
+ *   - a leading bracket-seed prefix ("[1] Legacy Hoopers (NY)")
+ *   - a trailing advancement asterisk ("Lady Breakers (MA) - Jean*")
+ * parseDivisionTeams strips the trailing "*" from standings names at parse time,
+ * but game-row cells keep these annotations — so the matcher strips them too,
+ * for consistency with team parsing. Matching-only; display names are untouched.
  */
 export function normalizeName(name?: string | null): string {
-  return (name || '').trim().replace(/^\[\d+\]\s*/, '').replace(/\s+/g, ' ').toLowerCase();
+  return (name || '').trim().replace(/^\[\d+\]\s*/, '').replace(/\s*\*+\s*$/, '').replace(/\s+/g, ' ').toLowerCase();
 }
 
 // Seed/advancement placeholders that appear in bracket rows but are NOT real
