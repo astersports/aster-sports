@@ -59,6 +59,69 @@ export function normalizeName(name?: string | null): string {
   return (name || '').trim().replace(/^\[\d+\]\s*/, '').replace(/\s*\*+\s*$/, '').replace(/\s+/g, ' ').toLowerCase();
 }
 
+export interface PlaceEntry {
+  tmPlaceKey: string | null;
+  rawName: string;
+  cleanName: string;
+  street: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+}
+
+/**
+ * Clean a venue label to a stable match key: strip Zero Gravity's leading
+ * location ordinal ("4 - " / "05 "), the trailing "- Court X" facility suffix,
+ * and lowercase. Mirrors geocode-venues' cleanVenueName so a game-row location
+ * cell ("4 - House of Sports - Court 1") and the places-panel <h4> ("4 - House
+ * of Sports") resolve to the same key ("house of sports").
+ */
+export function cleanPlaceName(name?: string | null): string {
+  const s = (name || '').trim();
+  const noOrdinal = /^\s*\d{1,2}\s*-\s+/.test(s)
+    ? s.replace(/^\s*\d{1,2}\s*-\s+/, '')
+    : s.replace(/^\s*\d{1,2}\s+/, '');
+  return noOrdinal
+    .replace(/\s*-\s*court\s*[0-9A-Za-z]+\s*$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Parse the "Complexes" places panel on Tournament.aspx into venue addresses.
+ * Each place renders as a `.js-list-group-item-place` (data-id + <h4> name)
+ * followed by a dropdown carrying an <address> (street <br> "City, ST ZIP").
+ * Returns one entry per place: { tmPlaceKey, rawName, cleanName, street, city,
+ * state, zip }. cleanName is the join key to a venue's game-location string.
+ * Pure; standard ES only (AP #30).
+ */
+export function parsePlaces(html: string): PlaceEntry[] {
+  const out: PlaceEntry[] = [];
+  const parts = (html || '').split('js-list-group-item-place');
+  for (let i = 1; i < parts.length; i++) {
+    const chunk = parts[i];
+    const nameM = chunk.match(/<h4>([\s\S]*?)<\/h4>/);
+    if (!nameM) continue;
+    const idM = chunk.match(/data-id="([^"]+)"/);
+    const addrM = chunk.match(/<address>([\s\S]*?)<\/address>/i);
+    const rawName = stripHtml(nameM[1]);
+    let street: string | null = null, city: string | null = null, state: string | null = null, zip: string | null = null;
+    if (addrM) {
+      const lines = addrM[1].split(/<br\s*\/?>/i).map(stripHtml).filter(Boolean);
+      if (lines.length) {
+        street = lines[0] || null;
+        const last = lines[lines.length - 1];
+        const m = last.match(/^(.*?),\s*([A-Za-z]{2})\.?\s*(\d{5})(?:-\d{4})?$/);
+        if (m) { city = m[1].trim(); state = m[2].toUpperCase(); zip = m[3]; }
+        else if (lines.length > 1) { city = last; }
+      }
+    }
+    out.push({ tmPlaceKey: idM ? idM[1] : null, rawName, cleanName: cleanPlaceName(rawName), street, city, state, zip });
+  }
+  return out;
+}
+
 // Seed/advancement placeholders that appear in bracket rows but are NOT real
 // teams (they resolve once pool play finishes). We never persist these as teams
 // and never ingest a game whose side is one of them.
