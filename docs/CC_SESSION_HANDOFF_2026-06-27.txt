@@ -1,0 +1,144 @@
+CC SESSION HANDOFF — 2026-06-27
+AAU Tracking Hub (astersports.io/aau)
+================================================================================
+Scope: the AAU parent/tracking hub — a thin public consumer of the aster-sports
+backbone (Supabase project vrwwpsbfbnveawqwbdmj). Frontend lives in the
+astersports-web repo (client/src/components/aau/**, client/src/lib/aau/**,
+client/src/lib/aster.ts); the read/predict backbone (public RPCs + migrations)
+lives in aster-sports. Pre-onboarding test bed; no money path touched.
+
+Operating note: this session ran Claude-led with Frank steering in real time
+(no architect round-trip mid-build). The forks below are flagged for architect
+ratification after the fact, per aster-sports §2.4 (predictor/engine + RPC +
+auth are architect-scoped).
+
+--------------------------------------------------------------------------------
+1. WHAT SHIPPED (merged, one line each)
+--------------------------------------------------------------------------------
+Backbone (aster-sports, project vrwwpsbfbnveawqwbdmj):
+  #1125  get_public_tournament_standings now returns a per-team cross-tournament
+         strength `rating` (+ gp) — opponent-adjusted avg margin (cap ±25) over
+         every public tournament keyed by stable resolved_key. Prod migration
+         20260627060257; mirror committed.
+
+Frontend (astersports-web, AAU hub):
+  #146   My Teams cleanup — ONE schedule fetch (MyTeams owns it; NextGame +
+         ConflictRadar derive from a passed `games` prop, was three independent
+         fetches); re-mounted the next-game+travel card; "to advance" labeled to
+         a single featured team; removed the half-built sign-in scaffolding.
+  #147   Strength + grade-aware predictor — predictBracket now weights each
+         remaining game by P(win)=logistic(rating gap) instead of a 50/50 coin
+         flip; grade prior penalizes a team listed below its division floor;
+         a `basis` flag ("results" | "ratings" | "even") gates the UI so a
+         no-signal field shows "—"/"projection" not a false precise %.
+  #148   My Teams: per-team odds in EVERY row (was only the featured team's
+         number visible) + tap-through to a Team Detail drill-down (full
+         game-by-game schedule + results + venue + one-tap directions, with the
+         next game as the travel hero).
+  #149   Google sign-in for account-synced tracking — tracked_teams (owner-only
+         RLS) becomes the source of truth when signed in; on-device localStorage
+         when signed out; on first sign-in, on-device tracks migrate up. Public
+         API of the tracking store stays synchronous so consumers don't change.
+
+(Earlier in the same session, for context — already merged: geocode-venues
+hardening #1116/#1118/#1119/#1121; TM venue-address scrape #1120; tm_id
+persistence #1122 + match-by-tm-id dedup #1123; tracked_teams table #1124;
+global team search #143/#1117; Killer #2 next-game+travel #144; My Teams
+command-center #145; conflict radar #142; tracked-team schedule RPC #1115.)
+
+--------------------------------------------------------------------------------
+2. VERIFIED LIVE STATE (grounded)
+--------------------------------------------------------------------------------
+- Predictor, live Grand Finale Girls 5/6 division (bf16b329): Empire State Storm
+  65% (rating +2.08, 24 gp) > NYC Titans 46% > High Rise-Brie 40% (-1.32, 28 gp)
+  > East Coast Storm 5th 34% > East Coast Storm 4th 15%. The 4th-grade team
+  playing up went from 41% (outranking real 5/6 teams, pre-fix) to 15% (clear
+  bottom). Strongest-by-record leads. Pre-game numbers labeled "projection".
+- Rating math sanity-checked on a completed division (Winter League 7750c3a8):
+  ordering tracks blowout margin + strength-of-schedule (Castle Athletics moves
+  up on a tough slate; High Rise down on a weak one).
+- Geo (from earlier this session): 91% of ~5,531 games resolve to an exact venue
+  pin, 97% to a street address; all 12 tournaments carry tm_id + addresses.
+- Data: the duplicate "Zero Gravity NY Grand Finale" I created on re-ingest was
+  archived/consolidated to the canonical division (bf16b329); search/directory/
+  teams RPCs already filter archived, so it can't be re-tracked.
+- Tests: astersports-web AAU suite green (predictBracket strength/grade/gate +
+  gradePrior parsing in new test files). pnpm check + build clean.
+
+--------------------------------------------------------------------------------
+3. IN FLIGHT / HELD / FRANK-DEPENDENT
+--------------------------------------------------------------------------------
+- Google sign-in END-TO-END proof: code shipped, but the OAuth round-trip can
+  only be verified on a real device (sandbox/CI browser can't reach Google).
+  FRANK TO TEST: hub → Sign in → Google → back; then cross-device sync. If
+  Google errors, it's provider config (vrwwpsbfbnveawqwbdmj → Auth → Providers →
+  Google client id/secret; Auth → URL Configuration → Redirect URLs should
+  list the EXACT hub callback URL(s) — e.g. https://astersports.io/aau plus any
+  staging origin; keep the allowlist narrow, NOT a domain wildcard (a wildcard
+  widens the blast radius of any open-redirect/XSS on the domain — security
+  review, Copilot on #1126). Note:
+  earlier in the session Frank's dashboard screenshots showed a wrong project /
+  wrong client values at one point — worth a re-confirm. CC cannot read provider
+  secrets via MCP, so this gate is Frank's.
+- Money path ($20/account, render screen 08) remains HELD — Frank sets pricing /
+  flips. No Stripe/credit code touched this session.
+
+--------------------------------------------------------------------------------
+4. DECISIONS AWAITING ARCHITECT RATIFICATION (forks)
+--------------------------------------------------------------------------------
+F1. Predictor strength model (#1125 + #147). Choices baked in, ratify or
+    recalibrate:
+      - Rating = opponent-adjusted average point margin, one SOS pass, per-game
+        margin capped ±25, aggregated by resolved_key across all public
+        tournaments. Null when a team has no finals anywhere.
+      - Win prob = logistic(0.1 * rating_gap)  (10-pt edge ≈ 73%).
+      - Grade prior = 12 rating points docked per grade a team is listed below
+        its division floor (heuristic; a team that plays up is occasionally
+        elite — Frank accepted this knowingly). Grades parsed from names; absent
+        grade → neutral.
+      - Gate: no precise % until "results" or a strength/grade signal exists;
+        otherwise "—".
+    Open calibration question for the architect: are 0.1 (scale) and 12
+    (grade penalty) the right magnitudes once real Grand Finale games start
+    landing? They were tuned to (a) sane spreads and (b) putting the 4th-grade
+    team clearly last — not yet against post-game outcomes.
+
+F2. Google sign-in is auth (architect-scoped per §2.4). Shipped under Frank's
+    direct direction in pre-onboarding; flagging for architect awareness. RLS is
+    owner-only on tracked_teams (#1124, full CRUD owner-scoped, UNIQUE(user_id,
+    team_key)); the hub client uses the publishable anon key + a browser session.
+
+--------------------------------------------------------------------------------
+5. OPEN FOLLOW-UPS (CC, next session)
+--------------------------------------------------------------------------------
+- STABLE CROSS-INGEST TRACKING KEY (durable fix). Tracking keys on the volatile
+  tournament_division_teams.id (teamKey). A re-ingest mints fresh ids, orphaning
+  everyone's tracked entries (this is exactly what bit Frank's phone twice this
+  session — he re-tracked an archived empty duplicate). resolved_key /
+  external_team_key are stable across ingests and are the right tracking key.
+  Sign-in (#149) softens this (account is the source of truth) but does not
+  eliminate it. Recommend: re-key tracking on resolved_key + a schedule-RPC that
+  resolves a stale/archived key to its live twin. Architect-scoped (changes the
+  tracking contract).
+- Surface the team's "to advance" odds inside Team Detail (#148 shows it in the
+  list + headline but not yet on the detail screen).
+- Continue the render set: screen 04 "Today · route there" as its own surface,
+  "Road to the chip" (predictor-as-story), and the 12-features backlog.
+
+--------------------------------------------------------------------------------
+6. HOUSEKEEPING / NOTES
+--------------------------------------------------------------------------------
+- Branch lineage: all AAU backbone migration mirrors landed on aster-sports
+  `main` via feature branches this session; the claude/handoff-documents-lad4to
+  branch is ~13 commits behind main and should be treated as stale for AAU work
+  (AP #21 mirror discipline followed on main, not that branch).
+- AP #36 honored on the new Supabase reads (destructure error before data).
+  AP #25 honored (upsert onConflict matches UNIQUE(user_id, team_key)).
+- Secrets: none echoed/committed. ingest_secret / app_secrets read server-side
+  only. The Supabase JWT/provider secret is Frank-managed in the dashboard.
+- One ⚠ for the architect to weigh: #1125 (the standings RPC change) and #147/
+  #148/#149 auto-merged under the pre-onboarding routine lane. If the architect
+  wants the predictor model and the auth change reviewed before they're treated
+  as blessed, flag it and CC will open a follow-up adjustment PR.
+
+— Claude Code, 2026-06-27
