@@ -53,6 +53,19 @@ describe('proof (c) — reordering same-day rematches does NOT swap keys', () =>
   });
 });
 
+describe('refinement 1 — global seq closes the CROSS-DAY pool-rematch gap', () => {
+  // Same pair, same pool role, but the two games fall on DIFFERENT days (a pool
+  // spanning a weekend). Per-day seq would give each seq 0 → identical keys. Global
+  // seq (by data-gameid order, no date) gives them distinct keys.
+  const role = structuralRole({ kind: 'P', poolKey: 'pool-A' });
+  const day1 = { id: 'd1', sourceGameId: 'h20260606aaa', divisionId: DIV, role, homeKey: 'a', awayKey: 'b', eventDate: '2026-06-06' };
+  const day2 = { id: 'd2', sourceGameId: 'h20260607bbb', divisionId: DIV, role, homeKey: 'a', awayKey: 'b', eventDate: '2026-06-07' };
+  it('cross-day repeats of the same pairing get distinct keys', () => {
+    const keys = keyAll([day1, day2]);
+    expect(keys.get('d1')).not.toBe(keys.get('d2'));
+  });
+});
+
 describe('uniqueness — role separates cross-kind same-pair games', () => {
   it('a pool game and a bracket game between the same pair get different keys', () => {
     const pool = stableGameKey({ divisionId: DIV, homeKey: 'a', awayKey: 'b', role: structuralRole({ kind: 'P', poolKey: POOL }) });

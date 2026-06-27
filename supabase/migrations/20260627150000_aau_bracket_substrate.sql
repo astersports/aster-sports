@@ -10,7 +10,8 @@
 -- so the first non-TM adapter writes its own native id into the SAME shape — no
 -- TM-named identity column. The positional P#/B#/G# slot label is demoted to the
 -- mutable attribute game_code. bracket_slots is populated by the ingest at
--- runtime (no DDL here); its unique index already exists.
+-- runtime; its unique index already exists. The one bracket_slots DDL here is the
+-- event_id FK-target correction (refinement 3, at the foot of this file).
 
 alter table public.division_games
   add column if not exists source                text,
@@ -41,3 +42,14 @@ comment on column public.division_games.away_source_team_ref is
   'Source-native team id for the away side (TM data-teamid); capture-only in §2.B.';
 comment on column public.division_games.source_facility_ref is
   'Source-native venue id (TM data-facilityid). Venue is currently name-matched; §2.D may harden linkage onto this. Capture-only in §2.B.';
+
+-- Refinement 3 (architect L99 2026-06-27): bracket_slots.event_id must FK the GAME,
+-- which on this backbone lives in division_games — NOT events (events is the tenant's
+-- own platform games, a different table). The substrate migration wired it to
+-- events(id) by mistake. bracket_slots is empty (0 rows, event_id all NULL), so this
+-- is a pure definition fix with no data to migrate — corrected BEFORE §2.B is applied
+-- so the ingest can populate the slot→game link through the right FK.
+alter table public.bracket_slots drop constraint if exists bracket_slots_event_id_fkey;
+alter table public.bracket_slots
+  add constraint bracket_slots_event_id_fkey
+  foreign key (event_id) references public.division_games(id) on delete set null;

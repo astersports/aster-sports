@@ -382,13 +382,15 @@ Deno.serve(async (req) => {
       }
 
       let gamesUpserted = 0;
+      const gameIdByCode = new Map<string, string>();
       if (gameRows.length) {
         const { data: up, error: gErr } = await sb
           .from("division_games")
           .upsert(gameRows, { onConflict: "tournament_division_id,external_game_id" })
-          .select("id");
+          .select("id, external_game_id");
         if (gErr) throw new Error(`games upsert: ${gErr.message}`);
         gamesUpserted = up?.length ?? 0;
+        for (const r of up || []) gameIdByCode.set(r.external_game_id as string, r.id as string);
       }
 
       // ── §2.B bracket substrate (additive; isolated) ─────────────────────────
@@ -411,6 +413,11 @@ Deno.serve(async (req) => {
             slot_index: s.slotIndex,
             seed_source: s.seedSourceRaw,
             division_team_id: s.isResolved ? teamIdByName.get(normalizeName(s.seedSourceRaw || "")) ?? null : null,
+            // slot→game link: the bracket game lives in division_games keyed by its
+            // slot label (== gameCode). Resolved/persisted games map; an unseeded
+            // bracket game isn't in division_games yet → event_id stays null. FK now
+            // targets division_games(id) (migration refinement 3).
+            event_id: gameIdByCode.get(s.gameCode) ?? null,
           }));
           const { data: slotIds, error: sErr } = await sb
             .from("bracket_slots")

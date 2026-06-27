@@ -41,22 +41,25 @@ export function stableGameKey({ divisionId, homeKey, awayKey, role, seq = 0 }) {
 }
 
 /**
- * Assign the intra-context SEQUENCE for same-day rematches. Group by (division,
- * pair, role, eventDate); within a group order by the DURABLE source game id
- * (data-gameid — embeds creation time, stable across reschedule) and number
- * 0,1,2... Singleton groups get seq 0.
+ * Assign the intra-context SEQUENCE for rematches. Group by (division, pair, role)
+ * — GLOBALLY, no date qualifier (architect refinement 1, L99 2026-06-27): the key
+ * string omits date (date is mutable — a reschedule moves a game across days), so
+ * the seq must too, or a pool that spans two days with a repeated pairing would mint
+ * two seq-0 games → same key → collision. Grouping globally gives every repeat in a
+ * role a distinct seq and still keeps date out of the key (proof (a) holds: moving a
+ * game across days changes neither (div,pair,role) membership nor data-gameid order).
+ * Within a group, order by the DURABLE source game id (data-gameid — embeds creation
+ * time, stable across reschedule) and number 0,1,2... Singleton groups get seq 0.
  *
- * This is the only place start_at could have leaked into identity. Ordering by
- * sourceGameId instead of start_at is exactly what makes proof (c) hold: swapping
- * two same-day rematches' times does NOT swap their keys. The residual risk is a
- * full bracket/pool REGENERATION (data-gameid itself churns) — the bounded tail
- * the engine reconciler (Option A's matcher) covers.
+ * Ordering by sourceGameId, not start_at, is what makes proof (c) hold: reordering
+ * two rematches' times does NOT swap their keys. The residual risk is a full
+ * REGENERATION (data-gameid itself churns) — the bounded tail Option A's matcher covers.
  * @returns {Map<any, number>} game id -> seq
  */
 export function assignSequences(games) {
   const groups = new Map();
   for (const g of games || []) {
-    const gk = [g.divisionId, teamPairKey(g.homeKey, g.awayKey), g.role, g.eventDate].join('|');
+    const gk = [g.divisionId, teamPairKey(g.homeKey, g.awayKey), g.role].join('|');
     if (!groups.has(gk)) groups.set(gk, []);
     groups.get(gk).push(g);
   }
