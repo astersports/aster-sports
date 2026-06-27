@@ -32,8 +32,11 @@ import {
   parseDivision,
   parseTournamentName,
   parseTournamentDates,
+  parsePlaces,
+  cleanPlaceName,
   normalizeName,
   type DivisionGame,
+  type PlaceEntry,
 } from "./_parse.ts";
 
 const DESKTOP_UA =
@@ -183,6 +186,15 @@ Deno.serve(async (req) => {
     for (const t of ourTeams || []) ourTeamNames.add(normalizeName(t.name as string));
   }
 
+  // Venue addresses from the "Complexes" places panel (Tournament.aspx), keyed by
+  // cleaned name so a game-row location ("4 - House of Sports - Court 1") matches the
+  // place <h4> ("4 - House of Sports"). TM gives us the real street address, so we pin
+  // the exact address instead of guessing from a bare site name (build-bible §3.3).
+  const placeByClean = new Map<string, PlaceEntry>();
+  for (const p of parsePlaces(tournamentHtml)) {
+    if (p.street) placeByClean.set(p.cleanName, p);
+  }
+
   // ── per-division ingest (try/catch isolated) ────────────────────────────────
   const now = new Date();
   const results: Array<Record<string, unknown>> = [];
@@ -315,7 +327,23 @@ Deno.serve(async (req) => {
       for (const loc of new Set(gameRows.map((r) => r.__location).filter(Boolean) as string[])) {
         const { data: vid, error: vErr } = await sb.rpc("get_or_create_venue", { p_name: loc, p_tm_key: null });
         if (vErr) throw new Error(`venue resolve ('${loc}'): ${vErr.message}`);
-        venueIdByLocation.set(loc, (vid as string | null) ?? null);
+        const venueId = (vid as string | null) ?? null;
+        venueIdByLocation.set(loc, venueId);
+        // Enrich with the real street address when this location matches a parsed
+        // place. enrich_venue_address only re-flags geocode when the address actually
+        // changes, so repeated ingests don't churn good pins (idempotent).
+        const place = venueId ? placeByClean.get(cleanPlaceName(loc)) : undefined;
+        if (place) {
+          const { error: enErr } = await sb.rpc("enrich_venue_address", {
+            p_venue_id: venueId,
+            p_address: place.street,
+            p_city: place.city,
+            p_state: place.state,
+            p_zip: place.zip,
+            p_tm_key: place.tmPlaceKey,
+          });
+          if (enErr) throw new Error(`venue enrich ('${loc}'): ${enErr.message}`);
+        }
       }
       for (const r of gameRows) {
         r.venue_id = r.__location ? venueIdByLocation.get(r.__location) ?? null : null;

@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  cleanPlaceName,
   getGameStatus,
   isPlaceholderTeam,
   normalizeName,
@@ -17,10 +18,74 @@ import {
   parseDivisionList,
   parseDivisionTeams,
   parseGameDate,
+  parsePlaces,
   parseScore,
   parseTournamentDates,
   parseTournamentName,
 } from '../parseTournament.js';
+
+// Verbatim shape of the Tournament.aspx "Complexes" places panel (captured from a
+// live Zero Gravity tournament). Two places: one full address, one with a 2-line
+// street + "City, ST ZIP" — locks the address parse + the cleanName join key.
+const PLACES_HTML = `
+<div class="panel panel-default panel-places complexList" data-type="complex">
+  <div class="list-group">
+    <div class="list-group-item js-list-group-item-place" data-id="hPLACE1">
+      <h4>4 - House of Sports</h4>
+      <button type="button" class="btn"><i class="fa fa-map-marker"></i></button>
+    </div>
+    <div class="list-group-item-dropdown hidden">
+      <a href="http://maps.google.com/maps?q=1%20Elm%20St" target="_blank">
+        <address>
+          1 Elm St<br />
+          Ardsley, NY 10502
+        </address>
+      </a>
+      <h5>Facilities</h5>
+      <ul><li><b>Court 1</b></li><li><b>Court 2</b></li></ul>
+    </div>
+    <div class="list-group-item js-list-group-item-place" data-id="hPLACE2">
+      <h4>3 - Harry S. Truman High School</h4>
+      <button type="button" class="btn"><i class="fa fa-map-marker"></i></button>
+    </div>
+    <div class="list-group-item-dropdown hidden">
+      <a href="#"><address>750 Baychester Ave<br />Bronx, NY 10475</address></a>
+      <h5>Facilities</h5><ul><li><b>Court 1</b></li></ul>
+    </div>
+  </div>
+</div>`;
+
+describe('parsePlaces (Tournament.aspx Complexes panel)', () => {
+  it('parses each venue name + street/city/state/zip + tm place id', () => {
+    const places = parsePlaces(PLACES_HTML);
+    expect(places.length).toBe(2);
+    expect(places[0]).toEqual({
+      tmPlaceKey: 'hPLACE1',
+      rawName: '4 - House of Sports',
+      cleanName: 'house of sports',
+      street: '1 Elm St',
+      city: 'Ardsley',
+      state: 'NY',
+      zip: '10502',
+    });
+    expect(places[1].cleanName).toBe('harry s. truman high school');
+    expect(places[1]).toMatchObject({ street: '750 Baychester Ave', city: 'Bronx', state: 'NY', zip: '10475' });
+  });
+
+  it('cleanName joins a game-row location (with court) to the place <h4>', () => {
+    // game cell carries the ordinal AND the court; the place <h4> carries only the
+    // ordinal — both must clean to the same key so the address attaches.
+    expect(cleanPlaceName('4 - House of Sports - Court 1')).toBe('house of sports');
+    expect(cleanPlaceName('4 - House of Sports')).toBe('house of sports');
+    expect(cleanPlaceName('05 Ramapo College - Court 3')).toBe('ramapo college');
+    // a number that is part of the real name survives (only the leading ordinal goes)
+    expect(cleanPlaceName('05 24 Hour Fitness')).toBe('24 hour fitness');
+  });
+
+  it('returns [] when there is no places panel', () => {
+    expect(parsePlaces('<div>no places here</div>')).toEqual([]);
+  });
+} );
 
 const FIX = join(process.cwd(), 'src/lib/aau/__tests__');
 const tournamentHtml = readFileSync(join(FIX, 'tournament.fixture.html'), 'utf8');
