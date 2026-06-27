@@ -29,9 +29,17 @@ export function stripHtml(html) {
     .trim();
 }
 
-/** Normalize a team/division name for case- and space-insensitive matching. */
+/**
+ * Normalize a team/division name for case- and space-insensitive matching.
+ * Strips a leading bracket-seed prefix ("[1] Legacy Hoopers (NY)" → "legacy
+ * hoopers (ny)") that TM stamps on BRACKET-game team cells but NOT on the
+ * standings rows the team list is built from. Without the strip a bracket game
+ * fails to resolve to a tournament_division_team id and the game is dropped —
+ * the record-accuracy bug where a team that went 3–1 (incl. a bracket loss)
+ * showed 2–0 (pool wins only). Matching-only; display names are untouched.
+ */
 export function normalizeName(name) {
-  return (name || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  return (name || '').trim().replace(/^\[\d+\]\s*/, '').replace(/\s+/g, ' ').toLowerCase();
 }
 
 // Seed/advancement placeholders that appear in bracket rows but are NOT real
