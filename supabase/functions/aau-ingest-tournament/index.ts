@@ -148,21 +148,34 @@ Deno.serve(async (req) => {
   // (idempotent without a schema change — AP #21, no migration).
   let tournamentId: string;
   {
-    const { data: existing, error: selErr } = await sb
-      .from("tournaments")
-      .select("id")
-      .eq("org_id", orgId)
-      .eq("name", tournamentName)
-      .eq("start_date", startDate)
-      .maybeSingle();
-    if (selErr) return json({ error: `tournament select: ${selErr.message}` }, 500);
+    // Match the STABLE TM id first (set on every prior ingest) so a name/date drift on
+    // TM — Zero Gravity nudges the start date as an event nears — updates the same row
+    // instead of spawning a duplicate tournament. Fall back to (org, name, start_date)
+    // only for a first-ever ingest before the id is stored.
+    let existing: { id: string } | null = null;
+    {
+      const { data: byId, error: idErr } = await sb
+        .from("tournaments").select("id").eq("tm_id_tournament", idTournament).maybeSingle();
+      if (idErr) return json({ error: `tournament select (tm_id): ${idErr.message}` }, 500);
+      existing = (byId as { id: string } | null) ?? null;
+    }
+    if (!existing) {
+      const { data: byName, error: selErr } = await sb
+        .from("tournaments")
+        .select("id")
+        .eq("org_id", orgId)
+        .eq("name", tournamentName)
+        .eq("start_date", startDate)
+        .maybeSingle();
+      if (selErr) return json({ error: `tournament select: ${selErr.message}` }, 500);
+      existing = (byName as { id: string } | null) ?? null;
+    }
     if (existing) {
-      tournamentId = existing.id as string;
-      // Persist the TM id on the existing row (reproducible re-ingest) if not yet set.
+      tournamentId = existing.id;
+      // Keep the row current (TM date/name can drift) + stamp the id if not yet set.
       await sb.from("tournaments")
-        .update({ tm_id_tournament: idTournament })
-        .eq("id", tournamentId)
-        .is("tm_id_tournament", null);
+        .update({ tm_id_tournament: idTournament, name: tournamentName, start_date: startDate, end_date: endDate })
+        .eq("id", tournamentId);
     } else {
       const { data: created, error: insErr } = await sb
         .from("tournaments")
