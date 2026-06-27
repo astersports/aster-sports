@@ -158,6 +158,11 @@ Deno.serve(async (req) => {
     if (selErr) return json({ error: `tournament select: ${selErr.message}` }, 500);
     if (existing) {
       tournamentId = existing.id as string;
+      // Persist the TM id on the existing row (reproducible re-ingest) if not yet set.
+      await sb.from("tournaments")
+        .update({ tm_id_tournament: idTournament })
+        .eq("id", tournamentId)
+        .is("tm_id_tournament", null);
     } else {
       const { data: created, error: insErr } = await sb
         .from("tournaments")
@@ -168,6 +173,7 @@ Deno.serve(async (req) => {
           start_date: startDate,
           end_date: endDate,
           schedule_status: "preliminary",
+          tm_id_tournament: idTournament,
         })
         .select("id")
         .single();
