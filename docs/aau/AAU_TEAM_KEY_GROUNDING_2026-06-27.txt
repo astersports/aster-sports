@@ -1,0 +1,71 @@
+================================================================================
+TEAM-KEY GROUNDING PROOF — §3 of the rating-binding brief
+aster-sports backbone (Supabase vrwwpsbfbnveawqwbdmj) · 2026-06-27 · CC → Architect + Frank
+re: RATING-BINDING BRIEF §3 ("ground the key's recurrence + non-collision, then build")
+================================================================================
+
+0 · WHAT THIS IS
+  The brief made §3 a hard precondition: prove external_team_key is cross-event-stable BEFORE
+  re-graining rating/record onto it (the team-level analog of the game re-seed proof). This is
+  that proof, run against live prod data 2026-06-27. [GROUNDED] = pg query result.
+
+1 · THE PROOF (live counts) [GROUNDED]
+  Source: tournament_division_teams.external_team_key (TM IDTeam) joined to its tournament.
+    • Coverage ........................ 3086 / 3086 team rows carry a key (0 missing) → 100%.
+    • Distinct keys ................... 3017.
+    • (b) NON-COLLISION .............. 0 of 3017 keys map to >1 distinct team name → PASSES.
+        external_team_key NEVER merges two genuinely distinct teams. It is PRECISE.
+    • (a) RECURRENCE ................. 69 of 3017 keys span >1 tournament; MAX = 2 tournaments.
+        TM's IDTeam is ~per-tournament-registration; it does NOT meaningfully recur cross-event.
+    • Contrast — the name-slug (the current bug) . 509 name-slugs map to MULTIPLE distinct keys.
+        i.e. 509 cases where distinct real teams share a display name. Keying cross-event on the
+        slug merge-corrupts at scale (e.g. "legacy hoopers" = 14 distinct division-teams across
+        5 tournaments collapsed to ONE rating + ONE tracked-state — the two reported bugs).
+
+2 · VERDICT
+  (b) PASSES decisively, (a) FAILS (weak). Consequence:
+    • external_team_key is the RIGHT key to RE-GRAIN onto — it is precise (0 collisions) and
+      fully covered (100%). Re-graining record/rating/tracking onto it KILLS BOTH BUGS: every
+      distinct team gets its own identity, its own record, its own tracked-state.
+    • But because it does NOT recur across tournaments, a rating bound to it is PER-TOURNAMENT
+      (the team's opponent-adjusted margin within the tournament's graph), NOT the cross-event
+      rating the brief's §1 envisioned. TRUE cross-event aggregation (a team's rating across all
+      its tournaments) is NOT achievable from TM's id — it requires entity resolution (§2.E).
+
+3 · THE DECISION THIS SURFACES (architect ruling needed before the re-grain)
+  Record is unambiguous: PER-CONTEXT exact, keyed on external_team_key. No fork.
+  Rating has a fork, because (a) failed:
+    OPTION A — PER-KEY (per-tournament) rating on external_team_key.  [CC LEAN]
+      Compute the opponent-adjusted margin over the team's games keyed by external_team_key.
+      Since the key is ~per-tournament, this is effectively the EXISTING standings model
+      (get_public_tournament_standings already rates per-division) — just correctly keyed so it
+      can't merge distinct teams. Has a REAL basis (the team's actual finals + real opponents),
+      so it is NOT fabrication. NULL only when the team has no finals (§4 basis gate). Honest +
+      precise + fixes the bugs now; cross-event aggregation arrives free when §2.E lands.
+    OPTION B — NULL rating until a true cross-event key exists (entity resolution).
+      Strict reading of §3 ("if the key fails recurrence → per-event RECORD + NULL RATING").
+      Record-only on the discovery surface now; rating returns with §2.E.
+  CC LEAN: OPTION A. A single tournament is not a 3-game pool — it carries a real multi-opponent
+  graph the standings model already rates; keying that on the precise external_team_key is the
+  honest, non-merge-corrupting version of what ships today. Label it for what it is (per-event),
+  reserve cross-event for §2.E. Option B is also defensible if the predictor must only ever see a
+  cross-event rating; the architect owns that model call.
+
+4 · ON BUILD (unchanged from the brief; gated on the §3 ruling above)
+  Once A vs B is ruled:
+    • Author ONE held migration: re-grain record (+ rating per the ruling) onto external_team_key
+      + A6 venue_state. vitest mirror (AP #21/#30). No auto-merge. OWNER APPLIES.
+    • Then gender→grade reorg + dedupe (now safe — deduping on external_team_key, the precise key)
+      + year/month/state filters ride on top, render-gated.
+    • No-fabrication holds: rating NULL without basis; projection visually distinct from exact
+      clinch math; conservative — never merge on uncertain identity.
+  CALIBRATION (brief §6) still applies once ratings compute: logistic slope (0.1) + grade prior
+  (12 pts/grade) calibrated against real Grand Finale outcomes before the win-% is trusted.
+
+ONE LINE: external_team_key PASSES non-collision (0/3017) and is 100% covered, so it is the
+precise key to re-grain record/rating/tracking onto — which kills both reported bugs — but it
+does NOT recur cross-event (69/3017, max 2 tournaments), so a rating bound to it is per-tournament
+(the existing standings model, correctly keyed), not cross-event; CC leans Option A (ship the
+honest per-event rating now, label it, defer true cross-event to the §2.E entity), architect to
+rule A vs B before the held migration is authored.
+================================================================================
