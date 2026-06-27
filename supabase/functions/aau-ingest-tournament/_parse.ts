@@ -46,14 +46,14 @@ export function stripHtml(html: string): string {
 
 /**
  * Normalize a team/division name for case- and space-insensitive matching.
- * Strips the two annotations TM stamps on game-row team cells but NOT on the
- * standings rows the team list is built from, so a game resolves to its
+ * Strips two TM-rendered team-cell annotations so a game resolves to its
  * tournament_division_team id instead of being dropped at the !homeId/!awayId
  * guard (the record-accuracy bug: a team that went 3–1 showed 2–0):
  *   - a leading bracket-seed prefix ("[1] Legacy Hoopers (NY)")
  *   - a trailing advancement asterisk ("Lady Breakers (MA) - Jean*")
- * parseDivisionTeams already strips the trailing "*" from standings names; this
- * mirrors it on the matching side. Matching-only; display names are untouched.
+ * parseDivisionTeams strips the trailing "*" from standings names at parse time,
+ * but game-row cells keep these annotations — so the matcher strips them too,
+ * for consistency with team parsing. Matching-only; display names are untouched.
  */
 export function normalizeName(name?: string | null): string {
   return (name || '').trim().replace(/^\[\d+\]\s*/, '').replace(/\s*\*+\s*$/, '').replace(/\s+/g, ' ').toLowerCase();
