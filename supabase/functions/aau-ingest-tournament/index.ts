@@ -398,9 +398,10 @@ Deno.serve(async (req) => {
       // including UNSEEDED ones the game upsert skips (a side is a "Bracket Winner
       // B<n>" / "Pool 1st" placeholder, not a real team yet). Structure (round
       // depth, seed_source, advancement) is derived purely in _bracket.ts. This
-      // writes NO consumer-visible surface yet; event_id is left null (the live
-      // bracket_slots.event_id FKs events(id), not division_games — flagged for
-      // architect §2.D; the slot↔game link rides the source_game_id work there).
+      // writes NO consumer-visible surface yet. event_id links the slot to its
+      // division_games row when the game is resolved/persisted (the migration
+      // retargets bracket_slots.event_id to division_games(id), refinement 3); an
+      // unseeded bracket game isn't in division_games yet, so event_id stays null.
       // Own try/catch so a bracket-shape quirk never drops already-upserted games.
       let bracketSlots = 0;
       try {
@@ -427,17 +428,22 @@ Deno.serve(async (req) => {
           bracketSlots = slotIds?.length ?? 0;
 
           // Second pass: resolve advances_to (winner destination) self-FK now that
-          // every slot has an id. Key by (round, slot_index).
+          // every slot has an id, then write ALL edges in ONE bulk upsert — not an
+          // N+1 update-per-slot, which risks edge-function timeouts on large brackets.
           const idByPos = new Map<string, string>();
           for (const r of slotIds || []) idByPos.set(`${r.round}:${r.slot_index}`, r.id as string);
-          for (const s of slots) {
-            if (!s.advancesTo) continue;
-            const fromId = idByPos.get(`${s.round}:${s.slotIndex}`);
-            const toId = idByPos.get(`${s.advancesTo.round}:${s.advancesTo.slotIndex}`);
-            if (fromId && toId) {
-              const { error: aErr } = await sb.from("bracket_slots").update({ advances_to_slot_id: toId }).eq("id", fromId);
-              if (aErr) throw new Error(`bracket_slots advances_to: ${aErr.message}`);
-            }
+          const edgeRows = slotRows
+            .map((row, i) => {
+              const a = slots[i].advancesTo;
+              const toId = a ? idByPos.get(`${a.round}:${a.slotIndex}`) : null;
+              return toId ? { ...row, advances_to_slot_id: toId } : null;
+            })
+            .filter(Boolean) as Array<Record<string, unknown>>;
+          if (edgeRows.length) {
+            const { error: aErr } = await sb
+              .from("bracket_slots")
+              .upsert(edgeRows, { onConflict: "tournament_division_id,round,slot_index" });
+            if (aErr) throw new Error(`bracket_slots advances_to: ${aErr.message}`);
           }
         }
       } catch (be) {
