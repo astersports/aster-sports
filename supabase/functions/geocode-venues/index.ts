@@ -42,9 +42,22 @@ async function getAppSecret(
   return (data?.value as string | null) ?? null;
 }
 
-/** Full address string for geocoding (name first — TM venues are site names). */
+/** Strip TM's "N - " court-sheet ordinal prefix + "- Court X" suffix so the geocoder
+ *  sees the real site name ("Harry S. Truman High School"), not "3 - … - Court 3".
+ *  The prefix regex requires whitespace on BOTH sides of the hyphen so it only matches
+ *  TM's "3 - Venue" sheet ordinal — never a hyphenated name like "24-7 Fitness". */
+export function cleanVenueName(name: string): string {
+  return (
+    name
+      .replace(/^\s*\d+\s+-\s+/, "")
+      .replace(/\s*-\s*court\s*[0-9A-Za-z]+\s*$/i, "")
+      .trim() || name
+  );
+}
+
+/** Full address string for geocoding (cleaned name first — TM venues are site names). */
 function venueQuery(v: { name: string; address: string | null; city: string | null; state: string | null; zip: string | null }): string {
-  return [v.name, v.address, [v.city, v.state].filter(Boolean).join(", "), v.zip]
+  return [cleanVenueName(v.name), v.address, [v.city, v.state].filter(Boolean).join(", "), v.zip]
     .filter(Boolean)
     .join(", ");
 }
@@ -102,10 +115,12 @@ Deno.serve(async (req) => {
       failed++;
       continue;
     }
-    const url = `${GEOCODE_URL}?address=${encodeURIComponent(q)}&key=${apiKey}`;
+    // region=us + a Northeast viewport BIAS the result toward the AAU footprint (not a
+    // hard restrict). The confidence gate below is the real guard against a wrong pin.
+    const url = `${GEOCODE_URL}?address=${encodeURIComponent(q)}&key=${apiKey}&region=us&bounds=${encodeURIComponent("39.0,-80.5|47.5,-69.0")}`;
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
-    let payload: { status?: string; results?: Array<{ geometry?: { location?: { lat: number; lng: number } } }> };
+    let payload: { status?: string; results?: Array<{ partial_match?: boolean; geometry?: { location?: { lat: number; lng: number }; location_type?: string } }> };
     try {
       const res = await fetch(url, { signal: ctrl.signal });
       payload = await res.json();
@@ -118,16 +133,24 @@ Deno.serve(async (req) => {
     }
 
     const status = payload.status;
-    if (status === "OK" && payload.results?.[0]?.geometry?.location) {
-      const { lat, lng } = payload.results[0].geometry.location;
+    const top = payload.results?.[0];
+    const loc = top?.geometry?.location;
+    // CONFIDENCE GATE: a bare TM site name with no city/state geocodes ambiguously
+    // (Google sent "Harry S. Truman High School" to NJ). Reject Google's own
+    // partial_match flag AND APPROXIMATE location_type so we NEVER persist a wrong pin —
+    // those rows mark 'failed' and directions fall back to the name/address link.
+    const lowConfidence = top?.partial_match === true || top?.geometry?.location_type === "APPROXIMATE";
+    if (status === "OK" && loc && !lowConfidence) {
+      const { lat, lng } = loc;
       const { error: upErr } = await sb
         .from("venues")
         .update({ lat, lng, geocode_status: "ok", geocoded_at: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq("id", v.id);
       if (upErr) return json({ error: `venue update: ${upErr.message}`, ok, failed }, 500);
       ok++;
-    } else if (status === "ZERO_RESULTS" || status === "INVALID_REQUEST" || status === "NOT_FOUND") {
-      // no usable result → mark failed; directions fall back to the address string
+    } else if (status === "OK" || status === "ZERO_RESULTS" || status === "INVALID_REQUEST" || status === "NOT_FOUND") {
+      // no usable result, OR a low-confidence/approximate match → mark failed so
+      // directions fall back to the address/name link instead of a wrong pin.
       await sb.from("venues").update({ geocode_status: "failed", geocoded_at: new Date().toISOString() }).eq("id", v.id);
       failed++;
     } else if (status === "OVER_QUERY_LIMIT" || status === "UNKNOWN_ERROR") {
