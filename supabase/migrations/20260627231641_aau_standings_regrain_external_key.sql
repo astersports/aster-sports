@@ -1,12 +1,11 @@
 -- ============================================================================
--- A2 — STANDINGS RE-GRAIN: resolved_key → external_team_key  (STAGED · HELD)
+-- A2 — STANDINGS RE-GRAIN: resolved_key → external_team_key  (APPLIED 2026-06-27 · B3)
 -- Architect-ratified 2026-06-27 (ARCHITECT_DECISION_RULINGS A2, option 1 full re-grain).
 --
--- ⛔ NOT YET APPLIED. This is STAGED for Frank's explicit apply-go (gate B3). Per the
---    apply-gate discipline this is a CREATE OR REPLACE of an existing function (NOT a
---    brand-new additive read), so it stage-and-holds regardless of the A1 narrow
---    exception. On apply via MCP, rename to the canonical production version string
---    (AP #21) and run the re-test below before declaring done.
+-- APPLIED to prod via MCP 2026-06-27 on Frank's B3 apply-go ("Go"). Canonical version
+--    20260627231641 (this filename). Re-test PASSED: division "Boys - 9th" returns 8 distinct
+--    teams (no collapsing) with max gp = 2 (was 17 cross-tournament before the re-grain) and the
+--    circuit cap applied. A CREATE OR REPLACE of an existing function — owner-applied per B3.
 --
 -- WHY (grounded against prod vrwwpsbfbnveawqwbdmj, 2026-06-27):
 --   - tournament_division_teams: 3,086 rows, 1,799 distinct resolved_key (1,287
