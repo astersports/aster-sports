@@ -186,4 +186,16 @@ describe('pure helpers', () => {
     // a bare "[..]" that isn't a numeric seed is left intact
     expect(normalizeName('[A] Team')).toBe('[a] team');
   });
+
+  it('normalizeName: strips a trailing advancement asterisk so those games resolve', () => {
+    // TM stamps a trailing "*" advancement marker on some game-row team cells but
+    // strips it from standings rows — the match must ignore it (Legacy 2-0→3-1 bug,
+    // Girls Nationals P7 "Lady Breakers (MA) - Jean*" was dropped without this).
+    expect(normalizeName('Lady Breakers (MA) - Jean*')).toBe('lady breakers (ma) - jean');
+    expect(normalizeName('Castle Athletics (NY)*')).toBe('castle athletics (ny)');
+    // resolves to the same key as the clean standings name
+    expect(normalizeName('CT Falcons (CT) - ST*')).toBe(normalizeName('CT Falcons (CT) - ST'));
+    // both annotations at once (leading seed + trailing asterisk)
+    expect(normalizeName('[2] CT Northstars (CT) - Tracy*')).toBe('ct northstars (ct) - tracy');
+  });
 });
