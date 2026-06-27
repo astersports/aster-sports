@@ -42,20 +42,19 @@ async function getAppSecret(
   return (data?.value as string | null) ?? null;
 }
 
-/** Strip TM's court-sheet ordinal prefix + "- Court X" suffix so the geocoder sees the
- *  real site name ("Ramapo College"), not "05 Ramapo College - Court 4". TM stamps two
- *  prefix shapes: "3 - Venue" (number, spaced hyphen) and "05 Venue" (zero-padded sheet
- *  number, no hyphen). Both are matched narrowly so a real numeric name survives:
- *   - "N - " requires whitespace on BOTH sides of the hyphen (never "24-7 Fitness").
- *   - "0N " requires a LEADING ZERO (never "24 Hour Fitness" — only TM's "01".."09"). */
+/** Strip the leading venue-ordinal prefix + "- Court X" suffix so the geocoder sees the
+ *  real site name ("Ramapo College"), not "05 Ramapo College - Court 4". Zero Gravity
+ *  assigns every venue cell a location number "1".."x" (operator-confirmed), in two
+ *  shapes: "3 - Venue" (spaced hyphen) and "05 Venue" / "10 Venue" (bare, padded or not).
+ *  Strip a leading 1–2 digit ordinal exactly ONCE — so a number that is part of the real
+ *  name survives (e.g. "05 24 Hour Fitness" → "24 Hour Fitness", not "Hour Fitness", and
+ *  "7 - 24-7 Fitness" → "24-7 Fitness"). The hyphen form is tried first, then the bare
+ *  form; .replace() with a non-global regex only removes the first (leading) ordinal. */
 export function cleanVenueName(name: string): string {
-  return (
-    name
-      .replace(/^\s*\d+\s+-\s+/, "")
-      .replace(/^\s*0\d+\s+/, "")
-      .replace(/\s*-\s*court\s*[0-9A-Za-z]+\s*$/i, "")
-      .trim() || name
-  );
+  const ordinalStripped = /^\s*\d{1,2}\s*-\s+/.test(name)
+    ? name.replace(/^\s*\d{1,2}\s*-\s+/, "")
+    : name.replace(/^\s*\d{1,2}\s+/, "");
+  return ordinalStripped.replace(/\s*-\s*court\s*[0-9A-Za-z]+\s*$/i, "").trim() || name;
 }
 
 /** Full address string for geocoding (cleaned name first — TM venues are site names). */
