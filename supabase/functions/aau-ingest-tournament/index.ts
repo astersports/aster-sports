@@ -38,6 +38,7 @@ import {
   type DivisionGame,
   type PlaceEntry,
 } from "./_parse.ts";
+import { deriveBracketStructure } from "./_bracket.ts";
 
 const DESKTOP_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
@@ -333,6 +334,17 @@ Deno.serve(async (req) => {
           status: g.status,
           start_at: g.startAt,
           external_game_id: g.externalGameId,
+          // §2.B additive source-native capture (architect ruling 2026-06-27).
+          // The upsert KEY is unchanged (still tournament_division_id,
+          // external_game_id=slot label); these columns just start flowing so the
+          // §2.D identity swap (external_game_id := source_game_id, behind `source`)
+          // has its substrate. game_code mirrors the mutable slot label.
+          source: "tourneymachine",
+          game_code: g.externalGameId,
+          source_game_id: g.sourceGameId || null,
+          home_source_team_ref: g.homeTeamRef || null,
+          away_source_team_ref: g.awayTeamRef || null,
+          source_facility_ref: g.facilityId || null,
           __location: (g.location || "").trim(),
         });
       }
@@ -370,13 +382,73 @@ Deno.serve(async (req) => {
       }
 
       let gamesUpserted = 0;
+      const gameIdByCode = new Map<string, string>();
       if (gameRows.length) {
         const { data: up, error: gErr } = await sb
           .from("division_games")
           .upsert(gameRows, { onConflict: "tournament_division_id,external_game_id" })
-          .select("id");
+          .select("id, external_game_id");
         if (gErr) throw new Error(`games upsert: ${gErr.message}`);
         gamesUpserted = up?.length ?? 0;
+        for (const r of up || []) gameIdByCode.set(r.external_game_id as string, r.id as string);
+      }
+
+      // ── §2.B bracket substrate (additive; isolated) ─────────────────────────
+      // Capture the bracket tree into bracket_slots from ALL B-prefix games —
+      // including UNSEEDED ones the game upsert skips (a side is a "Bracket Winner
+      // B<n>" / "Pool 1st" placeholder, not a real team yet). Structure (round
+      // depth, seed_source, advancement) is derived purely in _bracket.ts. This
+      // writes NO consumer-visible surface yet. event_id links the slot to its
+      // division_games row when the game is resolved/persisted (the migration
+      // retargets bracket_slots.event_id to division_games(id), refinement 3); an
+      // unseeded bracket game isn't in division_games yet, so event_id stays null.
+      // Own try/catch so a bracket-shape quirk never drops already-upserted games.
+      let bracketSlots = 0;
+      try {
+        const slots = deriveBracketStructure(games as DivisionGame[]);
+        if (slots.length) {
+          const slotRows = slots.map((s) => ({
+            org_id: orgId,
+            tournament_division_id: divisionId,
+            round: s.round,
+            slot_index: s.slotIndex,
+            seed_source: s.seedSourceRaw,
+            division_team_id: s.isResolved ? teamIdByName.get(normalizeName(s.seedSourceRaw || "")) ?? null : null,
+            // slot→game link: the bracket game lives in division_games keyed by its
+            // slot label (== gameCode). Resolved/persisted games map; an unseeded
+            // bracket game isn't in division_games yet → event_id stays null. FK now
+            // targets division_games(id) (migration refinement 3).
+            event_id: gameIdByCode.get(s.gameCode) ?? null,
+          }));
+          const { data: slotIds, error: sErr } = await sb
+            .from("bracket_slots")
+            .upsert(slotRows, { onConflict: "tournament_division_id,round,slot_index" })
+            .select("id, round, slot_index");
+          if (sErr) throw new Error(`bracket_slots upsert: ${sErr.message}`);
+          bracketSlots = slotIds?.length ?? 0;
+
+          // Second pass: resolve advances_to (winner destination) self-FK now that
+          // every slot has an id, then write ALL edges in ONE bulk upsert — not an
+          // N+1 update-per-slot, which risks edge-function timeouts on large brackets.
+          const idByPos = new Map<string, string>();
+          for (const r of slotIds || []) idByPos.set(`${r.round}:${r.slot_index}`, r.id as string);
+          const edgeRows = slotRows
+            .map((row, i) => {
+              const a = slots[i].advancesTo;
+              const toId = a ? idByPos.get(`${a.round}:${a.slotIndex}`) : null;
+              return toId ? { ...row, advances_to_slot_id: toId } : null;
+            })
+            .filter(Boolean) as Array<Record<string, unknown>>;
+          if (edgeRows.length) {
+            const { error: aErr } = await sb
+              .from("bracket_slots")
+              .upsert(edgeRows, { onConflict: "tournament_division_id,round,slot_index" });
+            if (aErr) throw new Error(`bracket_slots advances_to: ${aErr.message}`);
+          }
+        }
+      } catch (be) {
+        // Non-fatal: record + continue (games already committed).
+        results.push({ division: div.name, bracketError: (be as Error).message });
       }
 
       results.push({
@@ -388,6 +460,7 @@ Deno.serve(async (req) => {
         gamesParsed: games.length,
         gamesUpserted,
         gamesSkipped: skipped,
+        bracketSlots,
       });
     } catch (e) {
       // Per-division isolation: record the failure, continue the run.

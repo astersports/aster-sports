@@ -44,6 +44,15 @@ export function normalizeName(name) {
   return (name || '').trim().replace(/^\[\d+\]\s*/, '').replace(/\s*\*+\s*$/, '').replace(/\s+/g, ' ').toLowerCase();
 }
 
+/** Read one HTML attribute value out of a raw tag-attribute string. Returns ''
+ * when absent. Standard ES only (AP #30) — used to recover the source-native
+ * ids (data-gameid / data-teamid / data-facilityid) the cell text drops. */
+export function getAttr(tagAttrs, name) {
+  const re = new RegExp(name + "\\s*=\\s*['\"]([^'\"]*)['\"]", 'i');
+  const m = (tagAttrs || '').match(re);
+  return m ? m[1] : '';
+}
+
 /**
  * Clean a venue label to a stable match key: strip Zero Gravity's leading
  * location ordinal ("4 - " / "05 "), the trailing "- Court X" facility suffix,
@@ -231,18 +240,24 @@ export function parseDivisionTeams(html) {
  * surfaced via isPlaceholderTeam so the caller can skip non-external games.
  * `now` is injectable for deterministic status tests.
  * Returns [{ externalGameId, homeName, awayName, homeScore, awayScore,
- *            startAt (ISO|null), status, location, homePlaceholder, awayPlaceholder }].
+ *            startAt (ISO|null), status, location, homePlaceholder, awayPlaceholder,
+ *            sourceGameId, homeTeamRef, awayTeamRef, facilityId }].
+ * The four source-native ids (§2.B) are recovered from the <tr>/<td> attributes
+ * (data-gameid / data-teamid / data-facilityid); '' when the attribute is absent.
  */
 export function parseDivisionGames(html, now = new Date()) {
   const games = [];
   const seen = new Set();
-  const trRe = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+  // Capture <tr> + each <td> OPEN-TAG attributes alongside the cell text (§2.B).
+  // Cell text stays byte-identical; the attrs recover the source-native ids.
+  const trRe = /<tr([^>]*)>([\s\S]*?)<\/tr>/gi;
   let tr;
   while ((tr = trRe.exec(html)) !== null) {
     const cells = [];
-    const tdRe = /<td[^>]*>([\s\S]*?)<\/td>/gi;
+    const cellAttrs = [];
+    const tdRe = /<td([^>]*)>([\s\S]*?)<\/td>/gi;
     let td;
-    while ((td = tdRe.exec(tr[1])) !== null) cells.push(stripHtml(td[1]));
+    while ((td = tdRe.exec(tr[2])) !== null) { cellAttrs.push(td[1]); cells.push(stripHtml(td[2])); }
     if (cells.length < 7) continue;
 
     const externalGameId = cells[0];
@@ -269,6 +284,10 @@ export function parseDivisionGames(html, now = new Date()) {
       location: cells[2] || '',
       homePlaceholder: isPlaceholderTeam(homeName),
       awayPlaceholder: isPlaceholderTeam(awayName),
+      sourceGameId: getAttr(tr[1], 'data-gameid'),
+      homeTeamRef: getAttr(cellAttrs[3] || '', 'data-teamid'),
+      awayTeamRef: getAttr(cellAttrs[6] || '', 'data-teamid'),
+      facilityId: getAttr(cellAttrs[2] || '', 'data-facilityid'),
     });
   }
   return games;

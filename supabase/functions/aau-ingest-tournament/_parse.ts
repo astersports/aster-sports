@@ -27,6 +27,16 @@ export interface DivisionGame {
   location: string;
   homePlaceholder: boolean;
   awayPlaceholder: boolean;
+  // §2.B source-native refs (additive capture). TM stamps every game row with a
+  // durable `data-gameid` (h<created-ts><hex>) and every team/venue cell with a
+  // stable id; the parser used to discard them. `sourceGameId` is the durable
+  // game ref (the §2.D Layer-1 identity, source-neutral — see the ingest writer);
+  // homeTeamRef/awayTeamRef are TM team ids (empty for an unresolved seed); and
+  // facilityId is the TM venue id. All empty-string when the attribute is absent.
+  sourceGameId: string;
+  homeTeamRef: string;
+  awayTeamRef: string;
+  facilityId: string;
 }
 
 // ─── HTML helpers ───────────────────────────────────────────────────────────
@@ -42,6 +52,15 @@ export function stripHtml(html: string): string {
     .replace(/&#\d+;/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/** Read one HTML attribute value out of a raw tag-attribute string. Returns ''
+ * when absent. Standard ES only (AP #30) — used to recover the source-native
+ * ids (data-gameid / data-teamid / data-facilityid) the cell text drops. */
+export function getAttr(tagAttrs: string, name: string): string {
+  const re = new RegExp(name + "\\s*=\\s*['\"]([^'\"]*)['\"]", 'i');
+  const m = (tagAttrs || '').match(re);
+  return m ? m[1] : '';
 }
 
 /**
@@ -259,13 +278,18 @@ export function parseDivisionTeams(html: string): DivisionTeam[] {
 export function parseDivisionGames(html: string, now: Date = new Date()): DivisionGame[] {
   const games: DivisionGame[] = [];
   const seen = new Set<string>();
-  const trRe = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+  // Capture the <tr> + each <td> OPEN-TAG attributes alongside the cell text, so
+  // the source-native ids (data-gameid on the row, data-teamid on the team cells,
+  // data-facilityid on the location cell) survive — the old regex kept only inner
+  // text and dropped them (§2.B). Cell text is byte-identical to before.
+  const trRe = /<tr([^>]*)>([\s\S]*?)<\/tr>/gi;
   let tr: RegExpExecArray | null;
   while ((tr = trRe.exec(html)) !== null) {
     const cells: string[] = [];
-    const tdRe = /<td[^>]*>([\s\S]*?)<\/td>/gi;
+    const cellAttrs: string[] = [];
+    const tdRe = /<td([^>]*)>([\s\S]*?)<\/td>/gi;
     let td: RegExpExecArray | null;
-    while ((td = tdRe.exec(tr[1])) !== null) cells.push(stripHtml(td[1]));
+    while ((td = tdRe.exec(tr[2])) !== null) { cellAttrs.push(td[1]); cells.push(stripHtml(td[2])); }
     if (cells.length < 7) continue;
 
     const externalGameId = cells[0];
@@ -292,6 +316,10 @@ export function parseDivisionGames(html: string, now: Date = new Date()): Divisi
       location: cells[2] || '',
       homePlaceholder: isPlaceholderTeam(homeName),
       awayPlaceholder: isPlaceholderTeam(awayName),
+      sourceGameId: getAttr(tr[1], 'data-gameid'),
+      homeTeamRef: getAttr(cellAttrs[3] || '', 'data-teamid'),
+      awayTeamRef: getAttr(cellAttrs[6] || '', 'data-teamid'),
+      facilityId: getAttr(cellAttrs[2] || '', 'data-facilityid'),
     });
   }
   return games;

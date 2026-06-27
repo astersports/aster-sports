@@ -1,0 +1,175 @@
+================================================================================
+AAU DISCOVERY / FIND — REDESIGN: GROUNDING + L99 DECISION REQUEST
+aster-sports backbone + AAU hub (astersports-web) · 2026-06-27 · CC → Architect + Frank
+pairs with: aau-discovery-redesign-spec.txt + aau-discovery-redesign-render.html
+================================================================================
+
+0 · WHAT THIS DOC IS
+  The spec (§10/§11) made build-order step 1 a hard gate: GROUND the live public-RPC
+  contract before any code, and route any CONTRACT ADDITION through L99 (architect →
+  Frank → owner applies), building everything else behind the screenshot render gate.
+  This doc is that grounding + the resulting L99 decision request. Every claim below is
+  [GROUNDED] against the live DB (pg_proc / information_schema) or the live frontend
+  (file:line), 2026-06-27. CC's leans are labeled (AP #39 — committed, not hedged).
+
+1 · GROUNDING — THE LIVE CONTRACT vs THE SPEC
+
+  1.1 SEARCH  [GROUNDED: pg_get_functiondef]
+    LIVE: public.search_public_teams(p_query text) -> jsonb
+      Returns a FLAT array, TEAMS ONLY:
+        [{ teamKey, name, tournamentId, tournamentName, startDate, endDate,
+           divisionId, divisionName, gradeLabel, gender }]
+      • NOT program-grouped (no program_id, no nested variants — §2.E identity absent)
+      • NO tournaments[] / divisions[] typed sections (the render's §R1 three-section result)
+      • NO record / rating / is_live on the row (the §R4 value-in-row is absent)
+      • NO tier / day (only gradeLabel + gender)
+    SPEC WANTS (§R1): typed sections { teams(program-grouped w/ variants), tournaments,
+      divisions }, each variant carrying division{gender,grade,tier,day}, record, rating, is_live.
+    => DELTA. Per spec §10 this is the named L99 item: search returns flat team rows,
+       so program-grouped + typed + valued search is a CONTRACT ADDITION.
+
+  1.2 DIVISION TAXONOMY (§2.A)  [GROUNDED: information_schema]
+    tournament_divisions HAS: gender, grade_label, grade_min, grade_max, tier, day,
+      circuit, advance_count, bracket_size. The structured columns the chips need EXIST.
+    The gap is only that search/directory don't SELECT tier+day yet — a field addition,
+    NOT a backfill. No name-parsing needed anywhere (DO-NOT #2 satisfied by the columns).
+
+  1.3 PROGRAM IDENTITY (§2.E)  [GROUNDED: information_schema]
+    tournament_division_teams has NO program_id column. There is no programs table.
+    "Program" today is DERIVABLE only from the team name / resolved_key + shared location
+    (e.g. "High Rise — Brie", "High Rise — Will" share the "High Rise" stem). Grouping by a
+    normalized program stem is an honest derive (NOT fabrication); a true program entity is
+    a deeper backbone item (flagged, not built here).
+
+  1.4 DIRECTORY / BROWSE  [GROUNDED: pg_get_functiondef]
+    LIVE: public.get_public_tournament_directory() -> jsonb
+      Returns tournaments (de-duped to the richest copy per name+date), each with circuit,
+      start_date, end_date, divisions[]{id,name,grade_label,gender,advance_count,team_count}.
+      • HAS circuit + dates => circuit -> season+year -> tournament grouping is CLIENT-SIDE
+        derivable (season from start_date month, year from start_date). RENDER-GATED, no L99.
+      • Division rows here also lack tier/day + is_live (same field-addition as 1.2).
+      • No filter args, and no DIVISION-level browse (R3 division_browse) — see A4.
+
+  1.5 PASTE / INGEST (§R2)  [GROUNDED: frontend aster.ts + pg_proc + aau_ingest_submissions]
+    LIVE: edge fn `aau-submit-tournament` (POST {url}) -> { ok, status, submissionId,
+      tournamentId } ; then public.get_aau_ingest_status(p_id uuid) -> { status,
+      tournamentId, tournamentName, divisionCount, error }. aau_ingest_submissions carries
+      status in {ingesting, ready/ok, duplicate, error, missing}.
+    SPEC WANTS: resolve_source(url) {known? } + phased % status + source labeling.
+      • known-vs-new: ALREADY covered — submit returns `duplicate` + tournamentId for a
+        known link. A dedicated resolve_source(url) is OPTIONAL sugar, not required. RENDER-GATED.
+      • phased % + per-phase step copy: the status RPC returns a coarse status, not a %/phase.
+        The render's 4 phase lines + % bar can ride on status + divisionCount today (honest,
+        coarse) and tighten later. RENDER-GATED (no fabricated %; show real phase, not theater).
+      • source label (recognized/external/unrecognized): client-derivable from the URL host +
+        the submit result. RENDER-GATED.
+
+  1.6 LIVE STRIP (§R5)  [GROUNDED: pg_proc — absent]
+    No public.get_public_live_now(...) exists. The front-door "Live right now" strip + the
+    browse/result live dots have NO public read RPC today. The realtime TICK is TECH-1
+    (deferred, not a blocker) — but even the ON-LOAD READ needs a public RPC. => A new RPC.
+
+  1.7 FRONTEND STATE  [GROUNDED: file:line]
+    The Find surface EXISTS: client/src/components/aau/FindDiscovery.tsx (search box +
+    directory + paste, 359 ln), shelled by pages/AAUBasketball.tsx (bottom nav Find/My
+    Teams/Standings/Film), result tap -> TrackTeams.tsx modal. Dark theme + the render's
+    exact font stack (Space Grotesk/Inter/Space Mono) + brand gradient
+    (#E0631C→#E8902A→#F6CC55→#FBD56B) already live in index.css. All RPC calls go through
+    named wrappers in lib/aster.ts (no RPC name in a component) — so a new RPC is a one-file
+    wrapper swap. Tracking via lib/aau/trackingStore.ts (teamKey = resolved_key; localStorage
+    anon / tracked_teams signed-in). => The redesign is a REFINEMENT on good bones, not a rebuild.
+
+2 · THE L99 SURFACE (contract additions — additive + versioned; never rename/remove)
+  Consumer-impact [GROUNDED]: the only reader of these public RPCs today is the AAU hub
+  itself (astersports-web). New RPCs / new nullable fields break no existing read — Legacy
+  Hoopers + future tenants read get_public_aau_team_schedule / standings, untouched here.
+
+  A1 — search_public_aau(p_query text) -> jsonb   [NEW RPC, the spec §10 item]
+     Typed sections { teams, tournaments, divisions }. teams program-grouped:
+       [{ program, location, variants:[{ teamKey, label, gender, grade_label, tier, day,
+          record, rating, basis, is_live }] }]. Leaves search_public_teams INTACT.
+     LEAN: NEW name (not a shape change to the old fn) so no consumer can break, and the old
+     fn stays as the v1 fallback the screen renders against until A1 lands (spec §10 "held element").
+
+  A2 — value-in-row (record · rating · basis · is_live)
+     Fold INTO A1's variant objects AND a directory companion, so ONE round-trip per section
+     carries its value (no N+1 per-row value fetch). record from division_games results;
+     rating already computed by get_public_tournament_standings (reuse its basis gate); is_live
+     from division_games.status='live'. basis flag drives the "projection" label (no #7 fabrication).
+     LEAN: bundle with A1; do not ship a separate per-row value RPC (AP #40 — dedicated shape,
+     but same round-trip).
+
+  A3 — tier + day fields on search + directory division rows
+     Pure field addition (columns already exist, 1.2). Additive nullable JSON keys.
+
+  A4 — get_public_division_browse(p_filters jsonb) -> jsonb   [NEW RPC, R3 filters]
+     Division-grouped browse filtered by {gender, grade_label, tier, day, status}. Distinct
+     SHAPE from the tournament-grouped directory (AP #40 — dedicated contract, not a directory
+     filter-arg bolt-on). LEAN: PHASE 2 — the render's Browse screen (04) is TOURNAMENT-grouped
+     (circuit→season→tournament), which is render-gated on the existing directory (1.4); the
+     division-filter chips returning division lists are the second cut. Build screen 04 now;
+     file A4 for L99 but don't block the redesign on it.
+
+  A5 — get_public_live_now(p_limit int) -> jsonb   [NEW RPC, R5 read]
+     Currently-live public games for the front-door strip + live dots. One RPC feeding multiple
+     surfaces (front door, results, browse) — not per-row polling. The realtime TICK stays TECH-1.
+     LEAN: small + high-leverage; ship with A1.
+
+  NOT L99 (RENDER-GATED — build now, no contract change):
+     • The full 5-state visual redesign onto existing data.
+     • Browse circuit→season→year grouping over existing get_public_tournament_directory (1.4).
+     • Paste/ingest flow visual on existing aau-submit-tournament + get_aau_ingest_status (1.5).
+     • Known-vs-new via the existing `duplicate` status; URL-host source label.
+     • No-results escape hatch (paste + request-ingest + REAL near-match only, DO-NOT #4).
+
+3 · CC ENHANCEMENTS (the "unless you have enhancements" the brief invited)
+  E1  NAME the new search RPC search_public_aau and KEEP search_public_teams as the live
+      fallback — the screen renders grouped against A1 the moment it lands, flat against the
+      old fn until then. Zero-downtime, zero consumer break. (Implements spec §10 verbatim.)
+  E2  ONE valued round-trip per section (A1+A2 bundled) instead of row-by-row value fetches —
+      protects the §16.10-class perf budget on a search-as-you-type surface.
+  E3  ONE get_public_live_now feeding front-door strip + every live dot, vs per-row live state.
+  E4  DERIVE program grouping from the normalized name stem + shared location now (honest), and
+      separately FLAG a true `programs` entity as the deeper §2.E backbone follow-up — so the
+      screen ships the §2.E *win* (one "High Rise", variants nested) without waiting on a schema
+      entity. Grouping is presentation-derived; if two distinct programs ever share a stem the
+      fallback is "show as separate" (never merge-on-guess).
+  E5  DEFER A4 (division_browse) behind the tournament-grouped Browse screen (render-gated),
+      so the redesign ships on three new RPCs (A1+A2+A3 bundled, A5), not five surfaces at once.
+
+4 · PROPOSED BUILD / GATE SEQUENCE
+  Behind the RENDER gate (start now, no L99 needed):
+    1) Front door (screen 01): hero + search box + paths + live strip shell + popular.
+    2) Browse (screen 04): circuit→season→year tree over existing directory + client filters.
+    3) Paste (screen 03): the phased visual over existing submit + status (coarse-but-honest).
+    4) No-results (screen 05): escape hatch + real near-match only.
+    5) Smart results (screen 02): built to consume the A1 shape, rendered against the v1 flat
+       fallback until A1 lands (grouping = the one held element, spec §10).
+  Through L99 (owner applies after architect + Frank sign-off):
+    A1+A2+A3 (one migration: new search_public_aau + valued/typed/grouped + tier/day), A5
+    (get_public_live_now). A4 filed for phase 2. CC will author the migration SQL + mirror
+    file (AP #21) and open it as a HELD PR (no auto-merge, §2.4 Architect-scoped); CC does
+    NOT apply it — owner does, same as §2.B.
+  HOLDS intact: $20/money OFF this surface (DO-NOT #1); child/PII never here (Plane A only);
+    no agent flips *_LIVE; no fabricated record/rating/%/live tick (§7).
+
+5 · THE DECISION REQUESTED (architect + Frank)
+  Q1  APPROVE the A1+A2+A3 bundle as the §10 contract addition (new search_public_aau,
+      typed+program-grouped+valued+tier/day; old fn retained)?  CC LEAN: yes (it is exactly
+      the spec §10 additive-versioned path; zero consumer break).
+  Q2  APPROVE A5 (get_public_live_now) as a small additive read RPC now, realtime tick later?
+      CC LEAN: yes.
+  Q3  RATIFY E4: program grouping DERIVED from name-stem+location now, with a true `programs`
+      entity as a separate later backbone item?  CC LEAN: yes (ships the §2.E win without a
+      premature entity; honest derive, no merge-on-guess).
+  Q4  RATIFY E5: A4 (division_browse) deferred to phase 2 behind the render-gated tournament
+      Browse?  CC LEAN: yes.
+  On sign-off: CC opens the HELD migration PR (owner applies) + builds the render-gated screens
+  in parallel on branch claude/aster-aau-nextup-card-9le01j. Nothing consumer-visible flips
+  until the migration is applied and the screens pass the §8 screenshot-diff gate.
+
+ONE LINE: the Find surface already exists on the right bones; the redesign is render-gated
+everywhere EXCEPT a clean, additive search contract (program-grouped + typed + valued + tier/day)
+and a small live-now read RPC — both proposed additive+versioned for L99, with program grouping
+honestly derived now and a true program entity flagged as the deeper follow-up.
+================================================================================
