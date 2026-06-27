@@ -36,8 +36,9 @@ answers ARCHITECT_STANDINGS_REVIEW_20260627 §5 + aau-standings-improved-spec §
     prior effectively does not exist yet → drop now, not gate.
 
 2 · (b) IS THE PRE-PLAY ORDER HOST SEEDING OR COMPUTED? → COMPUTED (no seed data). [GROUNDED]
-   • `tournament_division_teams` HAS a `seed` column (and `sort_order`), BUT `seed` is NULL for
-     **0 / 3,017** public-division teams, and the RPC does not select or use it.
+   • `tournament_division_teams` HAS a `seed` column (and `sort_order`), BUT it is UNPOPULATED:
+     `seed` is non-null for **0 / 3,017** public-division teams (i.e. NULL for all 3,017), and the
+     RPC does not select or use it.
    • Pre-play, `computeStandings` orders teams on all-zero records (W-L 0–0, diff 0) → the rank
      1..N is an arbitrary tiebreak/insertion order with no earned basis, and the in-table "top 2
      advance" cut is drawn over it (S3 confirmed).
