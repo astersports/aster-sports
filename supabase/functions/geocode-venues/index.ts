@@ -57,11 +57,18 @@ export function cleanVenueName(name: string): string {
   return ordinalStripped.replace(/\s*-\s*court\s*[0-9A-Za-z]+\s*$/i, "").trim() || name;
 }
 
-/** Full address string for geocoding (cleaned name first — TM venues are site names). */
+/** Geocoding query for a venue. When we have a real street address (ingested from
+ *  TM's Complexes panel) we geocode the ADDRESS ALONE — the verbose venue name
+ *  ("University of Mount Saint Vincent - Peter J Sharpe Athletic Center") makes Google
+ *  flag partial_match even when the street resolves to rooftop, and the confidence gate
+ *  then rejects a perfectly good pin. With no address we fall back to the cleaned site
+ *  name (TM venues are site names) so a bare-name venue still gets a best-effort pin. */
 function venueQuery(v: { name: string; address: string | null; city: string | null; state: string | null; zip: string | null }): string {
-  return [cleanVenueName(v.name), v.address, [v.city, v.state].filter(Boolean).join(", "), v.zip]
-    .filter(Boolean)
-    .join(", ");
+  const cityState = [v.city, v.state].filter(Boolean).join(", ");
+  if (v.address && v.address.trim()) {
+    return [v.address, cityState, v.zip].filter(Boolean).join(", ");
+  }
+  return [cleanVenueName(v.name), cityState, v.zip].filter(Boolean).join(", ");
 }
 
 Deno.serve(async (req) => {
