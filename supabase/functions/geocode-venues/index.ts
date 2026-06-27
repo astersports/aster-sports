@@ -43,11 +43,13 @@ async function getAppSecret(
 }
 
 /** Strip TM's "N - " court-sheet ordinal prefix + "- Court X" suffix so the geocoder
- *  sees the real site name ("Harry S. Truman High School"), not "3 - … - Court 3". */
+ *  sees the real site name ("Harry S. Truman High School"), not "3 - … - Court 3".
+ *  The prefix regex requires whitespace on BOTH sides of the hyphen so it only matches
+ *  TM's "3 - Venue" sheet ordinal — never a hyphenated name like "24-7 Fitness". */
 export function cleanVenueName(name: string): string {
   return (
     name
-      .replace(/^\s*\d+\s*-\s*/, "")
+      .replace(/^\s*\d+\s+-\s+/, "")
       .replace(/\s*-\s*court\s*[0-9A-Za-z]+\s*$/i, "")
       .trim() || name
   );
