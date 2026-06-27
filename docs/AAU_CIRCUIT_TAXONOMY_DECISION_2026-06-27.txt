@@ -1,0 +1,66 @@
+================================================================================
+AAU CIRCUIT TAXONOMY — DECISION REQUEST + PREPARED BACKFILL
+2026-06-27 · CC → Frank / Architect · §2.C data lane · L99
+pairs with supabase/migrations/20260627200000_aau_circuit_taxonomy_backfill.sql (PREPARED, NOT APPLIED)
+================================================================================
+
+REQUEST
+  Ratify the AAU directory `circuit` taxonomy and authorize the prepared backfill that
+  collapses it to three buckets: {AAU Tournament, League Play, Other}. Owner applies on
+  Frank's explicit go (the migration is held, not applied).
+
+WHY (operator-flagged 2026-06-27, from the live Browse screen)
+  Zero Gravity events scatter between two groups — some under "AAU Zero Gravity", most under
+  "Other" — and a Zero Gravity *winter league* sits under "Other" too. Frank's ruling:
+  "Zero gravity had a winter league so should be assigned as league and not other. Maybe just
+  AAU Tournament, League Play and other."
+
+EVIDENCE (live, public-listed AAU tournaments, archived_at IS NULL — 2026-06-27)
+  Current `circuit` column:  7 × NULL · 5 × 'AAU Zero Gravity' · 1 × 'League Play'  (13 total)
+  Root cause: the scrape lands `circuit` inconsistently (brand string on some, NULL on most);
+  the Browse render reads the column faithfully, so the inconsistency surfaces as scatter.
+  This is a DATA problem, not a render problem (spec §R3 do-not: never name-parse in the client).
+
+PROPOSED CLASSIFICATION (deterministic, name-derived in the §2.C backfill lane — sanctioned,
+mirrors the division taxonomy backfill 20260627122920 which was owner-authorized + architect-
+ratified). Order matters:
+  1. League Play    := name ~* '\mleague\M'
+  2. AAU Tournament := name ~* 'zero gravity'  OR  prior circuit = 'AAU Zero Gravity'  (minus leagues)
+  3. Other          := whatever remains NULL
+
+DRY-RUN RESULT (read-only SELECT, no write) — the split the backfill will produce:
+  AAU Tournament (10):
+    Zero Gravity NY Grand Finale · The Challenge NY · Summer Slam 2026 · NY Hoop Festival ·
+    Empire State Showdown · Girls Nationals Finals 2026 · Rumble for the Ring CT · Rumble for
+    the Ring NY · NY Metro Showdown · Chase for the Chain NY
+  League Play (2):
+    WPCYO Spring League 2026 · Zero Gravity Tri-State Winter League (2025-2026)
+  Other (1):
+    BBallshootout Pre Summer Hoops Jam Classic 1 & 2
+
+OPEN QUESTION (the one judgment call)
+  BBallshootout Pre Summer Hoops Jam Classic → currently lands in "Other" (it is neither a
+  league nor a Zero Gravity-brand event). It IS an AAU-style tournament. Options:
+    (a) leave it "Other" — conservative; "Other" holds only genuinely-other events. [CC LEAN]
+    (b) reclassify "AAU Tournament" — if any non-ZG AAU tournament should read as AAU Tournament,
+        the rule broadens to "tournament-shaped events → AAU Tournament" (needs a positive signal
+        beyond brand; we don't have a clean structured one today, so this would be a manual pin).
+  CC lean = (a): keep it "Other" until we have a structured tournament-vs-other signal; one event
+  doesn't justify a fuzzy rule. Flip to (b) with a one-line go if you'd rather it read AAU.
+
+APPLY PATH (held — owner decides)
+  This is a data UPDATE to a display/grouping column: Plane A public, no schema/RLS/money/child,
+  reversible (relabel only). Per the L99 charter the go is its own affirmative act — I will NOT
+  apply it without your explicit "apply the circuit backfill." On go, owner (or CC on explicit
+  Tier-1 go) runs it via MCP and the post-apply verification SELECT in the migration footer.
+
+DURABLE FOLLOW-UP (separate, flagged — not in this backfill)
+  Classify `circuit` at INGEST in the aau-ingest-tournament edge function (same 3-bucket rule) so
+  new scrapes land correct and this backfill never has to re-run. Recommend scheduling right after
+  the backfill ratifies, so the column stays clean going forward.
+
+RELATED HELD ITEM (unchanged, still pending your go)
+  supabase/migrations/20260627190000_aau_search_hardening.sql — the #1128 follow-up (NULL
+  external_team_key filter + live-key public/archived gate). Tier 1, defensive (0 current impact),
+  awaiting your explicit go to apply.
+================================================================================
