@@ -6,6 +6,11 @@
 //
 // V-32 closure per ADMIN_SESSION_SCOPE.md Tier 1. Route: /admin/members
 // (admin-only).
+//
+// L99 enhancement pass (2026-06-28): summary stat row, link-state
+// filter + sort toolbar, avatar + kid chips + quick-contact actions
+// (MemberRow), result count + scoped empty/microcopy. Row/filter/sort
+// logic decomposed into src/components/admin-members/* to hold ≤150.
 
 import { useMemo, useState } from 'react';
 import { Users } from 'lucide-react';
@@ -13,14 +18,13 @@ import AdminManagerLayout from '../components/admin/AdminManagerLayout';
 import GuardianFormSheet from '../components/admin/GuardianFormSheet';
 import Toast from '../components/shared/Toast';
 import { useGuardians } from '../hooks/useGuardians';
+import MemberStatRow from '../components/admin-members/MemberStatRow';
+import MemberToolbar from '../components/admin-members/MemberToolbar';
+import MemberRow from '../components/admin-members/MemberRow';
+import { matchesGuardian, passesLinkFilter, sortGuardians } from '../components/admin-members/memberHelpers';
 
 function matches(g, q) {
-  if (!q) return true;
-  const haystack = [
-    g.first_name, g.last_name, g.email, g.phone,
-    ...(g.kids || []).flatMap((k) => [k.first_name, k.last_name]),
-  ].filter(Boolean).join(' ').toLowerCase();
-  return haystack.includes(q.toLowerCase());
+  return matchesGuardian(g, q);
 }
 
 export default function AdminMembersPage() {
@@ -29,10 +33,15 @@ export default function AdminMembersPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [toast, setToast] = useState(null);
+  const [filter, setFilter] = useState('all');
+  const [sortKey, setSortKey] = useState('name');
 
   const filtered = useMemo(
-    () => (guardians || []).filter((g) => matches(g, search.trim())),
-    [guardians, search],
+    () => sortGuardians(
+      (guardians || []).filter((g) => matches(g, search.trim()) && passesLinkFilter(g, filter)),
+      sortKey,
+    ),
+    [guardians, search, filter, sortKey],
   );
 
   const openNew = () => { setEditing(null); setSheetOpen(true); };
@@ -43,17 +52,26 @@ export default function AdminMembersPage() {
       ? await updateGuardian(editing.id, input)
       : await createGuardian(input);
     if (error) {
-      setToast({ message: error, variant: 'error' });
+      setToast({ message: 'Looks like that didn’t go through. Try again?', variant: 'error' });
     } else {
       setToast({ message: editing ? 'Member updated' : 'Member added', variant: 'success' });
       setSheetOpen(false);
     }
   };
 
+  const total = guardians?.length || 0;
+  const isFiltering = !!search.trim() || filter !== 'all';
+  const emptyTitle = isFiltering ? 'No matches' : 'No guardians yet';
+  const emptyDescription = filter === 'unlinked' && !search.trim()
+    ? 'Every guardian has a kid linked — nice and tidy.'
+    : isFiltering
+      ? 'Try a different search or filter.'
+      : 'Members appear here once families register.';
+
   return (
     <AdminManagerLayout
       title="Members"
-      subtitle={loading ? null : `${guardians.length} guardian${guardians.length === 1 ? '' : 's'} · ${guardians.reduce((s, g) => s + g.kids.length, 0)} kid link${guardians.reduce((s, g) => s + g.kids.length, 0) === 1 ? '' : 's'}`}
+      subtitle={loading ? null : `${total} guardian${total === 1 ? '' : 's'}`}
       searchValue={search}
       onSearchChange={setSearch}
       searchPlaceholder="Search by guardian or kid name, email, phone…"
@@ -62,53 +80,31 @@ export default function AdminMembersPage() {
       loading={loading}
       isEmpty={!loading && filtered.length === 0}
       emptyIcon={Users}
-      emptyTitle={search ? 'No matches' : 'No guardians yet'}
-      emptyDescription={search ? 'Try a different search term.' : 'Members appear here once families register.'}
+      emptyTitle={emptyTitle}
+      emptyDescription={emptyDescription}
     >
+      {total > 0 && (
+        <MemberStatRow
+          guardians={guardians}
+          onShowUnlinked={() => { setSearch(''); setFilter('unlinked'); }}
+        />
+      )}
+      {total > 0 && (
+        <MemberToolbar
+          filter={filter}
+          onFilterChange={setFilter}
+          sortKey={sortKey}
+          onSortChange={setSortKey}
+        />
+      )}
+      <p role="status" aria-live="polite" style={{ color: 'var(--as-text-secondary)', fontSize: 13, marginBottom: 8 }}>
+        {filtered.length} {filtered.length === 1 ? 'result' : 'results'}
+        {isFiltering ? ` of ${total}` : ''}
+      </p>
       <ul className="flex flex-col gap-2">
-        {filtered.map((g) => {
-          const fullName = `${g.first_name || ''} ${g.last_name || ''}`.trim() || '(unnamed)';
-          const kidLine = g.kids.length
-            ? g.kids.map((k) => `${k.first_name || ''} ${k.last_name || ''}`.trim()).filter(Boolean).join(', ')
-            : 'No linked kids';
-          const contactLine = [g.email, g.phone].filter(Boolean).join(' · ');
-          return (
-            <li
-              key={g.id}
-              style={{
-                backgroundColor: 'var(--as-bg-card)',
-                borderRadius: 10,
-                border: '1px solid var(--as-border-subtle)',
-                boxShadow: 'var(--as-shadow-sm)',
-                overflow: 'hidden',
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => openEdit(g)}
-                className="w-full text-left as-press"
-                style={{ padding: 16, background: 'none', border: 'none', cursor: 'pointer', display: 'block' }}
-              >
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold" style={{ color: 'var(--as-text-primary)', fontSize: 17 }}>
-                  {fullName}
-                </span>
-                <span style={{ color: 'var(--as-text-tertiary)', fontSize: 11, fontWeight: 500, letterSpacing: 0.5 }}>
-                  {g.kids.length} KID{g.kids.length === 1 ? '' : 'S'}
-                </span>
-              </div>
-              {contactLine && (
-                <div style={{ color: 'var(--as-text-secondary)', fontSize: 13, marginBottom: 4 }}>
-                  {contactLine}
-                </div>
-              )}
-              <div style={{ color: g.kids.length ? 'var(--as-text-secondary)' : 'var(--as-text-tertiary)', fontSize: 13, fontStyle: g.kids.length ? 'normal' : 'italic' }}>
-                {kidLine}
-              </div>
-              </button>
-            </li>
-          );
-        })}
+        {filtered.map((g) => (
+          <MemberRow key={g.id} guardian={g} onEdit={openEdit} />
+        ))}
       </ul>
       <GuardianFormSheet
         open={sheetOpen}

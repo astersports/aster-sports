@@ -10,6 +10,11 @@ import AdminBackHeader from '../components/admin/AdminBackHeader';
 import TournamentFormSheet from '../components/tournament/TournamentFormSheet';
 import TournamentRowMenu from '../components/tournament/TournamentRowMenu';
 import TournamentStatusChips from '../components/tournament/TournamentStatusChips';
+import TournamentsListSkeleton from '../components/tournaments/TournamentsListSkeleton';
+import TournamentsEmptyState from '../components/tournaments/TournamentsEmptyState';
+import TournamentsErrorState from '../components/tournaments/TournamentsErrorState';
+import TournamentsResultCount from '../components/tournaments/TournamentsResultCount';
+import TournamentsLoadMore from '../components/tournaments/TournamentsLoadMore';
 
 // Tournaments list page. Admin sees org-wide list. If mounted under
 // /teams/:teamId/tournaments (from team detail tab in 2A-γ), filters to that
@@ -20,7 +25,7 @@ export default function TournamentsPage() {
   const { role } = useAuth();
   const { teamId } = useParams();
   const [statusFilter, setStatusFilter] = useState('all');
-  const { tournaments, loading, error, hasMore, loadMore, archive } = useTournaments({
+  const { tournaments, loading, error, hasMore, loadMore, archive, refetch } = useTournaments({
     teamId,
     statusFilter,
   });
@@ -40,7 +45,8 @@ export default function TournamentsPage() {
     <div style={{ padding: 16, paddingBottom: 80 }}>
       <AdminBackHeader />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--as-text-primary)', margin: 0 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--as-text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Trophy size={20} strokeWidth={1.75} color="var(--as-accent)" aria-hidden="true" />
           Tournaments
         </h1>
         {isStaff && (
@@ -53,27 +59,27 @@ export default function TournamentsPage() {
       <TournamentStatusChips statusFilter={statusFilter} setStatusFilter={setStatusFilter} />
 
       {loading && tournaments.length === 0 && (
-        <div style={{ padding: 40, textAlign: 'center', color: 'var(--as-text-secondary)', fontSize: 15 }}>
-          Loading...
-        </div>
+        <TournamentsListSkeleton rows={4} />
       )}
 
+      {/* Render on ANY error — including a failed load-more append (tournaments
+          already present) — so append failures aren't silent. Sits above the
+          list/load-more when results exist. */}
       {error && (
-        <div style={{ padding: 16, color: 'var(--as-danger)', fontSize: 13 }}>
-          {error.message || 'Failed to load tournaments'}
-        </div>
+        <TournamentsErrorState onRetry={() => refetch()} retrying={loading} />
+      )}
+
+      {tournaments.length > 0 && (
+        <TournamentsResultCount count={tournaments.length} hasMore={hasMore} />
       )}
 
       {!loading && !error && tournaments.length === 0 && (
-        <div style={{ padding: '48px 16px', textAlign: 'center' }}>
-          <Trophy size={32} strokeWidth={1.5} color="var(--as-text-tertiary)" style={{ marginBottom: 12 }} />
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)', marginBottom: 4 }}>
-            No tournaments yet
-          </div>
-          <div style={{ fontSize: 13, color: 'var(--as-text-secondary)' }}>
-            {role === 'admin' || role === 'coach' ? 'Tap + New to create one.' : 'Check back when your team signs up.'}
-          </div>
-        </div>
+        <TournamentsEmptyState
+          isStaff={isStaff}
+          filtered={statusFilter !== 'all'}
+          onClear={() => setStatusFilter('all')}
+          onCreate={openCreate}
+        />
       )}
 
       {tournaments.map((t) => (
@@ -86,20 +92,8 @@ export default function TournamentsPage() {
         />
       ))}
 
-      {hasMore && !loading && (
-        <button
-          type="button"
-          onClick={loadMore}
-          className="as-press"
-          style={{
-            width: '100%', minHeight: 44, marginTop: 8,
-            borderRadius: 10, border: '1px solid var(--as-border-default)',
-            backgroundColor: 'var(--as-bg-card)', color: 'var(--as-accent)',
-            fontSize: 15, fontWeight: 500,
-          }}
-        >
-          Load more
-        </button>
+      {hasMore && tournaments.length > 0 && (
+        <TournamentsLoadMore onClick={loadMore} loading={loading} />
       )}
 
       {formOpen && (

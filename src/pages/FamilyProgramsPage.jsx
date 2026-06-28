@@ -1,55 +1,58 @@
-import { ChevronLeft, Users } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { Users } from 'lucide-react';
 import { useGoBack } from '../hooks/useGoBack';
 import { useFamilyPrograms } from '../hooks/useFamilyPrograms';
-import ChildProgramCard from '../components/family/ChildProgramCard';
-import FamilyBalanceCard from '../components/family/FamilyBalanceCard';
-import FamilyOpenCard from '../components/family/FamilyOpenCard';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
+import FamilyProgramsHeader from '../components/family-programs/FamilyProgramsHeader';
+import FamilyErrorState from '../components/family-programs/FamilyErrorState';
+import FamilyProgramsBody from '../components/family-programs/FamilyProgramsBody';
 
 // Parent "My Family" (PR-B1): what each child is registered for, what the family
 // owes (one number from family_balances), and what's open to register into.
 // Parent-scoped reads; negative contract — no org rollup, no other families, no
-// admin controls.
+// admin controls. L99 enhancement pass: sticky header + optimistic refresh,
+// at-a-glance summary, Futures Academy spotlight (headline, not a footnote),
+// per-child filter, collapsible open-programs, actionable error/empty, a11y
+// live region. Additive over the original gate; --as-* tokens only.
 export default function FamilyProgramsPage() {
   const goBack = useGoBack();
-  const { data, loading, error } = useFamilyPrograms();
+  const { data, loading, error, refetch } = useFamilyPrograms();
+  const [refreshing, setRefreshing] = useState(false);
   const children = data?.children || [];
   const balances = data?.familyBalances || [];
   const open = data?.openPrograms || [];
   const hasAnything = children.some((c) => c.enrollments.length > 0) || open.length > 0;
 
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try { await refetch(); } finally { setRefreshing(false); }
+  }, [refetch]);
+
+  const status = loading ? 'Loading your family…' : error ? 'Couldn’t load your family.' : 'Your family is up to date.';
+
   return (
     <div style={wrap}>
-      <button type="button" onClick={goBack} className="as-press" aria-label="Go back" style={back}>
-        <ChevronLeft size={20} strokeWidth={1.75} /> Back
-      </button>
+      <FamilyProgramsHeader onBack={goBack} onRefresh={handleRefresh} refreshing={refreshing} />
       <h1 style={h1}>My Family</h1>
+      <p aria-live="polite" className="as-sr-only">{status}</p>
 
       {loading ? (
         <LoadingSkeleton variant="card" count={3} />
       ) : error ? (
-        <div role="alert" style={errStyle}>Couldn’t load your family right now. Try again in a moment.</div>
+        <FamilyErrorState onRetry={handleRefresh} retrying={refreshing} />
       ) : !hasAnything ? (
-        <EmptyState icon={Users} title="No programs yet" description="We’ll show your registrations and what’s open right here when it opens." />
+        <EmptyState
+          icon={Users}
+          title="No programs yet"
+          description="We’ll show your registrations and what’s open right here the moment it opens. Pull Refresh to check again."
+        />
       ) : (
-        <>
-          {children.map((child) => <ChildProgramCard key={child.id} child={child} />)}
-          {balances.map((row) => <FamilyBalanceCard key={row.programId} row={row} />)}
-          {open.length > 0 && (
-            <>
-              <div style={secLabel}>Programs open now</div>
-              {open.map((program) => <FamilyOpenCard key={program.id} program={program} />)}
-            </>
-          )}
-        </>
+        <FamilyProgramsBody children={children} balances={balances} open={open} />
       )}
     </div>
   );
 }
 
 const wrap = { minHeight: '100vh', backgroundColor: 'var(--as-bg-page)', padding: '16px 16px 32px', maxWidth: 600, margin: '0 auto' };
-const back = { display: 'flex', alignItems: 'center', minHeight: 44, padding: '0 8px 0 0', background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 15, fontWeight: 500, marginBottom: 8 };
 const h1 = { fontSize: 24, fontWeight: 700, color: 'var(--as-text-primary)', margin: '0 0 14px' };
-const errStyle = { padding: '12px 14px', borderRadius: 10, backgroundColor: 'var(--as-danger-soft)', color: 'var(--as-danger)', fontSize: 14 };
-const secLabel = { fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--as-text-meta)', margin: '8px 4px 8px' };

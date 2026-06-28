@@ -64,6 +64,10 @@ const INLINE_REMAINING = new Set([
   'src/components/briefings/TokenChipPreview.jsx',
   'src/components/ride/ClaimStatusPill.jsx',
   'src/components/alerts/AllClearPill.jsx',
+  // L99 public-schedule "Next up" chip — a purpose-built actionable affordance
+  // (CalendarClock icon + NY-pinned countdown, accent-soft wash, 6px 12px),
+  // distinct from the shared status Badge. Same category as the chips above.
+  'src/components/public-schedule/PublicScheduleHeader.jsx',
   'src/components/admin/CutoverGateChip.jsx',
   'src/components/shared/Badge.jsx',
 ]);
