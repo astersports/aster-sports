@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Bell, Building2, CalendarDays, FlaskConical, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import AdminBackHeader from '../components/admin/AdminBackHeader';
 import SettingsSheets from '../components/admin/SettingsSheets';
@@ -7,37 +7,19 @@ import { useOrgAutoNotifications } from '../hooks/useOrgAutoNotifications';
 import { useOrgSettings } from '../hooks/useOrgSettings';
 import { useAlertConfigs } from '../hooks/useAlertConfigs';
 import { useOrgFeatureSettings } from '../hooks/useOrgFeatureSettings';
+import { SEARCH_KEYWORDS } from '../components/admin-settings/settingsStyles';
+import SettingsGroup from '../components/admin-settings/SettingsGroup';
+import SettingsSearch from '../components/admin-settings/SettingsSearch';
+import SettingsNoResults from '../components/admin-settings/SettingsNoResults';
+import SettingsSavedBanner from '../components/admin-settings/SettingsSavedBanner';
+import SettingsErrorNote from '../components/admin-settings/SettingsErrorNote';
+import { useSaveTick } from '../components/admin-settings/useSaveTick';
 
 // /admin/settings — org-level admin settings (admin-only route). Thin row-list:
-// each row opens a FullScreenForm from SettingsSheets. General + Communications +
-// Pilot groups per the REV 2 spec. Decomposed at the Step-4 cap-pressure trigger.
-
-const SECTION_LABEL = {
-  fontSize: 11, fontWeight: 500, color: 'var(--as-text-tertiary)',
-  textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 6px 4px',
-};
-const CARD = {
-  backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)',
-  borderRadius: 10, boxShadow: 'var(--as-shadow-sm)', overflow: 'hidden', marginBottom: 20,
-};
-const ROW = {
-  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-  width: '100%', minHeight: 56, padding: '0 16px', textAlign: 'left',
-  background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-};
-const DIVIDER = { height: 1, backgroundColor: 'var(--as-border-subtle)', margin: '0 16px' };
-
-function Row({ title, summary, disabled, onClick }) {
-  return (
-    <button type="button" className="as-press" style={ROW} disabled={disabled} onClick={onClick}>
-      <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ fontSize: 15, color: 'var(--as-text-primary)', display: 'block' }}>{title}</span>
-        <span style={{ fontSize: 13, color: 'var(--as-text-tertiary)', display: 'block', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{summary}</span>
-      </span>
-      <ChevronRight size={20} strokeWidth={1.75} aria-hidden="true" style={{ color: 'var(--as-text-tertiary)', flexShrink: 0 }} />
-    </button>
-  );
-}
+// each row opens a FullScreenForm from SettingsSheets. L99 enhancement pass adds
+// search, status badges, icons, skeletons, save feedback, and kind empty/error
+// states; the row catalog + groups live in src/components/admin-settings/.
+const onOff = (v) => ({ label: v ? 'On' : 'Off', tone: v ? 'on' : 'off' });
 
 export default function AdminSettingsPage() {
   const { orgId, org } = useAuth();
@@ -46,14 +28,60 @@ export default function AdminSettingsPage() {
   const al = useAlertConfigs();
   const fs = useOrgFeatureSettings();
   const [openForm, setOpenForm] = useState(null);
+  const [query, setQuery] = useState('');
   const s = os.settings;
 
-  const orgSummary = os.loading ? 'Loading…' : `${org?.name || 'Organization'} · ${s?.season_label || 'No season set'}`;
-  const anSummary = an.loading ? 'Loading…' : `Reminders ${an.remindersOn ? 'on' : 'off'} · Nudges ${an.nudgesOn ? 'on' : 'off'}`;
-  const senderSummary = os.loading ? 'Loading…' : (s?.from_name && s?.from_email ? `${s.from_name} · ${s.from_email}` : 'Not set');
-  const channelsSummary = os.loading ? 'Loading…' : 'Push & email per category';
-  const alertsSummary = al.loading ? 'Loading…' : `${al.configs.filter((c) => c.enabled).length} active · RSVP, briefings, data`;
-  const pilotSummary = os.loading ? 'Loading…' : (s?.pilot_test_recipient_email ? `Redirecting to ${s.pilot_test_recipient_email}` : 'Live — sending to families');
+  // Wrap each hook's save so a success bumps the saved-confirmation tick.
+  const { tick, wrapped } = useSaveTick([an, os, al, fs]);
+  const [anW, osW, alW, fsW] = wrapped;
+
+  const k = SEARCH_KEYWORDS;
+  const open = (id) => () => setOpenForm(id);
+  const activeAlerts = al.configs.filter((c) => c.enabled).length;
+  // Settings finished loading but came back empty → derived load-error note.
+  const loadError = !!orgId && !os.loading && !s;
+
+  const groups = useMemo(() => [
+    { label: 'General', icon: Building2, rows: [
+      { id: 'org', title: 'Organization', icon: Building2, keywords: k.org, disabled: os.loading,
+        summary: os.loading ? 'Loading…' : `${org?.name || 'Organization'} · ${s?.season_label || 'No season set'}`,
+        loading: os.loading, onClick: open('org') },
+    ] },
+    { label: 'Notifications', icon: Bell, rows: [
+      { id: 'autonotif', title: 'Automatic messages', icon: Bell, keywords: k.autonotif, disabled: an.loading,
+        summary: an.loading ? 'Loading…' : `Reminders ${an.remindersOn ? 'on' : 'off'} · Nudges ${an.nudgesOn ? 'on' : 'off'}`,
+        badge: an.loading ? null : onOff(an.remindersOn || an.nudgesOn), loading: an.loading, onClick: open('autonotif') },
+      { id: 'channels', title: 'Channels', icon: Bell, keywords: k.channels, disabled: os.loading,
+        summary: os.loading ? 'Loading…' : 'Push & email per category', loading: os.loading, onClick: open('channels') },
+      { id: 'alerts', title: 'Alerts', icon: Bell, keywords: k.alerts, disabled: al.loading,
+        summary: al.loading ? 'Loading…' : `${activeAlerts} active · RSVP, briefings, data`,
+        badge: al.loading ? null : { label: `${activeAlerts} active`, tone: activeAlerts ? 'on' : 'off' },
+        loading: al.loading, onClick: open('alerts') },
+    ] },
+    { label: 'Events', icon: CalendarDays, rows: [
+      { id: 'features', title: 'Event features', icon: CalendarDays, keywords: k.features, disabled: fs.loading,
+        summary: fs.loading ? 'Loading…' : `Rides ${fs.ridesOn ? 'on' : 'off'} · Volunteers ${fs.dutiesOn ? 'on' : 'off'}`,
+        badge: fs.loading ? null : onOff(fs.ridesOn || fs.dutiesOn), loading: fs.loading, onClick: open('features') },
+    ] },
+    { label: 'Communications', icon: Send, rows: [
+      { id: 'sender', title: 'Sender identity', icon: Send, keywords: k.sender, disabled: os.loading,
+        summary: os.loading ? 'Loading…' : (s?.from_name && s?.from_email ? `${s.from_name} · ${s.from_email}` : 'Not set'),
+        badge: os.loading ? null : { label: s?.from_name && s?.from_email ? 'Set' : 'Not set', tone: s?.from_name && s?.from_email ? 'on' : 'warn' },
+        loading: os.loading, onClick: open('sender') },
+    ] },
+    { label: 'Pilot', icon: FlaskConical, rows: [
+      { id: 'pilot', title: 'Pilot mode', icon: FlaskConical, keywords: k.pilot, disabled: os.loading,
+        summary: os.loading ? 'Loading…' : (s?.pilot_test_recipient_email ? `Redirecting to ${s.pilot_test_recipient_email}` : 'Live — sending to families'),
+        badge: os.loading ? null : (s?.pilot_test_recipient_email ? { label: 'Test mode', tone: 'warn' } : { label: 'Live', tone: 'on' }),
+        loading: os.loading, onClick: open('pilot') },
+    ] },
+  ], [k, os.loading, an, al.loading, activeAlerts, fs, s, org?.name]);
+
+  const q = query.trim().toLowerCase();
+  const allRows = groups.flatMap((g) => g.rows);
+  const matchCount = q
+    ? allRows.filter((r) => `${r.title} ${r.summary} ${r.keywords || ''}`.toLowerCase().includes(q)).length
+    : allRows.length;
 
   return (
     <div className="px-4 py-4 as-fade-in" style={{ maxWidth: 600, margin: '0 auto' }}>
@@ -62,39 +90,25 @@ export default function AdminSettingsPage() {
         Settings
       </h1>
 
-      <h2 style={SECTION_LABEL}>General</h2>
-      <div style={CARD}>
-        <Row title="Organization" summary={orgSummary} disabled={os.loading} onClick={() => setOpenForm('org')} />
-      </div>
+      <SettingsSavedBanner savedTick={tick} />
+      {loadError ? <SettingsErrorNote /> : null}
+      <SettingsSearch value={query} onChange={setQuery} resultCount={matchCount} totalCount={allRows.length} />
 
-      <h2 style={SECTION_LABEL}>Notifications</h2>
-      <div style={CARD}>
-        <Row title="Automatic messages" summary={anSummary} disabled={an.loading} onClick={() => setOpenForm('autonotif')} />
-        <div style={DIVIDER} />
-        <Row title="Channels" summary={channelsSummary} disabled={os.loading} onClick={() => setOpenForm('channels')} />
-        <div style={DIVIDER} />
-        <Row title="Alerts" summary={alertsSummary} disabled={al.loading} onClick={() => setOpenForm('alerts')} />
-      </div>
+      {q && matchCount === 0 ? (
+        <SettingsNoResults query={query} onClear={() => setQuery('')} />
+      ) : (
+        groups.map((g) => (
+          <SettingsGroup key={g.label} label={g.label} icon={g.icon} rows={g.rows} query={query} />
+        ))
+      )}
 
-      <h2 style={SECTION_LABEL}>Events</h2>
-      <div style={CARD}>
-        <Row title="Event features" summary={fs.loading ? 'Loading…' : `Rides ${fs.ridesOn ? 'on' : 'off'} · Volunteers ${fs.dutiesOn ? 'on' : 'off'}`} disabled={fs.loading} onClick={() => setOpenForm('features')} />
-      </div>
+      {(!q || k.pilot.includes(q) || 'pilot'.includes(q)) ? (
+        <p style={{ fontSize: 12, color: 'var(--as-warning)', lineHeight: 1.4, margin: '0 4px 20px' }}>
+          Clearing the test address sends real email to families — the go-live cutover.
+        </p>
+      ) : null}
 
-      <h2 style={SECTION_LABEL}>Communications</h2>
-      <div style={CARD}>
-        <Row title="Sender identity" summary={senderSummary} disabled={os.loading} onClick={() => setOpenForm('sender')} />
-      </div>
-
-      <h2 style={SECTION_LABEL}>Pilot</h2>
-      <div style={CARD}>
-        <Row title="Pilot mode" summary={pilotSummary} disabled={os.loading} onClick={() => setOpenForm('pilot')} />
-      </div>
-      <p style={{ fontSize: 12, color: 'var(--as-warning)', lineHeight: 1.4, margin: '0 4px 20px' }}>
-        Clearing the test address sends real email to families — the go-live cutover.
-      </p>
-
-      <SettingsSheets openForm={openForm} setOpenForm={setOpenForm} an={an} os={os} al={al} fs={fs} org={org} />
+      <SettingsSheets openForm={openForm} setOpenForm={setOpenForm} an={anW} os={osW} al={alW} fs={fsW} org={org} />
     </div>
   );
 }

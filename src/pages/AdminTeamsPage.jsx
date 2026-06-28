@@ -1,44 +1,65 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import { useActiveSeasonTeams } from '../hooks/useActiveSeasonTeams';
 import { useSeason } from '../context/SeasonContext';
+import { useDensity } from '../hooks/useDensity';
 import AdminBackHeader from '../components/admin/AdminBackHeader';
 import TeamFormSheet from '../components/admin/TeamFormSheet';
-import Badge from '../components/shared/Badge';
 import EmptyState from '../components/shared/EmptyState';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import Toast from '../components/shared/Toast';
-
-const CIRCUIT_LABELS = { aau: 'AAU', league_play: 'League Play', tournament: 'Tournament' };
-const DAY_LABELS = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' };
+import TeamsFilterBar from '../components/admin-teams/TeamsFilterBar';
+import TeamsList from '../components/admin-teams/TeamsList';
+import TeamsErrorState from '../components/admin-teams/TeamsErrorState';
 
 export default function AdminTeamsPage() {
   const { activeSeason } = useSeason();
-  const { teams, loading, createTeam, updateTeam, deleteTeam } = useActiveSeasonTeams();
+  const { teams, loading, error, refetch, createTeam, updateTeam, deleteTeam } = useActiveSeasonTeams();
+  const { density } = useDensity('admin_teams', 'maximum');
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [toast, setToast] = useState(null);
+  const [query, setQuery] = useState('');
+  const [circuit, setCircuit] = useState('all');
+  const [sort, setSort] = useState('age');
+  const [hiddenIds, setHiddenIds] = useState([]); // optimistic-delete overlay
 
   const openEdit = (p) => { setEditing(p); setSheetOpen(true); };
+  const clearFilters = () => { setQuery(''); setCircuit('all'); };
+  const filtered = query.trim() !== '' || circuit !== 'all';
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const rows = teams
+      .filter((t) => !hiddenIds.includes(t.id))
+      .filter((t) => circuit === 'all' || t.circuit === circuit)
+      .filter((t) => q === '' || (t.name || '').toLowerCase().includes(q));
+    return sort === 'name'
+      ? [...rows].sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+      : rows; // 'age' keeps hook's sort_order (oldest → youngest)
+  }, [teams, hiddenIds, circuit, query, sort]);
 
   const save = async (payload) => {
-    const { error } = editing
-      ? await updateTeam(editing.id, payload)
-      : await createTeam(payload);
-    if (error) setToast({ message: error, variant: 'error' });
+    const { error: e } = editing ? await updateTeam(editing.id, payload) : await createTeam(payload);
+    if (e) setToast({ message: e, variant: 'error' });
     else {
       setToast({ message: editing ? 'Team updated' : 'Team created', variant: 'success' });
       setSheetOpen(false);
     }
   };
 
+  // Optimistic delete: hide the row immediately, roll back + toast on error.
   const remove = async (id) => {
-    const { error } = await deleteTeam(id);
-    if (error) setToast({ message: error, variant: 'error' });
-    else {
+    setSheetOpen(false);
+    setHiddenIds((ids) => [...ids, id]);
+    const { error: e } = await deleteTeam(id);
+    if (e) {
+      setHiddenIds((ids) => ids.filter((x) => x !== id));
+      setToast({ message: 'Looks like that didn’t go through. Try again?', variant: 'error' });
+    } else {
+      setHiddenIds((ids) => ids.filter((x) => x !== id));
       setToast({ message: 'Team deleted', variant: 'success' });
-      setSheetOpen(false);
     }
   };
 
@@ -72,48 +93,31 @@ export default function AdminTeamsPage() {
         </Link>
       </div>
 
-      {loading ? (
+      {error ? (
+        <TeamsErrorState onRetry={refetch} />
+      ) : loading ? (
         <LoadingSkeleton variant="card" count={4} />
-      ) : teams.length === 0 ? (
-        <EmptyState
-          icon={Users}
-          title="No teams yet"
-          description="Add teams from each program — open Programs to get started."
-        />
       ) : (
-        <ul className="flex flex-col gap-2">
-          {teams.map((p) => (
-            <li key={p.id}>
-              <button
-                type="button"
-                onClick={() => openEdit(p)}
-                className="w-full text-left p-4 as-press"
-                style={{
-                  backgroundColor: 'var(--as-bg-card)',
-                  borderRadius: 10,
-                  border: '1px solid var(--as-border-subtle)',
-                  borderLeft: `4px solid ${p.team_color || 'var(--as-border-default)'}`,
-                  boxShadow: 'var(--as-shadow-sm)',
-                }}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold" style={{ color: 'var(--as-text-primary)', fontSize: 17 }}>
-                    {p.name}
-                  </span>
-                  <div className="flex gap-1">
-                    <Badge>{p.age_group}</Badge>
-                    <Badge variant="info">{CIRCUIT_LABELS[p.circuit] || p.circuit}</Badge>
-                  </div>
-                </div>
-                <div style={{ color: 'var(--as-text-secondary)', fontSize: 13 }}>
-                  {p.practice_day ? `${DAY_LABELS[p.practice_day]}` : 'No practice day set'}
-                  {p.practice_location ? ` · ${p.practice_location}` : ''}
-                  {p.circuit === 'aau' && p.circuit_name ? ` · ${p.circuit_name}` : ''}
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <>
+          {teams.length > 0 && (
+            <TeamsFilterBar
+              query={query}
+              onQuery={setQuery}
+              circuit={circuit}
+              onCircuit={setCircuit}
+              sort={sort}
+              onSort={setSort}
+            />
+          )}
+          <TeamsList
+            teams={visible}
+            total={teams.filter((t) => !hiddenIds.includes(t.id)).length}
+            density={density}
+            filtered={filtered}
+            onEdit={openEdit}
+            onClearFilters={clearFilters}
+          />
+        </>
       )}
 
       <TeamFormSheet
