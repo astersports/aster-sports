@@ -3,7 +3,7 @@ Date: 2026-06-28
 Author: CC (Claude Code). Read-only audit across all app surfaces via 5 partitioned agents
 (comms, scheduling/RSVP, financial/registration, roster/standings, home/insights).
 Status: ARCHITECT-DECISION artifact (per CLAUDE.md §11.8 / §2.4). Identify phase complete;
-implement phase is operator/architect-gated per the gates below.
+the implementation phase is operator/architect-gated per the gates below.
 
 =====================================================================================
 0. EXECUTIVE SUMMARY
@@ -50,7 +50,7 @@ TIER 1 — safe, high-value, routine, extends existing infra (build first):
      S effort. Pure extension of briefing-ai-draft (mode=redraft already exists).
      Admin-authored text only. No new PII/sub-processor/schema. [LEAN: build first]
  T2. One-tap AI game-recap / score narration draft (game_recap/games_recap/tournament_recap
-     already ANCHORED_KINDS in briefing-ai-draft; mostly UI wiring). S. §16.12 guardrail:
+     are already ANCHORED_KINDS in briefing-ai-draft; mostly UI wiring). S. §16.12 guardrail:
      facts-allowlist must EXCLUDE per-player game stats; team result + PoG first name OK.
  T3. AI bracket/standings scenario narration — turn deterministic predictBracket output into
      org-voice plain-English, auto-populating the hand-authored championship_scenarios table.
