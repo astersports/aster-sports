@@ -11,10 +11,14 @@ const CHIP = {
   borderRadius: 8, cursor: 'pointer',
 };
 
-function Chip({ on, onClick, label, icon: Icon, group }) {
+// Toggle buttons (aria-pressed) inside the parent role="group" — not
+// role="radio" (mixing role=radio with aria-pressed is invalid ARIA; radios
+// would need aria-checked + a radiogroup). aria-pressed toggles are correct
+// here and announce cleanly.
+function Chip({ on, onClick, label, icon: Icon }) {
   return (
     <button
-      type="button" className="as-press" role={group} aria-pressed={on}
+      type="button" className="as-press" aria-pressed={on}
       aria-label={label} onClick={onClick}
       style={{
         ...CHIP,
@@ -40,7 +44,7 @@ export default function RecordsControls({ sort, onSort, filter, onFilter, filter
           <ArrowUpDown size={13} strokeWidth={1.75} aria-hidden="true" /> Sort
         </span>
         {RECORDS_SORT_OPTIONS.map((o) => (
-          <Chip key={o.key} group="radio" on={sort === o.key} label={o.label} onClick={() => onSort(o.key)} />
+          <Chip key={o.key} on={sort === o.key} label={o.label} onClick={() => onSort(o.key)} />
         ))}
       </div>
       {showFilters && (
@@ -49,7 +53,7 @@ export default function RecordsControls({ sort, onSort, filter, onFilter, filter
             <Filter size={13} strokeWidth={1.75} aria-hidden="true" /> Circuit
           </span>
           {visibleFilters.map((f) => (
-            <Chip key={f.key} group="radio" on={filter === f.key} label={f.label} onClick={() => onFilter(f.key)} />
+            <Chip key={f.key} on={filter === f.key} label={f.label} onClick={() => onFilter(f.key)} />
           ))}
         </div>
       )}

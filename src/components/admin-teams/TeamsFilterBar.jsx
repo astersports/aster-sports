@@ -12,7 +12,7 @@ const CIRCUIT_OPTIONS = [
 ];
 
 const chip = (active) => ({
-  minHeight: 32,
+  minHeight: 44,
   padding: '0 12px',
   borderRadius: 999,
   fontSize: 13,

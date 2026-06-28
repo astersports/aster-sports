@@ -62,7 +62,10 @@ export default function TournamentsPage() {
         <TournamentsListSkeleton rows={4} />
       )}
 
-      {error && tournaments.length === 0 && (
+      {/* Render on ANY error — including a failed load-more append (tournaments
+          already present) — so append failures aren't silent. Sits above the
+          list/load-more when results exist. */}
+      {error && (
         <TournamentsErrorState onRetry={() => refetch()} retrying={loading} />
       )}
 

@@ -11,7 +11,7 @@
 export function resolveLocationMap(location) {
   const l = location || {};
   if (l.google_maps_url) return { url: l.google_maps_url, source: 'pin' };
-  if (l.lat && l.lon) return { url: `https://maps.google.com/?q=${l.lat},${l.lon}`, source: 'coords' };
+  if (l.lat != null && l.lon != null) return { url: `https://maps.google.com/?q=${l.lat},${l.lon}`, source: 'coords' };
   if (l.address && l.address.trim()) {
     return { url: `https://maps.google.com/?q=${encodeURIComponent(l.address.trim())}`, source: 'address' };
   }

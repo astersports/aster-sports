@@ -57,7 +57,7 @@ export default function TeamsSearchBar({ search, onSearch, circuits, circuit, on
                 aria-pressed={active}
                 className="as-press"
                 style={{
-                  minHeight: 36, padding: '8px 14px', borderRadius: 999, fontSize: 13, fontWeight: 500,
+                  minHeight: 44, padding: '8px 14px', borderRadius: 999, fontSize: 13, fontWeight: 500,
                   border: `1px solid ${active ? 'var(--as-accent)' : 'var(--as-border-default)'}`,
                   backgroundColor: active ? 'var(--as-accent-soft)' : 'var(--as-bg-card)',
                   color: active ? 'var(--as-accent)' : 'var(--as-text-secondary)',
