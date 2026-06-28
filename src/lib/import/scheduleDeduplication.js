@@ -22,6 +22,11 @@ function timesWithinTolerance(aISO, bISO) {
 }
 
 function fieldsDiffer(parsed, existing) {
+  // An unresolved parsed row (no `resolved` block) carries undefined for the
+  // resolved fields; comparing those against the existing event spuriously reads
+  // as 'updated' and triggers a needless UPDATE. With no resolution to compare,
+  // treat it as a duplicate (no diff).
+  if (!parsed.resolved) return false;
   const checks = [
     parsed.opponent !== existing.opponent,
     parsed.resolved?.location_id !== existing.location_id,

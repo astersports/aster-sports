@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import FullScreenForm from '../shared/FullScreenForm';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/useToast';
@@ -30,6 +30,7 @@ export default function TournamentPlaceholderEventsModal({ tournament, teamIds, 
   const [locationId, setLocationId] = useState('');
   const [cells, setCells] = useState({}); // key: `${teamId}:${dayIso}` → boolean
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,8 +66,8 @@ export default function TournamentPlaceholderEventsModal({ tournament, teamIds, 
   const canSave = !saving && checkedCount > 0 && !!locationId;
 
   const onConfirm = async () => {
-    if (!canSave) return;
-    setSaving(true);
+    if (savingRef.current || !canSave) return;
+    savingRef.current = true; setSaving(true);
     const rows = [];
     for (const team of teams) {
       for (const day of days) {
@@ -86,15 +87,17 @@ export default function TournamentPlaceholderEventsModal({ tournament, teamIds, 
         });
       }
     }
-    if (!rows.length) { setSaving(false); return; }
+    if (!rows.length) { savingRef.current = false; setSaving(false); return; }
     const { error } = await supabase.from('events').insert(rows);
     setSaving(false);
-    if (error) { showToast(`Couldn't create placeholders: ${error.message}`, 'error'); return; }
+    if (error) { savingRef.current = false; showToast(`Couldn't create placeholders: ${error.message}`, 'error'); return; }
     showToast(`Created ${rows.length} placeholder ${rows.length === 1 ? 'event' : 'events'}.`, 'success');
     onClose?.();
   };
 
-  if (!days.length) { onClose?.(); return null; }
+  useEffect(() => { if (!days.length) onClose?.(); }, [days, onClose]);
+
+  if (!days.length) return null;
 
   return (
     <FullScreenForm open onClose={onClose} title="Tournament placeholder events">

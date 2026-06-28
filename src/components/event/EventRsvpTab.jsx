@@ -47,7 +47,7 @@ export default function EventRsvpTab({
     const aOrder = statusOrder[aStatus] ?? 3;
     const bOrder = statusOrder[bStatus] ?? 3;
     if (aOrder !== bOrder) return aOrder - bOrder;
-    return a.last_name.localeCompare(b.last_name);
+    return (a.last_name || '').localeCompare(b.last_name || '');
   });
 
   const headerLabels = { going: 'Going', maybe: 'Maybe', not_going: 'Not Going', none: 'No Response' };

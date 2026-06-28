@@ -29,13 +29,21 @@ function humanGap(minutes: number) {
   return `${h}h ${m}m gap`;
 }
 
-// Convert ISO timestamp → Date in ET (UTC-4 for May 2026, fixed for
-// now per scheduleValidation.js). For prompt-context use, the
-// hour-of-day is what matters; we render the ET wall-clock so the
-// LLM closer can reference "lunch at 11" naturally.
+// Convert ISO timestamp → a Date whose UTC fields hold the ET wall-clock
+// (so the getUTC* readers in formatClock/dayKey below yield ET parts).
+// For prompt-context use, the hour-of-day is what matters; we render the
+// ET wall-clock so the LLM closer can reference "lunch at 11" naturally.
+// DST-correct: derives the ET offset for the given instant via Intl
+// (America/New_York) instead of a literal -4h, so EST (winter) is right.
+const ET_PARTS_FMT = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+});
 function toEt(iso: string) {
-  const utcMs = new Date(iso).getTime();
-  return new Date(utcMs - 4 * 60 * 60 * 1000);
+  const parts = ET_PARTS_FMT.formatToParts(new Date(iso));
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+  let hour = get('hour'); if (hour === 24) hour = 0;
+  return new Date(Date.UTC(get('year'), get('month') - 1, get('day'), hour, get('minute'), get('second')));
 }
 
 export function describeScheduleGaps(events: EvRow[], { minGapMinutes = MIN_GAP_MINUTES }: { minGapMinutes?: number } = {}) {

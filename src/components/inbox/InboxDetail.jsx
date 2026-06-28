@@ -64,6 +64,7 @@ export default function InboxDetail({ recipientId, onBack }) {
         supabase.from('comms_message_recipients')
           .update({ opened_at: new Date().toISOString() })
           .eq('id', recipientId)
+          .eq('guardian_id', guardianId)
           .then(({ error: writeErr }) => {
             if (!cancelled && writeErr) setReadPersistFailed(true);
           }, () => { if (!cancelled) setReadPersistFailed(true); });

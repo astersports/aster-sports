@@ -3,6 +3,7 @@
 // Email-safe inline-styled HTML; no CSS variables (most clients strip).
 
 import { escapeHtml } from './_util';
+import { safeHref } from './_safeHref';
 import { BG_PAGE, BORDER_DEFAULT, COBALT_DEEP, TEXT_NAVY, TEXT_SLATE_DARK } from '../colors';
 
 function hostFromUrl(url) {
@@ -20,7 +21,7 @@ export function renderFooter(section) {
     : '';
   const websiteHtml = websiteUrl
     ? `<div style="font-size:13px;color:${TEXT_SLATE_DARK};line-height:1.6;margin-bottom:4px;">`
-      + `<a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener" style="color:${COBALT_DEEP};text-decoration:none;">${escapeHtml(hostFromUrl(websiteUrl))}</a>`
+      + `<a href="${escapeHtml(safeHref(websiteUrl))}" target="_blank" rel="noopener" style="color:${COBALT_DEEP};text-decoration:none;">${escapeHtml(hostFromUrl(websiteUrl))}</a>`
       + '</div>'
     : '';
   const emailHtml = contactEmail
@@ -56,6 +57,6 @@ export function renderFooter(section) {
     '',
     contextLine.replace(/<[^>]+>/g, ''),
     'Unsubscribe: {{UNSUBSCRIBE_URL}}',
-  ].filter((part) => part !== undefined && part !== null);
+  ].filter(Boolean);
   return { html, plainText: plainParts.join('\n') };
 }

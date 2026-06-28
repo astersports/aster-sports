@@ -52,7 +52,7 @@ export default function RegisterFlowPage() {
   const draftDivision = divOf(state.draft.divisionId);
   const firstEntry = state.children.length === 0 && state.editIndex == null && state.phase === 'entry';
 
-  if (!program || (firstEntry && !draftDivision)) {
+  if (!program || divisions.length === 0 || (firstEntry && !draftDivision)) {
     return (
       <div style={{ ...centered, ...wrap }}>
         <p style={{ marginTop: 48 }}>This registration isn’t available.</p>

@@ -55,7 +55,7 @@ export default function EventDetailPage() {
   const [dutyCount, setDutyCount] = useState(0);
   const [pendingDiff, setPendingDiff] = useState(null);
 
-  useEffect(() => {
+  const refetchDutyCount = useCallback(() => {
     if (!id) return;
     supabase.from('event_duties').select('id', { count: 'exact', head: true }).eq('event_id', id)
       .then(({ count, error }) => {
@@ -63,6 +63,8 @@ export default function EventDetailPage() {
         setDutyCount(count || 0);
       });
   }, [id]);
+
+  useEffect(() => { refetchDutyCount(); }, [refetchDutyCount]);
 
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -97,7 +99,7 @@ export default function EventDetailPage() {
       setEditing(true);
     }
   };
-  const onWizardCreated = (diff) => { refetch(); if (diff) setPendingDiff(diff); };
+  const onWizardCreated = (diff) => { refetch(); refetchDutyCount(); if (diff) setPendingDiff(diff); };
   const setEventStatus = async (status) => {
     const { error } = await supabase.from('events').update({ status }).eq('id', event.id);
     if (error) { showToast(status === 'cancelled' ? "Couldn't cancel. Try again?" : "Couldn't reinstate. Try again?", 'error'); return; }

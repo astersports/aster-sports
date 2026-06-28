@@ -41,7 +41,7 @@ export function useRecentAudiences() {
         .order('sent_at', { ascending: false })
         .limit(FETCH_LIMIT);
       if (cancelled) return;
-      if (error) { setRecents([]); setLoading(false); return; }
+      if (error) { console.error('useRecentAudiences:', error.message); setRecents([]); setLoading(false); return; }
       const seen = new Set();
       const distinct = [];
       for (const row of data || []) {

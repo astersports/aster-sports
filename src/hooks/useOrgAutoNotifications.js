@@ -38,7 +38,7 @@ export function useOrgAutoNotifications() {
         .eq('id', orgId)
         .maybeSingle();
       if (cancelled) return;
-      if (error) { setConfig(null); setLoading(false); return; }
+      if (error) { console.error('useOrgAutoNotifications:', error.message); setConfig(null); setLoading(false); return; }
       setConfig(data?.auto_notifications ?? {});
       setLoading(false);
     });

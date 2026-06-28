@@ -70,8 +70,8 @@ export default function AlertCard({ alert }) {
       </button>
       {canExpand && expanded && (
         <div style={{ padding: '0 14px 8px 44px' }}>
-          {items.slice(0, 10).map((item) => (
-            <AlertItemRow key={item.id} {...rowPropsForItem(alert, item)}
+          {items.slice(0, 10).map((item, i) => (
+            <AlertItemRow key={item.id ?? `idx-${i}`} {...rowPropsForItem(alert, item)}
               onTap={() => navigate(isBriefingRecap ? composeTargetFor(alert, item) : fixTarget(item))} />
           ))}
           {items.length > 10 && (

@@ -6,6 +6,7 @@ import { programRule } from '../../lib/programRegistry';
 // registration lifecycle. --as-* tokens only; team_color is the sanctioned DB hex.
 const STATUS = {
   enrolled: { label: 'Enrolled', fg: 'var(--as-success)', bg: 'var(--as-success-soft)' },
+  futures_academy: { label: 'Futures Academy', fg: 'var(--as-academy)', bg: 'var(--as-academy-soft)' },
   confirmed: { label: 'Confirmed', fg: 'var(--as-success)', bg: 'var(--as-success-soft)' },
   pending: { label: 'Pending', fg: 'var(--as-warning)', bg: 'var(--as-warning-soft)' },
   waitlist: { label: 'Waitlist', fg: 'var(--as-info)', bg: 'var(--as-info-soft)' },

@@ -11,7 +11,10 @@ const dateFmt = new Intl.DateTimeFormat('en-US', {
 
 function formatDeadline(iso) {
   if (!iso) return '';
-  try { return dateFmt.format(new Date(iso + 'T12:00:00')); }
+  // Append noon-local only for a bare YYYY-MM-DD; a full timestamp parses
+  // as-is (appending 'T12:00:00' to it would yield Invalid Date).
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(iso + 'T12:00:00') : new Date(iso);
+  try { return dateFmt.format(d); }
   catch { return iso; }
 }
 

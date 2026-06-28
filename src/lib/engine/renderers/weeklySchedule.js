@@ -13,6 +13,7 @@
 //                          back-compat (no third line rendered at all).
 
 import { escapeHtml } from './_util';
+import { safeHref } from './_safeHref';
 import { AMBER_DEEP, BG_PAGE, BORDER_DEFAULT, COBALT, COBALT_DEEP, CREAM, GOLD, RSVP_GOING_GREEN, RSVP_MAYBE_AMBER, RSVP_OUT_RED, TEXT_GRAPHITE, TEXT_NAVY, TEXT_SLATE, TEXT_SLATE_DARK } from '../colors';
 
 function renderDayHeader(label) {
@@ -31,7 +32,7 @@ function highlightEmailSuffix(text) {
 
 function renderMapLink(url) {
   if (!url) return '';
-  return ` · <a href="${escapeHtml(url)}" target="_blank" rel="noopener" style="color:${TEXT_SLATE_DARK};text-decoration:underline;">map</a>`;
+  return ` · <a href="${escapeHtml(safeHref(url))}" target="_blank" rel="noopener" style="color:${TEXT_SLATE_DARK};text-decoration:underline;">map</a>`;
 }
 
 function rsvpLine(counts) {

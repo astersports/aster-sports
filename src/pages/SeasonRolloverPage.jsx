@@ -15,6 +15,7 @@ export default function SeasonRolloverPage() {
   const goBack = useGoBack();
   const [step, setStep] = useState(1);
   const [season, setSeason] = useState(null);
+  const [error, setError] = useState(null);
   const [teams, setTeams] = useState([]);
   const [plan, setPlan] = useState({ newSeasonName: '', startDate: '', endDate: '', teams: [], carryLocations: true });
   const [locationCount, setLocationCount] = useState(0);
@@ -23,9 +24,12 @@ export default function SeasonRolloverPage() {
 
   useEffect(() => {
     if (!orgId) return;
+    // Reset stale error when orgId changes so a retry/re-render can recover.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setError(null);
     (async () => {
       const { data: s, error: sErr } = await supabase.from('seasons').select('*').eq('org_id', orgId).eq('status', 'active').maybeSingle();
-      if (sErr) throw sErr;
+      if (sErr) { console.error('SeasonRolloverPage season:', sErr.message); setError(sErr); setSeason(null); return; }
       setSeason(s);
       if (!s) return;
       // CLAUDE.md §11.5 historical-view exception (Wave 4.8 hygiene PR
@@ -58,6 +62,7 @@ export default function SeasonRolloverPage() {
     locations: plan.carryLocations ? locationCount : 0,
   };
 
+  if (error) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Couldn’t load the rollover right now. Try again in a moment.</div>;
   if (!season) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>No active season found.</div>;
 
   return createPortal(

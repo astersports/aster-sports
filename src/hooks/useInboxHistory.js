@@ -30,12 +30,13 @@ export function useInboxHistory({ orgId, filters, search } = {}) {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState(null);
-  const [page, setPage] = useState(0);
+  // page value is read only via setPage's functional updater (loadMore); no direct read.
+  const [, setPage] = useState(0);
 
-  const refetch = useCallback(async (resetPage = true) => {
+  const refetch = useCallback(async (resetPage = true, nextPage) => {
     if (!orgId) return;
     setLoading(true); setError(null);
-    const targetPage = resetPage ? 0 : page;
+    const targetPage = resetPage ? 0 : (nextPage ?? 0);
     let q = supabase.from('comms_messages')
       .select('id,kind,anchor_kind,anchor_id,subject,sent_at,body_plain,audience_type', { count: 'exact' })
       .eq('org_id', orgId).eq('status', 'sent')
@@ -46,16 +47,15 @@ export function useInboxHistory({ orgId, filters, search } = {}) {
     const { data, error: err, count } = await q;
     Promise.resolve().then(() => {
       if (err) { setError(err); setLoading(false); return; }
-      setRows(resetPage ? (data || []) : [...rows, ...(data || [])]);
+      setRows((prev) => resetPage ? (data || []) : [...prev, ...(data || [])]);
       setHasMore((targetPage + 1) * PAGE_SIZE < (count || 0));
-      if (resetPage) setPage(0);
+      setPage(targetPage);
       setLoading(false);
     });
-  }, [orgId, filters, search, page, rows]);
+  }, [orgId, filters, search]);
 
   const loadMore = useCallback(() => {
-    setPage((p) => p + 1);
-    refetch(false);
+    setPage((p) => { const next = p + 1; refetch(false, next); return next; });
   }, [refetch]);
 
   useEffect(() => { Promise.resolve().then(() => refetch(true)); }, [orgId, filters?.kind, filters?.dateRange, JSON.stringify(filters?.teams || []), search]); // eslint-disable-line react-hooks/exhaustive-deps

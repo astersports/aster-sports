@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import BottomSheet from '../shared/BottomSheet';
@@ -15,17 +15,18 @@ export default function AddChargeSheet({ accountId, orgId, onClose, onSaved }) {
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
+  const savingRef = useRef(false);
   const cents = Math.max(0, Math.round(parseFloat(amount) * 100) || 0);
 
   const handleSave = async () => {
-    if (cents <= 0) return;
-    setSaving(true); setErr(null);
+    if (savingRef.current || cents <= 0) return;
+    savingRef.current = true; setSaving(true); setErr(null);
     const { error } = await supabase.from('financial_transactions').insert({
       account_id: accountId, org_id: orgId, transaction_type: 'fee', amount_cents: cents,
       reference: reason || null, occurred_at: new Date().toISOString(), recorded_by: user.id,
     });
-    setSaving(false);
-    if (error) { setErr('Looks like that didn’t go through. Try again?'); return; }
+    if (error) { savingRef.current = false; setSaving(false); setErr('Looks like that didn’t go through. Try again?'); return; }
+    savingRef.current = false; setSaving(false);
     onSaved();
   };
 

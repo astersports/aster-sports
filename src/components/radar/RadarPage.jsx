@@ -33,7 +33,7 @@ export default function RadarPage() {
   const review = (item) => navigate(`/admin/briefings/compose?draft=${item.id}`);
   const dismiss = async (item) => {
     setBusyId(item.id);
-    const { error: e } = await supabase.from('comms_messages').update({ status: 'archived' }).eq('id', item.id);
+    const { error: e } = await supabase.from('comms_messages').update({ status: 'archived' }).eq('org_id', orgId).eq('id', item.id);
     setBusyId(null);
     if (e) { showToast("Couldn't dismiss that briefing. Try again?", 'error'); return; }
     showToast('Dismissed.', 'success');

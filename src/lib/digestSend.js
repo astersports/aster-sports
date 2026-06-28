@@ -62,7 +62,10 @@ export async function sendWeeklyDigest({
   const sample = renderedFamilies[0];
   const subject = sample?.subject || `Week ahead: ${formatPeriodLabel(period)}`;
 
-  const periodStart = period.start.toISOString().slice(0, 10);
+  // period.start/end are NY-local days — derive the day-key in America/New_York,
+  // not UTC (toISOString), so the stored period boundaries don't shift a day.
+  const nyDayKey = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(d);
+  const periodStart = nyDayKey(period.start);
   const { data: msg, error: msgErr } = await supabase
     .from('comms_messages')
     .insert({
@@ -75,7 +78,7 @@ export async function sendWeeklyDigest({
       content_sections: sample?.sections || [],
       body_notes: bodyNotes || null, signoff_message: signoffMessage || null,
       period_start: periodStart,
-      period_end: period.end.toISOString().slice(0, 10),
+      period_end: nyDayKey(period.end),
     })
     .select('id').single();
   // D-1(c) BUG A second half: race-resolved-other-tick-won. Mirrors the

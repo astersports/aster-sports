@@ -16,7 +16,7 @@ export function parseLeagueAppsData(raw) {
     const phone = (r.Parent_1_Mobile_Number || r.parentPhone || r.parent_phone || r.phone || '').trim();
     const firstName = r.Parent_1_First_Name || r.parentFirstName || r.parent_first_name || '';
     const lastName = r.Parent_1_Last_Name || r.parentLastName || r.parent_last_name || '';
-    const key = email || phone || `${firstName} ${lastName}`.trim().toLowerCase();
+    const key = email || phone || `${firstName} ${lastName}`.trim().replace(/\s+/g, ' ').toLowerCase();
     if (!key) continue;
 
     if (!families.has(key)) {
@@ -75,14 +75,14 @@ export async function importToFinancials(families, orgId, seasonId, userId) {
   (guardians || []).forEach((g) => {
     if (g.email) byEmail.set(g.email.trim().toLowerCase(), g.id);
     if (g.phone) byPhone.set(g.phone.replace(/\D/g, ''), g.id);
-    byName.set(`${g.first_name} ${g.last_name}`.toLowerCase(), g.id);
+    byName.set(`${g.first_name} ${g.last_name}`.trim().replace(/\s+/g, ' ').toLowerCase(), g.id);
   });
 
   for (const fam of families) {
     let guardianId = null;
     if (fam.email) guardianId = byEmail.get(fam.email);
     if (!guardianId && fam.phone) guardianId = byPhone.get(fam.phone.replace(/\D/g, ''));
-    if (!guardianId) guardianId = byName.get(`${fam.firstName} ${fam.lastName}`.toLowerCase());
+    if (!guardianId) guardianId = byName.get(`${fam.firstName} ${fam.lastName}`.trim().replace(/\s+/g, ' ').toLowerCase());
 
     if (!guardianId) {
       const { data: newG, error: gErr } = await supabase
@@ -117,6 +117,7 @@ export async function importToFinancials(families, orgId, seasonId, userId) {
     }
 
     for (const pmt of fam.payments) {
+      const pmtDate = pmt.date ? new Date(pmt.date) : null;
       const { error: tErr } = await supabase
         .from('financial_transactions')
         .insert({
@@ -127,7 +128,7 @@ export async function importToFinancials(families, orgId, seasonId, userId) {
           processing_fee_cents: pmt.processingFeeCents || 0,
           payment_method: pmt.method,
           reference: pmt.reference || null,
-          occurred_at: pmt.date ? new Date(pmt.date).toISOString() : new Date().toISOString(),
+          occurred_at: pmtDate && !isNaN(pmtDate.getTime()) ? pmtDate.toISOString() : new Date().toISOString(),
           recorded_by: userId,
         });
       if (tErr) results.errors.push(`Payment for ${fam.firstName}: ${tErr.message}`);

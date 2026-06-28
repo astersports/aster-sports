@@ -5,7 +5,9 @@
 // when rn is empty or unparseable (never fabricate).
 export function parsePrecip(rn) {
   if (typeof rn !== 'string') return { pct: null, kind: null };
-  const m = rn.match(/^(\d+)%\s*([a-z]+)/i);
+  const m = rn.match(/^(\d+)%\s*([a-z]+)?/i);
   if (!m) return { pct: null, kind: null };
-  return { pct: Number(m[1]), kind: m[2].toLowerCase() };
+  // A bare "55%" (no kind word) keeps the pct and defaults kind to 'rain'
+  // rather than discarding the whole reading.
+  return { pct: Number(m[1]), kind: m[2] ? m[2].toLowerCase() : 'rain' };
 }

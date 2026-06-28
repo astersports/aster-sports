@@ -68,10 +68,14 @@ export default function RegisterEntryPage() {
       </div>
 
       {nonSeason ? (
-        <NonSeasonRegisterHero
-          program={program} division={divisions[0]} regState={regState} opensLabel={opensLabel}
-          onContinue={() => navigate(`/r/${slug}/apply?division=${divisions[0].id}`)}
-        />
+        divisions[0] ? (
+          <NonSeasonRegisterHero
+            program={program} division={divisions[0]} regState={regState} opensLabel={opensLabel}
+            onContinue={() => navigate(`/r/${slug}/apply?division=${divisions[0]?.id}`)}
+          />
+        ) : (
+          <div style={{ ...centered, fontSize: 15 }}>Registration isn’t set up yet. Check back soon — your program admin is finishing the details.</div>
+        )
       ) : (
         <>
           <h2 style={{ fontSize: 13, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--as-text-tertiary)', margin: '0 0 12px' }}>Pick a division</h2>

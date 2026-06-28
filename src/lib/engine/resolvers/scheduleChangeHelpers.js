@@ -42,8 +42,8 @@ export function buildDiffSection(event, location, before, after, changed) {
   return {
     kind: 'schedule_change_diff',
     changed_fields: changed,
-    before: { time: formatRange(before.start_at, before.end_at), label: event.title || '', location: before.location ?? location?.name ?? null, opponent: before.opponent ?? null },
-    after: { time: formatRange(after.start_at, after.end_at), label: event.title || '', location: after.location ?? location?.name ?? null, opponent: after.opponent ?? null },
+    before: { time: formatRange(before.start_at, before.end_at), label: event.title || '', location: before.location || location?.name || null, opponent: before.opponent ?? null },
+    after: { time: formatRange(after.start_at, after.end_at), label: event.title || '', location: after.location || location?.name || null, opponent: after.opponent ?? null },
   };
 }
 

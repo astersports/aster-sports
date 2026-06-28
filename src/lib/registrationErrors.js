@@ -23,6 +23,6 @@ const FALLBACK = { message: 'Looks like that didn’t go through. Try again in a
 // a known RPC code (network/transient) — the fallback microcopy then applies.
 export function registrationErrorInfo(error) {
   const raw = (typeof error === 'string' ? error : error?.message) || '';
-  const code = Object.keys(CODES).find((c) => raw.includes(c));
+  const code = Object.keys(CODES).find((c) => new RegExp('\\b' + c + '\\b').test(raw));
   return code ? { code, ...CODES[code] } : { code: null, ...FALLBACK };
 }

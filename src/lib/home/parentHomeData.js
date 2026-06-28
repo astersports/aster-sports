@@ -34,7 +34,10 @@ export function shapeAchievement(achievement, recordsByTeam = {}) {
 export function shapeChildRecords(myChildren, activities, recordsByTeam = {}, achievementTeamIds = new Set()) {
   const meta = new Map();
   for (const a of activities || []) {
-    if (a.team_id && !meta.has(a.team_id)) {
+    // Fill meta from the first activity that actually carries a joined `teams`
+    // row — an earlier activity for the same team_id with teams=null would
+    // otherwise lock in empty age/color.
+    if (a.team_id && a.teams && !meta.has(a.team_id)) {
       meta.set(a.team_id, { age: a.teams?.age_group || a.teams?.name || '', color: a.teams?.team_color });
     }
   }

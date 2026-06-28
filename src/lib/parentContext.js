@@ -18,6 +18,10 @@ export async function fetchParentContext(userId) {
     return empty;
   }
 
+  const distinctGuardianIds = [...new Set(data.map((r) => r.guardian_id))];
+  if (distinctGuardianIds.length > 1) {
+    console.error('[parentContext] multiple guardian_ids for user', userId, distinctGuardianIds);
+  }
   const guardianId = data[0].guardian_id;
   const { data: gRow, error: gErr } = await supabase
     .from('guardians').select('first_name').eq('id', guardianId).maybeSingle();

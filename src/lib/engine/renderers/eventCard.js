@@ -7,6 +7,7 @@
 // is pure HTML/plainText.
 
 import { escapeHtml } from './_util';
+import { safeHref } from './_safeHref';
 import { BORDER_DEFAULT, COBALT, TEXT_NAVY, TEXT_SLATE, TEXT_SLATE_DARK } from '../colors';
 
 export default function renderEventCard(section) {
@@ -20,7 +21,7 @@ export default function renderEventCard(section) {
   const dateLine = [date, time].filter(Boolean).join(' · ');
   const venue = locationName
     ? (locationMapUrl
-        ? `<a href="${escapeHtml(locationMapUrl)}" style="color:${COBALT};text-decoration:none;font-weight:500;">${escapeHtml(locationName)}</a>`
+        ? `<a href="${escapeHtml(safeHref(locationMapUrl))}" style="color:${COBALT};text-decoration:none;font-weight:500;">${escapeHtml(locationName)}</a>`
         : escapeHtml(locationName))
     : '';
   const opponentLine = opponent ? `vs. ${escapeHtml(opponent)}` : '';

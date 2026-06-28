@@ -12,7 +12,7 @@ import { formatCurrency } from '../../lib/formatters';
 export default function OutstandingCallout({ stats, seasonName }) {
   const owing = stats?.familiesOwing ?? 0;
   const outstanding = stats?.outstanding ?? 0;
-  const clear = owing <= 0 || outstanding <= 0;
+  const clear = outstanding <= 0;
   const announce = clear
     ? `${seasonName || 'Season'}: all families paid up.`
     : `${seasonName || 'Season'}: ${formatCurrency(outstanding)} outstanding across ${owing} famil${owing === 1 ? 'y' : 'ies'}.`;

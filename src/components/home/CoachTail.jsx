@@ -21,7 +21,7 @@ const SUBLABEL = {
   color: 'var(--as-text-meta)', padding: '10px 0 4px',
 };
 
-export default function CoachTail({ teams, recordsByTeam, recordsLoading, onTeamClick, offSeason, seasonLabel, programs }) {
+export default function CoachTail({ teams, recordsByTeam = {}, recordsLoading, onTeamClick, offSeason, seasonLabel, programs }) {
   if (!teams?.length) return null;
   const accent = teams[0]?.team_color || 'var(--as-accent)';
 

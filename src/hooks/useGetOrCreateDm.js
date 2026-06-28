@@ -22,7 +22,21 @@ export function useGetOrCreateDm() {
       .insert({ org_id: orgId, user_a: a, user_b: b })
       .select()
       .single();
-    if (error) { console.error('getOrCreateDm:', error.message); return null; }
+    if (error) {
+      // TOCTOU: a concurrent insert may have won the race (unique violation).
+      // Re-select and return the now-existing thread instead of null.
+      const { data: raced, error: raceErr } = await supabase
+        .from('dm_threads')
+        .select('*')
+        .eq('org_id', orgId)
+        .eq('user_a', a)
+        .eq('user_b', b)
+        .maybeSingle();
+      if (raced) return raced;
+      console.error('getOrCreateDm:', error.message);
+      if (raceErr) console.error('getOrCreateDm (re-select):', raceErr.message);
+      return null;
+    }
     return created;
   }, [user, orgId]);
 

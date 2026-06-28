@@ -5,10 +5,22 @@
 // is the same rows enriched with `status` (valid/warning/error) +
 // `messages` (per-row diagnostic strings).
 
+import { isEasternDST } from '../aau/parseTournament';
+
 const SANITY_HOUR_MIN = 7;   // 7am
 const SANITY_HOUR_MAX = 22;  // 10pm
 
 function pad2(n) { return String(n).padStart(2, '0'); }
+
+// Tournament year from the date-only `start_date` string's "YYYY-" prefix.
+// Parsing through `new Date(...).getUTCFullYear()` rolls a Dec-31-ET date-only
+// string back to the prior year (it's read as UTC midnight). Falls back to the
+// current UTC year only when start_date is absent/unparseable.
+function tournamentYearOf(tournament) {
+  const sd = String(tournament?.start_date || '').trim();
+  const ym = /^(\d{4})-/.exec(sd);
+  return ym ? parseInt(ym[1], 10) : new Date().getUTCFullYear();
+}
 
 // "5/16" → "2026-05-16" anchored on tournament year
 export function normalizeDate(mdString, tournamentYear) {
@@ -27,19 +39,34 @@ export function normalizeTimeToISO(timeString, dateISO) {
   const ampm = m[3].toUpperCase();
   if (ampm === 'PM' && hours !== 12) hours += 12;
   if (ampm === 'AM' && hours === 12) hours = 0;
-  // ET is EDT (UTC-4) for May; tournaments outside DST window need
-  // a different anchor. Hardcoded EDT for now — fine for Spring 2026.
-  return `${dateISO}T${pad2(hours)}:${pad2(minutes)}:00-04:00`;
+  // Anchor the ET offset to the actual date: -04:00 in EDT (DST), -05:00 in
+  // EST (Nov–Mar). Derived via the shared isEasternDST helper so a Dec game
+  // isn't shifted 1h. dateISO is YYYY-MM-DD; isEasternDST month is 1-indexed.
+  const dm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateISO);
+  let offset = '-04:00';
+  if (dm) {
+    const isDst = isEasternDST(parseInt(dm[1], 10), parseInt(dm[2], 10), parseInt(dm[3], 10), hours);
+    offset = isDst ? '-04:00' : '-05:00';
+  }
+  return `${dateISO}T${pad2(hours)}:${pad2(minutes)}:00${offset}`;
 }
 
 export function resolveTeamId(teamHeader, teams) {
   if (!teamHeader) return null;
   const norm = String(teamHeader).toLowerCase().replace(/[^a-z0-9]/g, '');
-  for (const t of teams || []) {
+  const list = teams || [];
+  // Prefer an exact normalized match (so "10U" never silently picks "10U Black").
+  for (const t of list) {
     const tn = String(t.name).toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (norm.includes(tn) || tn.includes(norm)) return t.id;
+    if (tn === norm) return t.id;
   }
-  return null;
+  // Fall back to a bidirectional substring match ONLY when EXACTLY ONE team
+  // matches; an ambiguous header (matches 2+) returns null → error row.
+  const subMatches = list.filter((t) => {
+    const tn = String(t.name).toLowerCase().replace(/[^a-z0-9]/g, '');
+    return norm.includes(tn) || tn.includes(norm);
+  });
+  return subMatches.length === 1 ? subMatches[0].id : null;
 }
 
 export function resolveLocationId(venueString, locations) {
@@ -74,7 +101,7 @@ function dateWithinTournament(dateISO, tournament) {
 // .messages (array of diagnostic strings).
 export function validateParsedRow(row, { teams, locations, tournament }) {
   const messages = []; let severity = 'valid';
-  const dateISO = normalizeDate(row.date, new Date(tournament?.start_date || Date.now()).getUTCFullYear());
+  const dateISO = normalizeDate(row.date, tournamentYearOf(tournament));
   const startISO = normalizeTimeToISO(row.time, dateISO);
   const teamId = resolveTeamId(row.team, teams);
   const locationId = resolveLocationId(row.venue, locations);

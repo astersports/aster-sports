@@ -29,7 +29,9 @@ export function useGuardianNotificationPrefs() {
         .eq('guardian_id', guardianId)
         .maybeSingle();
       if (cancelled) return;
-      // Greenfield (no row) → all-ON defaults. Read error also defaults (fail-open read).
+      // Greenfield (no row) → all-ON defaults. Read error also defaults (fail-open
+      // read), but log it (AP#36) so a fetch failure isn't an invisible all-ON default.
+      if (error) console.error('useGuardianNotificationPrefs:', error.message);
       setPrefs(error ? { ...DEFAULTS } : (data ?? { ...DEFAULTS }));
       setLoading(false);
     });

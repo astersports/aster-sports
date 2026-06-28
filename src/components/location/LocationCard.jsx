@@ -1,24 +1,26 @@
 import { ExternalLink, MapPin, Navigation } from 'lucide-react';
 import LocationRowMenu from './LocationRowMenu';
 
-function mapsUrl(address, lat, lon, googleMapsUrl) {
+function mapsUrl(address, lat, lon, googleMapsUrl, name) {
   if (googleMapsUrl) return googleMapsUrl;
-  if (lat && lon) return `https://maps.google.com/?q=${lat},${lon}`;
-  return `https://maps.google.com/?q=${encodeURIComponent(address || '')}`;
+  if (lat != null && lon != null) return `https://maps.google.com/?q=${lat},${lon}`;
+  if (address) return `https://maps.google.com/?q=${encodeURIComponent(address)}`;
+  if (name) return `https://www.google.com/search?q=${encodeURIComponent(name)}`;
+  return null;
 }
 
 export default function LocationCard({ location, isStaff, showArchived, onEdit, onArchive, onUnarchive, density = 'medium' }) {
   const l = location;
-  const url = mapsUrl(l.address, l.lat, l.lon, l.google_maps_url);
+  const url = mapsUrl(l.address, l.lat, l.lon, l.google_maps_url, l.name);
 
   if (density === 'minimal') {
     return (
-      <button type="button" onClick={() => window.open(url, '_blank')} className="as-press"
+      <button type="button" onClick={() => url && window.open(url, '_blank')} disabled={!url} className="as-press"
         style={{
           display: 'flex', alignItems: 'center', gap: 8, width: '100%',
           padding: '10px 16px', minHeight: 44, marginBottom: 8,
           backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)',
-          borderRadius: 10, boxShadow: 'var(--as-shadow-sm)', cursor: 'pointer',
+          borderRadius: 10, boxShadow: 'var(--as-shadow-sm)', cursor: url ? 'pointer' : 'default',
           opacity: showArchived ? 0.7 : 1, fontFamily: 'inherit', textAlign: 'left',
         }}>
         <MapPin size={15} strokeWidth={1.75} color="var(--as-accent)" style={{ flexShrink: 0 }} />
@@ -63,10 +65,16 @@ export default function LocationCard({ location, isStaff, showArchived, onEdit, 
         </div>
       )}
 
-      <button type="button" onClick={() => window.open(url, '_blank')} className="as-press"
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, padding: '0 12px', borderRadius: 10, fontSize: 13, fontWeight: 500, alignSelf: 'flex-start', backgroundColor: 'var(--as-accent-soft)', color: 'var(--as-accent)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-        <Navigation size={13} strokeWidth={1.75} /> Get Directions
-      </button>
+      {url ? (
+        <button type="button" onClick={() => window.open(url, '_blank')} className="as-press"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, padding: '0 12px', borderRadius: 10, fontSize: 13, fontWeight: 500, alignSelf: 'flex-start', backgroundColor: 'var(--as-accent-soft)', color: 'var(--as-accent)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+          <Navigation size={13} strokeWidth={1.75} /> Get Directions
+        </button>
+      ) : (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, alignSelf: 'flex-start', color: 'var(--as-text-tertiary)' }}>
+          <MapPin size={13} strokeWidth={1.75} /> Location TBD
+        </span>
+      )}
     </div>
   );
 }
