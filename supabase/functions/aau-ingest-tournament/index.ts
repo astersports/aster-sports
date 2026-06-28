@@ -332,6 +332,20 @@ Deno.serve(async (req) => {
         const homePool = poolNameByTeam.get(homeNorm);
         const awayPool = poolNameByTeam.get(awayNorm);
         const poolId = homePool && homePool === awayPool ? poolIdByName.get(homePool) ?? null : null;
+        // Forfeit/default detection — LABELED INFERENCE (no hard source signal exists).
+        // TourneyMachine's public feed carries NO forfeit flag: a defaulted game renders
+        // identically to a played one (verified 2026-06-28 against the live championship row —
+        // empty game-note, no "Forfeit"/"Default" text, no status attribute). The only
+        // fingerprint is the Zero Gravity scoring convention: a default is awarded as the
+        // standings cap (20) to 0. GROUNDED across all prod data — a 20-0 final occurs ONLY in
+        // Zero Gravity events (190 instances) and NEVER in non-ZG circuits (WPCYO 729 finals→0,
+        // BBallshootout 516→0), so cap-to-0 is the ZG forfeit signature, not a real score.
+        // Risk: a real game can't reach exactly cap-to-0 under ZG's rules; revisit only if a
+        // non-ZG circuit is ever observed scoring 20-0 for a played game.
+        const FORFEIT_CAP = 20;
+        const isForfeit = g.status === "final" &&
+          ((g.homeScore === FORFEIT_CAP && g.awayScore === 0) ||
+           (g.homeScore === 0 && g.awayScore === FORFEIT_CAP));
         gameRows.push({
           org_id: orgId,
           tournament_division_id: divisionId,
@@ -341,6 +355,7 @@ Deno.serve(async (req) => {
           home_placeholder_label: homeId ? null : g.homeName,
           away_placeholder_label: awayId ? null : g.awayName,
           is_bracket: isBracket,
+          is_forfeit: isForfeit,
           home_score: g.homeScore,
           away_score: g.awayScore,
           status: g.status,
