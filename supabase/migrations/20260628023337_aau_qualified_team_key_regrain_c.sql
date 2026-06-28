@@ -1,6 +1,8 @@
 -- ============================================================================
--- AAU TEAM-IDENTITY RE-GRAIN — INTERIM "QUALIFIED KEY" (ruling C)  (STAGED — owner-applied)
--- Architect team-identity fork ruling 2026-06-27: C now, B later. Canonical version assigned at apply.
+-- AAU TEAM-IDENTITY RE-GRAIN — INTERIM "QUALIFIED KEY" (ruling C)  (APPLIED 2026-06-28 on Frank's apply-go · canonical version 20260628023337)
+-- Architect team-identity fork ruling 2026-06-27: C now, B later.
+-- APPLY NOTE: get_public_team_season's p_division_like carries DEFAULT NULL to match the live
+--   function signature — CREATE OR REPLACE cannot remove an existing parameter default (42P13).
 --
 -- WHY: D1 proved the team page's "season" is a resolved_key COLLISION — different same-named teams in
 --   different grade/gender divisions merge into one identity (High Rise - Brie showed 35 games hiding
@@ -258,7 +260,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' A
 $function$;
 
 -- ── 4) own-org season echo: ECHO teamKey = qkey (was bare resolved_key) ──
-CREATE OR REPLACE FUNCTION public.get_public_team_season(p_org_id uuid, p_team_name text, p_division_like text)
+CREATE OR REPLACE FUNCTION public.get_public_team_season(p_org_id uuid, p_team_name text, p_division_like text DEFAULT NULL)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
   WITH mine AS (
     SELECT dt.id AS team_id, dt.resolved_key, dt.display_name,
