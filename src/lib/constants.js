@@ -104,4 +104,4 @@ export const APP_BASE_URL =
 export const ORG_NAME_DEFAULT = 'Aster AAU';
 export const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
 export const ORG_CONTACT_DEFAULT = 'support@astersports.app';
-export const ORG_LOGO_DEFAULT = `${APP_BASE_URL}/knight-logo-240.png`;
+export const ORG_LOGO_DEFAULT = `${APP_BASE_URL}/aster-mark-240.png`;

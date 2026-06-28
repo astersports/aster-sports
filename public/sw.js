@@ -43,7 +43,7 @@ self.addEventListener('push', (e) => {
   const title = data.title || 'Aster AAU';
   const options = {
     body: data.body || '',
-    icon: data.icon || '/knight-logo-240.png',
+    icon: data.icon || '/aster-mark-240.png',
     badge: '/knight-logo-240.png',
     tag: data.tag,
     data: { url: data.url || '/' },
