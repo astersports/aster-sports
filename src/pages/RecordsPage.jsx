@@ -81,7 +81,7 @@ export default function RecordsPage() {
                   onClick={() => setPicked(s.id)}
                   style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', padding: '8px 16px', borderRadius: 8, cursor: 'pointer',
                     border: on ? '1px solid var(--as-bc-cobalt)' : '1px solid rgba(255,255,255,0.15)',
-                    background: on ? 'var(--as-bc-cobalt)' : 'rgba(255,255,255,0.05)', color: on ? '#fff' : 'rgba(255,255,255,0.7)' }}>
+                    background: on ? 'var(--as-bc-cobalt)' : 'rgba(255,255,255,0.05)', color: on ? '#151525' : 'rgba(255,255,255,0.7)' }}>
                   {s.name}
                 </button>
               );

@@ -12,9 +12,9 @@ describe('template T6 — ctaButtons', () => {
     expect(html).toMatch(/<a\s+href=/);
     expect(html).not.toContain('<button');
   });
-  it('cobalt fill + uppercase text', () => {
+  it('navy fill + uppercase text', () => {
     const { html } = render(fixture);
-    expect(html).toContain('background-color:#4a8fd4');
+    expect(html).toContain('background-color:#151525');
     expect(html).toContain('color:#ffffff');
     expect(html).toContain('TRACK LIVE STANDINGS');
     expect(html).toContain('VIEW BRACKET');

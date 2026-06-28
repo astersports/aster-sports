@@ -39,7 +39,7 @@ export async function resolveTournamentPrelim({ tournamentId, pilotOnly }, { sup
   const ttRows = ttRowsRaw || [];
   const tournament_teams = ttRows.map((r) => ({
     team_id: r.team_id, team_name: r.teams?.name || r.team_name || 'Team',
-    team_color: r.teams?.team_color || r.team_color || '#4a8fd4',
+    team_color: r.teams?.team_color || r.team_color || '#c9952e',
     sort_order: r.teams?.sort_order ?? r.sort_order ?? 0,
     final_place: r.final_place, wins: r.final_record_wins ?? 0, losses: r.final_record_losses ?? 0,
   }));

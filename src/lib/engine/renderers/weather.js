@@ -11,12 +11,12 @@
 
 import { escapeHtml } from './_util';
 import { goldBarHtml } from './_goldBar';
-import { BORDER_DEFAULT, COBALT, TEXT_NAVY, TEXT_SLATE } from '../colors';
+import { BORDER_DEFAULT, BRAND_GOLD_TEXT, TEXT_NAVY, TEXT_SLATE } from '../colors';
 
 function cellHtml(d, isLast) {
   const border = isLast ? '' : `border-right:1px solid ${BORDER_DEFAULT};`;
   const rain = d.rn
-    ? `<div style="font-size:10.5px;font-weight:700;color:${COBALT};margin-top:3px;">${escapeHtml(d.rn)}</div>`
+    ? `<div style="font-size:10.5px;font-weight:700;color:${BRAND_GOLD_TEXT};margin-top:3px;">${escapeHtml(d.rn)}</div>`
     : '';
   return `<td align="center" valign="top" style="padding:11px 6px;${border}font-family:Inter,system-ui,sans-serif;">`
     + `<div style="font-size:10px;font-weight:700;letter-spacing:0.6px;color:${TEXT_SLATE};text-transform:uppercase;">${escapeHtml(d.day || '')}</div>`

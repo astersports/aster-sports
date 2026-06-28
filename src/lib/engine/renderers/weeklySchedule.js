@@ -14,13 +14,13 @@
 
 import { escapeHtml } from './_util';
 import { safeHref } from './_safeHref';
-import { AMBER_DEEP, BG_PAGE, BORDER_DEFAULT, COBALT, COBALT_DEEP, CREAM, GOLD, RSVP_GOING_GREEN, RSVP_MAYBE_AMBER, RSVP_OUT_RED, TEXT_GRAPHITE, TEXT_NAVY, TEXT_SLATE, TEXT_SLATE_DARK } from '../colors';
+import { AMBER_DEEP, BG_PAGE, BORDER_DEFAULT, BRAND_GOLD, BRAND_GOLD_TEXT, CREAM, GOLD, RSVP_GOING_GREEN, RSVP_MAYBE_AMBER, RSVP_OUT_RED, TEXT_GRAPHITE, TEXT_NAVY, TEXT_SLATE, TEXT_SLATE_DARK } from '../colors';
 
 function renderDayHeader(label) {
   return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"'
     + ' style="border-collapse:collapse;margin:24px 0 8px 0;">'
     + `<tr><td style="padding:0 0 6px 0;border-bottom:1px solid ${BORDER_DEFAULT};font-family:Inter,system-ui,sans-serif;">`
-    + `<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:${COBALT_DEEP};text-transform:uppercase;line-height:1.4;">${escapeHtml(label)}</div>`
+    + `<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:${BRAND_GOLD_TEXT};text-transform:uppercase;line-height:1.4;">${escapeHtml(label)}</div>`
     + '</td></tr></table>';
 }
 
@@ -57,7 +57,7 @@ function renderEvent(ev) {
   const isPlaceholder = ev?.variant === 'tournament_placeholder';
   const containerBg = isPlaceholder ? `background-color:${CREAM};` : `background-color:${BG_PAGE};`;
   const containerBorder = isPlaceholder ? `border:1px solid ${GOLD};` : `border:1px solid ${BORDER_DEFAULT};`;
-  const teamColor = ev?.team_color || COBALT;
+  const teamColor = ev?.team_color || BRAND_GOLD;
   const secondaryHtml = isPlaceholder
     ? highlightEmailSuffix(ev?.secondary || '')
     : escapeHtml(ev?.secondary || '');

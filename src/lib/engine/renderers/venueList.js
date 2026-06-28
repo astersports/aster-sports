@@ -6,11 +6,11 @@
 // the tournament's events.
 
 import { escapeHtml } from './_util';
-import { BORDER_DEFAULT, COBALT_DEEP, TEXT_NAVY, TEXT_SLATE } from '../colors';
+import { BORDER_DEFAULT, BRAND_GOLD_TEXT, TEXT_NAVY, TEXT_SLATE } from '../colors';
 
 function renderVenueRow(v) {
   const mapLink = v.map_url
-    ? ` | <a href="${escapeHtml(v.map_url)}" target="_blank" rel="noopener" style="color:${COBALT_DEEP};text-decoration:none;">Map</a>`
+    ? ` | <a href="${escapeHtml(v.map_url)}" target="_blank" rel="noopener" style="color:${BRAND_GOLD_TEXT};text-decoration:none;">Map</a>`
     : '';
   const cityPart = v.city ? ` | ${escapeHtml(v.city)}` : '';
   return `<div style="font-size:14px;color:${TEXT_NAVY};line-height:1.6;text-align:center;">`
@@ -20,7 +20,7 @@ function renderVenueRow(v) {
 
 function renderSingleWithAddress(v) {
   const mapLink = v.map_url
-    ? ` | <a href="${escapeHtml(v.map_url)}" target="_blank" rel="noopener" style="color:${COBALT_DEEP};text-decoration:none;">Map</a>`
+    ? ` | <a href="${escapeHtml(v.map_url)}" target="_blank" rel="noopener" style="color:${BRAND_GOLD_TEXT};text-decoration:none;">Map</a>`
     : '';
   return `<div style="font-size:14px;font-weight:600;color:${TEXT_NAVY};line-height:1.6;text-align:center;">All games at ${escapeHtml(v.name)}</div>`
     + `<div style="font-size:13px;color:${TEXT_SLATE};line-height:1.5;text-align:center;margin-top:2px;">${escapeHtml(v.address || '')}${mapLink}</div>`;

@@ -9,7 +9,7 @@ import { escapeHtml } from './_util';
 import { BORDER_DEFAULT, TEXT_NAVY, TEXT_SLATE, TEXT_SLATE_DARK } from '../colors';
 
 export default function renderColorStripedRow(section) {
-  const color = section?.team_color || '#4a8fd4';
+  const color = section?.team_color || '#c9952e';
   const day = section?.day_label || 'TBD';
   const time = section?.time || '';
   const primary = section?.primary || 'TBD';

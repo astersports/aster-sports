@@ -2,9 +2,9 @@
   --as-bc-bg:          #070d17;
   --as-bc-card:        #0e1e33;
   --as-bc-card-alt:    #132845;
-  --as-bc-border:      rgba(74,143,212,0.18);
-  --as-bc-glow:        rgba(74,143,212,0.25);
-  --as-bc-cobalt:      #4a8fd4;
+  --as-bc-border:      rgba(201,149,46,0.18);
+  --as-bc-glow:        rgba(201,149,46,0.25);
+  --as-bc-cobalt:      #c9952e;   /* Aster Sports Hub gold accent (was AAU cobalt) */
   --as-bc-gold:        #f59e0b;
   --as-bc-green:       #22c55e;
   --as-bc-red:         #ef4444;
@@ -52,7 +52,7 @@
   font-family: var(--as-bc-display);
   font-size: clamp(90px, 16vw, 200px);
   font-weight: 800;
-  color: rgba(74,143,212,0.06);
+  color: rgba(201,149,46,0.06);
   line-height: 1;
   pointer-events: none;
   white-space: nowrap;
@@ -64,7 +64,7 @@
 .bc-hero-h1 b     { color: var(--as-bc-cobalt); font-weight: 800; }
 .bc-hero-sub      { font-size: 17px; max-width: 440px; margin-bottom: 28px; }
 .bc-hero-tags     { display: flex; flex-wrap: wrap; gap: 8px; }
-.bc-hero-tag      { font-family: var(--as-bc-display); font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 14px; border-radius: 4px; background: rgba(74,143,212,0.14); border: 1px solid rgba(74,143,212,0.3); color: var(--as-bc-cobalt); }
+.bc-hero-tag      { font-family: var(--as-bc-display); font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 14px; border-radius: 4px; background: rgba(201,149,46,0.14); border: 1px solid rgba(201,149,46,0.3); color: var(--as-bc-cobalt); }
 .bc-last-updated  { font-size: 14px; color: var(--as-bc-text-soft); font-style: italic; margin-top: 20px; }
 
 /* Stat hero bar */
@@ -97,7 +97,7 @@
 .bc-tourney-title-row   { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .bc-tourney-name        { font-family: var(--as-bc-display); font-size: 15px; font-weight: 800; text-transform: uppercase; color: var(--as-bc-text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bc-tourney-pill        { font-family: var(--as-bc-display); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: var(--as-bc-text-mute); flex-shrink: 0; }
-.bc-tourney-pill.next   { background: rgba(74,143,212,0.15); border-color: rgba(74,143,212,0.4); color: var(--as-bc-cobalt); animation: bc-tourney-pulse 2s ease-in-out infinite; }
+.bc-tourney-pill.next   { background: rgba(201,149,46,0.15); border-color: rgba(201,149,46,0.4); color: var(--as-bc-cobalt); animation: bc-tourney-pulse 2s ease-in-out infinite; }
 .bc-tourney-pill.complete { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.3); color: var(--as-bc-gold); }
 .bc-tourney-meta-row    { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
 .bc-tourney-date        { font-size: 12px; color: var(--as-bc-text-soft); }
@@ -106,7 +106,7 @@
 .bc-tourney-chips       { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .bc-tourney-chip        { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 6px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); font-size: 12px; font-weight: 600; color: var(--as-bc-text); }
 .bc-tourney-chip.champions { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.3); color: var(--as-bc-gold); }
-.bc-tourney-chip.finalists { background: rgba(74,143,212,0.12); border-color: rgba(74,143,212,0.3); color: var(--as-bc-cobalt); }
+.bc-tourney-chip.finalists { background: rgba(201,149,46,0.12); border-color: rgba(201,149,46,0.3); color: var(--as-bc-cobalt); }
 .bc-tourney-team-dot    { display: inline-block; width: 7px; height: 7px; border-radius: 9999px; flex-shrink: 0; }
 .bc-tourney-chip-record { font-family: var(--as-bc-display); font-size: 10px; font-weight: 700; letter-spacing: 0.02em; color: var(--as-bc-text-mute); margin-left: 2px; }
 @keyframes bc-tourney-pulse {

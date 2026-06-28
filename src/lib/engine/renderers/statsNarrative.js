@@ -10,11 +10,11 @@
 // via substituteBodyTokens; compose stays pure.
 
 import { escapeHtml } from './_util';
-import { COBALT } from '../colors';
+import { BRAND_NAVY } from '../colors';
 import { BODY_TOKENS, splitBodyTokens, TOKEN_PLACEHOLDER } from '../substitution/bodyTokens';
 
 const BTN = [
-  'display:inline-block', `background-color:${COBALT}`, 'color:#ffffff',
+  'display:inline-block', `background-color:${BRAND_NAVY}`, 'color:#ffffff',
   'font-weight:700', 'font-size:12.5px', 'border-radius:999px',
   'padding:6px 13px', 'text-decoration:none', 'line-height:1.2',
 ].join(';');

@@ -11,13 +11,13 @@ describe('renderer #6 — weeklySchedule', () => {
     const { html } = render(fixture);
     expect(html).toContain('MON · MAY 18');
     expect(html).toContain('SAT · MAY 23');
-    expect(html).toContain('color:#2563eb');
+    expect(html).toContain('color:#8f6708');
   });
   it('standard event uses team color left border', () => {
     const { html } = render(fixture);
     expect(html).toContain('border-left:5px solid #7C3AED');
     expect(html).toContain('border-left:5px solid #18181B');
-    expect(html).toContain('border-left:5px solid #2563EB');
+    expect(html).toContain('border-left:5px solid #c9952e');
   });
   it('tournament_placeholder uses cream bg + gold border + amber suffix', () => {
     const { html } = render(fixture);

@@ -12,7 +12,7 @@ import { TEXT_NAVY, TEXT_SLATE } from '../colors';
 export default function renderKidColorPill(section) {
   const kid = section?.kid_name || 'Kid';
   const team = section?.team_name || 'Team';
-  const color = section?.team_color || '#4a8fd4';
+  const color = section?.team_color || '#c9952e';
   const count = section?.event_count || 0;
   // PR 5b-1 — kind-aware label per V-37 finding #1 applied consistently
   // across the email. Lower-cased here to match the secondary-line tone

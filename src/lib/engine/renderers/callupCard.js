@@ -11,7 +11,7 @@ import { escapeHtml } from './_util';
 import { BORDER_DEFAULT, TEXT_NAVY, TEXT_SLATE_DARK } from '../colors';
 
 function pill(color, name) {
-  const c = color || '#4a8fd4';
+  const c = color || '#c9952e';
   return `<span style="display:inline-block;padding:4px 12px;background-color:${escapeHtml(c)};color:#ffffff;font-size:12px;font-weight:600;letter-spacing:0.5px;border-radius:9999px;line-height:1.4;">${escapeHtml(name || 'TEAM')}</span>`;
 }
 

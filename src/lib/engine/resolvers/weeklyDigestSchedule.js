@@ -56,7 +56,7 @@ function buildEventRow(event, ctx) {
     const tournament = event.tournament_id ? ctx.tournamentsMap.get(event.tournament_id) : null;
     return {
       team_name: teamName,
-      team_color: team.team_color || '#4a8fd4',
+      team_color: team.team_color || '#c9952e',
       primary: `${teamName} · Tournament`,
       secondary: deriveTournamentLabel(event, tournament),
       variant: 'tournament_placeholder',
@@ -70,7 +70,7 @@ function buildEventRow(event, ctx) {
   const secondary = locParts ? `${timeRange(event)} · ${locParts}` : timeRange(event);
   return {
     team_name: teamName,
-    team_color: team.team_color || '#4a8fd4',
+    team_color: team.team_color || '#c9952e',
     primary: `${teamName} · ${typeLabel}`,
     secondary,
     variant: 'standard',

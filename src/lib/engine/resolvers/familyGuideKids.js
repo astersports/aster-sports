@@ -22,7 +22,7 @@ export async function fetchFamilyGuideKids(supabase, { kidRows, playerIds, dateR
     byPlayer.get(r.player_id).push({
       team_id: r.team_id,
       team_name: r.teams.name || 'Team',
-      team_color: r.teams.team_color || '#4a8fd4',
+      team_color: r.teams.team_color || '#c9952e',
       sort_order: r.teams.sort_order ?? 0,
     });
   }

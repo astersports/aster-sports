@@ -9,7 +9,7 @@ import { TEXT_NAVY, TEXT_SLATE } from '../colors';
 
 export default function renderTeamColorPill(section) {
   const name = section?.team_name || 'Team';
-  const color = section?.team_color || '#4a8fd4';
+  const color = section?.team_color || '#c9952e';
   const count = section?.event_count || 0;
   const countLabel = count === 1 ? '1 game' : `${count} games`;
   const html = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"'

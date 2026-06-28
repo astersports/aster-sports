@@ -3,7 +3,7 @@
 // Map link is inline (not standalone button) per locked decision.
 
 import { escapeHtml } from './_util';
-import { AMBER_DEEP, COBALT, TEXT_NAVY, TEXT_SLATE, TEXT_SLATE_DARK } from '../colors';
+import { AMBER_DEEP, BRAND_GOLD_TEXT, TEXT_NAVY, TEXT_SLATE, TEXT_SLATE_DARK } from '../colors';
 
 const STAKE_TONES = {
   green: { color: '#16a34a', weight: '500' },
@@ -24,7 +24,7 @@ const VARIANT_STYLES = {
 function renderRail(rail, vs) {
   if (rail.label) {
     return `<td width="80" valign="top" align="center" style="padding:14px 12px;background-color:${vs.railBg};border-right:1px solid ${vs.railBorder};border-radius:8px 0 0 8px;font-family:Inter,system-ui,sans-serif;">`
-      + `<div style="font-size:11px;font-weight:600;letter-spacing:1px;color:${COBALT};text-transform:uppercase;line-height:1.4;">${escapeHtml(rail.label)}</div>`
+      + `<div style="font-size:11px;font-weight:600;letter-spacing:1px;color:${BRAND_GOLD_TEXT};text-transform:uppercase;line-height:1.4;">${escapeHtml(rail.label)}</div>`
       + `<div style="font-size:18px;font-weight:700;color:#0f172a;line-height:1.2;margin-top:2px;">${escapeHtml(rail.timePrimary || '')}</div>`
       + '</td>';
   }
@@ -48,7 +48,7 @@ function renderStakeLine({ text, tone }) {
 function renderSecondary(secondary) {
   if (!secondary?.text) return '';
   const link = secondary.link?.url
-    ? ` &mdash; <a href="${escapeHtml(secondary.link.url)}" style="color:${COBALT};text-decoration:none;font-weight:500;">${escapeHtml(secondary.link.text || 'Map')}</a>`
+    ? ` &mdash; <a href="${escapeHtml(secondary.link.url)}" style="color:${BRAND_GOLD_TEXT};text-decoration:none;font-weight:500;">${escapeHtml(secondary.link.text || 'Map')}</a>`
     : '';
   return `<div style="font-size:13px;color:#64748b;line-height:1.5;margin-top:4px;">${escapeHtml(secondary.text)}${link}</div>`;
 }

@@ -217,7 +217,7 @@ describe('tournament_prelim gold — renderer shape (to mockup)', () => {
     const { html, plainText } = renderPoolStandings({ bar_label: 'Division 3 Orange', rows: [{ text: 'ASA (MA)', is_home: false }, { text: 'Aster AAU (NY)', is_home: true }] });
     expect(html).toContain('Division 3 Orange'); // bar label present
     expect(html).toContain('Aster AAU (NY)');
-    expect(html).toContain('#eef4fb'); // home-row cobalt wash
+    expect(html).toContain('#FBF3DC'); // home-row gold wash
     expect(html).toContain('font-weight:800'); // home row bold
     expect(plainText).toContain('→ Aster AAU (NY)');
   });
@@ -231,9 +231,9 @@ describe('tournament_prelim gold — renderer shape (to mockup)', () => {
     expect(html).toContain('55% storms');
   });
 
-  it('rules renderer: bold cobalt lead label + dot bullet', () => {
+  it('rules renderer: bold gold lead label + dot bullet', () => {
     const { html } = renderRules({ bar_label: 'Rules', rules: [{ lead: 'Format:', text: 'two halves.' }, { lead: null, text: 'Bring water.' }] });
-    expect(html).toContain('<b style="color:#4a8fd4');
+    expect(html).toContain('<b style="color:#8f6708');
     expect(html).toContain('Format:');
     expect(html).toContain('two halves.');
     expect(html).toContain('Bring water.');

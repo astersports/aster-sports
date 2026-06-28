@@ -9,15 +9,15 @@
 // email clients.
 
 import { escapeHtml } from './_util';
-import { BG_PAGE, COBALT, COBALT_DEEP } from '../colors';
+import { BG_PAGE, BRAND_GOLD, BRAND_GOLD_TEXT } from '../colors';
 
 export default function renderSectionBar(section) {
   const label = section?.label || '';
   if (!label) return { html: '', plainText: '' };
   const html = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"'
     + ' style="border-collapse:collapse;font-family:Inter,system-ui,sans-serif;">'
-    + `<tr><td align="center" style="background-color:${BG_PAGE};border-top:2px solid ${COBALT};padding:11px 18px;">`
-    + `<div style="font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:${COBALT_DEEP};line-height:1.4;">${escapeHtml(label)}</div>`
+    + `<tr><td align="center" style="background-color:${BG_PAGE};border-top:2px solid ${BRAND_GOLD};padding:11px 18px;">`
+    + `<div style="font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:${BRAND_GOLD_TEXT};line-height:1.4;">${escapeHtml(label)}</div>`
     + '</td></tr></table>';
   return { html, plainText: `── ${label.toUpperCase()} ──` };
 }

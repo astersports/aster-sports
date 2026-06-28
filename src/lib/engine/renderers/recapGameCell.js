@@ -16,7 +16,7 @@
 
 import { escapeHtml } from './_util';
 import {
-  BORDER_DEFAULT, COBALT, PILL_LOSS_BG, PILL_LOSS_TX, PILL_TIE_BG, PILL_TIE_TX,
+  BORDER_DEFAULT, BRAND_GOLD, PILL_LOSS_BG, PILL_LOSS_TX, PILL_TIE_BG, PILL_TIE_TX,
   PILL_WIN_BG, PILL_WIN_TX, TEXT_MIST, TEXT_NAVY, TEXT_SLATE,
 } from '../colors';
 
@@ -41,7 +41,7 @@ function scoreBlock(our, opp) {
 
 export default function renderRecapGameCell(section) {
   const { team_color, date_label, matchup, context, our_score, opponent_score, result } = section || {};
-  const rail = team_color || COBALT;
+  const rail = team_color || BRAND_GOLD;
   const dateHtml = date_label
     ? `<div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${TEXT_SLATE};line-height:1.4;">${escapeHtml(date_label)}</div>`
     : '';

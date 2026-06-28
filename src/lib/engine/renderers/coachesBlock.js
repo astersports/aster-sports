@@ -5,7 +5,7 @@
 // already deduped + sorted upstream by buildTeamCoaches.
 
 import { escapeHtml } from './_util';
-import { COBALT_DEEP, TEXT_NAVY, TEXT_SLATE } from '../colors';
+import { BRAND_GOLD_TEXT, TEXT_NAVY, TEXT_SLATE } from '../colors';
 
 function renderCoachRow(c) {
   const meta = [c?.title, c?.phone].filter(Boolean).join(' · ');
@@ -17,7 +17,7 @@ function renderCoachRow(c) {
 
 function renderTeamGroup(g) {
   const label = `<tr><td style="font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:700;`
-    + `letter-spacing:1.5px;text-transform:uppercase;color:${COBALT_DEEP};padding:0 0 6px 0;">`
+    + `letter-spacing:1.5px;text-transform:uppercase;color:${BRAND_GOLD_TEXT};padding:0 0 6px 0;">`
     + `${escapeHtml(g?.team_name || 'Team')}</td></tr>`;
   const rows = (g?.coaches || []).map(renderCoachRow).join('');
   return label + rows;

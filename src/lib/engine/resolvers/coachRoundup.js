@@ -36,7 +36,7 @@ export async function resolveCoachRoundup({ coachUserId, dateRange }, { supabase
   if (staffErr) throw staffErr;
   const teams = (staffRows || []).filter((r) => r.teams).map((r) => ({
     team_id: r.team_id, role: r.role,
-    team_name: r.teams.name, team_color: r.teams.team_color || '#4a8fd4',
+    team_name: r.teams.name, team_color: r.teams.team_color || '#c9952e',
     sort_order: r.teams.sort_order ?? 0,
   }));
 

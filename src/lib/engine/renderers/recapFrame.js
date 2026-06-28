@@ -16,11 +16,11 @@
 // frame_close: closes the inner td + outer table. They MUST be emitted as
 // a matched pair around the recap sections.
 
-import { COBALT } from '../colors';
+import { BRAND_GOLD } from '../colors';
 
 export function renderRecapFrameOpen() {
   const html = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"'
-    + ` style="border-collapse:collapse;border:2px solid ${COBALT};border-radius:4px;overflow:hidden;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;">`
+    + ` style="border-collapse:collapse;border:2px solid ${BRAND_GOLD};border-radius:4px;overflow:hidden;background-color:#ffffff;font-family:Inter,system-ui,sans-serif;">`
     + '<tr><td style="padding:0;">';
   return { html, plainText: '' };
 }

@@ -4,7 +4,7 @@
 
 import { escapeHtml } from './_util';
 import { safeHref } from './_safeHref';
-import { BG_PAGE, BORDER_DEFAULT, COBALT_DEEP, TEXT_NAVY, TEXT_SLATE_DARK } from '../colors';
+import { BG_PAGE, BORDER_DEFAULT, BRAND_GOLD_TEXT, TEXT_NAVY, TEXT_SLATE_DARK } from '../colors';
 
 function hostFromUrl(url) {
   try { return new URL(url).host.replace(/^www\./, ''); }
@@ -21,12 +21,12 @@ export function renderFooter(section) {
     : '';
   const websiteHtml = websiteUrl
     ? `<div style="font-size:13px;color:${TEXT_SLATE_DARK};line-height:1.6;margin-bottom:4px;">`
-      + `<a href="${escapeHtml(safeHref(websiteUrl))}" target="_blank" rel="noopener" style="color:${COBALT_DEEP};text-decoration:none;">${escapeHtml(hostFromUrl(websiteUrl))}</a>`
+      + `<a href="${escapeHtml(safeHref(websiteUrl))}" target="_blank" rel="noopener" style="color:${BRAND_GOLD_TEXT};text-decoration:none;">${escapeHtml(hostFromUrl(websiteUrl))}</a>`
       + '</div>'
     : '';
   const emailHtml = contactEmail
     ? `<div style="font-size:13px;color:${TEXT_SLATE_DARK};line-height:1.6;">`
-      + `<a href="mailto:${escapeHtml(contactEmail)}" style="color:${COBALT_DEEP};text-decoration:none;">${escapeHtml(contactEmail)}</a>`
+      + `<a href="mailto:${escapeHtml(contactEmail)}" style="color:${BRAND_GOLD_TEXT};text-decoration:none;">${escapeHtml(contactEmail)}</a>`
       + '</div>'
     : '';
   // Wave 4.1 §7 — CAN-SPAM unsubscribe block. {{UNSUBSCRIBE_URL}} is
@@ -42,8 +42,8 @@ export function renderFooter(section) {
   const unsubscribeHtml = '<hr style="border:none;border-top:1px solid ' + BORDER_DEFAULT + ';margin:20px 0;"/>'
     + `<p style="font-size:12px;color:${TEXT_SLATE_DARK};line-height:1.5;margin:0;">`
     + contextLine + '<br/>'
-    + `<a href="{{UNSUBSCRIBE_URL}}" style="color:${COBALT_DEEP};text-decoration:underline;">Unsubscribe</a>`
-    + (contactEmail ? ` &middot; <a href="mailto:${escapeHtml(contactEmail)}" style="color:${COBALT_DEEP};text-decoration:underline;">Contact us</a>` : '')
+    + `<a href="{{UNSUBSCRIBE_URL}}" style="color:${BRAND_GOLD_TEXT};text-decoration:underline;">Unsubscribe</a>`
+    + (contactEmail ? ` &middot; <a href="mailto:${escapeHtml(contactEmail)}" style="color:${BRAND_GOLD_TEXT};text-decoration:underline;">Contact us</a>` : '')
     + '</p>';
   const html = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"'
     + ` style="border-collapse:collapse;margin:32px 0 0 0;background-color:${BG_PAGE};border-top:1px solid ${BORDER_DEFAULT};font-family:Inter,system-ui,sans-serif;">`
