@@ -15,7 +15,7 @@
 // resolved at preview/send).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { audienceFraming, AI_DRAFT_KINDS, ANCHORED_KINDS, buildAiDraftUserPrompt, factsToLines, parseAiDraftOutput } from "./_helpers.ts";
+import { audienceFraming, AI_DRAFT_KINDS, ANCHORED_KINDS, buildAiDraftUserPrompt, buildPolishPrompt, factsToLines, parseAiDraftOutput, POLISH_STYLES } from "./_helpers.ts";
 
 // Mirrors suggest-briefing-closer's proven model string for this deployment;
 // bump to the latest per CLAUDE.md once a gateway smoke confirms it.
@@ -69,9 +69,9 @@ Deno.serve(async (req) => {
   const { data: { user }, error: authErr } = await supabaseAuth.auth.getUser();
   if (authErr || !user) return json({ error: "Invalid auth" }, 401);
 
-  let body: { org_id?: string; kind?: string; mode?: string; audience?: { team_id?: string }; proposal_id?: string; facts?: Record<string, unknown>; gist?: string };
+  let body: { org_id?: string; kind?: string; mode?: string; audience?: { team_id?: string }; proposal_id?: string; facts?: Record<string, unknown>; gist?: string; polish_body?: string; style?: string };
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
-  const { org_id, kind, mode = "draft", audience = {}, proposal_id, facts, gist } = body;
+  const { org_id, kind, mode = "draft", audience = {}, proposal_id, facts, gist, polish_body, style } = body;
   if (!org_id || !kind) return json({ error: "org_id and kind are required" }, 400);
   // Facts are supplied by the caller (free-form gist+facts, OR AI-2 anchored
   // kinds whose facts are resolved CLIENT-side and passed in). proposal_id ->
@@ -79,7 +79,13 @@ Deno.serve(async (req) => {
   if (proposal_id) {
     return json({ error: "Pass resolved facts instead of proposal_id (server-side proposal resolution isn't wired)." }, 400);
   }
-  if (!AI_DRAFT_KINDS.includes(kind)) {
+  // Polish rewrites the admin's EXISTING body in the org voice, so it isn't
+  // gated by the facts-draft kind set; it just needs text to rewrite.
+  if (mode === "polish") {
+    if (!polish_body || !String(polish_body).trim()) {
+      return json({ error: "Add a message first, then polish it." }, 400);
+    }
+  } else if (!AI_DRAFT_KINDS.includes(kind)) {
     return json({ error: `AI draft isn't available for "${kind}" yet.` }, 400);
   }
 
@@ -103,11 +109,17 @@ Deno.serve(async (req) => {
       teamName = (team as { name?: string } | null)?.name ?? null;
     }
 
-    const userPrompt = buildAiDraftUserPrompt({
-      kind, framing: audienceFraming(teamName), factLines: factsToLines(facts ?? null), gist,
-      narrativeOnly: ANCHORED_KINDS.includes(kind),
-    });
-    const temperature = mode === "redraft" ? 0.9 : 0.7;
+    const userPrompt = mode === "polish"
+      ? buildPolishPrompt({
+        body: polish_body!,
+        styleDirective: POLISH_STYLES[style ?? ""] ?? POLISH_STYLES.warmer,
+        framing: audienceFraming(teamName),
+      })
+      : buildAiDraftUserPrompt({
+        kind, framing: audienceFraming(teamName), factLines: factsToLines(facts ?? null), gist,
+        narrativeOnly: ANCHORED_KINDS.includes(kind),
+      });
+    const temperature = mode === "polish" ? 0.6 : (mode === "redraft" ? 0.9 : 0.7);
 
     let raw = await callClaude(apiKey, profile, userPrompt, temperature);
     try {

@@ -4,8 +4,8 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-  AI_DRAFT_KINDS, ANCHORED_KINDS, audienceFraming, buildAiDraftUserPrompt, factsToLines,
-  FREE_FORM_KINDS, parseAiDraftOutput, stripEmDashes, stripFences,
+  AI_DRAFT_KINDS, ANCHORED_KINDS, audienceFraming, buildAiDraftUserPrompt, buildPolishPrompt,
+  factsToLines, FREE_FORM_KINDS, parseAiDraftOutput, POLISH_STYLES, stripEmDashes, stripFences,
 } from '../aiDraftPrompt';
 
 describe('aiDraftPrompt helpers', () => {
@@ -77,6 +77,26 @@ describe('aiDraftPrompt helpers', () => {
       expect(p).toContain('opener, playoff, or first game');
       expect(p).toContain('within-game timeline');
     }
+  });
+
+  it('POLISH_STYLES: exposes the three voice-polish directives', () => {
+    expect(Object.keys(POLISH_STYLES).sort()).toEqual(['clearer', 'shorter', 'warmer']);
+    for (const v of Object.values(POLISH_STYLES)) expect(typeof v === 'string' && v.length > 0).toBe(true);
+  });
+
+  it('buildPolishPrompt: embeds the body + style directive + facts-preserving + JSON rules', () => {
+    const p = buildPolishPrompt({ body: 'Game moved to 5pm at WCC.', styleDirective: POLISH_STYLES.warmer, framing: '11U Girls families' });
+    expect(p).toContain('Rewrite the following briefing message for 11U Girls families.');
+    expect(p).toContain(POLISH_STYLES.warmer);
+    expect(p).toContain('Game moved to 5pm at WCC.');
+    expect(p).toContain('never add, drop, or alter a fact');
+    expect(p).toContain('Do NOT sign off by name');
+    expect(p).toContain('minified JSON');
+    expect(p).toContain('NO em dashes');
+  });
+
+  it('buildPolishPrompt: tolerates a null body without throwing', () => {
+    expect(() => buildPolishPrompt({ body: null, styleDirective: POLISH_STYLES.shorter, framing: 'all families' })).not.toThrow();
   });
 
   it('stripFences: removes ```json fences', () => {

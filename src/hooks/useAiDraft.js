@@ -25,16 +25,19 @@ export function useAiDraft() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const draft = useCallback(async ({ kind, mode, facts, gist, audience }) => {
+  const draft = useCallback(async ({ kind, mode, facts, gist, audience, polishBody, style }) => {
     setLoading(true);
     setError(null);
     try {
       if (!orgId) throw new Error('No organization in context.');
       // Contract §1: org_id + kind + mode + audience always; then facts
-      // (free-form/explicit) + gist (free-form only).
+      // (free-form/explicit) + gist (free-form only). mode 'polish' rewrites an
+      // existing body in the org voice — it carries polish_body + style instead.
       const body = { org_id: orgId, kind, mode, audience };
       if (facts != null) body.facts = facts;
       if (gist != null) body.gist = gist;
+      if (polishBody != null) body.polish_body = polishBody;
+      if (style != null) body.style = style;
 
       const { data, error: invErr } = await supabase.functions.invoke(AI_DRAFT_FN_SLUG, { body });
       // The edge fn returns { error } in the JSON body on 4xx/5xx, while

@@ -15,6 +15,7 @@ import { labelStyle, textareaStyle } from './bodies/_styles';
 import SignoffContactToggle from './SignoffContactToggle';
 import AiDraftAnchored from './AiDraftAnchored';
 import AiDraftFreeForm from './AiDraftFreeForm';
+import AiDraftPolish from './AiDraftPolish';
 import PilotModeChip from './PilotModeChip';
 import { audienceCopy } from '../../lib/briefings/audience';
 import { useAuth } from '../../context/AuthContext';
@@ -83,6 +84,7 @@ export default function StepBodySignoff({ state, dispatch, audience, hasParentTo
           hasParentTournament={hasParentTournament}
           onAudienceChange={(audience_filter) => dispatch({ type: 'SET_AUDIENCE', audience_type: state.audience_type, audience_filter })} />
       </Suspense>
+      <AiDraftPolish state={state} dispatch={dispatch} />
       <label>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
           <span style={labelStyle}>Signoff message (optional)</span>
