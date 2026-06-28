@@ -4,7 +4,7 @@ import { renderFooter } from '../footer';
 describe('renderer — footer (Wave 3.6 §D4)', () => {
   const fixture = {
     kind: 'footer',
-    logoUrl: 'https://astersports.app/knight-logo-240.png',
+    logoUrl: 'https://astersports.app/aster-mark-240.png',
     orgName: 'Aster AAU',
     websiteUrl: 'https://www.legacyhoopers.org/',
     contactEmail: 'info@legacyhoopers.org',
@@ -17,15 +17,15 @@ describe('renderer — footer (Wave 3.6 §D4)', () => {
 
   it('renders 120x120 logo image with alt text', () => {
     const { html } = renderFooter(fixture);
-    expect(html).toContain('src="https://astersports.app/knight-logo-240.png"');
+    expect(html).toContain('src="https://astersports.app/aster-mark-240.png"');
     expect(html).toContain('width="120"');
     expect(html).toContain('height="120"');
     expect(html).toContain('alt="Aster AAU"');
   });
 
-  it('uses Knight logo (post-auth org brand), NOT Phoenix apple-touch-icon (PWA shell)', () => {
+  it('uses the org brand logo (post-auth Aster mark), NOT Phoenix apple-touch-icon (PWA shell)', () => {
     const { html } = renderFooter(fixture);
-    expect(html).toContain('knight-logo');
+    expect(html).toContain('aster-mark');
     expect(html).not.toContain('apple-touch-icon');
     expect(html).not.toContain('phoenix');
   });

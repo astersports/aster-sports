@@ -44,7 +44,7 @@ self.addEventListener('push', (e) => {
   const options = {
     body: data.body || '',
     icon: data.icon || '/aster-mark-240.png',
-    badge: '/knight-logo-240.png',
+    badge: '/aster-mark-240.png',
     tag: data.tag,
     data: { url: data.url || '/' },
   };
