@@ -9,8 +9,21 @@
 
 function computeWeekStartIso(weekStartLocal) {
   const day = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 }[weekStartLocal] ?? 0;
+  // Anchor the week-start on the current ET calendar day, not the machine's
+  // local day. The server runs UTC, so `new Date().getDay()`/`getDate()` can
+  // be a day off for late-evening ET. Read ET parts via Intl (the codebase's
+  // established America/New_York pattern, e.g. engine/etDate.js).
   const now = new Date();
-  const dt = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() - day + 7) % 7));
+  const NY_TZ = 'America/New_York';
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: NY_TZ, year: 'numeric', month: 'numeric', day: 'numeric', weekday: 'short',
+  }).formatToParts(now);
+  const get = (t) => parts.find((p) => p.type === t)?.value || '';
+  const dowMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const etDow = dowMap[get('weekday')] ?? 0;
+  // Build a UTC-midnight date for the ET calendar day, then step back to the
+  // configured week-start weekday. ISO out is a stable, date-granular cutoff.
+  const dt = new Date(Date.UTC(Number(get('year')), Number(get('month')) - 1, Number(get('day')) - ((etDow - day + 7) % 7)));
   return dt.toISOString();
 }
 

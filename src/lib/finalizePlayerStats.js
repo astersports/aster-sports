@@ -18,7 +18,7 @@ export async function finalizePlayerStats(eventId, teamId, orgId, plays) {
     s.pts += POINT_MAP[p.play_type] || 0;
     if (p.play_type === 'foul') s.pf++;
     if (p.play_type === 'turnover') s.to_count++;
-    if (p.play_type === 'rebound') { s.reb++; s.drb++; }
+    if (p.play_type === 'rebound') { s.reb++; }
     if (p.play_type === 'assist') s.ast++;
     if (p.play_type === 'steal') s.stl++;
     if (p.play_type === 'block') s.blk++;
@@ -33,11 +33,12 @@ export async function finalizePlayerStats(eventId, teamId, orgId, plays) {
   const playerIds = Object.keys(stats);
   if (playerIds.length === 0) return { error: null, count: 0 };
 
-  const { data: jerseys } = await supabase
+  const { data: jerseys, error: jerseysError } = await supabase
     .from('team_players')
     .select('player_id, jersey_number')
     .eq('team_id', teamId)
     .in('player_id', playerIds);
+  if (jerseysError) console.error('finalizePlayerStats: failed to load jerseys', jerseysError);
 
   const jerseyMap = {};
   (jerseys || []).forEach((j) => { jerseyMap[j.player_id] = j.jersey_number; });

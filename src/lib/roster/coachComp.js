@@ -36,7 +36,10 @@ export function scopeLabel(scope) {
 // comp = { rateCents, scope, role } | null. null → volunteer.
 export function compLine(comp) {
   if (!comp) return 'Volunteer';
-  const dollars = Math.round((comp.rateCents || 0) / 100);
+  const cents = comp.rateCents || 0;
+  // Whole dollars render as "$38"; non-whole amounts keep 2 decimals ("$37.50")
+  // instead of rounding away the cents.
+  const dollars = cents % 100 === 0 ? String(cents / 100) : (cents / 100).toFixed(2);
   return `$${dollars}/session · ${scopeLabel(comp.scope).toLowerCase()}`;
 }
 

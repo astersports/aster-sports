@@ -3,7 +3,7 @@
 // the coach's teams. No DB calls; no IO. Caller passes data; helpers
 // transform. Tested in isolation against fixtures.
 
-import { formatDayLabel, formatTime } from '../etDate';
+import { etDateStr, formatDayLabel, formatTime } from '../etDate';
 
 const DEFAULT_GAME_MINUTES = 60;
 
@@ -53,9 +53,13 @@ export function detectConflicts(teamsWithEvents) {
   for (let i = 0; i < allEvents.length; i++) {
     const a = allEvents[i];
     const aEnd = a.end_at ? new Date(a.end_at).getTime() : new Date(a.start_at).getTime() + DEFAULT_GAME_MINUTES * 60 * 1000;
+    // ET calendar date (not UTC) so an evening-ET event isn't mis-paired
+    // with the next UTC day (mirrors familyGuideHelpers.detectConflicts).
+    const aDay = etDateStr(a.start_at);
     for (let j = i + 1; j < allEvents.length; j++) {
       const b = allEvents[j];
       const bStart = new Date(b.start_at).getTime();
+      if (etDateStr(b.start_at) !== aDay) break;
       if (bStart >= aEnd) break;
       if (a._team.team_id === b._team.team_id) continue;
       conflicts.push({

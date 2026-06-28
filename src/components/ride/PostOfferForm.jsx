@@ -54,11 +54,11 @@ export default function PostOfferForm({ open, onClose, onSubmit, eventStartAt = 
     let cancelled = false;
     (async () => {
       const { data: g, error: gErr } = await supabase.from('guardians').select('phone').eq('org_id', orgId).eq('user_id', user.id).maybeSingle();
-      if (gErr) throw gErr;
+      if (gErr) { console.error('PostOfferForm:', gErr.message); return; }
       if (cancelled) return;
       if (g?.phone) { setPhone(g.phone); return; }
       const { data: c, error: cErr } = await supabase.from('coaching_assignments').select('phone').eq('org_id', orgId).eq('user_id', user.id).not('phone', 'is', null).limit(1).maybeSingle();
-      if (cErr) throw cErr;
+      if (cErr) { console.error('PostOfferForm:', cErr.message); return; }
       if (cancelled || !c?.phone) return;
       setPhone(c.phone);
     })();

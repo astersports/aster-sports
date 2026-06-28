@@ -23,7 +23,7 @@ const SAVE = { minHeight: 44, borderRadius: 10, backgroundColor: 'var(--as-accen
 export default function FamilyNotificationsForm({ open, onClose, initial, players, onSave, saving }) {
   return (
     <FullScreenForm open={open} onClose={onClose} title="Family notifications">
-      <Body initial={initial} players={players} onSave={onSave} saving={saving} onClose={onClose} />
+      <Body key={initial ? 'loaded' : 'pending'} initial={initial} players={players} onSave={onSave} saving={saving} onClose={onClose} />
     </FullScreenForm>
   );
 }

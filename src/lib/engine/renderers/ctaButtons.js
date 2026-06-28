@@ -3,6 +3,7 @@
 // white text, 6px radius. Two buttons sit side-by-side with 12px gap.
 
 import { escapeHtml } from './_util';
+import { safeHref } from './_safeHref';
 import { COBALT } from '../colors';
 
 const BTN_STYLE = [
@@ -22,7 +23,7 @@ const BTN_STYLE = [
 
 function renderButton(btn, isLast) {
   const margin = isLast ? '' : 'margin-right:12px;';
-  return `<a href="${escapeHtml(btn?.url || '#')}" style="${BTN_STYLE};${margin}">${escapeHtml(btn?.text || '')}</a>`;
+  return `<a href="${escapeHtml(safeHref(btn?.url || '#'))}" style="${BTN_STYLE};${margin}">${escapeHtml(btn?.text || '')}</a>`;
 }
 
 export default function render(section) {

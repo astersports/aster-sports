@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import FullScreenForm from '../shared/FullScreenForm';
@@ -31,6 +31,7 @@ export default function RecordPaymentForm({ account, onClose, onSaved }) {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
+  const savingRef = useRef(false);
 
   const name = account.guardians ? `${account.guardians.first_name} ${account.guardians.last_name}` : 'Unknown';
   const balanceCents = account.balance ?? 0;
@@ -39,8 +40,8 @@ export default function RecordPaymentForm({ account, onClose, onSaved }) {
   const meta = META[mode];
 
   const handleSave = async () => {
-    if (cents <= 0) return;
-    setSaving(true); setErr(null);
+    if (savingRef.current || cents <= 0) return;
+    savingRef.current = true; setSaving(true); setErr(null);
     const { error } = await supabase.from('financial_transactions').insert({
       account_id: account.id, org_id: orgId, ...txnForMode(mode, cents, charge),
       payment_method: mode === 'payment' ? method : null,
@@ -49,8 +50,7 @@ export default function RecordPaymentForm({ account, onClose, onSaved }) {
       occurred_at: new Date(`${date}T12:00:00`).toISOString(),
       recorded_by: user.id,
     });
-    setSaving(false);
-    if (error) { setErr('Looks like that didn’t go through. Try again?'); return; }
+    if (error) { savingRef.current = false; setSaving(false); setErr('Looks like that didn’t go through. Try again?'); return; }
     onSaved();
   };
 

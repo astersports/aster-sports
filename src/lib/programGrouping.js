@@ -17,7 +17,7 @@ export function programBadge(programType) {
 }
 
 export function groupPrograms(programs, today = new Date()) {
-  const todayStr = today.toISOString().slice(0, 10);
+  const todayStr = today.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
   const draft = [], active = [], upcoming = [], archived = [];
   for (const p of programs || []) {
     if (p.status === 'draft') draft.push(p);

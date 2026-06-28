@@ -3,6 +3,7 @@
 // semantics across both event-anchored kinds).
 
 import { computeUrgency, formatLongDay, formatTime } from './rsvpNudgeHelpers';
+import { etDateStr } from '../etDate';
 
 export class EventNotFoundError extends Error { constructor(id) { super(`Event ${id} not found.`); this.name = 'EventNotFoundError'; this.eventId = id; } }
 export class PlayerNotFoundError extends Error { constructor(id) { super(`Player ${id} not found.`); this.name = 'PlayerNotFoundError'; this.playerId = id; } }
@@ -22,8 +23,11 @@ export function computeResponseWindow(eventStartIso, now) {
   const deadlineMs = Math.min(proposed, cap);
   const deadline_at = new Date(deadlineMs).toISOString();
   const hours_to_respond = (deadlineMs - now.getTime()) / 3600000;
+  // "today" is only accurate when the deadline's ET calendar date matches
+  // now's ET date — a tight (<=4h) window can still cross midnight ET.
+  const sameEtDay = etDateStr(deadline_at) === etDateStr(now.toISOString());
   let window_label;
-  if (hours_to_respond <= 4) {
+  if (hours_to_respond <= 4 && sameEtDay) {
     window_label = `Please respond by ${formatTime(deadline_at)} today.`;
   } else {
     window_label = `Please respond by ${formatLongDay(deadline_at)} at ${formatTime(deadline_at)}.`;

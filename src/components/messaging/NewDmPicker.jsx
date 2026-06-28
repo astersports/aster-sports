@@ -17,7 +17,7 @@ export default function NewDmPicker({ onSelect, onClose }) {
   }, [onClose]);
 
   useEffect(() => {
-    if (!orgId) return;
+    if (!orgId || !user?.id) return;
     supabase.from('user_roles').select('user_id, role')
       .eq('organization_id', orgId)
       .neq('user_id', user.id)
@@ -25,19 +25,23 @@ export default function NewDmPicker({ onSelect, onClose }) {
         if (error) { console.error('NewDmPicker user_roles:', error.message); return; }
         const rows = (data || []).map((r) => ({ userId: r.user_id, role: r.role, name: '' }));
         Promise.all(rows.map(async (r) => {
-          if (r.role === 'parent') {
-            const { data: g, error: gErr } = await supabase.from('guardians').select('first_name, last_name').eq('user_id', r.userId).maybeSingle();
-            if (gErr) console.error('NewDmPicker guardians:', gErr.message);
-            r.name = g ? `${g.first_name} ${g.last_name}` : 'Parent';
-          } else {
-            const { data: m, error: mErr } = await supabase.from('staff_profiles').select('display_name').eq('user_id', r.userId).eq('org_id', orgId).maybeSingle();
-            if (mErr) console.error('NewDmPicker staff_profiles:', mErr.message);
-            r.name = m?.display_name || r.role;
+          try {
+            if (r.role === 'parent') {
+              const { data: g, error: gErr } = await supabase.from('guardians').select('first_name, last_name').eq('user_id', r.userId).maybeSingle();
+              if (gErr) console.error('NewDmPicker guardians:', gErr.message);
+              r.name = g ? `${g.first_name} ${g.last_name}` : 'Parent';
+            } else {
+              const { data: m, error: mErr } = await supabase.from('staff_profiles').select('display_name').eq('user_id', r.userId).eq('org_id', orgId).maybeSingle();
+              if (mErr) console.error('NewDmPicker staff_profiles:', mErr.message);
+              r.name = m?.display_name || r.role;
+            }
+          } catch (err) {
+            console.error('NewDmPicker row lookup:', err.message);
           }
           return r;
         })).then(setMembers);
       });
-  }, [orgId, user]);
+  }, [orgId, user?.id]);
 
   const filtered = search
     ? members.filter((m) => m.name.toLowerCase().includes(search.toLowerCase()))

@@ -35,7 +35,12 @@ function capMargin(margin, cap) {
 }
 
 export function computeStandings({ teams = [], games = [], rules = {}, advanceCount = null } = {}) {
-  const cap = Number.isFinite(rules.pointDiffCap) ? rules.pointDiffCap : null;
+  // Coerce a numeric-string cap ("20") so it isn't silently dropped; null /
+  // undefined / '' stay "no cap" (Number('') and Number(null) are 0, which
+  // would wrongly cap every margin at 0).
+  const rawCap = rules.pointDiffCap;
+  const capNum = Number(rawCap);
+  const cap = (rawCap != null && rawCap !== '' && Number.isFinite(capNum)) ? capNum : null;
   const tiebreakers = rules.tiebreakers?.length ? rules.tiebreakers : DEFAULT_TIEBREAKERS;
 
   const rec = new Map();

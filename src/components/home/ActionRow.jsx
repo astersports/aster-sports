@@ -88,7 +88,7 @@ export default function ActionRow({ item, onRsvpResolved, onNavigate }) {
         <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--as-text-primary)', marginTop: 3 }}>{item.title}</div>
         {item.subtitle && <div style={EVLINE}>{item.subtitle}</div>}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 9 }}>
-          {item.chips.map((c) => (
+          {(item.chips || []).map((c) => (
             <button key={c.label} type="button" onClick={() => onNavigate(c.to)} className="as-press"
               style={c.primary
                 ? { ...CHIP, backgroundColor: 'var(--as-accent)', borderColor: 'var(--as-accent)', color: 'var(--as-text-inverse)' }

@@ -26,5 +26,10 @@ export function levenshtein(a, b) {
 
 export function fuzzyOpponentMatch(parsedString, candidateString) {
   if (!parsedString || !candidateString) return false;
-  return levenshtein(parsedString, candidateString) <= FUZZY_THRESHOLD;
+  // Length-relative tolerance: short names (<6 chars) must match exactly so a
+  // 3-edit budget can't false-match them; longer names allow up to
+  // min(FUZZY_THRESHOLD, floor(len/4)) edits. Length is the shorter of the two.
+  const len = Math.min(String(parsedString).length, String(candidateString).length);
+  const tolerance = len < 6 ? 0 : Math.min(FUZZY_THRESHOLD, Math.floor(len / 4));
+  return levenshtein(parsedString, candidateString) <= tolerance;
 }

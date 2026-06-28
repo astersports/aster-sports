@@ -17,11 +17,10 @@ export default function ConfirmDialog({
     document.body.style.overflow = 'hidden';
     const onKey = (e) => {
       if (e.key === 'Escape') onCancel?.();
-      else if (e.key === 'Enter') onConfirm?.();
     };
     window.addEventListener('keydown', onKey);
     return () => { document.body.style.overflow = ''; window.removeEventListener('keydown', onKey); };
-  }, [onCancel, onConfirm]);
+  }, [onCancel]);
 
   const confirmBg = destructive ? 'var(--as-danger)' : 'var(--as-accent)';
 
@@ -56,7 +55,7 @@ export default function ConfirmDialog({
             style={{ minHeight: 44, borderRadius: 10, backgroundColor: 'var(--as-bg-secondary)', color: 'var(--as-text-primary)', fontSize: 15, border: 'none' }}>
             {cancelLabel}
           </button>
-          <button type="button" onClick={onConfirm} autoFocus className="flex-1 font-semibold as-press"
+          <button type="button" onClick={onConfirm} className="flex-1 font-semibold as-press"
             style={{ minHeight: 44, borderRadius: 10, backgroundColor: confirmBg, color: 'var(--as-text-inverse)', fontSize: 15, border: 'none' }}>
             {confirmLabel}
           </button>

@@ -35,6 +35,7 @@ export default function FinancialFamilyDetailPage() {
   // would reject the 2nd, but we shouldn't fire it).
   const doVoid = async (t) => {
     if (voidingRef.current) return;
+    if (!user?.id) { setVoidErr('Looks like your session expired. Sign in again, then try?'); return; }
     voidingRef.current = true; setVoidErr(null);
     const { error } = await supabase.from('financial_transactions').insert({
       account_id: accountId, org_id: orgId, transaction_type: t.transaction_type, amount_cents: t.amount_cents,

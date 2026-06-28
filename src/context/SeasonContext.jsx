@@ -8,7 +8,7 @@ const SeasonContext = createContext(null);
 // The season list is small (a handful of rows per org) so we cache it in
 // memory and never refetch until the org changes.
 export function SeasonProvider({ children }) {
-  const { orgId } = useAuth();
+  const { orgId, loading: authLoading } = useAuth();
   const [seasons, setSeasons] = useState([]);
   const [activeSeasonId, setActiveSeasonId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,6 +34,10 @@ export function SeasonProvider({ children }) {
         // (§4.G Cluster 6.A2 close, 2026-05-20 PM).
         setSeasons([]);
         setActiveSeasonId(null);
+        // Once auth has resolved and there's still no orgId, this is a
+        // genuine sign-out (not the initial-mount premature-zero case
+        // above) — clear loading so consumers aren't stuck on a skeleton.
+        if (!authLoading) setLoading(false);
         return;
       }
       setLoading(true);
@@ -56,7 +60,7 @@ export function SeasonProvider({ children }) {
       setLoading(false);
     });
     return () => { cancelled = true; };
-  }, [orgId]);
+  }, [orgId, authLoading]);
 
   const setSeason = useCallback((id) => setActiveSeasonId(id), []);
 

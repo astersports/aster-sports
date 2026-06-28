@@ -106,10 +106,12 @@ export function formatCountdown(startAt) {
   const rm = mins % 60;
   if (hrs < 24) return `in ${hrs}h ${rm}m`;
   const dt = new Date(startAt);
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
   const dayKey = (date) => date.toLocaleDateString('en-CA', { timeZone: NY_TZ });
-  if (dayKey(dt) === dayKey(tomorrow)) {
+  // Tomorrow's NY day-key must be derived from NY's "today", not the browser's
+  // local day — otherwise a non-NY browser can be off by one near NY midnight.
+  const todayNyKey = dayKey(new Date());
+  const tomorrowNyKey = dayKey(new Date(new Date(todayNyKey + 'T12:00:00').getTime() + 86400000));
+  if (dayKey(dt) === tomorrowNyKey) {
     return `Tomorrow ${dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: NY_TZ })}`;
   }
   return dt.toLocaleDateString('en-US', { weekday: 'short', timeZone: NY_TZ }) + ' ' +

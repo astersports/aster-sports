@@ -29,12 +29,18 @@ export default function RegisterConfirm({ result, program, guardianEmail, onAddA
         <p style={{ fontSize: 13, color: 'var(--as-text-tertiary)', marginTop: 8 }}>Already on file: {already.join(', ')}</p>
       )}
 
-      {reserved && total > 0 && (
+      {reserved && (
         <div style={totalBox}>
-          {discount > 0 && (
-            <div style={row}><span>Family discount</span><b style={{ color: 'var(--as-success)' }}>−{formatCurrency(discount)}</b></div>
+          {total > 0 ? (
+            <>
+              {discount > 0 && (
+                <div style={row}><span>Family discount</span><b style={{ color: 'var(--as-success)' }}>−{formatCurrency(discount)}</b></div>
+              )}
+              <div style={{ ...row, ...bigRow }}><span>Amount due</span><b>{formatCurrency(total)}</b></div>
+            </>
+          ) : (
+            <div style={{ ...row, ...bigRow }}><span>Amount due</span><b>Confirmed by your admin</b></div>
           )}
-          <div style={{ ...row, ...bigRow }}><span>Amount due</span><b>{formatCurrency(total)}</b></div>
           <div style={note}>Billed at registration · no online payment yet.</div>
         </div>
       )}

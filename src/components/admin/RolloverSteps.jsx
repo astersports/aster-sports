@@ -22,7 +22,7 @@ export function StepPlayers({ plan, setPlan }) {
           {tm.players.map((p, pi) => (
             <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--as-border-subtle)' }}>
               <span style={{ fontSize: 14, color: 'var(--as-text-primary)' }}>#{p.jersey_number || '—'} {p.first_name} {p.last_name}</span>
-              <select value={p.action} onChange={(e) => { const next = [...plan.teams]; next[ti].players[pi].action = e.target.value; setPlan({ ...plan, teams: next }); }}
+              <select value={p.action} onChange={(e) => { const val = e.target.value; setPlan((prev) => ({ ...prev, teams: prev.teams.map((t, i) => i === ti ? { ...t, players: t.players.map((pl, j) => j === pi ? { ...pl, action: val } : pl) } : t) })); }}
                 style={{ fontSize: 13, padding: '4px 8px', borderRadius: 8, border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)', color: 'var(--as-text-primary)', fontFamily: 'inherit', minHeight: 44 }}>
                 <option value="keep">Keep</option>
                 <option value="advance">Advance age</option>
@@ -46,7 +46,7 @@ export function StepCoaches({ plan, setPlan }) {
           {tm.coaches.map((c, ci) => (
             <div key={c.user_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--as-border-subtle)' }}>
               <span style={{ fontSize: 14, color: 'var(--as-text-primary)', textTransform: 'capitalize' }}>{c.role.replace('_', ' ')}</span>
-              <button type="button" onClick={() => { const next = [...plan.teams]; next[ti].coaches[ci].keep = !c.keep; setPlan({ ...plan, teams: next }); }} className="as-press"
+              <button type="button" onClick={() => { setPlan((prev) => ({ ...prev, teams: prev.teams.map((t, i) => i === ti ? { ...t, coaches: t.coaches.map((co, j) => j === ci ? { ...co, keep: !co.keep } : co) } : t) })); }} className="as-press"
                 style={{ minHeight: 44, padding: '0 12px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 500, backgroundColor: c.keep ? 'var(--as-success-soft)' : 'var(--as-bg-secondary)', color: c.keep ? 'var(--as-success)' : 'var(--as-text-tertiary)', cursor: 'pointer', fontFamily: 'inherit' }}>{c.keep ? '✓ Keeping' : 'Dropped'}</button>
             </div>
           ))}

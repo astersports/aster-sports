@@ -21,6 +21,7 @@ export default function LiveScorePage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [event, setEvent] = useState(null);
+  const [loadState, setLoadState] = useState('loading'); // 'loading' | 'ready' | 'notfound' | 'error'
   const { players } = useRoster(event?.team_id);
   const game = useLiveGame(eventId, { teamId: event?.team_id, orgId: event?.teams?.org_id });
   const [pendingPlay, setPendingPlay] = useState(null);
@@ -31,8 +32,9 @@ export default function LiveScorePage() {
   useEffect(() => {
     supabase.from('events').select('*, teams(id, name, team_color, org_id)').eq('id', eventId).maybeSingle()
       .then(({ data, error }) => {
-        if (error) console.error('LiveScorePage event:', error.message);
+        if (error) { console.error('LiveScorePage event:', error.message); setLoadState('error'); return; }
         setEvent(data);
+        setLoadState(data ? 'ready' : 'notfound');
       });
   }, [eventId]);
 
@@ -61,6 +63,8 @@ export default function LiveScorePage() {
 
   const endGame = async () => { setConfirmEnd(false); await game.saveToGameResults(); navigate(`/events/${eventId}`, { replace: true }); };
 
+  if (loadState === 'error') return <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Couldn’t load this game. Try again in a moment.</div>;
+  if (loadState === 'notfound') return <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>We couldn’t find this game. It may have been moved or removed.</div>;
   if (!event) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Loading…</div>;
 
   const tabs = ['scoring', 'stats', 'plays'];

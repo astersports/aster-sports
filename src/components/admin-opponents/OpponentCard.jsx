@@ -139,9 +139,9 @@ export default function OpponentCard({ opponent: o, lastPlayedLabel, duplicate }
             id={notesId}
             ref={notesRef}
             style={{
-              maxHeight: notesHeight,
+              height: notesHeight,
               overflow: 'hidden',
-              transition: 'max-height 0.2s ease',
+              transition: 'height 0.2s ease',
             }}
           >
             <p style={{ color: 'var(--as-text-tertiary)', fontSize: 12, lineHeight: 1.5, fontStyle: 'italic', margin: '4px 0 0' }}>

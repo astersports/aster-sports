@@ -45,7 +45,7 @@ export default function FinalizedGameView({ event }) {
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 4 }}>
           <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--as-text-inverse)', backgroundColor: 'rgba(255,255,255,0.2)', padding: '2px 10px', borderRadius: 6 }}>{result.result}</span>
-          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-inverse)', opacity: 0.8 }}>+{Math.abs(diff)}</span>
+          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--as-text-inverse)', opacity: 0.8 }}>{diff > 0 ? '+' : ''}{diff}</span>
         </div>
         <div style={{ fontSize: 13, color: 'var(--as-text-inverse)', opacity: 0.7, marginTop: 8 }}>
           vs. {event.opponent || 'Opponent'} · {dateStr} · {event.location || ''} · {event.home_away === 'home' ? 'HOME' : event.home_away === 'away' ? 'AWAY' : ''}

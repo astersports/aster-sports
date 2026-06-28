@@ -8,11 +8,17 @@
 
 // Wave 4.1b §5 — broadened from Sun 7PM-Mon 7AM to Sat AM through
 // Mon AM so admins see the reminder over the whole prep window.
-// ET via fixed -4h offset (May = EDT). Refine when org expands TZs.
+// ET dow/hour derived via Intl (America/New_York) — DST-correct, so the
+// window is right in EST (winter) as well as EDT. The server runs UTC.
+const WEEKLY_DIGEST_ET_FMT = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/New_York', weekday: 'short', hour: '2-digit', hour12: false,
+});
 export function weeklyDigestDueWindow(now = new Date()) {
-  const et = new Date(now.getTime() - 4 * 3600000);
-  const dow = et.getUTCDay();
-  const hour = et.getUTCHours();
+  const parts = WEEKLY_DIGEST_ET_FMT.formatToParts(now);
+  const get = (t) => parts.find((p) => p.type === t)?.value || '';
+  const dowMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const dow = dowMap[get('weekday')] ?? 0;
+  let hour = Number(get('hour')); if (hour === 24) hour = 0;
   if (dow === 6) return hour >= 6;
   if (dow === 0) return true;
   if (dow === 1 && hour < 7) return true;

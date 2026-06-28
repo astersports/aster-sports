@@ -17,6 +17,7 @@
 // cobalt-underline + slate-headline pattern used by weekly_digest.
 
 import { escapeHtml } from './_util';
+import { safeHref } from './_safeHref';
 import { COBALT, COBALT_DEEP, GOLD, TEXT_MIST, TEXT_SLATE } from '../colors';
 
 function hostFromUrl(url) {
@@ -28,7 +29,7 @@ function renderEyebrow(eyebrow, eyebrow_link, variant) {
   if (!eyebrow) return '';
   const inner = escapeHtml(eyebrow);
   const text = eyebrow_link
-    ? `<a href="${escapeHtml(eyebrow_link)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">${inner}</a>`
+    ? `<a href="${escapeHtml(safeHref(eyebrow_link))}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">${inner}</a>`
     : inner;
   const color = variant === 'cobalt_band' ? '#ffffff' : COBALT_DEEP;
   return `<div style="font-size:11px;font-weight:600;color:${color};letter-spacing:3px;text-transform:uppercase;line-height:1.4;margin:0 0 10px 0;">${text}</div>`;

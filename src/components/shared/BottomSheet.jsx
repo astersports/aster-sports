@@ -107,6 +107,7 @@ function Sheet({ onClose, children, initialHeight, expandedHeight }) {
       >
         <button
           type="button"
+          tabIndex={-1}
           onClick={() => setExpanded((v) => !v)}
           className="as-press flex items-center justify-center"
           style={{ display: 'flex', width: '100%', height: HANDLE_PX }}

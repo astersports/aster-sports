@@ -65,7 +65,15 @@ export function assignSequences(games) {
   }
   const out = new Map();
   for (const arr of groups.values()) {
-    arr.sort((a, b) => String(a.sourceGameId).localeCompare(String(b.sourceGameId)));
+    arr.sort((a, b) => {
+      const bySource = String(a.sourceGameId ?? '').localeCompare(String(b.sourceGameId ?? ''));
+      if (bySource !== 0) return bySource;
+      // Blank/equal sourceGameId sorts equal → nondeterministic seq. Break the
+      // tie on the durable externalGameId, then the row id, for a stable order.
+      const byExternal = String(a.externalGameId ?? '').localeCompare(String(b.externalGameId ?? ''));
+      if (byExternal !== 0) return byExternal;
+      return String(a.id ?? '').localeCompare(String(b.id ?? ''));
+    });
     arr.forEach((g, i) => out.set(g.id, arr.length > 1 ? i : 0));
   }
   return out;
