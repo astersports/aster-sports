@@ -1,0 +1,408 @@
+NEXT-LEVEL TECH SCOUTING PASS — Aster Sports management app (aster-sports @ main)
+Date: 2026-06-28
+Author: CC (Claude Code)
+Status: RESEARCH DOC for Architect ratification. Nothing here flips dark->live.
+Pillar: Aster Sports management app (React 19 + Vite 8 + Supabase SPA).
+        This pass is RE-RUNNABLE for the other four pillars on request:
+          - Studio / astersports-web (the AAU Hub / image studio)
+          - Aster Sports AAU Hub marketing site
+          - St Patrick's Armonk (sandbox parish site)
+          - Aster (basketball / weather libs)
+
+================================================================================
+0. WHAT THIS DOC IS (and is NOT)
+================================================================================
+This is a BOUNDED, RE-RUNNABLE RESEARCH PASS. It identifies and recommends;
+the Architect ratifies; Frank owns every go/no-go. Nothing here is autonomous,
+self-implementing, or a build. Every candidate that ever ships does so LATER as
+a normal dark-flagged, gated PR after ratification.
+
+Conventions used below:
+  [GROUNDED] = verified against the live tree / live API docs (file:line or URL).
+  [FIT]      = my assessment of how a verified capability maps onto our code
+               (a judgement, not a fabricated fact).
+  Never fabricated: where I could not verify, I say so explicitly.
+
+Gate legend (operator's):
+  RED    (HUMAN)   — money path, schema, child data/film, OR anything that
+                     changes user-visible output. Frank flips.
+  YELLOW (BENCH)   — model/algorithm swap. Must pass an OFFLINE EVAL with a
+                     pre-declared acceptance bar AND a re-run of the current
+                     baseline in the same pass.
+  GREEN  (ROUTINE) — cosmetic / internal. No user-visible-output change.
+
+Acceptance-bar rule (operator's): for any model/algorithm candidate, the
+acceptance bar is DECLARED BEFORE the run, and the current baseline is re-run in
+the same pass. Pilots run in an OFFLINE EVAL HARNESS first — no prod, no money
+path, no real user data until privacy coverage is confirmed. No candidate may
+make the UI claim something the data does not support.
+
+================================================================================
+STEP 1 — GROUND AGAINST THE REAL CODE
+================================================================================
+Verified this pass against /home/user/aster-sports @ main:
+
+G1. [GROUNDED] Data layer is hand-rolled. 163 files in src/hooks/; ~60+ are
+    bespoke `useEffect(() => { ... supabase.from(...) ... }, [deps])` fetchers
+    (e.g. useRoster.js, useScheduleData.js, useActivities.js, useRadarFeed.js,
+    useInboxHistory.js, useTournaments.js). NO @tanstack/react-query and NO
+    SWR anywhere in package.json or src/ (grep: "none found"). Consequences we
+    already pay for: each hook re-implements loading/error/cancel/refetch;
+    AP#36 (destructured-default swallows supabase errors) is a recurring class
+    BECAUSE every hook hand-writes the fetch; no request dedup or shared cache
+    (two components mounting useOrgTeams = two queries); manual
+    useRefetchOnVisible.js / useInterval.js stand in for stale-while-revalidate.
+
+G2. [GROUNDED] No list virtualization exists. grep for react-window /
+    react-virtuoso / @tanstack/react-virtual = "none found". Long lists render a
+    full `.map()` (RosterSection.jsx, PlayerRow.jsx, UpcomingEvents.jsx;
+    Records/Schedule/Inbox likewise). This DIRECTLY violates the standing
+    doctrine §16.10: "Long lists (>30 items) must virtualize." Today the org has
+    ~60 families / 5 teams so the cap is rarely hit in the pilot — but the rule
+    is unmet platform-wide and a 2nd/3rd tenant (St Patrick) trips it.
+
+G3. [GROUNDED] No React Compiler. vite.config.js plugins = [react(),
+    tailwindcss(), sentry?]. There is no babel-plugin-react-compiler /
+    vite-plugin-react-compiler. React is 19.2.7 (compiler-eligible). All
+    memoization is manual (useMemo/useCallback scattered, or absent).
+
+G4. [GROUNDED] AI-draft edge fns parse model output with a FRAGILE hack.
+    supabase/functions/briefing-ai-draft/index.ts:126-133 calls the model, then
+    parseAiDraftOutput(raw); on throw it does ONE retry appended with "Return
+    VALID minified JSON only...". aiDraftPrompt.js carries stripFences() +
+    stripEmDashes() to clean model output by hand. The locked response shape is
+    {body, card_summary, facts_used, warnings}. This is exactly what native
+    constrained decoding is for.
+
+G5. [GROUNDED] Model is pinned old. index.ts:22 MODEL = "claude-sonnet-4-5"
+    (shared by suggest-briefing-closer + parse-tournament-schedule). The
+    in-code comment already says "bump to the latest per CLAUDE.md once a
+    gateway smoke confirms it."
+
+G6. [GROUNDED] Data sparsity bounds any ML. Live census (queried earlier this
+    session): event_rsvps n=1701 (all have responded_at; median lead ~24h);
+    check_ins = 0; event_arrivals = 21; ride_claims = 0; guardians carry no
+    home lat/lon. ~60 families / 5 teams / ~12 games per player / ~2 seasons.
+    Per-player engagement signal is THIN. §16.12 also LOCKS per-player GAME
+    stats to team-level-only; per-player ENGAGEMENT stats are allowed. Any
+    predictive feature must respect both the sparsity and the honest-claims bar.
+
+G7. [GROUNDED] No SSR / SEO / prerender. CSR-only SPA (Vite). PublicSchedule /
+    public tournament pages (usePublicTournaments.js) ship as client-rendered.
+    There is no next/remix/prerender layer. (Noted for completeness; see C-PARK.)
+
+G8. [FIT] Observability is wired for app errors (Sentry) + product analytics
+    (PostHog), but NOT for the 3 AI edge fns. There is no per-call tracking of
+    AI latency / token cost / parse-failure rate / retry rate. As the Tier-1 AI
+    set rolls out (voice-polish shipped as #1137 today), this is a blind spot.
+
+================================================================================
+STEP 2 — SCOUT (trend radar + per-op replacements)
+================================================================================
+External facts verified this pass against vendor docs / release pages (URLs in
+STEP 3). Trend radar for a React 19 + Supabase + Claude SPA in mid-2026:
+
+  RADAR / ADOPT  — TanStack Query v5 (server-state standard); native LLM
+                   structured outputs (Anthropic GA); list virtualization
+                   (TanStack Virtual / react-virtuoso); React Compiler 1.0
+                   (auto-memoization, stable since Oct 2025).
+  RADAR / TRIAL  — LLM observability (PostHog LLM analytics / Sentry AI);
+                   latest Claude Sonnet tier; Supabase Broadcast for ephemeral
+                   presence (vs Postgres Changes).
+  RADAR / ASSESS — voice/STT recap dictation; rolldown-vite build.
+  RADAR / HOLD   — embeddings/semantic search (corpus too small); SSR/SEO
+                   layer (large lift, low pilot value); bespoke ML ranking
+                   (data-sparsity bound, G6).
+
+Per-op replacement map (current op -> candidate):
+  hand-rolled useEffect fetch (G1)        -> TanStack Query v5            (C1)
+  full .map() long lists (G2)             -> virtualization              (C2)
+  manual memoization / none (G3)          -> React Compiler 1.0          (C3)
+  fence-strip + 1-retry JSON (G4)         -> Anthropic Structured Output (C4)
+  pinned claude-sonnet-4-5 (G5)           -> latest Sonnet tier          (C5)
+  coach picks non-responders by hand      -> RSVP flip-propensity rank   (C6)
+  coach types recap from scratch          -> voice/STT dictation         (C7)
+  keyword-only history lookup             -> embeddings semantic search  (C8-PARK)
+  no AI telemetry (G8)                    -> LLM observability           (C9)
+  length-relative opponent fuzzy match    -> string-sim/embedding match  (C10-PARK)
+  Vite build                              -> rolldown-vite               (C11-PARK)
+  CSR-only public pages (G7)              -> SSR/prerender               (C12-PARK)
+
+================================================================================
+STEP 3 — DECISION DOC (one entry per candidate)
+================================================================================
+
+--------------------------------------------------------------------------------
+C1. TanStack Query v5 — server-state for the data hooks
+--------------------------------------------------------------------------------
+WHAT + SOURCE: Async server-state manager (caching, dedup, retry, cancellation,
+  stale-while-revalidate, devtools). Latest 5.101.x (Jun 2026); requires React
+  18+ (we are 19.2.7). https://tanstack.com/query/latest ;
+  https://github.com/tanstack/query/releases
+WHICH CODE IT IMPROVES: the ~60+ hand-rolled hooks in src/hooks/ (G1). queryFn
+  wraps the existing supabase call; org_id-first filter (AP#37) stays inside it.
+EXPECTED WIN: kills the AP#36 swallowed-error class structurally (queryFn that
+  throws -> error state, never a silent []); request dedup + shared cache cut
+  duplicate fetches; removes bespoke refetch-on-visible / interval plumbing.
+ADOPTION COST: medium-high (one provider + incremental per-hook migration). NOT
+  a big-bang. Pilot 3-5 hooks (e.g. useOrgTeams, useRoster, useScheduleData),
+  prove parity, then migrate by cluster. Bundle: ~12-13 KB gz added — must hold
+  §16.10 350 KB budget; offset by deleting bespoke plumbing.
+PRIVACY / SUB-PROCESSOR: none (client-side lib, no new egress).
+GATE: GREEN (ROUTINE) per-hook IF behavior is byte-preserved (internal refactor,
+  no user-visible-output change). Treat the FIRST pilot PR as the pattern-setter.
+INVARIANT COLLISION: none. AP#27 (pure resolvers, injected IO) unaffected —
+  query lives in hooks, not resolvers. AP#36 actively satisfied. AP#37 preserved
+  in queryFn. Files stay <=150 (§6) — query hooks are SHORTER than hand-rolled.
+LEAN: PILOT (3-5 hooks, parity-tested, then expand).
+
+--------------------------------------------------------------------------------
+C2. List virtualization (TanStack Virtual or react-virtuoso)
+--------------------------------------------------------------------------------
+WHAT + SOURCE: Windowed rendering for long lists. TanStack Virtual (headless,
+  ~19.8M weekly dl) https://tanstack.com/virtual/latest ; react-virtuoso
+  (batteries-included: dynamic heights, sticky headers, groups) — the pragmatic
+  default for most apps per 2026 comparisons.
+WHICH CODE IT IMPROVES: the full-`.map()` lists (G2) — Records (org-wide roster),
+  Schedule, Inbox history, season rollover lists.
+EXPECTED WIN: closes the standing §16.10 violation ("lists >30 must
+  virtualize"); 60fps on long lists for tenant #2+ (St Patrick) where counts
+  exceed the pilot's ~60 families.
+ADOPTION COST: low-medium per list (react-virtuoso shorter for dynamic-height
+  cards; TanStack Virtual if we want zero opinions). Must keep each list file
+  <=150 (§6) and respect prefers-reduced-motion (§16.4).
+PRIVACY / SUB-PROCESSOR: none.
+GATE: RED (HUMAN) — it CHANGES user-visible output (scroll/measure behavior,
+  focus, screen-reader list semantics). Pilot one list, Frank eyeballs scroll +
+  VoiceOver before expanding. (Mechanically simple, but the gate is about the
+  visible surface, not the difficulty.)
+INVARIANT COLLISION: must preserve AP#46 (Card/Row rhythm) — a virtualized row
+  must render the SAME height/typography as today; ship the AP#46 cross-surface
+  invariant test with it. Accessibility (§16.4): virtualized lists need correct
+  aria + keyboard nav.
+LEAN: PILOT on the single longest list (Records / org roster), with the AP#46
+  invariant test.
+
+--------------------------------------------------------------------------------
+C3. React Compiler 1.0 — automatic memoization
+--------------------------------------------------------------------------------
+WHAT + SOURCE: Build-time auto-memoization. Stable v1.0 since Oct 2025; supports
+  React 17+, opt-in vite/babel plugin (NOT bundled with react@19).
+  https://react.dev/blog/2025/10/07/react-compiler-1 . Reported up to ~12%
+  load + 2.5x interaction improvements.
+WHICH CODE IT IMPROVES: G3 — replaces scattered/absent manual memoization across
+  the whole component tree; helps the un-virtualized lists (C2) incrementally.
+EXPECTED WIN: fewer re-renders without hand-written useMemo/useCallback; pairs
+  well with C1/C2.
+ADOPTION COST: low to wire (add the plugin to vite.config.js), but REQUIRES a
+  full eval: the compiler can surface latent rules-of-React violations (it
+  refuses to compile non-compliant components — usually safe, but must be
+  verified), and bundle size must hold §16.10. Lint with eslint-plugin-react-
+  compiler first to find non-compliant components.
+PRIVACY / SUB-PROCESSOR: none.
+GATE: YELLOW (BENCH) — build-tool/behavior swap. Acceptance bar (declare BEFORE):
+  (a) full lint/test/build green; (b) no visual diff on the 3 home roles +
+  Schedule + Records + composer; (c) entry bundle gz <= current + 0 (compiler
+  runtime offsets); (d) measured render improvement, or at minimum no
+  regression. Re-run current baseline (no-compiler build) in the same pass.
+INVARIANT COLLISION: must keep all §0 design-token + file-size rules; compiler
+  output is invisible to those. Watch for any component that relies on identity
+  instability (rare).
+LEAN: PROTOTYPE behind a build flag; eval; then PILOT if the bar clears.
+
+--------------------------------------------------------------------------------
+C4. Anthropic Structured Outputs — constrained JSON for the AI-draft fns
+--------------------------------------------------------------------------------
+WHAT + SOURCE: Native grammar-constrained decoding to a JSON schema, via the
+  output_format parameter (public beta header structured-outputs-2025-11-13,
+  reported GA). Supports Sonnet 4.5 (our pinned model).
+  https://platform.claude.com/docs/en/build-with-claude/structured-outputs
+WHICH CODE IT IMPROVES: G4 — replaces the fence-strip + em-dash-guard + 1-retry
+  loop in briefing-ai-draft/index.ts:126-133 + parseAiDraftOutput, locking the
+  {body, card_summary, facts_used, warnings} shape at the API.
+EXPECTED WIN: eliminates a whole failure class (malformed JSON -> retry ->
+  occasional 500). Cheaper (no retry round-trip), more reliable, less hand-
+  parsing. The em-dash guard stays as a post-pass (it's a voice rule, not a
+  shape rule).
+ADOPTION COST: low — one request-shape change in each of the 3 edge fns +
+  AP#30 mirror in _helpers.ts. Must keep the same parse fallback as a belt-and-
+  suspenders until proven.
+PRIVACY / SUB-PROCESSOR: none new — same Anthropic call, same app_secrets key
+  (AP#33). No new sub-processor.
+GATE: YELLOW (BENCH) — it changes how user-visible AI output is produced. Same
+  model + same schema, but enforced. Acceptance bar (declare BEFORE): on a fixed
+  set of recap/announcement/games_recap drafts, structured-output drafts must
+  (a) parse 100%, (b) preserve all supplied facts, (c) stay em-dash-free after
+  the guard, (d) match or beat baseline voice fidelity (human spot-check). Run
+  the current fence-strip baseline in the same pass.
+INVARIANT COLLISION: AP#30 (mirror both files in one commit). Honest-claims
+  invariant: schema must not let the model invent fields. Keep the existing
+  no-fabrication prompt rules.
+LEAN: PILOT (offline harness on briefing-ai-draft first; expand to the other 2).
+
+--------------------------------------------------------------------------------
+C5. Claude model bump (claude-sonnet-4-5 -> latest Sonnet tier)
+--------------------------------------------------------------------------------
+WHAT + SOURCE: Move MODEL (index.ts:22, shared by 3 fns) to the current Sonnet
+  release. Latest Sonnet tier id: claude-sonnet-4-6 [GROUNDED against this
+  session's model registry]. Verify the exact deployed-gateway id with a smoke
+  before flipping (the in-code comment already requires this).
+WHICH CODE IT IMPROVES: G5 — voice-draft, closer-suggest, schedule-parse quality.
+EXPECTED WIN: better drafts / parsing at similar cost; unblocks the stale pin.
+ADOPTION COST: trivial to change (one const x3 fns) — the COST is the eval.
+PRIVACY / SUB-PROCESSOR: none new.
+GATE: YELLOW (BENCH). Acceptance bar (declare BEFORE): on the same fixed draft
+  set as C4, the new model must match-or-beat 4-5 on voice fidelity + facts-
+  preserved + em-dash-free + schedule-parse accuracy. Re-run 4-5 baseline in the
+  same pass. Pairs naturally with C4 (run both evals together).
+INVARIANT COLLISION: none beyond the BENCH discipline.
+LEAN: BENCH, then PILOT if it clears. Sequence AFTER/WITH C4.
+
+--------------------------------------------------------------------------------
+C6. RSVP flip-propensity ranking (Tier-1 T1.3)
+--------------------------------------------------------------------------------
+WHAT + SOURCE: Rank the not-yet-"going" families on an upcoming game by
+  likelihood to flip to "going", so the coach nudges the highest-yield first.
+  Technique: start with a TRANSPARENT heuristic/logistic score over engagement
+  features (historical response rate, prior lead time, last-N attendance) —
+  NOT a black box. (Standard small-data ranking; no external sub-processor.)
+WHICH CODE IT IMPROVES: the Stream-B RSVP-nudge flow (§16.5) + the coach
+  needs-you surfaces — currently no ordering signal beyond "hasn't responded".
+EXPECTED WIN: higher confirm rate per nudge for short-rostered games.
+ADOPTION COST: medium — feature extraction + an offline eval harness. MUST be
+  built/evaluated offline first (G6 sparsity).
+PRIVACY / SUB-PROCESSOR: none (in-DB engagement features only; no child film, no
+  external model). Engagement stats are per-player-ALLOWED (§16.12) — this is
+  NOT game stats.
+GATE: RED (HUMAN) — it changes user-visible ordering on a coach surface AND
+  makes an implicit claim ("most likely to flip"). Honest-claims invariant is
+  the binding constraint: the UI must not assert a confidence the data can't
+  support. Frank flips after seeing the offline numbers.
+INVARIANT COLLISION: §16.12 (engagement-only — OK), honest-claims (binding),
+  privacy locks §16.7 (no cross-family exposure of one family's propensity).
+ACCEPTANCE BAR (declare BEFORE): top-k precision / AUC must beat the naive
+  baseline "sort by longest-since-response" by a pre-set margin on a held-out
+  split; if it can't beat naive, ship naive ordering and label it plainly.
+LEAN: PROTOTYPE in the offline harness; do NOT ship a model-ranked UI until the
+  bar clears. (This is the already-queued T1.3 — it lands later as a gated PR.)
+
+--------------------------------------------------------------------------------
+C7. Voice / STT coach-recap dictation
+--------------------------------------------------------------------------------
+WHAT + SOURCE: Let a coach DICTATE a game recap (browser SpeechRecognition or a
+  Whisper-class STT), then feed the transcript into the existing recap-draft AI
+  (which already exists post-#1137 polish path). Coach's own voice — not child
+  audio.
+WHICH CODE IT IMPROVES: the recap composer entry point (coach types from
+  scratch today).
+EXPECTED WIN: faster recap capture on a phone after a game.
+ADOPTION COST: medium (capture UI + transcript handling + accessibility).
+PRIVACY / SUB-PROCESSOR: if cloud STT -> NEW sub-processor (disclosure + COPPA
+  check even though it's coach audio). Browser-native STT avoids that.
+GATE: YELLOW->RED depending on STT choice (cloud STT = new sub-processor = RED).
+INVARIANT COLLISION: sub-processor disclosure if cloud. Accessibility §16.4.
+LEAN: PARK now; PROTOTYPE later with browser-native STT only (no new
+  sub-processor), low priority vs C1-C5.
+
+--------------------------------------------------------------------------------
+C8. Embeddings / semantic search over briefing + family-guide history  [PARK]
+--------------------------------------------------------------------------------
+WHAT + SOURCE: pgvector + embeddings for "find the briefing where we said X".
+WHY PARK: corpus is tiny (one pilot org, ~2 seasons); keyword/ILIKE suffices; no
+  demonstrated pain. Revisit at multi-tenant scale.
+GATE: would be YELLOW (algorithm) + schema (pgvector) = RED-ish. Not now.
+LEAN: PARK.
+
+--------------------------------------------------------------------------------
+C9. LLM observability for the 3 AI edge fns
+--------------------------------------------------------------------------------
+WHAT + SOURCE: instrument briefing-ai-draft / suggest-briefing-closer /
+  parse-tournament-schedule with per-call latency, token cost, parse-failure
+  rate, retry rate, and mode (draft/polish/redraft). PostHog LLM analytics
+  and/or Sentry AI monitoring (both already in our stack).
+WHICH CODE IT IMPROVES: G8 — the AI rollout is currently a telemetry blind spot.
+EXPECTED WIN: see cost + failure rate as Tier-1 AI ships; catch a bad model bump
+  (C5) or a structured-output regression (C4) immediately; data to tune temps.
+ADOPTION COST: low (a thin logging wrapper around callClaude + a dashboard).
+PRIVACY / SUB-PROCESSOR: BINDING CONSTRAINT — must log METADATA ONLY (latency,
+  tokens, status, kind), NEVER prompt/response bodies (they contain admin-
+  authored family-facing prose and resolved facts). Aligns with §16.7.1
+  (two-surface telemetry) — verify no PII reaches PostHog/Sentry.
+GATE: GREEN (ROUTINE) provided metadata-only (no user-visible-output change, no
+  PII). If any prompt/response body were logged -> RED.
+INVARIANT COLLISION: §16.7 privacy locks; §16.7.1 SDK telemetry discipline.
+LEAN: PILOT — cheapest, highest-leverage de-risker for the whole AI program.
+
+--------------------------------------------------------------------------------
+C10. Opponent fuzzy-match upgrade  [PARK]
+--------------------------------------------------------------------------------
+WHAT: replace the length-relative fuzzy opponent matcher with a proper string-
+  similarity (token-set ratio) or tiny embedding match.
+WHY PARK: current matcher works at pilot volume; low ROI vs C1-C5. Revisit if
+  import mismatches recur at scale.
+GATE: YELLOW (algorithm). LEAN: PARK (watch import error rate).
+
+--------------------------------------------------------------------------------
+C11. rolldown-vite build  [PARK]
+--------------------------------------------------------------------------------
+WHAT: Rust-based Rolldown bundler under Vite for faster builds.
+WHY PARK: build time isn't a pain point; Vite 8 already fast. Watch as it
+  matures. GATE: GREEN. LEAN: PARK (watch).
+
+--------------------------------------------------------------------------------
+C12. SSR / prerender layer for public pages  [PARK]
+--------------------------------------------------------------------------------
+WHAT: add SSR/prerender (e.g. a framework or vite-plugin-ssr) for PublicSchedule
+  / public tournament pages (G7) -> SEO + faster first paint.
+WHY PARK: large architectural lift on a CSR SPA; low pilot value (public SEO is
+  not a current goal). Revisit if public discovery becomes a product goal.
+GATE: RED (changes the whole render path + user-visible output). LEAN: PARK.
+
+REJECTED FROM THIS PASS:
+  - Standings tiebreaker / bracket-prediction honesty (H2H gp=0; predictBracket
+    margin) — this is a CORRECTNESS BUG already on the backlog, not a tech
+    scout. Route to the bug ledger, not here. REJECT (wrong instrument).
+
+================================================================================
+STEP 4 — PRIORITIZATION
+================================================================================
+P1 — do first (high ROI, contained risk; de-risks the AI program + closes a
+     standing doctrine gap):
+  P1.1  C9  LLM observability (GREEN, metadata-only) — ship the telemetry BEFORE
+            more AI lands so C4/C5 evals have real numbers.
+  P1.2  C4  Anthropic Structured Outputs (BENCH) — remove the fragile JSON hack
+            on a now-live feature; offline harness on briefing-ai-draft first.
+  P1.3  C2  Virtualization PILOT on the longest list (RED) — closes the §16.10
+            violation; ship with the AP#46 invariant test.
+
+P2 — next (bigger wins, larger surface or needs the bench):
+  P2.1  C1  TanStack Query PILOT (GREEN per-hook) — 3-5 hooks, parity-tested,
+            then migrate by cluster. Biggest structural win (kills AP#36 class).
+  P2.2  C5  Model bump (BENCH) — run WITH the C4 eval on the same fixed set.
+  P2.3  C3  React Compiler PROTOTYPE (BENCH) — behind a build flag; eval bundle
+            + render before any pilot.
+
+P3 — prototype / watch:
+  P3.1  C6  RSVP flip-propensity (RED) — offline harness + acceptance bar; the
+            already-queued T1.3 lands later as a gated PR, naive-baseline-gated.
+  P3.2  C7  Voice/STT recap (browser-native only) — PROTOTYPE, low priority.
+  P3.3  C11 rolldown-vite — watch.
+
+PARK: C8 (embeddings), C10 (opponent fuzzy), C12 (SSR).
+REJECT (wrong instrument): standings/bracket correctness -> bug ledger.
+
+Sequencing note: P1.1 -> P1.2/P2.2 (telemetry first so the AI evals have data) ->
+P1.3/P2.1 (frontend structure) -> P2.3 -> P3. Each ships LATER as its own dark-
+flagged, gated PR after Architect ratification + (for BENCH items) a passed
+offline eval with the pre-declared bar.
+
+================================================================================
+RE-RUN HOOK
+================================================================================
+This pass covered ONE pillar (aster-sports management app). The same STEP 1-4
+structure re-runs per pillar:
+  - Studio / astersports-web: the deterministic/byte-stable image ops + count-
+    based billing invariants dominate; scout SAM2/LaMa-class mask/inpaint
+    improvements (all BENCH/RED, offline eval, privacy-gated) — NOT touched here.
+  - AAU Hub marketing site / St Patrick sandbox / Aster libs: lighter surfaces.
+Ask for the pillar and CC re-runs this doc for it.
