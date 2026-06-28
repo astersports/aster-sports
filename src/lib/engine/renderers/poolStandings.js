@@ -10,7 +10,7 @@
 
 import { escapeHtml } from './_util';
 import { goldBarHtml } from './_goldBar';
-import { BORDER_DEFAULT, COBALT, TEXT_NAVY } from '../colors';
+import { BORDER_DEFAULT, BRAND_GOLD_TEXT, TEXT_NAVY } from '../colors';
 
 const HOME_BG = '#eef4fb'; // cobalt wash (light-theme analog of mockup rgba(74,143,212,.16))
 
@@ -18,7 +18,7 @@ function rowHtml(row, isLast) {
   const home = !!row.is_home;
   const border = isLast ? '' : `border-bottom:1px solid ${BORDER_DEFAULT};`;
   const bg = home ? `background-color:${HOME_BG};` : '';
-  const color = home ? COBALT : TEXT_NAVY;
+  const color = home ? BRAND_GOLD_TEXT : TEXT_NAVY;
   const weight = home ? 800 : 500;
   return `<tr><td style="padding:9px 13px;${border}${bg}font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:${weight};color:${color};">`
     + escapeHtml(row.text)

@@ -233,7 +233,7 @@ describe('tournament_prelim gold — renderer shape (to mockup)', () => {
 
   it('rules renderer: bold cobalt lead label + dot bullet', () => {
     const { html } = renderRules({ bar_label: 'Rules', rules: [{ lead: 'Format:', text: 'two halves.' }, { lead: null, text: 'Bring water.' }] });
-    expect(html).toContain('<b style="color:#4a8fd4');
+    expect(html).toContain('<b style="color:#8f6708');
     expect(html).toContain('Format:');
     expect(html).toContain('two halves.');
     expect(html).toContain('Bring water.');

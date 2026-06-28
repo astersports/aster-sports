@@ -11,7 +11,7 @@ describe('template T5 — opsNotes', () => {
     const { html } = render(fixture);
     expect(html).toContain('BEFORE YOU GO');
     expect(html).toContain('color:#0f172a'); // navy eyebrow
-    expect(html).toContain('background-color:#4a8fd4'); // cobalt bullet dot
+    expect(html).toContain('background-color:#c9952e'); // gold bullet dot
   });
   it('default title is NOTES when omitted', () => {
     const out = render({ kind: 'ops_notes', items: ['One', 'Two'] });

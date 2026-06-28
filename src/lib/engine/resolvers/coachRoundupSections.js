@@ -10,7 +10,7 @@
 
 import { formatDateRange, formatDayLabel, formatTime } from './coachRoundupHelpers';
 
-const FALLBACK_TEAM_COLOR = '#4a8fd4';
+const FALLBACK_TEAM_COLOR = '#c9952e';
 
 export function buildCoachHeaderSection(coach, teamsWithEvents, dateRange) {
   const teamCount = (teamsWithEvents || []).filter((t) => (t.events || []).length).length;

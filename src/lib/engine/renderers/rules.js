@@ -11,15 +11,15 @@
 
 import { escapeHtml } from './_util';
 import { goldBarHtml } from './_goldBar';
-import { COBALT, TEXT_NAVY } from '../colors';
+import { BRAND_GOLD, BRAND_GOLD_TEXT, TEXT_NAVY } from '../colors';
 
 function ruleHtml(rule, isLast) {
   const lead = rule.lead
-    ? `<b style="color:${COBALT};font-weight:700;">${escapeHtml(rule.lead)}</b> `
+    ? `<b style="color:${BRAND_GOLD_TEXT};font-weight:700;">${escapeHtml(rule.lead)}</b> `
     : '';
   const mb = isLast ? '0' : '9px';
   return '<tr>'
-    + `<td valign="top" style="width:13px;padding:0 8px 0 0;"><div style="width:5px;height:5px;border-radius:50%;background-color:${COBALT};margin-top:7px;"></div></td>`
+    + `<td valign="top" style="width:13px;padding:0 8px 0 0;"><div style="width:5px;height:5px;border-radius:50%;background-color:${BRAND_GOLD};margin-top:7px;"></div></td>`
     + `<td valign="top" style="padding:0 0 ${mb} 0;font-family:Inter,system-ui,sans-serif;font-size:12.5px;line-height:1.5;color:${TEXT_NAVY};">${lead}${escapeHtml(rule.text)}</td>`
     + '</tr>';
 }

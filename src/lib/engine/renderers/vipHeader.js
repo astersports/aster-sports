@@ -5,7 +5,7 @@
 // parent sees the headline before scrolling.
 
 import { escapeHtml } from './_util';
-import { COBALT_DEEP } from '../colors';
+import { BRAND_NAVY } from '../colors';
 
 export default function renderVipHeader(section) {
   const parent = section?.parent_name || 'Parent';
@@ -26,7 +26,7 @@ export default function renderVipHeader(section) {
   const conflictLabel = conflictCount ? ` · ${conflictCount} CONFLICT${conflictCount === 1 ? '' : 'S'}` : '';
   const html = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"'
     + ' style="border-collapse:collapse;margin:0 0 16px 0;">'
-    + `<tr><td style="padding:24px 20px;background-color:${COBALT_DEEP};color:#ffffff;font-family:Inter,system-ui,sans-serif;text-align:center;">`
+    + `<tr><td style="padding:24px 20px;background-color:${BRAND_NAVY};color:#ffffff;font-family:Inter,system-ui,sans-serif;text-align:center;">`
     + `<div style="font-size:11px;font-weight:700;color:#ffffff;letter-spacing:2px;text-transform:uppercase;line-height:1.4;opacity:0.85;margin-bottom:6px;">${eyebrow}</div>`
     + `<div style="font-size:22px;font-weight:700;color:#ffffff;line-height:1.2;letter-spacing:-0.2px;">${headline}</div>`
     + `<div style="font-size:13px;font-weight:500;color:#ffffff;line-height:1.4;opacity:0.9;margin-top:4px;">${kidsLine}</div>`

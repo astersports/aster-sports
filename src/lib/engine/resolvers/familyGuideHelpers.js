@@ -49,7 +49,7 @@ export function groupEventsByKid(kids, events) {
         first_name: k.first_name,
         team_id: t.team_id,
         team_name: t.team_name,
-        team_color: t.team_color || '#4a8fd4',
+        team_color: t.team_color || '#c9952e',
         sort_order: t.sort_order ?? 0,
         events: [],
       };

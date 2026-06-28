@@ -28,7 +28,7 @@ export default {
       events: [
         {
           team_name: '10U Blue',
-          team_color: '#2563EB',
+          team_color: '#c9952e',
           primary: '10U Blue · Practice',
           secondary: '6:00 - 7:30 PM · WCC',
           variant: 'standard',

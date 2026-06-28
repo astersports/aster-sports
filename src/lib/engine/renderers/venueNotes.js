@@ -9,13 +9,13 @@
 // no tips have been entered yet.
 
 import { escapeHtml } from './_util';
-import { BORDER_DEFAULT, COBALT, TEXT_NAVY, TEXT_SLATE_DARK } from '../colors';
+import { BORDER_DEFAULT, BRAND_GOLD, TEXT_NAVY, TEXT_SLATE_DARK } from '../colors';
 
 const LABELS = { notes: 'Tip', parking_notes: 'Parking', entry_instructions: 'Entry' };
 
 function renderNoteLine(label, text) {
   return `<tr><td style="padding:4px 0;font-family:Inter,system-ui,sans-serif;font-size:14px;color:${TEXT_SLATE_DARK};line-height:1.5;">`
-    + `<span style="display:inline-block;width:6px;height:6px;background-color:${COBALT};border-radius:50%;margin-right:10px;vertical-align:middle;"></span>`
+    + `<span style="display:inline-block;width:6px;height:6px;background-color:${BRAND_GOLD};border-radius:50%;margin-right:10px;vertical-align:middle;"></span>`
     + `<strong style="color:${TEXT_NAVY};">${escapeHtml(label)}:</strong> ${escapeHtml(text)}`
     + '</td></tr>';
 }

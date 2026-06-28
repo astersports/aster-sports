@@ -69,7 +69,7 @@ export function composeReminder(event, sendBucket, tz = ET) {
 }
 
 function reminderHtml(title, whenLine, tail) {
-  const c = '#4a8fd4';
+  const c = '#151525'; // Aster Sports Hub navy band (was AAU cobalt); white text on it
   return `<div style="max-width:480px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;border:2px solid ${c};border-radius:6px;overflow:hidden;background:#ffffff;">`
     + `<div style="background:${c};padding:14px 16px;"><span style="font-size:16px;font-weight:700;color:#ffffff;">${esc(title)}</span></div>`
     + `<div style="padding:14px 16px;"><div style="font-size:15px;font-weight:700;color:#1a1a2e;">${esc(whenLine)}</div>`

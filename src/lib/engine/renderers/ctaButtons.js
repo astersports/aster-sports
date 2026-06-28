@@ -4,11 +4,11 @@
 
 import { escapeHtml } from './_util';
 import { safeHref } from './_safeHref';
-import { COBALT } from '../colors';
+import { BRAND_NAVY } from '../colors';
 
 const BTN_STYLE = [
   'display:inline-block',
-  `background-color:${COBALT}`,
+  `background-color:${BRAND_NAVY}`,
   'color:#ffffff',
   'font-family:Inter,system-ui,sans-serif',
   'font-size:13px',

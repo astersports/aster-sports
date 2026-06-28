@@ -21,7 +21,7 @@ describe('statsNarrative — body action tokens', () => {
     };
     const { html, plainText } = render(section);
     expect(html).toContain('<a href="https://h.test/r?t=abc&amp;action=going"');
-    expect(html).toContain('background-color:#4a8fd4');
+    expect(html).toContain('background-color:#151525');
     expect(html).toContain('border-radius:999px');
     expect(html).toContain('>RSVP</a>');
     expect(html).toContain('Quick one. ');

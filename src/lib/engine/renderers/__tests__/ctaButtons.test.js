@@ -14,7 +14,7 @@ describe('template T6 — ctaButtons', () => {
   });
   it('cobalt fill + uppercase text', () => {
     const { html } = render(fixture);
-    expect(html).toContain('background-color:#4a8fd4');
+    expect(html).toContain('background-color:#151525');
     expect(html).toContain('color:#ffffff');
     expect(html).toContain('TRACK LIVE STANDINGS');
     expect(html).toContain('VIEW BRACKET');

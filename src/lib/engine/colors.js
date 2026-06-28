@@ -13,9 +13,12 @@ export const TEXT_GRAPHITE    = '#475569';   //  7.5:1 — RSVP counts, mid-weig
 export const TEXT_SLATE       = '#64748b';   //  5.0:1 — secondary (time + location)
 export const TEXT_MIST        = '#94a3b8';   //  3.2:1 — large-font atmospheric only
 
-// Brand cobalt
-export const COBALT           = '#4a8fd4';   // Aster AAU brand cobalt — UI/headers
-export const COBALT_DEEP      = '#2563eb';   //  4.6:1 — eyebrow contrast variant (passes AA)
+// Aster Sports Hub brand — gold-on-navy (constellation-arrow mark). Gold is a
+// mid-tone: NAVY backs dark bands/buttons (light text on them), GOLD is for small
+// accent fills (borders, dots), GOLD_TEXT is for accent text/links on white (AA 6.8:1).
+export const BRAND_NAVY       = '#151525';   // dark bands / buttons / footers — light text on it
+export const BRAND_GOLD       = '#c9952e';   // small accent fills — borders, bullet dots, team-rail fallback
+export const BRAND_GOLD_TEXT  = '#8f6708';   //  6.8:1 — accent text / eyebrows / links on white (AA)
 
 // Tournament + warning accents
 export const AMBER_DEEP       = '#92400e';   //  6.6:1 — tournament suffix amber

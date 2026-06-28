@@ -20,9 +20,9 @@ export function composeRsvpNudge(context, slice, overrides = {}) {
   const sections = [];
   sections.push({ kind: 'header', eyebrow: `${team?.name || org.name} · RSVP NEEDED`, eyebrow_link: org.branding.eyebrowLink, headline: 'QUICK RSVP', urgency_label: (urgency.day_label || '').toUpperCase(), goldStripe: true });
   for (const kid of kids) {
-    sections.push({ kind: 'rsvp_request', kid_first_name: kid.first_name, player_id: kid.player_id, team_name: team?.name || '', team_color: team?.team_color || '#4a8fd4', event_label: eventLabel, urgency_phrase: `${urgency.day_label} at ${urgency.time_label}`, rsvp_token_placeholders: { going: '{{rsvp_going_url}}', maybe: '{{rsvp_maybe_url}}', not_going: '{{rsvp_not_going_url}}' } });
+    sections.push({ kind: 'rsvp_request', kid_first_name: kid.first_name, player_id: kid.player_id, team_name: team?.name || '', team_color: team?.team_color || '#c9952e', event_label: eventLabel, urgency_phrase: `${urgency.day_label} at ${urgency.time_label}`, rsvp_token_placeholders: { going: '{{rsvp_going_url}}', maybe: '{{rsvp_maybe_url}}', not_going: '{{rsvp_not_going_url}}' } });
   }
-  sections.push({ kind: 'event_card', team_color: team?.team_color || '#4a8fd4', date: ((iso) => iso ? new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'long', month: 'long', day: 'numeric' }).format(new Date(iso)) : '')(event.start_at), time: urgency.time_range_label, location_name: location?.name || event.location || null, location_map_url: location?.google_maps_url || null, opponent: event.opponent || null });
+  sections.push({ kind: 'event_card', team_color: team?.team_color || '#c9952e', date: ((iso) => iso ? new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'long', month: 'long', day: 'numeric' }).format(new Date(iso)) : '')(event.start_at), time: urgency.time_range_label, location_name: location?.name || event.location || null, location_map_url: location?.google_maps_url || null, opponent: event.opponent || null });
   for (const key of ['coach_note', 'parent_shoutout']) {
     const v = trim(overrides[key]); if (v) sections.push({ kind: 'stats_narrative', body: v });
   }

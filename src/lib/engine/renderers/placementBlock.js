@@ -34,7 +34,7 @@ function placementLabel(place) {
 export default function renderPlacementBlock(section) {
   const place = section?.final_place;
   if (!place) return { html: '', plainText: '' };
-  const teamColor = section?.team_color || '#4a8fd4';
+  const teamColor = section?.team_color || '#c9952e';
   const record = section?.record || '';
   const placeLabel = placementLabel(place);
   const isChamp = placeLabel === 'CHAMPIONS';

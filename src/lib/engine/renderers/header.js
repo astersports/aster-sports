@@ -18,7 +18,7 @@
 
 import { escapeHtml } from './_util';
 import { safeHref } from './_safeHref';
-import { COBALT, COBALT_DEEP, GOLD, TEXT_MIST, TEXT_SLATE } from '../colors';
+import { BRAND_GOLD, BRAND_GOLD_TEXT, BRAND_NAVY, GOLD, TEXT_MIST, TEXT_SLATE } from '../colors';
 
 function hostFromUrl(url) {
   try { return new URL(url).host.replace(/^www\./, ''); }
@@ -31,7 +31,7 @@ function renderEyebrow(eyebrow, eyebrow_link, variant) {
   const text = eyebrow_link
     ? `<a href="${escapeHtml(safeHref(eyebrow_link))}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">${inner}</a>`
     : inner;
-  const color = variant === 'cobalt_band' ? '#ffffff' : COBALT_DEEP;
+  const color = variant === 'cobalt_band' ? '#ffffff' : BRAND_GOLD_TEXT;
   return `<div style="font-size:11px;font-weight:600;color:${color};letter-spacing:3px;text-transform:uppercase;line-height:1.4;margin:0 0 10px 0;">${text}</div>`;
 }
 
@@ -63,8 +63,8 @@ export function renderHeader(section) {
   const { eyebrow, eyebrow_link, headline, sub_context, goldStripe, variant, record_pill } = section || {};
   const isCobaltBand = variant === 'cobalt_band';
   const tableStyle = isCobaltBand
-    ? `border-collapse:collapse;font-family:Inter,system-ui,sans-serif;background-color:${COBALT};`
-    : `border-collapse:collapse;font-family:Inter,system-ui,sans-serif;border-bottom:2px solid ${COBALT_DEEP};`;
+    ? `border-collapse:collapse;font-family:Inter,system-ui,sans-serif;background-color:${BRAND_NAVY};`
+    : `border-collapse:collapse;font-family:Inter,system-ui,sans-serif;border-bottom:2px solid ${BRAND_GOLD};`;
   const headerTable =
     '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"'
     + ` style="${tableStyle}">`

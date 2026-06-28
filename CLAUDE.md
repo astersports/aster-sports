@@ -162,13 +162,18 @@ Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, 
 }
 ```
 
-### Legacy Hoopers Org Overrides (applied at runtime via AuthContext)
+### Pilot Org Overrides (applied at runtime via AuthContext)
+Verified against the live `organizations.brand_colors` (2026-06-28): the pilot org
+("Aster Sports AAU LLC", formerly Legacy Hoopers) now carries the gold-on-navy Hub
+palette — rebranded from the prior AAU cobalt. These mirror the platform defaults in
+§3 above (the pilot tracks the platform brand); a future tenant with a different brand
+will differ on every line (§4 Tenant Data Boundary).
 ```css
---as-header:       #4a8fd4;
---as-accent:       #4a8fd4;
---as-accent-hover: #5BA0E0;
---as-accent-soft:  rgba(74, 143, 212, 0.1);
---as-text-on-dark: #FFFFFF;
+--as-header:       #151525;
+--as-accent:       #C9952E;
+--as-accent-hover: #D4A843;
+--as-accent-soft:  rgba(201, 149, 46, 0.1);
+--as-text-on-dark: #F5F0E8;
 ```
 
 ### Team Colors (inline style from DB — the ONLY acceptable inline hex)
@@ -457,7 +462,7 @@ to prevent drift.
 8. Hardcode hex → CSS variables only (except team_color from DB)
 9. "CYO" publicly → "League Play"
 10. "Boys 10U" → "10U Boys"
-11. Sky blue `#29b6f6` → cobalt `#4a8fd4`
+11. Sky blue `#29b6f6` → brand accent. (Brand accent rebranded 2026-06-28: the prior AAU cobalt `#4a8fd4` → Hub gold `#c9952e`; the original sky-blue mistake stays forbidden.)
 12. Scrimmage as activity type → `is_scrimmage` boolean
 13. Duties as one row → per-slot rows
 14. Futures Academy as role → `roster_type`
@@ -1089,11 +1094,13 @@ When generating tournament briefing HTML for LeagueApps + email delivery:
 2. **Table-based layout.** No `<div>` wrappers in rules sections.
 3. **`<span>` + `<br>` for inline content.** Not `<p>` tags inside list rows.
 4. **Standard bullets.** Use `&#8226;` not unicode bullets.
-5. **Brand colors** (canonical source: `src/lib/engine/colors.js` — per AP #39, live engine is the truer position):
-   - Header: dark navy #0f172a (`TEXT_NAVY`) — was #1e3a5f in older docs; reconciled to engine value 2026-06-02
-   - Accent: cobalt #4a8fd4 (`COBALT`; NOT old sky blue #29b6f6) — matches org brand_colors + §3/§16.11
-   - Accent (eyebrow contrast variant): #2563eb (`COBALT_DEEP`, passes WCAG AA at 4.6:1)
+5. **Brand colors** (canonical source: `src/lib/engine/colors.js` — per AP #39, live engine is the truer position). **Rebranded 2026-06-28 from AAU cobalt to the gold-on-navy Hub palette** (gold is a mid-tone, so the role split below preserves WCAG AA):
+   - Dark bands / buttons / footers: navy #151525 (`BRAND_NAVY`) — carry white/cream text
+   - Accent fills: Hub gold #c9952e (`BRAND_GOLD`) — small fills only (borders, bullet dots, team-rail fallback); never behind white text
+   - Accent text / eyebrows / links on white: gold #8f6708 (`BRAND_GOLD_TEXT`, WCAG AA 6.8:1)
+   - Body-text navy: #0f172a (`TEXT_NAVY`) — unchanged
    - Game-day arrival callout: orange #e05c2a
+   - (The prior `COBALT` #4a8fd4 / `COBALT_DEEP` #2563eb constants were removed in the rebrand.)
 6. **Audience scoping for tournament messages:** scope to `tournament_rosters` table, NOT team roster. Read via `src/lib/tournamentRosters.js` / inline `.from('tournament_rosters')` (there is no `getTournamentRecipients` helper).
 7. **Recipient preview before send:** show "Active: X · Futures: Y · Recipients: Z guardians" chip.
 8. **Canonical 12 kinds for `comms_messages.kind`** (production `comms_messages_kind_check`, verified 2026-05-29): weekly_digest, schedule_change, game_recap, games_recap, tournament_prelim, tournament_recap, announcement, custom_message, rsvp_nudge, academy_callup_notice, coach_roundup, family_guide. The 7 transitional legacy values have been backfilled and dropped. The table rename (tournament_messages → comms_messages) and enum rename (message_type → kind) shipped in foundation migration `20260508234920_comms_foundation_polymorphic_rename`. (Note: `games_recap` is the plural multi-game digest, distinct from singular `game_recap`.)
@@ -1308,7 +1315,7 @@ trade-off for last-resort error capture reliability.
 
 ### 16.11 First impressions
 
-- Login: platform default brand (navy header #151525 + gold accent #C9952E), constellation-arrow mark. Tenant colors like LH cobalt #4a8fd4 apply at runtime AFTER login, never on the login screen. (phoenix.webp was deleted post-rebrand per AP #51.)
+- Login: platform default brand (navy header #151525 + gold accent #C9952E), constellation-arrow mark. Per-org `brand_colors` apply at runtime AFTER login, never on the login screen. (The pilot org's own `brand_colors` are the gold-on-navy Hub palette as of the 2026-06-28 rebrand — verified against live `organizations.brand_colors`; phoenix.webp was deleted post-rebrand per AP #51.)
 - First-time tour: 3 dismissible tooltips on first home visit
 - "What's new" changelog: 3-line summary once per shipped feature
 - Empty states with brand voice

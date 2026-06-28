@@ -12,7 +12,7 @@ import { BORDER_SUBTLE, TEXT_SLATE } from '../colors';
 function renderRow(item) {
   const kid = escapeHtml(item.kid_name || 'Kid');
   const team = escapeHtml(item.team_name || 'Team');
-  const color = escapeHtml(item.team_color || '#4a8fd4');
+  const color = escapeHtml(item.team_color || '#c9952e');
   const url = item.url ? escapeHtml(item.url) : null;
   const inner = `<strong style="color:#0f172a;">${kid}</strong> <span style="opacity:0.7;">·</span> ${team}`;
   const cellContent = url

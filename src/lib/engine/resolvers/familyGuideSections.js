@@ -16,7 +16,7 @@
 import { formatDateRange, formatDayLabel, formatTime, summarizeEventKinds } from './familyGuideHelpers';
 import { APP_BASE_URL, ORG_CONTACT_DEFAULT, ORG_LOGO_DEFAULT, ORG_WEBSITE_DEFAULT } from '../../constants';
 
-const FALLBACK_TEAM_COLOR = '#4a8fd4';
+const FALLBACK_TEAM_COLOR = '#c9952e';
 
 // PR 5b-3 — Family Guide gets its own conflict_callout section, mirroring
 // Coach Roundup's pattern. detectConflicts produces items with kid_a /
