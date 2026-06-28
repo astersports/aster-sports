@@ -12,6 +12,12 @@ import FamilyBalanceList from '../components/admin/FamilyBalanceList';
 import FinancialSummaryCard from '../components/admin/FinancialSummaryCard';
 import CoachPayoutsSection from '../components/admin/CoachPayoutsSection';
 import SegmentedControl from '../components/shared/SegmentedControl';
+// L99 enhancement components (src/components/financial/) — all additive.
+import CollectionProgressBar from '../components/financial/CollectionProgressBar';
+import OutstandingCallout from '../components/financial/OutstandingCallout';
+import SeasonTabStrip from '../components/financial/SeasonTabStrip';
+import FinancialStatChips from '../components/financial/FinancialStatChips';
+import { FinancialDashboardSkeleton, FinancialErrorBanner, NoSeasonsState } from '../components/financial/FinancialStates';
 
 export default function FinancialDashboardPage() {
   const { orgId } = useAuth();
@@ -55,7 +61,7 @@ export default function FinancialDashboardPage() {
   // Per anti-pattern #42 — single source of truth for financial
   // state across this page and admin-home's payment-overdue lane.
   // Previously inline at :57-69 here; extracted PR #303.
-  const { accounts, balances, byAccount, stats, loading } = useSeasonFinancials(orgId, seasonId);
+  const { accounts, balances, byAccount, stats, loading, error, refetch } = useSeasonFinancials(orgId, seasonId);
   const { teamsByGuardian, teams: familyTeams, playersByTeam } = useFamilyTeams(orgId, seasonId);
   const funnel = useFunnelRevenue(orgId);
 
@@ -65,32 +71,38 @@ export default function FinancialDashboardPage() {
   if (loading && !seasonId) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Loading…</div>;
 
   return (
-    <div style={{ padding: '16px 16px 80px' }}>
-      <button type="button" onClick={goBack} className="as-press" style={{ display: 'flex', alignItems: 'center', minHeight: 44, background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12, padding: 0 }}>
-        <ChevronLeft size={20} strokeWidth={1.75} /> Back
+    <main style={{ padding: '16px 16px 80px' }} aria-labelledby="financials-heading">
+      <button type="button" onClick={goBack} className="as-press" aria-label="Go back" style={{ display: 'flex', alignItems: 'center', minHeight: 44, background: 'none', border: 'none', color: 'var(--as-accent)', fontSize: 15, fontWeight: 500, marginBottom: 12, padding: 0 }}>
+        <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" /> Back
       </button>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--as-text-primary)', marginBottom: 16 }}>Financials</h1>
+      <h1 id="financials-heading" style={{ fontSize: 20, fontWeight: 700, color: 'var(--as-text-primary)', marginBottom: 16 }}>Financials</h1>
 
+      {/* E5: accessible, responsive season tablist with owing-dots (single
+          source: the page's owingSeasonIds Set). */}
       {seasons.length > 1 && (
-        <div style={{ display: 'flex', gap: 6, marginBottom: 16, overflowX: 'auto' }}>
-          {seasons.map((s) => (
-            <button key={s.id} type="button" onClick={() => setSelectedSeasonId(s.id)} className="as-press" style={{
-              minHeight: 44, padding: '0 14px', borderRadius: 9999, fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap',
-              border: s.id === seasonId ? 'none' : '1px solid var(--as-border-default)',
-              backgroundColor: s.id === seasonId ? 'var(--as-accent)' : 'var(--as-bg-card)',
-              color: s.id === seasonId ? 'var(--as-text-inverse)' : 'var(--as-text-secondary)',
-            }}>
-              {s.name}
-            </button>
-          ))}
-        </div>
+        <SeasonTabStrip seasons={seasons} seasonId={seasonId} owingSeasonIds={owingSeasonIds} onSelect={setSelectedSeasonId} />
       )}
 
+      {/* E3: org with no billed season yet. */}
+      {!loading && seasons.length === 0 && <NoSeasonsState />}
+
+      {/* E2: money-load error (was silently swallowed by the hook). */}
+      {error && !loading && <FinancialErrorBanner message={error} onRetry={refetch} />}
+
       {loading ? (
-        <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Loading…</div>
-      ) : (
+        <FinancialDashboardSkeleton />
+      ) : seasons.length === 0 ? null : (
         <>
+          {/* E6/E7: scope-labeled families-owing headline + a11y live region. */}
+          <OutstandingCallout stats={stats} seasonName={currentSeason?.name} />
+
           <FinancialSummaryCard stats={stats} seasonName={currentSeason?.name} funnel={funnel} fmt={fmt} />
+
+          {/* E1: Stripe-style season collection progress bar. */}
+          <CollectionProgressBar stats={stats} />
+
+          {/* E9/E10: at-a-glance KPI chips (familyCount = season accounts). */}
+          <FinancialStatChips stats={stats} familyCount={accounts.length} />
 
           <div style={{ margin: '16px 0 12px' }}>
             <SegmentedControl label="Financials view" value={segment} onChange={setSegment}
@@ -109,6 +121,6 @@ export default function FinancialDashboardPage() {
           )}
         </>
       )}
-    </div>
+    </main>
   );
 }

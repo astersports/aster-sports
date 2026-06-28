@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus } from 'lucide-react';
 import { useChannels } from '../hooks/useChannels';
 import { useUnreadCounts } from '../hooks/useUnreadCounts';
 import { useChannelPreviews } from '../hooks/useChannelPreviews';
@@ -12,6 +11,10 @@ import MessageThread from '../components/messaging/MessageThread';
 import NewDmPicker from '../components/messaging/NewDmPicker';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import Label from '../components/shared/Label';
+import MessagesHeader from '../components/messages/MessagesHeader';
+import MessagesSearchBar from '../components/messages/MessagesSearchBar';
+import MessagesEmptyState from '../components/messages/MessagesEmptyState';
+import MessagesErrorState from '../components/messages/MessagesErrorState';
 
 export default function MessagesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -22,6 +25,29 @@ export default function MessagesPage() {
   const getOrCreate = useGetOrCreateDm();
   const [active, setActive] = useState(null);
   const [showNewDm, setShowNewDm] = useState(false);
+  const [query, setQuery] = useState('');
+  const [startError, setStartError] = useState(false);
+  const [starting, setStarting] = useState(false);
+
+  // L99 enhancement: derive an unread-conversation count for the header summary,
+  // grounded in the same `previews`/`reads` shape ChannelList already consumes.
+  const unreadCount = useMemo(() => channels.reduce((n, ch) => {
+    const p = previews?.[ch.key];
+    const unread = p?.time && (!reads?.[ch.key] || p.time > reads[ch.key]);
+    return unread ? n + 1 : n;
+  }, 0), [channels, previews, reads]);
+
+  // L99 enhancement: case-insensitive filtering of channels + DMs (iMessage search).
+  const q = query.trim().toLowerCase();
+  const filteredChannels = useMemo(
+    () => (q ? channels.filter((ch) => ch.label?.toLowerCase().includes(q)) : channels),
+    [channels, q],
+  );
+  const filteredDms = useMemo(
+    () => (q ? dmThreads.filter((t) => t.otherName?.toLowerCase().includes(q)) : dmThreads),
+    [dmThreads, q],
+  );
+  const noResults = q.length > 0 && filteredChannels.length === 0 && filteredDms.length === 0;
 
   useEffect(() => {
     if (loading || active) return;
@@ -41,8 +67,18 @@ export default function MessagesPage() {
 
   const startNewDm = async (otherUserId) => {
     setShowNewDm(false);
-    const thread = await getOrCreate(otherUserId);
-    if (thread) { await refetchDms(); openDm({ ...thread, otherName: 'Loading…' }); }
+    setStartError(false);
+    setStarting(true);
+    try {
+      const thread = await getOrCreate(otherUserId);
+      if (thread) { await refetchDms(); openDm({ ...thread, otherName: 'Loading…' }); }
+      else setStartError(true);
+    } catch {
+      // Kindness microcopy (§16.3): surface a retryable error, never a stack trace.
+      setStartError(true);
+    } finally {
+      setStarting(false);
+    }
   };
 
   if (loading || dmsLoading) return <div style={{ padding: 24 }}><LoadingSkeleton variant="card" count={3} /></div>;
@@ -57,23 +93,45 @@ export default function MessagesPage() {
 
   if (showNewDm) return <NewDmPicker onSelect={startNewDm} onClose={() => setShowNewDm(false)} />;
 
+  if (startError) {
+    return (
+      <div className="px-4 py-4">
+        <MessagesHeader unreadCount={unreadCount} onNewMessage={() => { setStartError(false); setShowNewDm(true); }} />
+        <MessagesErrorState onRetry={() => { setStartError(false); setShowNewDm(true); }} />
+      </div>
+    );
+  }
+
   return (
     <div className="px-4 py-4">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <h1 className="font-bold" style={{ color: 'var(--as-text-primary)', fontSize: 20 }}>Messages</h1>
-        <button type="button" onClick={() => setShowNewDm(true)} className="as-press" aria-label="New message"
-          style={{ width: 44, height: 44, borderRadius: 10, border: 'none', backgroundColor: 'var(--as-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-          <Plus size={18} strokeWidth={2} color="var(--as-text-inverse)" />
-        </button>
-      </div>
-      <div style={{ width: 32, height: 3, backgroundColor: 'var(--as-accent)', borderRadius: 2, marginBottom: 8 }} />
-      <Label>Channels</Label>
-      <ChannelList channels={channels} activeKey={active?.key} onSelect={setActive} previews={previews} reads={reads} />
-      {dmThreads.length > 0 && (
-        <div style={{ marginTop: 16 }}>
-          <Label>Direct Messages</Label>
-          <DmList threads={dmThreads} onSelect={openDm} />
+      {/* L99 enhancement: header with unread summary, fallback to legacy markup-equivalent. */}
+      <MessagesHeader unreadCount={unreadCount} onNewMessage={() => setShowNewDm(true)} />
+      {starting && (
+        <div aria-live="polite" style={{ marginBottom: 12 }}>
+          <LoadingSkeleton variant="text" count={1} />
         </div>
+      )}
+      <MessagesSearchBar value={query} onChange={setQuery} />
+      {noResults ? (
+        <MessagesEmptyState mode="no-results" query={query.trim()} />
+      ) : (
+        <>
+          {filteredChannels.length > 0 && (
+            <>
+              <Label>Channels</Label>
+              <ChannelList channels={filteredChannels} activeKey={active?.key} onSelect={setActive} previews={previews} reads={reads} />
+            </>
+          )}
+          {filteredDms.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <Label>Direct Messages</Label>
+              <DmList threads={filteredDms} onSelect={openDm} />
+            </div>
+          )}
+          {!q && channels.length === 0 && dmThreads.length === 0 && (
+            <MessagesEmptyState mode="empty" />
+          )}
+        </>
       )}
     </div>
   );

@@ -1,24 +1,44 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import LoadingSkeleton from '../components/shared/LoadingSkeleton';
 import InboxList from '../components/inbox/InboxList';
 import InboxDetail from '../components/inbox/InboxDetail';
+import InboxHeader from '../components/inbox/InboxHeader';
+import InboxToolbar from '../components/inbox/InboxToolbar';
+import InboxErrorState from '../components/inbox/InboxErrorState';
+import InboxFilterEmpty from '../components/inbox/InboxFilterEmpty';
+import { useMarkAllRead } from '../components/inbox/useMarkAllRead';
+import { useToast } from '../context/useToast';
 import { useInboxList } from '../hooks/useInboxList';
 
 // Phase 3 D-6(a) parent inbox — orchestration page.
-// Minimal-viable per docs/REDESIGN_BRIEFINGS_2026-06-03.md §2.D-6(a):
-//   - list view (recency-grouped)
-//   - detail view (renders body_html_rendered from recipient row)
-//   - no filter, no mark-as-read affordance, no in-app unsubscribe
-// All deferred to a follow-up wave once parent usage data exists.
-
-const errBox = { padding: 16, borderRadius: 10, backgroundColor: 'var(--as-danger-soft)', color: 'var(--as-danger)', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 };
-const retryBtn = { minHeight: 36, padding: '0 14px', borderRadius: 8, border: 'none', backgroundColor: 'var(--as-danger)', color: 'var(--as-text-inverse)', fontSize: 13, fontWeight: 600, cursor: 'pointer' };
+// L99 enhancement pass (additive): unread-count header, All/Unread filter,
+// optimistic "mark all read", icon error state + filtered-empty state,
+// responsive max-width container. The core list/detail contract is
+// unchanged — InboxList / InboxDetail own their own render.
 
 export default function InboxPage() {
   const { items, loading, error, refetch, markOpened } = useInboxList();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeId, setActiveId] = useState(() => searchParams.get('r') || null);
+  // All / Unread filter (persisted to the URL so back/refresh keeps it).
+  const [filter, setFilter] = useState(() => (searchParams.get('f') === 'unread' ? 'unread' : 'all'));
+  const { showToast } = useToast();
+  const { busy, status, run, clearStatus } = useMarkAllRead({ items, markOpened, refetch });
+
+  const unreadCount = useMemo(() => items.filter((it) => !it.opened_at).length, [items]);
+  const visibleItems = useMemo(
+    () => (filter === 'unread' ? items.filter((it) => !it.opened_at) : items),
+    [items, filter],
+  );
+
+  // Map the mark-all-read result to a kindness toast (§16.3), then clear.
+  useEffect(() => {
+    if (!status) return;
+    if (status === 'done') showToast('All briefings marked read', 'success');
+    else showToast('Looks like that didn’t go through. Try again?', 'error');
+    clearStatus();
+  }, [status, showToast, clearStatus]);
 
   const openDetail = (item) => {
     setActiveId(item.id);
@@ -35,9 +55,15 @@ export default function InboxPage() {
     next.delete('r');
     setSearchParams(next, { replace: true });
   };
+  const changeFilter = (next) => {
+    setFilter(next);
+    const params = new URLSearchParams(searchParams);
+    if (next === 'unread') params.set('f', 'unread'); else params.delete('f');
+    setSearchParams(params, { replace: true });
+  };
 
   if (loading) {
-    return <div style={{ padding: 24 }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={3} /></div>;
+    return <div style={{ padding: 24, maxWidth: 640, margin: '0 auto' }} role="status" aria-live="polite"><LoadingSkeleton variant="card" count={3} /></div>;
   }
 
   if (activeId) {
@@ -45,16 +71,27 @@ export default function InboxPage() {
   }
 
   return (
-    <div className="px-4 py-4">
-      <h1 className="font-bold" style={{ color: 'var(--as-text-primary)', fontSize: 20, marginBottom: 4 }}>Inbox</h1>
-      <div style={{ width: 32, height: 3, backgroundColor: 'var(--as-accent)', borderRadius: 2, marginBottom: 12 }} />
+    <div className="px-4 py-4 as-fade-in" style={{ maxWidth: 640, margin: '0 auto' }}>
+      <InboxHeader unreadCount={unreadCount} total={items.length} />
       {error ? (
-        <div role="alert" style={errBox}>
-          <span>Couldn’t load your inbox. Try again in a moment.</span>
-          <button type="button" className="as-press" style={retryBtn} onClick={refetch}>Retry</button>
-        </div>
+        <InboxErrorState onRetry={refetch} />
       ) : (
-        <InboxList items={items} onSelect={openDetail} />
+        <>
+          {items.length > 0 && (
+            <InboxToolbar
+              filter={filter}
+              onFilterChange={changeFilter}
+              unreadCount={unreadCount}
+              onMarkAllRead={run}
+              busy={busy}
+            />
+          )}
+          {filter === 'unread' && visibleItems.length === 0 && items.length > 0 ? (
+            <InboxFilterEmpty />
+          ) : (
+            <InboxList items={visibleItems} onSelect={openDetail} />
+          )}
+        </>
       )}
     </div>
   );
