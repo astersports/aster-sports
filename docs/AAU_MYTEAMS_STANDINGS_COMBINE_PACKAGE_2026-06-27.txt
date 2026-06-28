@@ -1,0 +1,126 @@
+================================================================================
+AAU — MY TEAMS × STANDINGS: COMBINE DECISION PACKAGE (for the architect)
+2026-06-27 · CC → Architect + Frank · §11.8 decision-input artifact
+Frank's prompt: "maybe combine Standings and My Teams into a new section."
+================================================================================
+
+0 · THE QUESTION
+  Should My Teams and Standings become one section? This package gives the architect the
+  grounded inputs to decide + plan the next phase: what the two screens already share, the
+  data contracts that exist vs are missing, the live-data reality (so we design against what
+  the data supports), the hard plane constraint, and CC's labeled lean. CC does not settle
+  this — it's an architect design call; this is the evidence.
+
+1 · SHARED SUBSTRATE — they are already one engine [GROUNDED, code]
+  Standings and My Teams already consume the SAME engine:
+   • Predictor + standings: `predictBracket`, `computeStandings`, `useAauStandings`,
+     `effectiveRatings`/`gradePrior` (client/src/lib/standings/* + hooks + lib/aau).
+   • The exact-vs-estimate language (Clinched / In top 2 / Out / proj NN% / "—").
+   • The tracking store (`tracked_teams`) — My Teams = your tracked teams; Standings
+     personalization ("your divisions") = the divisions your tracked teams are in.
+   • The same RPCs and the SAME bug: both ride `resolved_key` (the name-slug), both fixed by
+     the SAME re-grain onto `external_team_key` (the #1128 pattern; see AAU_STANDINGS_GROUNDING).
+  → A combine is natural, not forced: these are two views of one dataset + one engine. The risk
+    is not technical coupling — it's the PLANE boundary (§5).
+
+2 · DATA CONTRACTS — what exists vs what's missing [GROUNDED]
+  PRESENT (public RPCs / tables):
+   • `get_public_tournament_standings(division_id)` — per-division bundle {teams, games,
+     remaining, rules, division}. Keyed on `resolved_key` (the bug). Drives table + predictor.
+   • `get_public_tournament_directory()` — tournaments + divisions + `states`.
+   • `search_public_aau(q)`, `get_public_live_now(n)`, the public team-schedule RPC.
+   • `tracked_teams` (DB, per user_id): team_key, program, tournament_id, division_id, pool,
+     `kid` (the Plane-C kid-layer hook), created_at.
+   • `division_games`: start_at, venue_id, court, status, scores. `venues`: lat/lng, geocode.
+  MISSING for a combined section (the build surface to spec):
+   • A "MY DIVISIONS" read (divisions containing the user's tracked teams) — Standings frame 01
+     + a combined hub both need it; today it'd be assembled client-side from tracked_teams.
+   • A "MY TRACKED TEAMS' GAMES / DAY" aggregate (the Up-Next + Day-timeline) — no single RPC
+     today; it's per-team schedule fan-out.
+   • Schedule-diff feed (killer #1) — §2.D, NOT STARTED.
+   • Bracket / placement (clinch / scenarios / road-to-chip) — §2.B, HELD (needs the
+     bracket_slots.event_id FK fix, then owner-applies).
+   • Drive-time minutes (leave-by exact + inter-venue split) — needs a routing provider
+     (Frank cost-nod); coordinates exist, the routing call does not.
+
+3 · LIVE-DATA REALITY — design against this, not the aspirational persona [GROUNDED 2026-06-27]
+  TRACKING: 20 tracked rows, 1 user (the dev/test account), 20 teams, 0 kid-linked. The
+    "director tracking many teams" persona is plausible in shape (one account, 20 teams) but
+    is currently a single user — pre-onboarding. No kid-linking exercised yet.
+  TRACKED → SCHEDULE RESOLUTION IS LOSSY: of the 20 tracked teams, only 6 resolve to
+    `division_games` schedules (26 games across 16 days); 14 do not. Cause to confirm: those
+    tournaments' game-level schedules likely aren't ingested (only rosters), or key drift on
+    pre-re-grain tracked rows. IMPLICATION: a "your day / up next" timeline is SPARSE today —
+    the architect should design the empty/partial states as first-class, and we should verify
+    the ingest gap before promising a full multi-team day.
+  CONFLICTS: 0 overlapping-game pairs across the tracking user's teams (games spread over 16
+    distinct days). The CONFLICT + SPLIT-UP killer (#3) has NO live instance to render today —
+    it's structurally buildable but the data doesn't exercise it. Build it with an honest
+    "no conflicts this week" state; don't make it the hero of an empty surface.
+  LEAVE-BY FEASIBILITY (killer #2) is STRONG: 100% of public games have start_at, 98.6% have a
+    venue, 94% of venues (50/53) are geocoded (lat/lng). So distance-based "leave by" works
+    NOW; the exact drive-time number needs the routing provider.
+  STANDINGS: 294/304 public divisions are in-play; odds ride `resolved_key` with an unfiltered
+    cross-tournament ratings scan (251/1,755 keys leak across tournaments); `external_team_key`
+    100% populated. Live-now has stale `status='live'` rows (a separate ingest hygiene item).
+    DIFF cap inconsistency: rating margin hardcoded ±25 vs table cap 20 (ZG).
+
+4 · COMBINE OPTIONS (what each entails)
+  A) KEEP 4 TABS, SHARE THE ENGINE ONLY. Find / My Teams / Standings / Film unchanged; extract
+     the predictor + exact-vs-estimate into one shared module both import (AP #63 one-source).
+     + Cleanest plane separation; least disruption.  − Most nav; the "your divisions ↔ my teams"
+     overlap stays duplicated in UI.
+  B) LITERAL MERGE into one tab (My Teams + Standings together).
+     + One place for everything about your teams.  − Risks gating the PUBLIC standings/browse
+     behind the paid plane (forbidden, §5), and mixes two different JOBS (act-on-your-day vs
+     competitive-structure) into one muddy surface.
+  C) DISSOLVE STANDINGS-THE-TAB [CC LEAN].
+     • Personalized competition (your divisions, your team's record/standing/odds) folds INTO
+       My Teams — each tracked team shows standing + odds inline (paid/personalized).
+     • Public competition (division pool table, bracket, browse-all) becomes a FREE Division
+       Detail surface reached from Find/search (and deep-linkable/shareable) — stays Plane A.
+     • Nav becomes Find / My Teams / Film (3 tabs).
+     + One engine, one exact-vs-estimate language, the bug fixed once; My Teams is the single
+       personalized hub; public data stays free via Find. − More design work (defines a new
+       public Division Detail surface + how My Teams embeds standing/odds).
+
+5 · THE HARD CONSTRAINT (binds any option)
+  Standings DATA is Plane A — public, signed-out readable, the free acquisition/SEO/share funnel
+  (Find + public Standings). A combine MUST keep the public division tables/brackets reachable
+  WITHOUT an account or the paywall. Only the PERSONALIZED + intelligence layer (your divisions,
+  alerts, conflict, leave-by) sits behind Plus. Collapsing that boundary breaks the freemium
+  model. Option C satisfies this by keeping the public view on the free Find/search path.
+
+6 · CC LABELED LEAN
+  Option C. It gives Frank the combine he's after (one coherent competition story, no
+  divergence, My Teams as the hub) while preserving the public/free funnel and not forcing two
+  different jobs into one muddy tab. It also pays for the integrity fix once: the resolved_key →
+  external_team_key re-grain + exact-vs-estimate module serve both the personalized standing in
+  My Teams and the public Division Detail. (Per AP #39, committing to C; the architect/Frank
+  decide.)
+
+7 · OPEN DECISIONS FOR THE ARCHITECT / FRANK
+  • Combine model: A / B / C (CC lean C).
+  • Standings integrity: confirm the standings re-grain is its own held migration (mirrors
+    #1128) + the cross-tournament rating dropped now (R-SRC) — see AAU_STANDINGS_GROUNDING.
+  • The 6/20 tracked→schedule gap: do we close the game-ingest gap before My Teams promises a
+    full day-timeline, or ship sparse with honest empty states? (CC will verify the cause.)
+  • Conflict killer with 0 live instances: build + honest empty state now, or defer until data
+    exercises it? (CC lean: build the structure, lead with Up-Next/Day, not the empty conflict.)
+  • Drive-time provider (Frank cost-nod) — gates the exact leave-by number; distance-based ships now.
+  • The kid layer (`tracked_teams.kid`, 0 used) stays Plane C / held behind guardian verification.
+
+8 · GATE / DEPENDENCY MAP (grounded, corrects the master plan's stale status)
+  #1128 (search re-grain + venue_state) — APPLIED (done). Find improved — SHIPPED (#153/#154/#155).
+  §2.C circuit backfill — STAGED/HELD (#1129), awaiting apply go + BBallshootout call.
+  Standings re-grain — OWED (the integrity fix; not yet prepared).
+  §2.B bracket — HELD (event_id FK fix first). §2.D diff — NOT STARTED. §2.E cross-event — NOT STARTED.
+  F1 projection calibration — pending (projections suppressed until then).
+  Drive-time provider — unset. TECH-1 (live tick/push) — not real. Billing — owner-applied gate.
+
+ONE LINE: My Teams and Standings are already one engine over one tracked-team dataset, so a
+combine is natural — CC's lean is Option C (personalized standing folds into My Teams; the public
+division tables become a free Division Detail off Find), preserving the public/free funnel; and the
+grounded reality (1 user/20 teams, only 6 resolve to schedules, 0 live conflicts, strong leave-by
+geo, standings still on the buggy key) should shape the scope before build.
+================================================================================

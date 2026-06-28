@@ -1,0 +1,82 @@
+================================================================================
+AAU STANDINGS — GROUNDING ANSWERS (the architect's pre-ship questions)
+2026-06-27 · CC → Architect + Frank · §11.8 verification artifact
+answers ARCHITECT_STANDINGS_REVIEW_20260627 §5 + aau-standings-improved-spec §7
+================================================================================
+
+0 · WHAT THIS IS
+  The architect's live-Standings review (S1–S5) flagged the bracket-odds card as a 🔴 integrity
+  problem and asked CC three grounding questions to answer BEFORE the Standings fix ships. These are
+  the grounded answers (Supabase prod, 2026-06-27), with the implication for the fix. This is
+  verification — no migration is prepared here; the Standings build scope is the architect+Frank
+  round-trip.
+
+1 · (a) WHERE DO THE BRACKET-ODDS % COME FROM? → THE NAME-SLUG PATH (the proven bug). [GROUNDED]
+  Source read of `get_public_tournament_standings(uuid)` (the only standings RPC; consumed by
+  `useAauStandings` → `effectiveRatings` → `predictBracket`):
+   • Team identity (`units`), the strength `ratings` CTE, `games`, and `remaining` are ALL keyed on
+     **`resolved_key` = lower(display_name)** — the name-slug. `external_team_key` is NOT used.
+   • The `ratings.fin` CTE scans **ALL final `division_games` across ALL tournaments with NO
+     tournament filter**, grouped by `resolved_key`. So a team's "strength" rating blends games
+     played by DISTINCT teams that merely share a name slug, across tournaments. That is the
+     "cross-tournament strength" the footer claims — produced via the linkage we proved unsafe.
+   • This is the SAME bug class re-grained out of SEARCH in #1128 (resolved_key → external_team_key).
+     Standings was never re-grained.
+  Quantified (public, archived_at IS NULL):
+   • 251 / 1,755 resolved_keys that have final games span >1 tournament (~14% leak surface).
+   • Slug collision is the proven one: 509 slugs → multiple distinct teams; "legacy hoopers" = 14
+     distinct division-teams collapsed (AAU_TEAM_KEY_GROUNDING).
+   • `external_team_key` is populated for ALL 3,017 public-division teams (100% coverage) — the
+     re-grain target is clean and available today.
+  → IMPLICATION: the odds are sourced from exactly the path the ruling says is unsafe. The fix is
+    the same re-grain as #1128 applied to this RPC (resolved_key → external_team_key) AND removing
+    the cross-tournament rating source (R-SRC): scope the rating to THIS event's opponent graph, or
+    drop it until §2.E composes a real prior on the proven key. Per recurrence (only ~14% of keys
+    even span 2 tournaments, and those are mostly collisions, not the same team), a true cross-event
+    prior effectively does not exist yet → drop now, not gate.
+
+2 · (b) IS THE PRE-PLAY ORDER HOST SEEDING OR COMPUTED? → COMPUTED (no seed data). [GROUNDED]
+   • `tournament_division_teams` HAS a `seed` column (and `sort_order`), BUT it is UNPOPULATED:
+     `seed` is non-null for **0 / 3,017** public-division teams (i.e. NULL for all 3,017), and the
+     RPC does not select or use it.
+   • Pre-play, `computeStandings` orders teams on all-zero records (W-L 0–0, diff 0) → the rank
+     1..N is an arbitrary tiebreak/insertion order with no earned basis, and the in-table "top 2
+     advance" cut is drawn over it (S3 confirmed).
+  → IMPLICATION: there is NO official host seed to show. Pre-play must present a NEUTRAL order with
+    "standings begin at first tip" — never the "seeded by host" / Seed-column variant (no data for
+    it). Advancement stays a RULE via the context chip; no in-table cut line pre-play. If a future
+    ingest populates `seed`, the "seeded by host" variant can light up then.
+
+3 · (c) WHAT IS THE DIFF* RULE? → PER-CIRCUIT CAP + H2H TIEBREAK. [GROUNDED]
+   • `rules.pointDiffCap` = `circuit_rules.point_differential_cap`, joined per (org_id, circuit):
+     **AAU Zero Gravity = 20**, League Play = NULL (uncapped). Tiebreakers = ['head_to_head',
+     'point_diff'].
+   • NOTE (internal inconsistency to reconcile in the fix): the RPC's RATING margin is hardcoded
+     `greatest(-25, least(25, …))` = ±25, while the TABLE's diff cap is the circuit value (20 for
+     ZG). The DIFF* footnote should state the TABLE cap (20 ZG / uncapped League Play) + the H2H→
+     point-diff tiebreaker; align the rating margin to the same cap (or document why it differs).
+
+4 · REALITY CHECK (corrects "pre-play is the dominant current state"). [GROUNDED]
+   • 294 / 304 public divisions are IN-PLAY (≥1 final game); only 10 are pre-play. So the IN-PLAY
+     pool table — which ALSO keys on resolved_key — is the dominant live surface, not just the
+     pre-play odds card. The re-grain matters for the live table + ratings, not only the suppressed
+     pre-play state.
+
+5 · WHAT THE FIX REQUIRES (for the architect to scope; NOT built here)
+   • BACKEND (held migration, owner-applied — mirrors #1128, Tier-1 class: Plane A public, replace,
+     reversible, no RLS/money/child): re-grain `get_public_tournament_standings` resolved_key →
+     external_team_key throughout (units, ratings, games, remaining, teams[].id); scope/drop the
+     cross-tournament `ratings.fin` source (R-SRC); reconcile the ±25 vs 20 cap.
+   • FRONTEND (render-gated): pre-play suppression gated on `basis !== 'results'` (the grade prior
+     makes `basis = 'ratings'` pre-play, so suppression must be explicit, per R-PRE); neutral
+     seeding label; no pre-play cut line; DIFF footnote from the real cap (R-FTN); coherence guard
+     rank-1 ≥ rank-2 (R-COH); "In control" only when earned (R-LBL); suppress narration when the
+     number is suppressed (R-NARR). The exact-vs-estimate language is built once as a shared module
+     (My Teams + Team Detail inherit it).
+   • This fix also fixes My Teams' B2 ("0%"/inverted odds) — same predictor + RPC substrate.
+
+ONE LINE: the live Standings odds are computed on `resolved_key` (the name-slug) with an unfiltered
+cross-tournament ratings scan — the proven-unsafe path, never re-grained — so the fix is the #1128
+re-grain applied to the standings RPC plus dropping the cross-tournament source (R-SRC); there is no
+host seed data (0/3,017) so pre-play is neutral-not-seeded; and the DIFF cap is per-circuit (20 ZG).
+================================================================================
