@@ -3,9 +3,12 @@
 // Aster Sports tenancy architecture doc section 5.
 
 export const ASTER_BRAND = Object.freeze({
-  accent: '#D4AF37',
-  accent_hover: '#E8C75C',
-  accent_soft: 'rgba(212,175,55,0.1)',
+  // Gold-on-navy Hub palette. Reconciled to the canonical index.css :root
+  // tokens (--as-accent #C9952E / --as-accent-hover #D4A843) and the live
+  // org brand_colors, removing the prior #D4AF37 gold drift.
+  accent: '#C9952E',
+  accent_hover: '#D4A843',
+  accent_soft: 'rgba(201,149,46,0.1)',
   header: '#151525',
   text_on_dark: '#F5F0E8',
 });
