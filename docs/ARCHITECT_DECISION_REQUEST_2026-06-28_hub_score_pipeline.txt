@@ -127,9 +127,17 @@ FORK 4 — Competition generality: AAU (TourneyMachine) vs CYO / league-play.
        "loaded tournament/game" contract that ingest consumes.
     C. CYO entered via the existing paste → Claude schedule-parse path (semi-manual),
        scores entered/scraped separately.
-  CC LEAN: NEEDS FRANK INPUT — see §3 Q1. Regardless of answer, design the ingest
-    contract SOURCE-AGNOSTIC (a normalized loaded-tournament shape) so AAU/TM and CYO
-    plug into the same fan-out. Don't hard-couple fan-out to TourneyMachine.
+  CC LEAN: RESOLVED 2026-06-28 (Frank) → Option A (reuse). CYO IS on TourneyMachine,
+    same load path as AAU; no new source adapter. [GROUNDED] the spring CYO tournament
+    is already loaded: tournaments row "WPCYO Spring League 2026"
+    (id 254afad0-23af-4979-ac4a-88614b76e341, circuit league_play, 2026-03-01..06-30,
+    schedule_status=final). So AAU + CYO are ONE source (TourneyMachine); the pipeline
+    need not be source-agnostic for v1 — it can stay TM-shaped.
+    CONCRETE GAP [GROUNDED]: that CYO row AND all 8 loaded tournaments currently have
+    tm_id_tournament = NULL (they were loaded via the manual paste/Claude schedule path,
+    not the TM scrape-ingest that stamps tm_id_tournament). So the first concrete step to
+    enable auto fan-out is BACKFILLING tm_id_tournament (the TM link) onto the existing
+    tournament rows — then the live-score-poll cron + ingest can act on them.
 
 FORK 5 — Unify schedule + scores into one "load → games AND scores" flow.
   EVIDENCE: today events (schedule) come from the manual Claude parse path; scores
@@ -145,10 +153,11 @@ FORK 5 — Unify schedule + scores into one "load → games AND scores" flow.
 =====================================================================================
 3. OPEN QUESTIONS FOR FRANK (carried verbatim to the architect)
 =====================================================================================
-Q1. CYO / league-play DATA SOURCE: where does CYO schedule + score data come from?
-    Is it on TourneyMachine (reuse), a different website/feed (new adapter), or
-    entered by hand (paste path)? This is the one blocker for Fork 4 and for scoping
-    St Patrick's 25-team winter season.
+Q1. RESOLVED 2026-06-28 (Frank): CYO is on TourneyMachine, same load path as AAU
+    (reuse, no new adapter). Spring CYO already loaded ("WPCYO Spring League 2026",
+    circuit league_play). St Patrick's 25-team winter season loads the same way.
+    Residual: the existing tournament rows need tm_id_tournament backfilled (all 8 are
+    NULL today) before the scrape-ingest/cron can auto-act — see Fork 4.
 Q2. "Triggers the Aster Sports AAU website" — confirm this just means the PUBLIC Hub
     display updates automatically. If so it's FREE: the Hub already reads the shared
     DB via the get_public_tournament_* RPCs, so once data lands it shows up with no
@@ -161,14 +170,15 @@ Q4. Schedule source of truth on conflict: if a tournament's scraped schedule
 =====================================================================================
 4. CC RECOMMENDED SEQUENCE (post-ratification; nothing starts until then)
 =====================================================================================
-1) Answer Q1 (CYO source) — gates Fork 4 + St Patrick scope.
+1) Backfill tm_id_tournament (the TM link) onto the existing tournament rows (all 8
+   are NULL — paste-loaded). This makes them scrape-ingestable; CYO + AAU both. (Q1
+   resolved — no CYO adapter needed; one TM source.)
 2) Build the mapping (Fork 3C): suggest+confirm UI persisting feed_source_mapping
    with externalTeamKey ↔ (org_id, team_id). Confirmed-only fan-out.
 3) Build the unified fan-out (Forks 2A + 5A): on load/refresh, for each confirmed
    mapping, create/update the org's events from the tournament schedule, then run
-   ingest-game-results. Source-agnostic ingest contract (Fork 4).
+   ingest-game-results.
 4) Hub load front-door consolidation (Fork 1A) — UX, low risk.
-5) CYO adapter per Q1 answer.
 
 GATING: all of this is architect-scoped (schema touches on feed_source_mapping +
 events provenance; cross-tenant fan-out; money/credit untouched). Per §2.4 + §11.8 it
