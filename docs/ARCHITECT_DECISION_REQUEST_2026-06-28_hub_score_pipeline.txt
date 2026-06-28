@@ -1,0 +1,177 @@
+ARCHITECT DECISION REQUEST — Hub → tenant score/schedule pipeline
+Date: 2026-06-28
+Author: CC (Claude Code)
+Status: DECISION REQUEST (architect-scoped). NOTHING built until ratified.
+Repos in scope: aster-sports (tenant app) + astersports-web (AAU Hub).
+
+=====================================================================================
+0. WHAT FRANK DESCRIBED (operator intent, verbatim shape)
+=====================================================================================
+- The HUB is the central tournament loader. It loads tournaments from the
+  tournament site (TourneyMachine / Zero Gravity / CYO), then "triggers the tenant
+  in the app" to update the games and subsequent scores.
+- It ALSO surfaces on the public Aster Sports AAU website.
+- Trigger condition: a tournament is loaded/uploaded in the Hub AND a tenant org
+  has a team in that tournament (Zero Gravity AAU, or "any tournament loaded on the
+  tournament site and uploaded in the hub").
+- MULTI-COMPETITION + MULTI-TENANT. Example given: Legacy Hoopers = AAU (Zero
+  Gravity) today; St Patrick winter season = ALL League Play (CYO), ~25 teams.
+
+So: one Hub load fans out to whichever tenant org(s) have teams in that tournament,
+across both AAU and CYO/league-play.
+
+=====================================================================================
+1. GROUNDED CURRENT STATE (file:line; [GROUNDED] unless marked)
+=====================================================================================
+KEY CORRECTION [GROUNDED]: the Hub and the tenant app SHARE ONE Supabase project.
+  - astersports-web/client/src/lib/aster.ts:14-15 — the Hub hardcodes the Aster
+    platform Supabase `vrwwpsbfbnveawqwbdmj` (the SAME DB as the tenant app) as its
+    single data backbone; it is a thin PUBLIC READER via RPC + `org_is_public_listed`
+    RLS (get_public_tournament_directory / _games / _standings / _teams).
+  - astersports-web's OWN Supabase (`eyitiv…`) is only the Studio/print money-path —
+    NOT the AAU data. So "Hub → tenant" is INTRA-database, not cross-project. The
+    earlier "two Supabase projects / cross-project trigger" framing is WRONG for AAU
+    data and is retracted.
+
+HOW TOURNAMENTS LOAD TODAY [GROUNDED]:
+  - Hub front door: astersports-web/client/src/lib/aster.ts:309-320 `submitTournament()`
+    invokes the public edge fn `aau-submit-tournament` (paste a TourneyMachine URL →
+    scrape server-side → ingest into the shared Aster Supabase; ingest_secret stays
+    server-side).
+  - App-side scrape/ingest (same DB): aster-sports/supabase/functions/
+    aau-scrape-tournament → aau-ingest-tournament + ingest-game-results. Bearer auth
+    against `app_secrets.ingest_secret`; config.toml verify_jwt=false.
+  - Live refresh: migration 20260627202959_aau_live_score_poll.sql — pg_cron every
+    10 min (ET game hours), calls aau-ingest-tournament to refresh standings/games
+    for tournaments live today.
+
+SCORE WRITE PATH [GROUNDED]:
+  - ingest-game-results writes `game_results` upsert on key (org_id, external_game_id);
+    external_game_id format `tm:<idTournament>:<gameId>` (aau-scrape-tournament:222).
+  - Match logic (ingestGameResultsHelpers.js / _helpers.ts): a scraped game matches an
+    existing `events` row by team_id + opponent (normalized) + start_at within ±3h.
+    Match-ONLY (B2): unmatched games are review-flagged, never silent-inserted.
+
+SCHEDULE WRITE PATH [GROUNDED]:
+  - Separate, manual: parse-tournament-schedule edge fn (Claude) + useImportSchedule.js
+    → writes `events` (team_id, opponent, start_at, tournament_id, location_id,
+    home_away). So today "events" (the schedule) and "game_results" (the scores) are
+    populated by DIFFERENT paths; scores match to pre-existing events.
+
+THE MAPPING SEAM [GROUNDED]:
+  - feed_source_mapping (org_id, team_id, source_type, external_feed_id) exists as
+    bookkeeping (org/team → external feed scope; migration 20260625120000).
+  - tournament_division_teams.externalTeamKey = TourneyMachine IDTeam.
+  - The Hub's tracked_teams has NO org_id / app_team_id link (astersports-web
+    aster.ts:68-95 TrackedRow has team_key/tournament_id/division_id but no tenant
+    mapping). Hub tracking is per-USER, not per-tenant-org.
+
+WHAT'S MISSING for Frank's vision (the gap):
+  (a) No tenant-team ↔ tournament-team mapping that drives an automatic fan-out.
+  (b) No "trigger" that, on a tournament load/refresh, iterates the tenant orgs with
+      a team in that tournament and creates their events + ingests their scores.
+  (c) CYO/league-play is NOT wired — the whole pipeline is TourneyMachine/AAU-shaped.
+  (d) The schedule path (events) and score path (game_results) aren't unified into one
+      "a tournament loaded → tenant gets games AND scores" flow.
+
+=====================================================================================
+2. DECISION FORKS (each: REQUEST · EVIDENCE · OPTIONS · CC LEAN per AP#39)
+=====================================================================================
+
+FORK 1 — Load ownership: who is the single "front door" for loading a tournament?
+  EVIDENCE: Hub `aau-submit-tournament` (paste URL) and app `aau-scrape-tournament`
+    both scrape TourneyMachine into the SAME DB; the cron also refreshes. Two human
+    entry points, one DB.
+  OPTIONS:
+    A. Hub `aau-submit-tournament` becomes the SOLE human load front door; the app's
+       ingest edge fns stay as the shared WRITE layer (no UI of their own).
+    B. Keep both entry points (Hub paste + app admin scrape).
+  CC LEAN: A. One front door (the Hub) for the human "load a tournament" action;
+    everything writes through the existing ingest functions. Less drift, one mental
+    model. The app keeps the cron for live refresh.
+
+FORK 2 — Fan-out trigger: how does a load reach every tenant with a team in it?
+  EVIDENCE: intra-DB (shared Supabase), so no cross-project auth needed. Existing
+    ingest is per-(org_id) and idempotent on (org_id, external_game_id).
+  OPTIONS:
+    A. Extend the live-score-poll cron + the load edge fn to iterate
+       feed_source_mapping rows for the loaded tournament and run ingest per mapped
+       org. (Reuses everything; intra-DB.)
+    B. A Postgres trigger on division_games insert/update enqueues per-mapped-org
+       ingest jobs.
+    C. The load edge fn directly calls ingest-game-results once per mapped org.
+  CC LEAN: A. Drive the fan-out off feed_source_mapping in the cron + the load fn —
+    minimal new surface, reuses the idempotent per-org ingest, no new auth. (B's DB
+    trigger calling edge fns adds a fragile in-DB→HTTP hop per AP#32.)
+
+FORK 3 — Tenant-team ↔ tournament-team mapping (the join that drives fan-out):
+  EVIDENCE: feed_source_mapping exists but is manual; Hub tracked_teams has no org
+    link; externalTeamKey is the TM team identity.
+  OPTIONS:
+    A. Admin explicitly links their org-team to a tournament division-team at load
+       time (reliable, manual).
+    B. Auto-match by team name / externalTeamKey (zero-touch, fragile — name drift).
+    C. Hybrid: auto-SUGGEST by name, admin CONFIRMS, persist in feed_source_mapping.
+  CC LEAN: C. Auto-suggest + admin-confirm, persisted. HONEST-CLAIMS GUARD: never
+    auto-ingest scores against an UNCONFIRMED mapping (a wrong auto-match would write
+    a wrong score to a family-facing record). Confirmed mappings then fan out
+    automatically on every refresh.
+
+FORK 4 — Competition generality: AAU (TourneyMachine) vs CYO / league-play.
+  EVIDENCE: entire pipeline is TourneyMachine-shaped (tm_id_tournament,
+    external_game_id `tm:…`, the scraper). CYO/league-play (St Patrick, ~25 teams) is
+    NOT wired and its DATA SOURCE is unknown to CC.
+  OPTIONS:
+    A. CYO is also on TourneyMachine → reuse the existing scraper as-is.
+    B. CYO is a different site/feed → a new source adapter behind one normalized
+       "loaded tournament/game" contract that ingest consumes.
+    C. CYO entered via the existing paste → Claude schedule-parse path (semi-manual),
+       scores entered/scraped separately.
+  CC LEAN: NEEDS FRANK INPUT — see §3 Q1. Regardless of answer, design the ingest
+    contract SOURCE-AGNOSTIC (a normalized loaded-tournament shape) so AAU/TM and CYO
+    plug into the same fan-out. Don't hard-couple fan-out to TourneyMachine.
+
+FORK 5 — Unify schedule + scores into one "load → games AND scores" flow.
+  EVIDENCE: today events (schedule) come from the manual Claude parse path; scores
+    match to pre-existing events (±3h). If a tournament is loaded but the tenant's
+    events don't exist yet, scores have nothing to match → review-flag limbo.
+  OPTIONS:
+    A. Fan-out FIRST creates/updates the tenant's events from the tournament schedule,
+       THEN ingests scores (which now match). One flow.
+    B. Keep schedule manual; only scores fan out (status quo gap remains).
+  CC LEAN: A. The fan-out must create/update the tenant's events (schedule) before
+    score ingest, or scores strand. This is the substantive new build.
+
+=====================================================================================
+3. OPEN QUESTIONS FOR FRANK (carried verbatim to the architect)
+=====================================================================================
+Q1. CYO / league-play DATA SOURCE: where does CYO schedule + score data come from?
+    Is it on TourneyMachine (reuse), a different website/feed (new adapter), or
+    entered by hand (paste path)? This is the one blocker for Fork 4 and for scoping
+    St Patrick's 25-team winter season.
+Q2. "Triggers the Aster Sports AAU website" — confirm this just means the PUBLIC Hub
+    display updates automatically. If so it's FREE: the Hub already reads the shared
+    DB via the get_public_tournament_* RPCs, so once data lands it shows up with no
+    extra work. (CC assumption — confirm.)
+Q3. Mapping authority: who confirms the team↔tournament-team link (Fork 3C) — the
+    tenant org admin (Frank/Kenny for LH; St Patrick's admin), or platform-level?
+Q4. Schedule source of truth on conflict: if a tournament's scraped schedule
+    disagrees with a tenant's already-entered events (time/venue), which wins?
+
+=====================================================================================
+4. CC RECOMMENDED SEQUENCE (post-ratification; nothing starts until then)
+=====================================================================================
+1) Answer Q1 (CYO source) — gates Fork 4 + St Patrick scope.
+2) Build the mapping (Fork 3C): suggest+confirm UI persisting feed_source_mapping
+   with externalTeamKey ↔ (org_id, team_id). Confirmed-only fan-out.
+3) Build the unified fan-out (Forks 2A + 5A): on load/refresh, for each confirmed
+   mapping, create/update the org's events from the tournament schedule, then run
+   ingest-game-results. Source-agnostic ingest contract (Fork 4).
+4) Hub load front-door consolidation (Fork 1A) — UX, low risk.
+5) CYO adapter per Q1 answer.
+
+GATING: all of this is architect-scoped (schema touches on feed_source_mapping +
+events provenance; cross-tenant fan-out; money/credit untouched). Per §2.4 + §11.8 it
+holds for architect ratification before any PR. game_results writes are family-facing
+records → honest-claims: NO auto-ingest against unconfirmed mappings (Fork 3 guard).
+A §45 EMBER_PENDING_LEDGER §4 entry gets added when the build is queued post-ratify.
