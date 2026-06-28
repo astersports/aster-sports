@@ -43,7 +43,7 @@ function Body({ initial, onSave, saving, onClose }) {
       <Input label="From name" required value={fromName} style={INPUT_STYLE}
         onChange={(e) => setFromName(e.target.value)} placeholder="Aster AAU" />
       <Input label="From email" required type="email" value={fromEmail} style={INPUT_STYLE}
-        onChange={(e) => setFromEmail(e.target.value)} placeholder="admin@legacyhoopers.org" />
+        onChange={(e) => setFromEmail(e.target.value)} placeholder="frank@astersports.co" />
       <Input label="Reply-to email" type="email" value={replyTo} style={INPUT_STYLE}
         onChange={(e) => setReplyTo(e.target.value)} placeholder="Optional — defaults to from email" />
       <button
