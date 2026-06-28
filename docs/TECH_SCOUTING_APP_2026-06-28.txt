@@ -28,7 +28,9 @@ STEP 1 — GROUNDED INVENTORY (file:line cited; [GROUNDED] vs [FIT])
 ═══════════════════════════════════════════════════════════════════════════
 STACK [GROUNDED package.json]: React 19.2.7 + Vite 8.0.16 + Tailwind 4 +
   @supabase/supabase-js 2.108 + react-router-dom 7; Sentry 10.61 + PostHog 1.391
-  (both lazy-loaded via requestIdleCallback, AuthContext.jsx:80,88). Tests: Vitest
+  (init DEFERRED via requestIdleCallback in src/main.jsx:29-31; AuthContext.jsx:80,88
+  then dynamic-imports each lib for the per-user identify — two distinct lazy points,
+  not one). Tests: Vitest
   4.1.9 + Playwright 1.61; knip for dead code. 312 migrations; 20 edge functions.
   Hosting: Vercel (auto-deploy from main).
 
@@ -88,9 +90,13 @@ AI / COMMS ENGINE / AAU INGEST [GROUNDED]:
     schedule. Key from app_secrets.anthropic_api_key (AP#33). Quarantine is
     STRONG: facts-verbatim prompts, prose-only, never writes comms_messages /
     money / schema. [GROUNDED]
-  · Model pinned `claude-sonnet-4-5` ×3 — STALE; current Sonnet is
-    claude-sonnet-4-6. No structured-output: output is fence-strip + single JSON-
-    parse retry (briefing-ai-draft/index.ts:113-118) — best-effort, no schema. [GROUNDED]
+  · Model pinned `claude-sonnet-4-5` ×3 — a DELIBERATE pin, not an oversight: an
+    attempted `claude-sonnet-4-6` returned a model-not-found error from the API, so
+    4-5 is the known-good stable ID (parse-tournament-schedule/index.ts:48-55).
+    [GROUNDED] Whether a newer Sonnet is now reachable is a HYPOTHESIS to smoke-test
+    (count_tokens / a 1-token call), NOT a grounded fact [FIT]. No structured-output:
+    output is fence-strip + single JSON-parse retry (briefing-ai-draft/index.ts:113-
+    118) — best-effort, no schema. [GROUNDED]
   · Comms engine is TEMPLATE-based (calendar-as-spine): RESOLVER_REGISTRY maps ~11
     kinds → {resolve,compose,sendPath} (registry.js:75-160); resolvers/composers
     pure with injected IO (AP#27); renderer-emit parity enforced (AP#38). AI only
@@ -210,6 +216,8 @@ A6. PROMPT CACHING (cache_control: ephemeral) on the static instruction prefixes
 A2. MODEL UPGRADE claude-sonnet-4-5 → claude-sonnet-4-6 (+ consider claude-haiku-4-5
   for the parser: $1/$5 vs $3/$15). Where: the 3 model: strings. Win: newer model
   quality; ~3× cost cut on the parser if Haiku holds accuracy. GATE 🟡 BENCH.
+  PRECONDITION: a prior `claude-sonnet-4-6` attempt 404'd (index.ts:48-55) — STEP 0
+  is a model-availability smoke (1-token call per candidate ID) before any eval.
   ACCEPTANCE BAR (declare before run): re-run the AAU "CT Rumble" ground-truth —
   require ≥10/10 row match on ≥3 real pastes, ZERO hallucinated games, before
   promotion; for the drafter, ZERO fact-fabrication on the A5 golden set. Re-run
