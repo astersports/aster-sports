@@ -25,7 +25,9 @@ const errBox = { margin: 0, padding: '8px 12px', borderRadius: 8, fontSize: 12, 
 export default function AiDraftPolish({ state, dispatch }) {
   const ai = useAiDraft();
   const bodyText = state.body?.body_text;
-  if (!bodyText || !bodyText.trim()) return null;
+  // Need a kind too: the edge fn requires it, and polish is meaningless with no
+  // body. (kind is set before any body editor renders, but gate defensively.)
+  if (!state.kind || !bodyText || !bodyText.trim()) return null;
 
   const onPolish = async (style) => {
     if (ai.loading) return;

@@ -112,7 +112,9 @@ Deno.serve(async (req) => {
     const userPrompt = mode === "polish"
       ? buildPolishPrompt({
         body: polish_body!,
-        styleDirective: POLISH_STYLES[style ?? ""] ?? POLISH_STYLES.warmer,
+        // Own-key lookup only: `style` is user-controlled, so guard against
+        // inherited keys (__proto__, toString) resolving to a non-string.
+        styleDirective: (style && Object.prototype.hasOwnProperty.call(POLISH_STYLES, style)) ? POLISH_STYLES[style] : POLISH_STYLES.warmer,
         framing: audienceFraming(teamName),
       })
       : buildAiDraftUserPrompt({
