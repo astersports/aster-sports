@@ -41,9 +41,9 @@ function Body({ initial, onSave, saving, onClose }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 600, margin: '0 auto' }}>
       <p style={HELP}>The name and address families see on automated emails. Replies go to the reply-to address.</p>
       <Input label="From name" required value={fromName} style={INPUT_STYLE}
-        onChange={(e) => setFromName(e.target.value)} placeholder="Legacy Hoopers" />
+        onChange={(e) => setFromName(e.target.value)} placeholder="Aster AAU" />
       <Input label="From email" required type="email" value={fromEmail} style={INPUT_STYLE}
-        onChange={(e) => setFromEmail(e.target.value)} placeholder="admin@legacyhoopers.org" />
+        onChange={(e) => setFromEmail(e.target.value)} placeholder="frank@astersports.co" />
       <Input label="Reply-to email" type="email" value={replyTo} style={INPUT_STYLE}
         onChange={(e) => setReplyTo(e.target.value)} placeholder="Optional — defaults to from email" />
       <button

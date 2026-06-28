@@ -104,19 +104,19 @@ describe('tournament_prelim gold — weather (auto, AP #27 injected IO)', () => 
 describe('tournament_prelim gold — standings (paste-fed)', () => {
   it('emits one row per non-empty pasted line; highlights home row', async () => {
     const { context, slices } = await resolveTournamentPrelim({ tournamentId: TID, pilotOnly: false }, { supabase: mockClient(fixtures()), now: NOW, fetchWeather: stubNoWeather });
-    const overrides = { standings_paste: 'ASA (MA)\n\nLegacy Hoopers (NY)\nTeam Spartans Academy (MA)\n' };
+    const overrides = { standings_paste: 'ASA (MA)\n\nAster AAU (NY)\nTeam Spartans Academy (MA)\n' };
     const { content_sections } = composeTournamentPrelim(context, slices[0], overrides);
     const st = content_sections.find((s) => s.kind === 'pool_standings');
     expect(st).toBeDefined();
     expect(st.rows).toHaveLength(3); // blank line dropped
     const home = st.rows.filter((r) => r.is_home);
     expect(home).toHaveLength(1);
-    expect(home[0].text).toBe('Legacy Hoopers (NY)');
+    expect(home[0].text).toBe('Aster AAU (NY)');
   });
 
   it('builder omits when paste empty / whitespace', () => {
-    expect(buildStandingsSection({ standings_paste: '' }, 'X', ['Legacy Hoopers'])).toBeNull();
-    expect(buildStandingsSection({ standings_paste: '   \n  ' }, 'X', ['Legacy Hoopers'])).toBeNull();
+    expect(buildStandingsSection({ standings_paste: '' }, 'X', ['Aster AAU'])).toBeNull();
+    expect(buildStandingsSection({ standings_paste: '   \n  ' }, 'X', ['Aster AAU'])).toBeNull();
     expect(buildStandingsSection({}, 'X', [])).toBeNull();
   });
 });
@@ -126,24 +126,24 @@ describe('tournament_prelim gold — standings (paste-fed)', () => {
 // (tournamentRecapHelpers), so the acronym/initials match must hold
 // for any caller. These exercise the builder directly (the one source).
 describe('tournament_prelim gold — standings home-row acronym match', () => {
-  it('highlights an abbreviated row ("LH (NY)") for "Legacy Hoopers LLC"', () => {
+  it('highlights an abbreviated row ("AA (NY)") for "Aster AAU LLC"', () => {
     const sec = buildStandingsSection(
-      { standings_paste: 'ASA (MA)\nLH (NY)\nTeam Spartans Academy (MA)' },
-      'X', ['Legacy Hoopers LLC'],
+      { standings_paste: 'ASA (MA)\nAA (NY)\nTeam Spartans Academy (MA)' },
+      'X', ['Aster AAU LLC'],
     );
     const home = sec.rows.filter((r) => r.is_home);
     expect(home).toHaveLength(1);
-    expect(home[0].text).toBe('LH (NY)');
+    expect(home[0].text).toBe('AA (NY)');
   });
 
   it('still highlights the full-name row (existing substring match preserved)', () => {
     const sec = buildStandingsSection(
-      { standings_paste: 'ASA (MA)\nLegacy Hoopers (NY)\nSpartans (MA)' },
-      'X', ['Legacy Hoopers LLC'],
+      { standings_paste: 'ASA (MA)\nAster AAU (NY)\nSpartans (MA)' },
+      'X', ['Aster AAU LLC'],
     );
     const home = sec.rows.filter((r) => r.is_home);
     expect(home).toHaveLength(1);
-    expect(home[0].text).toBe('Legacy Hoopers (NY)');
+    expect(home[0].text).toBe('Aster AAU (NY)');
   });
 
   it('does NOT highlight a non-matching row, and does not match initials inside a word', () => {
@@ -151,7 +151,7 @@ describe('tournament_prelim gold — standings home-row acronym match', () => {
     // not fire; no row should highlight.
     const sec = buildStandingsSection(
       { standings_paste: 'ASA (MA)\nFLASH Elite (NJ)\nAlhambra Hoops (CA)' },
-      'X', ['Legacy Hoopers LLC'],
+      'X', ['Aster AAU LLC'],
     );
     expect(sec.rows.filter((r) => r.is_home)).toHaveLength(0);
   });
@@ -197,7 +197,7 @@ describe('tournament_prelim gold — rules (paste-fed)', () => {
 describe('tournament_prelim gold — section ordering', () => {
   it('renders standings -> weather -> rules after bracket, before footer', async () => {
     const { context, slices } = await resolveTournamentPrelim({ tournamentId: TID, pilotOnly: false }, { supabase: mockClient(fixtures()), now: NOW, fetchWeather: stubWeather });
-    const overrides = { standings_paste: 'Legacy Hoopers (NY)', rules_paste: 'Format: two halves.' };
+    const overrides = { standings_paste: 'Aster AAU (NY)', rules_paste: 'Format: two halves.' };
     const { content_sections } = composeTournamentPrelim(context, slices[0], overrides);
     const kinds = content_sections.map((s) => s.kind);
     const si = kinds.indexOf('pool_standings');
@@ -214,12 +214,12 @@ describe('tournament_prelim gold — section ordering', () => {
 
 describe('tournament_prelim gold — renderer shape (to mockup)', () => {
   it('standings renderer: .ebar.gold bar + row per line; home row highlighted', () => {
-    const { html, plainText } = renderPoolStandings({ bar_label: 'Division 3 Orange', rows: [{ text: 'ASA (MA)', is_home: false }, { text: 'Legacy Hoopers (NY)', is_home: true }] });
+    const { html, plainText } = renderPoolStandings({ bar_label: 'Division 3 Orange', rows: [{ text: 'ASA (MA)', is_home: false }, { text: 'Aster AAU (NY)', is_home: true }] });
     expect(html).toContain('Division 3 Orange'); // bar label present
-    expect(html).toContain('Legacy Hoopers (NY)');
+    expect(html).toContain('Aster AAU (NY)');
     expect(html).toContain('#eef4fb'); // home-row cobalt wash
     expect(html).toContain('font-weight:800'); // home row bold
-    expect(plainText).toContain('→ Legacy Hoopers (NY)');
+    expect(plainText).toContain('→ Aster AAU (NY)');
   });
 
   it('weather renderer: per-day cell with day/emoji/temp/rain', () => {

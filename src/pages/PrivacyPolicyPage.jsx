@@ -23,7 +23,7 @@ export default function PrivacyPolicyPage() {
         <Section title="1. Who we are">
           <p style={body}>
             Aster Sports is a platform operated by Olive Juice Inc. for youth-sports
-            organizations. The first organization on the platform is Legacy Hoopers LLC.
+            organizations. The first organization on the platform is Aster AAU LLC.
             <Placeholder note="Legal-entity address, contact details, jurisdiction" />
           </p>
         </Section>

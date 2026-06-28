@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase';
 //
 // Wave 3.5: pilotOnly param wires through to the RPC's p_pilot_only
 // argument. When TRUE (org pilot mode active), only guardians flagged
-// is_pilot_family return — currently 6 for Legacy Hoopers. The RPC's
+// is_pilot_family return — currently 6 for Aster AAU. The RPC's
 // single-arg signature was dropped in migration 20260509101739, so
 // every call MUST pass p_pilot_only explicitly (defense in depth —
 // no caller can accidentally omit the pilot intent).

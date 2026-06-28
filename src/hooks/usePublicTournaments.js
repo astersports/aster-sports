@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 /**
- * Returns Legacy Hoopers tournaments with embedded participants for the
+ * Returns Aster AAU tournaments with embedded participants for the
  * public /records page. Each tournament has a `participants` array (sorted
  * by team sort_order) and a derived `display_status` field:
  *   'Complete' | 'Up Next' | 'Upcoming'

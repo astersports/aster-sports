@@ -36,7 +36,7 @@ export default function TournamentPrelimBody({ value, onChange }) {
     { key: 'sun_notes', label: 'Sunday plan', placeholder: 'Bracket play TBD pending Saturday results.' },
     { key: 'opponent_scouting', label: 'Opponent scouting', placeholder: 'Saturday opponent leans on #12 — physical defender on her.' },
     { key: 'lineup_notes', label: 'Lineup considerations', placeholder: 'Start with Sara, Sienna, Stella, Sloane, Skyla.' },
-    { key: 'standings_paste', label: 'Standings (paste · one team per line)', placeholder: 'ASA (MA)\nLegacy Hoopers (NY)\nTeam Spartans Academy (MA)' },
+    { key: 'standings_paste', label: 'Standings (paste · one team per line)', placeholder: 'ASA (MA)\nAster AAU (NY)\nTeam Spartans Academy (MA)' },
     { key: 'rules_paste', label: 'Rules (paste · one rule per line)', placeholder: 'Format: two 14-minute stop-time halves.\nFouls: bonus on the 10th team foul.\nArrive 20 minutes early.' },
   ];
   return (

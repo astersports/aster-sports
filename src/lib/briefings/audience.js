@@ -82,7 +82,7 @@ export function computeAudience({
   // Wave 4.3-I: pilot_test_recipient_email override.
   // Wave 4.3-L: detection generalized to N synthetic rows. 4.3-J added
   // per-team fan-out — the RPC now emits one synthetic row per team
-  // (5 for Legacy Hoopers) when override is active. 4.3-I checked
+  // (5 for Aster AAU) when override is active. 4.3-I checked
   // length === 1, which falsely fell through to pilot_partial mode
   // post-4.3-J. Now: any non-empty list where EVERY row has
   // guardian_id=null is the synthetic-override state. Real-guardian

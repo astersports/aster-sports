@@ -1,5 +1,5 @@
 // Wave 3.6 §D4 — universal footer for digest + future kinds.
-// Knight logo + Legacy Hoopers wordmark + website link + contact email.
+// Knight logo + Aster AAU wordmark + website link + contact email.
 // Email-safe inline-styled HTML; no CSS variables (most clients strip).
 
 import { escapeHtml } from './_util';

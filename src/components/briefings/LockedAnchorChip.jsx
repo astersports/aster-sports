@@ -14,7 +14,7 @@ const unlockBtn = { marginLeft: 'auto', minHeight: 36, padding: '0 10px', border
 
 async function resolveAnchorName(kind, id) {
   if (!id) return '';
-  if (kind === 'org') return 'All Legacy Hoopers families';
+  if (kind === 'org') return 'All Aster AAU families';
   if (kind === 'event') {
     const { data } = await supabase.from('events').select('title,start_at,teams(name)').eq('id', id).maybeSingle();
     if (!data) return '(event not found)';

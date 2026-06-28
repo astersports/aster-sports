@@ -119,7 +119,7 @@ describe('composeCoachRoundup', () => {
       conflicts: [],
       dateRange: { start: '2026-05-18', end: '2026-05-24' },
       coaches: [],
-      orgName: 'Legacy Hoopers',
+      orgName: 'Aster AAU',
     };
     const out = composeCoachRoundup(ctx, { coach_name: 'Coach Kenny' });
     expect(out.content_sections[0].kind).toBe('coach_header');

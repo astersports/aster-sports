@@ -14,7 +14,7 @@ export const TEXT_SLATE       = '#64748b';   //  5.0:1 — secondary (time + loc
 export const TEXT_MIST        = '#94a3b8';   //  3.2:1 — large-font atmospheric only
 
 // Brand cobalt
-export const COBALT           = '#4a8fd4';   // Legacy Hoopers brand cobalt — UI/headers
+export const COBALT           = '#4a8fd4';   // Aster AAU brand cobalt — UI/headers
 export const COBALT_DEEP      = '#2563eb';   //  4.6:1 — eyebrow contrast variant (passes AA)
 
 // Tournament + warning accents

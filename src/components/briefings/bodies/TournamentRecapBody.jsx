@@ -56,7 +56,7 @@ export default function TournamentRecapBody({ value, onChange }) {
       </label>
       <label>
         <span style={labelStyle}>Final standings (paste · one team per line)</span>
-        <textarea value={v.standings_paste} onChange={(e) => set({ standings_paste: e.target.value })} style={textareaStyle} placeholder="ASA (MA)&#10;Legacy Hoopers (NY)&#10;Team Spartans Academy (MA)" />
+        <textarea value={v.standings_paste} onChange={(e) => set({ standings_paste: e.target.value })} style={textareaStyle} placeholder="ASA (MA)&#10;Aster AAU (NY)&#10;Team Spartans Academy (MA)" />
       </label>
     </div>
   );

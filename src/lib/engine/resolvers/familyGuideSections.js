@@ -124,7 +124,7 @@ export function buildFamilyGuideFooter(orgName, branding = {}) {
   return {
     kind: 'footer',
     logoUrl: branding.logoUrl || ORG_LOGO_DEFAULT,
-    orgName: orgName || 'Legacy Hoopers',
+    orgName: orgName || 'Aster AAU',
     websiteUrl: branding.eyebrowLink || ORG_WEBSITE_DEFAULT,
     contactEmail: branding.contactEmail || ORG_CONTACT_DEFAULT,
   };

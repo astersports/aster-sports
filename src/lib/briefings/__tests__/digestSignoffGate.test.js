@@ -35,7 +35,7 @@ describe('weekly_digest contact gate — state→digest args mapping', () => {
 
 describe('weekly_digest contact gate — composeWeeklyDigest render', () => {
   const ctx = {
-    org: { id: 'o-1', name: 'Legacy Hoopers', branding: { eyebrowLink: 'x', contactEmail: 'c', logoUrl: 'l' }, coaches: [FRANK, KENNY], signature_coaches: [FRANK, KENNY] },
+    org: { id: 'o-1', name: 'Aster AAU', branding: { eyebrowLink: 'x', contactEmail: 'c', logoUrl: 'l' }, coaches: [FRANK, KENNY], signature_coaches: [FRANK, KENNY] },
     period: { start: new Date(), end: new Date(), label: 'X' }, events: [], teams: [], tournaments: [], rsvpCountsByEvent: new Map(),
   };
   const slice = { kind: 'family', team_ids: [] };

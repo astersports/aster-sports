@@ -43,7 +43,7 @@ function htmlPage(title: string, body: string, orgName: string, replyEmail: stri
 }
 
 // Per Wave 3.B #28 P0-5: render org identity from the guardian's org so a
-// future second tenant's parent doesn't see "Legacy Hoopers" in their
+// future second tenant's parent doesn't see "Aster AAU" in their
 // unsubscribe page. Fallbacks are intentionally generic ("your team",
 // platform sender) rather than tenant-named so a missing-row case never
 // leaks the wrong org's identity.

@@ -6,7 +6,7 @@ import SenderIdentityForm from '../SenderIdentityForm';
 
 afterEach(() => cleanup());
 
-const baseInitial = { fromName: 'Legacy Hoopers', fromEmail: 'admin@lh.org', replyTo: 'reply@lh.org' };
+const baseInitial = { fromName: 'Aster AAU', fromEmail: 'admin@lh.org', replyTo: 'reply@lh.org' };
 
 function setup(overrides = {}) {
   const onSave = overrides.onSave ?? vi.fn(async () => ({ ok: true }));
@@ -26,7 +26,7 @@ function setup(overrides = {}) {
 describe('SenderIdentityForm', () => {
   it('renders the three fields reflecting the initial values', () => {
     setup();
-    expect(screen.getByLabelText(/from name/i)).toHaveValue('Legacy Hoopers');
+    expect(screen.getByLabelText(/from name/i)).toHaveValue('Aster AAU');
     expect(screen.getByLabelText(/from email/i)).toHaveValue('admin@lh.org');
     expect(screen.getByLabelText(/reply-to email/i)).toHaveValue('reply@lh.org');
   });
@@ -35,7 +35,7 @@ describe('SenderIdentityForm', () => {
     const { onSave, onClose } = setup();
     await userEvent.click(screen.getByRole('button', { name: /^save$/i }));
     expect(onSave).toHaveBeenCalledWith({
-      from_name: 'Legacy Hoopers',
+      from_name: 'Aster AAU',
       from_email: 'admin@lh.org',
       reply_to_email: 'reply@lh.org',
     });

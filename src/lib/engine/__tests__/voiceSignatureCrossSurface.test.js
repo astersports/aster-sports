@@ -28,7 +28,7 @@ function findSignoff(sections) {
 }
 
 function orgCtx() {
-  return { id: 'o-1', name: 'Legacy Hoopers', branding: { eyebrowLink: 'x', contactEmail: 'c', logoUrl: 'l' }, coaches: [], signature_coaches: [] };
+  return { id: 'o-1', name: 'Aster AAU', branding: { eyebrowLink: 'x', contactEmail: 'c', logoUrl: 'l' }, coaches: [], signature_coaches: [] };
 }
 
 // (compose fn, contextFor) per narrative-signing kind that routes the wizard.

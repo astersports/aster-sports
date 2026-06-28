@@ -14,7 +14,7 @@ const os = {
   settings: {
     season_label: 'Spring 2026', timezone: 'America/New_York',
     registration_open: false, futures_academy_enabled: true, carpool_enabled: true,
-    custom_domain: null, from_name: 'Legacy Hoopers', from_email: 'admin@lh.org',
+    custom_domain: null, from_name: 'Aster AAU', from_email: 'admin@lh.org',
     reply_to_email: 'reply@lh.org', pilot_mode_enabled: true, pilot_test_recipient_email: 'r@test.com',
     notification_channels: { defaults: { push: true, email: true, sms: false }, per_category: {}, emergency_override_bypasses_quiet_hours: true },
   },
@@ -28,7 +28,7 @@ const al = {
   save: vi.fn(), saving: false,
 };
 const fs = { ridesOn: true, dutiesOn: true, save: vi.fn(), saving: false };
-const org = { name: 'Legacy Hoopers LLC', mailing_address: '4 Byram Brook Place' };
+const org = { name: 'Aster AAU LLC', mailing_address: '4 Byram Brook Place' };
 
 function renderSheets(openForm) {
   return render(<SettingsSheets openForm={openForm} setOpenForm={() => {}} an={an} os={os} al={al} fs={fs} org={org} />);

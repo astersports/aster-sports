@@ -3,7 +3,7 @@ import { renderHeader } from '../header';
 
 describe('renderer #1 — header (uplifted shape)', () => {
   const fixture = {
-    eyebrow: 'Legacy Hoopers · Weekly Digest',
+    eyebrow: 'Aster AAU · Weekly Digest',
     headline: 'Week Ahead',
     sub_context: 'May 11–17',
     goldStripe: true,
@@ -14,12 +14,12 @@ describe('renderer #1 — header (uplifted shape)', () => {
     expect(out.html).toContain('<table');
     // Title content stays in original case in the HTML — CSS text-transform
     // handles the visual uppercase. plainText below is where casing changes.
-    expect(out.html).toContain('Legacy Hoopers · Weekly Digest');
+    expect(out.html).toContain('Aster AAU · Weekly Digest');
     expect(out.html).toContain('background-color:#fbbf24'); // gold stripe
   });
   it('plainText uppercases eyebrow + headline + includes sub_context', () => {
     const { plainText } = renderHeader(fixture);
-    expect(plainText).toContain('LEGACY HOOPERS · WEEKLY DIGEST');
+    expect(plainText).toContain('ASTER AAU · WEEKLY DIGEST');
     expect(plainText).toContain('WEEK AHEAD');
     expect(plainText).toContain('May 11–17');
   });
@@ -33,7 +33,7 @@ describe('renderer #1 — header (uplifted shape)', () => {
     expect(out.html).toContain('href="https://www.legacyhoopers.org/"');
     expect(out.html).toContain('target="_blank"');
     expect(out.html).toContain('rel="noopener"');
-    expect(out.html).toMatch(/<a[^>]*>Legacy Hoopers · Weekly Digest<\/a>/);
+    expect(out.html).toMatch(/<a[^>]*>Aster AAU · Weekly Digest<\/a>/);
   });
 
   it('eyebrow_link omitted → no <a> tag in eyebrow', () => {
@@ -43,6 +43,6 @@ describe('renderer #1 — header (uplifted shape)', () => {
 
   it('plainText appends bare-host suffix when eyebrow_link present', () => {
     const out = renderHeader({ ...fixture, eyebrow_link: 'https://www.legacyhoopers.org/' });
-    expect(out.plainText).toContain('LEGACY HOOPERS · WEEKLY DIGEST · legacyhoopers.org');
+    expect(out.plainText).toContain('ASTER AAU · WEEKLY DIGEST · legacyhoopers.org');
   });
 });

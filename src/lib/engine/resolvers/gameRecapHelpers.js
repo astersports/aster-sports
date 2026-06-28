@@ -37,7 +37,7 @@ export function buildGameRecapPill(event, gr) {
 //   context    — venue (location.name) when present, else omitted
 //   our_score / opponent_score / result — score + W/L pill
 export function buildGameRecapCard(team, event, location, gr) {
-  const teamName = team?.name || 'Legacy Hoopers';
+  const teamName = team?.name || 'Aster AAU';
   const opp = event?.opponent ? String(event.opponent).trim() : '';
   const matchup = opp ? `${teamName} vs ${opp}` : teamName;
   const venue = location?.name ? String(location.name).trim() : '';
@@ -69,7 +69,7 @@ export function formatSubContext(startAt, locationName) {
 }
 
 export function buildSubject(team, event, gr) {
-  const teamName = team?.name || 'Legacy Hoopers';
+  const teamName = team?.name || 'Aster AAU';
   const opp = event?.opponent ? String(event.opponent).trim() : '';
   if (!opp) return `Recap: ${teamName} ${gr.our_score}-${gr.opponent_score}`;
   const verb = RESULT_VERB[gr.result] || 'played';

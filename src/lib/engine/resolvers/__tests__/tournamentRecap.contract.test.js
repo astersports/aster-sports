@@ -187,15 +187,15 @@ describe('tournament_recap resolver — contract', () => {
     const { context, slices } = await resolveTournamentRecap({ tournamentId: TID, pilotOnly: false }, { supabase: mockClient(FIXTURES), now: NOW });
     // Empty paste -> no pool_standings
     expect(composeTournamentRecap(context, slices[2], {}).content_sections.find((s) => s.kind === 'pool_standings')).toBeUndefined();
-    // Paste -> one row per line, home team (Legacy Hoopers) highlighted
-    const paste = 'NY Extreme Black\nLegacy Hoopers (NY)\nShowtime Elite';
+    // Paste -> one row per line, home team (Aster AAU) highlighted
+    const paste = 'NY Extreme Black\nAster AAU (NY)\nShowtime Elite';
     const sections = composeTournamentRecap(context, slices[2], { standings_paste: paste }).content_sections;
     const standings = sections.find((s) => s.kind === 'pool_standings');
     expect(standings).toBeDefined();
     expect(standings.bar_label).toBeTruthy();
     expect(standings.rows.length).toBe(3);
     const home = standings.rows.find((r) => r.is_home);
-    expect(home.text).toBe('Legacy Hoopers (NY)');
+    expect(home.text).toBe('Aster AAU (NY)');
     expect(standings.rows.filter((r) => r.is_home).length).toBe(1);
     // Standings slots after the run/bracket, before the sideline narrative
     const standingsIdx = sections.indexOf(standings);
@@ -205,7 +205,7 @@ describe('tournament_recap resolver — contract', () => {
 
   it('12. AP #38 renderer-emit parity: every emitted section kind is registered', async () => {
     const { context, slices } = await resolveTournamentRecap({ tournamentId: TID, pilotOnly: false }, { supabase: mockClient(FIXTURES), now: NOW });
-    const overrides = { standout_moments: 'x', coach_reflection: 'y', coach_note: 'z', parent_shoutout: 'q', standings_paste: 'Legacy Hoopers (NY)\nFoo' };
+    const overrides = { standout_moments: 'x', coach_reflection: 'y', coach_note: 'z', parent_shoutout: 'q', standings_paste: 'Aster AAU (NY)\nFoo' };
     const brEvents = events.map((e) => (e.id === '24b998e9-8fe6-4123-bc95-607f20a70c8d' ? { ...e, bracket_label: 'Final', is_championship_final: true } : e));
     const { context: cBr, slices: sBr } = await resolveTournamentRecap({ tournamentId: TID, pilotOnly: false }, { supabase: mockClient({ ...FIXTURES, events: brEvents }), now: NOW });
     for (const [ctx, sl] of [[context, slices[2]], [cBr, sBr[2]]]) {

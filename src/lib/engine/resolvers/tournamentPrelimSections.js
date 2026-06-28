@@ -130,5 +130,5 @@ export function buildTaglineFooter(overrides) {
 }
 
 export function buildBrandFooter(orgName) {
-  return { kind: 'brand_footer', org_name: (orgName || 'Legacy Hoopers').toUpperCase(), tagline: 'GROW YOUR GAME · LEAVE YOUR LEGACY' };
+  return { kind: 'brand_footer', org_name: (orgName || 'Aster AAU').toUpperCase(), tagline: 'GROW YOUR GAME · OWN YOUR FUTURE' };
 }

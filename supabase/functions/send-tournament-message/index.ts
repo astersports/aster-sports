@@ -46,13 +46,13 @@ const corsHeaders = {
 
 // Platform send-from address (rebrand 2026-06-02; was briefings@legacyhoopers.org).
 // astersports.app is verified in Resend. from_name still shows the org (below) and
-// replies route to the org's reply-to, so families see "Legacy Hoopers" + reply
+// replies route to the org's reply-to, so families see "Aster AAU" + reply
 // to the org — only the envelope sender is the platform domain.
 const FROM_EMAIL = "noreply@astersports.app";
 // Wave 4.3-H: from_name reads from organization_settings.from_name per kind
-// (no per-kind branching needed; Frank locked "Legacy Hoopers" for all sends).
+// (no per-kind branching needed; Frank locked "Aster AAU" for all sends).
 // Fallback used only if org_settings row is missing or column is NULL.
-const FROM_NAME_FALLBACK = "Legacy Hoopers";
+const FROM_NAME_FALLBACK = "Aster AAU";
 const REPLY_TO_FALLBACK = "support@astersports.app";
 const RESEND_BATCH_LIMIT = 100;
 

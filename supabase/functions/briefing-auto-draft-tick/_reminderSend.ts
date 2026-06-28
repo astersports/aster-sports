@@ -8,7 +8,7 @@ import { Resend } from "https://esm.sh/resend@4";
 // Platform send-from (rebrand 2026-06-02; was briefings@legacyhoopers.org).
 // astersports.app verified in Resend; from_name/reply-to stay the org.
 const FROM_EMAIL = "noreply@astersports.app";
-const FROM_NAME_FALLBACK = "Legacy Hoopers";
+const FROM_NAME_FALLBACK = "Aster AAU";
 const REPLY_TO_FALLBACK = "support@astersports.app";
 
 export interface Recipients {

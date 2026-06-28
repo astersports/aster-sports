@@ -5,7 +5,7 @@ describe('renderer — footer (Wave 3.6 §D4)', () => {
   const fixture = {
     kind: 'footer',
     logoUrl: 'https://astersports.app/knight-logo-240.png',
-    orgName: 'Legacy Hoopers',
+    orgName: 'Aster AAU',
     websiteUrl: 'https://www.legacyhoopers.org/',
     contactEmail: 'info@legacyhoopers.org',
   };
@@ -20,7 +20,7 @@ describe('renderer — footer (Wave 3.6 §D4)', () => {
     expect(html).toContain('src="https://astersports.app/knight-logo-240.png"');
     expect(html).toContain('width="120"');
     expect(html).toContain('height="120"');
-    expect(html).toContain('alt="Legacy Hoopers"');
+    expect(html).toContain('alt="Aster AAU"');
   });
 
   it('uses Knight logo (post-auth org brand), NOT Phoenix apple-touch-icon (PWA shell)', () => {
@@ -51,7 +51,7 @@ describe('renderer — footer (Wave 3.6 §D4)', () => {
 
   it('plainText concatenates org name + host + contact', () => {
     const { plainText } = renderFooter(fixture);
-    expect(plainText).toContain('Legacy Hoopers');
+    expect(plainText).toContain('Aster AAU');
     expect(plainText).toContain('legacyhoopers.org');
     expect(plainText).toContain('Contact: info@legacyhoopers.org');
   });
@@ -71,12 +71,12 @@ describe('renderer — footer (Wave 3.6 §D4)', () => {
   it('uses player + team context line when both are provided', () => {
     const { html } = renderFooter({ ...fixture, playerName: 'Sara K', teamName: '10U Blue' });
     expect(html).toContain('because Sara K is on the 10U Blue roster');
-    expect(html).toContain('at Legacy Hoopers');
+    expect(html).toContain('at Aster AAU');
   });
 
   it('falls back to generic context line when player/team are missing', () => {
     const { html } = renderFooter(fixture);
-    expect(html).toContain('You are receiving this as a member of Legacy Hoopers');
+    expect(html).toContain('You are receiving this as a member of Aster AAU');
   });
 
   it('plainText surfaces unsubscribe placeholder for plain-text fallback', () => {

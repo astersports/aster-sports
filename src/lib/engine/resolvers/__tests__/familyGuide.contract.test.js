@@ -223,7 +223,7 @@ describe('composeFamilyGuide', () => {
     const ctx = {
       parent: PARENT,
       kidsWithEvents: [{ player_id: 'p-1', first_name: 'Charlie', team_id: 't-1', team_name: '11U Girls', team_color: '#a78bfa', events: [{ start_at: '2026-05-18T15:00:00-04:00' }] }],
-      conflicts: [], dateRange: { start: '2026-05-18', end: '2026-05-24' }, coaches: [], orgName: 'Legacy Hoopers',
+      conflicts: [], dateRange: { start: '2026-05-18', end: '2026-05-24' }, coaches: [], orgName: 'Aster AAU',
     };
     const out = composeFamilyGuide(ctx, { parent_name: 'Frank' });
     const kinds = out.content_sections.map((s) => s.kind);
@@ -236,7 +236,7 @@ describe('composeFamilyGuide', () => {
     const ctx = {
       parent: PARENT,
       kidsWithEvents: [{ player_id: 'p-1', first_name: 'Charlie', team_id: 't-1', team_name: '11U Girls', team_color: '#a78bfa', events: [{ start_at: '2026-05-18T15:00:00-04:00' }] }],
-      conflicts: [], dateRange: { start: '2026-05-18', end: '2026-05-24' }, coaches: [], orgName: 'Legacy Hoopers',
+      conflicts: [], dateRange: { start: '2026-05-18', end: '2026-05-24' }, coaches: [], orgName: 'Aster AAU',
     };
     const out = composeFamilyGuide(ctx, { parent_name: 'Frank' });
     const footer = out.content_sections.find((s) => s.kind === 'footer');
