@@ -200,6 +200,23 @@ Q4. Schedule source of truth on conflict: if a tournament's scraped schedule
         teams) first, THEN the team↔tournament-team mapping (Fork 3).
   => St Patrick's tenant fan-out is gated on TENANT ONBOARDING, a prerequisite project
      to this pipeline, not part of it.
+- PUBLIC LOAD FIRED + VERIFIED 2026-06-28 (Frank "go"): POST aau-submit-tournament with
+  the winter link → ingested under the directory org as "WPCYO Basketball 2025-2026"
+  (tournament cc8a2a82-d060-4733-91a0-3b0d965e1c85, tm_id h2025…). [GROUNDED] 12
+  divisions, 513 teams, 1106 games (1089 scored; ~17 unplayed). WPCYO is the WHOLE
+  Westchester/Putnam CYO league — St Patrick's ~25 teams are a SUBSET within it (the
+  tenant fan-out will filter to St Patrick's division-teams). NOTE: the data landed
+  but the orchestrating aau-submit→aau-ingest call returned HTTP 504 (the worker
+  finished writing AFTER the gateway timeout), so aau_ingest_submissions row
+  13789ef4… is marked status=error — a TRACKING false-negative, not a data failure.
+- NEW FORK (ingest scalability): single-shot aau-ingest-tournament is at its ceiling
+  for a 500+-team league — it completed this time but 504'd, and the 10-min
+  live-score-poll refresh (which re-ingests live tournaments whole) would keep timing
+  out on WPCYO. FORK: (a) chunk ingest per-division (12 calls instead of 1), (b) a
+  queue/worker, or (c) cap the poll to only the divisions a tenant maps to. CC LEAN:
+  (c) for tenant refresh (only fan-out the mapped division-teams — cheap), + (a)
+  per-division chunking for the public full-league load. Both keep each call under the
+  gateway limit. Add to the build sequence before relying on auto-refresh.
 
 GATING: all of this is architect-scoped (schema touches on feed_source_mapping +
 events provenance; cross-tenant fan-out; money/credit untouched). Per §2.4 + §11.8 it
