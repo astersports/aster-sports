@@ -51,7 +51,7 @@ describe('composeAnnouncement', () => {
 
   it('uses default subject when headline empty', () => {
     const out = composeAnnouncement({ body_text: 'Heads up.' });
-    expect(out.subject).toBe('Legacy Hoopers announcement');
+    expect(out.subject).toBe('Aster AAU announcement');
   });
 });
 

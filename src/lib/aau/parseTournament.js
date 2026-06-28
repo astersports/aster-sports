@@ -34,7 +34,7 @@ export function stripHtml(html) {
  * Strips two TM-rendered team-cell annotations so a game resolves to its
  * tournament_division_team id instead of being dropped at the !homeId/!awayId
  * guard (the record-accuracy bug: a team that went 3–1 showed 2–0):
- *   - a leading bracket-seed prefix ("[1] Legacy Hoopers (NY)")
+ *   - a leading bracket-seed prefix ("[1] Aster AAU (NY)")
  *   - a trailing advancement asterisk ("Lady Breakers (MA) - Jean*")
  * parseDivisionTeams strips the trailing "*" from standings names at parse time,
  * but game-row cells keep these annotations — so the matcher strips them too,

@@ -244,7 +244,7 @@ describe('pure helpers', () => {
   it('normalizeName: strips a leading bracket-seed prefix so bracket games resolve', () => {
     // TM stamps "[1]"/"[2]" seed prefixes on bracket-game team cells but NOT on
     // the standings rows the team list is built from — the match must ignore it.
-    expect(normalizeName('[1] Legacy Hoopers (NY)')).toBe('legacy hoopers (ny)');
+    expect(normalizeName('[1] Aster AAU (NY)')).toBe('aster aau (ny)');
     expect(normalizeName('[12] NE Storm Black (MA)')).toBe('ne storm black (ma)');
     // resolves to the same key as the clean standings name
     expect(normalizeName('[3] CT Northstars')).toBe(normalizeName('CT Northstars'));

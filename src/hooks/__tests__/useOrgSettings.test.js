@@ -23,7 +23,7 @@ const { useOrgSettings } = await import('../useOrgSettings');
 
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 beforeEach(() => {
-  selectResult = { data: { from_name: 'Legacy Hoopers', from_email: 'admin@lh.org', reply_to_email: 'reply@lh.org', pilot_mode_enabled: false }, error: null };
+  selectResult = { data: { from_name: 'Aster AAU', from_email: 'admin@lh.org', reply_to_email: 'reply@lh.org', pilot_mode_enabled: false }, error: null };
   updateResult = { error: null };
 });
 
@@ -31,7 +31,7 @@ describe('useOrgSettings', () => {
   it('reads the sender + pilot fields off organization_settings', async () => {
     const { result } = renderHook(() => useOrgSettings('org-1'));
     await waitFor(() => expect(result.current.settings).not.toBeNull());
-    expect(result.current.settings.from_name).toBe('Legacy Hoopers');
+    expect(result.current.settings.from_name).toBe('Aster AAU');
     expect(result.current.settings.from_email).toBe('admin@lh.org');
     expect(result.current.pilotModeEnabled).toBe(false);
   });
@@ -64,6 +64,6 @@ describe('useOrgSettings', () => {
     let res;
     await act(async () => { res = await result.current.save({ from_name: 'X' }); });
     expect(res).toEqual({ ok: false });
-    expect(result.current.settings.from_name).toBe('Legacy Hoopers');
+    expect(result.current.settings.from_name).toBe('Aster AAU');
   });
 });

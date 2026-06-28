@@ -26,7 +26,7 @@ vi.mock('../engine/resolvers/registry', async () => {
 });
 
 const baseContext = {
-  org: { id: 'o-1', name: 'Legacy Hoopers', branding: { eyebrowLink: '#', contactEmail: 'x@x', logoUrl: '' }, coaches: [], voice_config: null, brand_colors: null },
+  org: { id: 'o-1', name: 'Aster AAU', branding: { eyebrowLink: '#', contactEmail: 'x@x', logoUrl: '' }, coaches: [], voice_config: null, brand_colors: null },
   event: { id: 'e-1', title: 'Practice', team_id: 't-1', event_type: 'practice', start_at: '2026-05-12T23:35:00Z', end_at: '2026-05-13T00:35:00Z', location: 'WCC', location_id: null, opponent: null, status: 'scheduled', publish_status: 'published', teams: { id: 't-1', name: '10U Black', team_color: '#000', sort_order: 2, org_id: 'o-1' } },
   team: { id: 't-1', name: '10U Black', team_color: '#000', sort_order: 2 },
   location: null,

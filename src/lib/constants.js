@@ -101,7 +101,7 @@ export const TOURNAMENT_MESSAGE_TYPES = [
 export const APP_BASE_URL =
   (import.meta.env?.VITE_APP_BASE_URL || 'https://astersports.app').replace(/\/+$/, '');
 
-export const ORG_NAME_DEFAULT = 'Legacy Hoopers';
+export const ORG_NAME_DEFAULT = 'Aster AAU';
 export const ORG_WEBSITE_DEFAULT = 'https://www.legacyhoopers.org/';
 export const ORG_CONTACT_DEFAULT = 'support@astersports.app';
 export const ORG_LOGO_DEFAULT = `${APP_BASE_URL}/knight-logo-240.png`;

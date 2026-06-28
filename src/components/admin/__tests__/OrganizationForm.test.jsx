@@ -7,7 +7,7 @@ import OrganizationForm from '../OrganizationForm';
 afterEach(() => cleanup());
 
 const baseInitial = {
-  name: 'Legacy Hoopers LLC',
+  name: 'Aster AAU LLC',
   mailingAddress: '4 Byram Brook Place, Armonk, NY 10504',
   seasonLabel: 'Spring 2026',
   timezone: 'America/New_York',
@@ -25,11 +25,11 @@ function setup(overrides = {}) {
 describe('OrganizationForm', () => {
   it('shows name + mailing address as read-only (not editable inputs)', () => {
     setup();
-    expect(screen.getByText('Legacy Hoopers LLC')).toBeInTheDocument();
+    expect(screen.getByText('Aster AAU LLC')).toBeInTheDocument();
     expect(screen.getByText('4 Byram Brook Place, Armonk, NY 10504')).toBeInTheDocument();
     expect(screen.getAllByText(/read-only/i)).toHaveLength(2);
     // no text input carries the org name (it's a static row)
-    expect(screen.queryByDisplayValue('Legacy Hoopers LLC')).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue('Aster AAU LLC')).not.toBeInTheDocument();
   });
 
   it('reflects the editable season label + timezone', () => {

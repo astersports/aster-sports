@@ -3,7 +3,7 @@ import { composeGamesRecap } from '../gamesRecap';
 import { buildGamesSubject, summarizeGames } from '../gamesRecapHelpers';
 
 const ORG = {
-  name: 'Legacy Hoopers',
+  name: 'Aster AAU',
   branding: { eyebrowLink: 'https://lh.org/', contactEmail: 'info@lh.org', logoUrl: 'https://lh.org/logo.png' },
   coaches: [{ display_name: 'Coach Kenny', title: 'Coaching Director', phone: '555-1' }],
 };

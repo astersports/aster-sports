@@ -64,7 +64,7 @@ export async function resolveFamilyGuide({ parentUserId, dateRange, pilotOnly },
     // and the allowlist gate keeps its correct narrow-to-pilot-family behavior.
     const redirectMode = (rpcRows || []).some((r) => r.guardian_id == null && r.email);
     if (!redirectMode && !allowed.has(parent.id)) {
-      return { context: { parent, kidsWithEvents: [], conflicts: [], dateRange, coaches: [], teamCoaches: [], orgName: 'Legacy Hoopers' }, slices: [] };
+      return { context: { parent, kidsWithEvents: [], conflicts: [], dateRange, coaches: [], teamCoaches: [], orgName: 'Aster AAU' }, slices: [] };
     }
   }
 

@@ -17,11 +17,11 @@
 import { trim } from './tournamentPrelimHelpers';
 
 // Words skipped when building an acronym (legal suffixes + trivia that
-// shouldn't contribute an initial). "Legacy Hoopers LLC" -> "LH".
+// shouldn't contribute an initial). "Aster AAU LLC" -> "AA".
 const ACRONYM_SKIP = new Set(['llc', 'inc', 'co', 'ltd', 'the', 'of', 'and', '&']);
 
 // Build the acronym/initials from an org/team name's significant words:
-// "Legacy Hoopers" -> "LH". Returns null when fewer than 2 significant
+// "Aster AAU" -> "AA". Returns null when fewer than 2 significant
 // words contribute (a single-word name has no meaningful acronym and a
 // 1-letter token is far too false-positive-prone to match on).
 function acronymOf(name) {
@@ -43,15 +43,15 @@ function acronymOf(name) {
 //
 // Two match signals (either highlights the row):
 //   (1) substring — the (suffix-stripped) full name appears in the line
-//       ("Legacy Hoopers (NY)" contains "legacy hoopers").
+//       ("Aster AAU (NY)" contains "aster aau").
 //   (2) acronym — the name's initials appear as a standalone token
-//       ("LH (NY)" -> "LH" for "Legacy Hoopers"). Word-boundary anchored
-//       (\bLH\b) so "LH" doesn't match inside "FLASH" or "ALHambra".
+//       ("AA (NY)" -> "AA" for "Aster AAU"). Word-boundary anchored
+//       (\bAA\b) so "AA" doesn't match inside "BAZAAR" or "AArdvark".
 export function buildStandingsSection(overrides, label, homeNames) {
   const raw = trim(overrides?.standings_paste);
   if (!raw) return null;
   // Strip a trailing legal suffix ("LLC"/"Inc"/...) so an org named
-  // "Legacy Hoopers LLC" still matches a "Legacy Hoopers (NY)" row.
+  // "Aster AAU LLC" still matches a "Aster AAU (NY)" row.
   const matchers = (homeNames || [])
     .map((n) => trim(n).toLowerCase().replace(/[\s,]+(llc|inc|inc\.|co|co\.|ltd)\.?$/i, '').trim())
     .filter((n) => n.length >= 3);

@@ -1,7 +1,7 @@
 {
   "id":"e3e95e21-3571-4e9a-985a-d5d01480d4a6",
-  "name":"Legacy Hoopers LLC",
-  "display_name":"Legacy Hoopers",
+  "name":"Aster AAU LLC",
+  "display_name":"Aster AAU",
   "brand_colors":{"accent":"#4a8fd4","header":"#1e3a5f","accent_hover":"#5BA0E0","text_on_dark":"#FFFFFF"},
-  "voice_config":{"tone_notes":"warm, direct, sharp operator voice. no corporate jargon. occasional emoji ok. number-first team naming.","signoff_default":"Frankie + Kenny","brand_accent_hex":"#4a8fd4","brand_header_hex":"#1e3a5f","primary_contact_name":"Frankie Samaritano","primary_contact_role":"Program Director","primary_contact_email":"admin@legacyhoopers.org","primary_contact_phone":"(917) 991-9830","secondary_contact_name":"Kenny Lane","secondary_contact_role":"Coaching Director","team_naming_convention":"number_first","secondary_contact_phone":"(516) 644-0208","unsubscribe_explainer_text":"You are receiving this because your child is on a Legacy Hoopers roster."}
+  "voice_config":{"tone_notes":"warm, direct, sharp operator voice. no corporate jargon. occasional emoji ok. number-first team naming.","signoff_default":"Frankie + Kenny","brand_accent_hex":"#4a8fd4","brand_header_hex":"#1e3a5f","primary_contact_name":"Frankie Samaritano","primary_contact_role":"Program Director","primary_contact_email":"admin@legacyhoopers.org","primary_contact_phone":"(917) 991-9830","secondary_contact_name":"Kenny Lane","secondary_contact_role":"Coaching Director","team_naming_convention":"number_first","secondary_contact_phone":"(516) 644-0208","unsubscribe_explainer_text":"You are receiving this because your child is on a Aster AAU roster."}
 }

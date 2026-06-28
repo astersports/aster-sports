@@ -55,7 +55,7 @@ beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => {});
   state.teamRes = { data: { id: 'team-1', name: '10U Black', team_color: '#4a8fd4', org_id: 'org-1' }, error: null };
   state.eventsRes = { data: [], error: null };
-  state.rpcRes = { data: [{ feed_token: 'tok-1', org_display_name: 'Legacy Hoopers' }], error: null };
+  state.rpcRes = { data: [{ feed_token: 'tok-1', org_display_name: 'Aster AAU' }], error: null };
 });
 
 describe('PublicSchedulePage (P0 STEP 5b locks)', () => {
@@ -83,7 +83,7 @@ describe('PublicSchedulePage (P0 STEP 5b locks)', () => {
       expect(screen.getByText('10U Black')).toBeTruthy();
     });
     expect(screen.getByText('WCC Gym 2')).toBeTruthy();
-    expect(screen.getByText('Legacy Hoopers')).toBeTruthy();
+    expect(screen.getByText('Aster AAU')).toBeTruthy();
     expect(screen.queryByText(/No upcoming events scheduled/i)).toBeNull();
   });
 });
