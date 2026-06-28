@@ -1,53 +1,62 @@
 -- ============================================================================
--- AAU STANDINGS SUBSTRATE CORRECTNESS  (STAGED — architect-scoped, await Frank's apply-go)
--- Architect ZG ruleset spec 2026-06-27 (§1 cap / §2 tiebreak inputs / §3 exhibition / §4 forfeit).
--- Canonical version string is assigned at apply time; this filename is the staged name.
+-- AAU STANDINGS CAP — HUB-ORG circuit_rules + restore operator's universal default 20
+--   (APPLIED on Frank's apply-go for the #1130 substrate/qkey migrations; this corrects a
+--    cap regression surfaced during post-apply verification of 20260628000000.)
 --
--- Builds the correct substrate the A3 exact-status engine reads. Four corrections, all grounded:
+-- WHAT WENT WRONG (grounded, prod vrwwpsbfbnveawqwbdmj 2026-06-28):
+--   The substrate migration (20260628000000) replaced the operator's universal default-20
+--   cap with a three-case per-circuit cap (matched-cap → that cap · matched-uncapped →
+--   no cap · unmatched → 25), and backfilled tournament_divisions.circuit from the parent
+--   tournament. Its header reasoned "tournaments.circuit matches circuit_rules.circuit_name
+--   exactly" — TRUE for the circuit-NAME half of the join, but it missed the ORG half:
+--     • ALL scraped TourneyMachine data lives under org a51e2a00-…-001 ("AAU Tournaments",
+--       public-listed) — the hub org.
+--     • EVERY circuit_rules row lives under the PILOT org e3e95e21-… .
+--   The standings join is `cr.org_id = d.org_id AND cr.circuit_name = d.circuit`, so the
+--   org half never matches for scraped divisions and the unmatched default governed every
+--   hub division. Effect on the 317 hub divisions: 82 ZG + 3 League Play fell through the
+--   cross-org gap; the 232 NULL-circuit divisions hit the unmatched 25. Before the substrate
+--   migration ALL were at the operator's universal 20 (migration 20260627234848) — so this
+--   was a live regression off the operator's explicit directive:
+--     "Regardless of the score, the most points a team can win/lose by is 20 points in the
+--      standings." (2026-06-27, vendor-confirmed for Zero Gravity.)
 --
--- (1) PER-CIRCUIT CAP (replaces the blunt default-20). GROUNDED: tournament_divisions.circuit is
---     NULL on all rows, but the PARENT tournaments.circuit IS populated ('AAU Zero Gravity',
---     'League Play') and matches circuit_rules.circuit_name exactly. So:
---       • backfill div.circuit ← parent tournament.circuit (one-time + forward via ingest, separate).
---       • the cap now binds per-circuit with THREE cases — matched-with-cap (ZG → 20),
---         matched-uncapped (League Play, circuit_rules cap IS NULL → NO cap), and unmatched
---         (unknown circuit → default 25). The prior COALESCE(cap,20) wrongly capped League Play.
---         BBallshootout has no circuit_rules row yet → falls to default 25 until Frank classifies it.
+-- THE FIX (two parts):
+--   (1) Give the hub org its own circuit_rules so the per-circuit logic actually binds on the
+--       public/scraped data: AAU Zero Gravity → 20 (vendor-confirmed), League Play → NULL
+--       (uncapped, per its own rules). Content mirrors the pilot org's rows (circuit rules are
+--       circuit-wide facts, not org-specific). Idempotent via ON CONFLICT (org_id, circuit_name).
+--       → fixes the 82 ZG (now 20) and 3 League Play (now uncapped) hub divisions.
+--   (2) Restore the unmatched/unknown default from 25 → 20, matching the operator's UNIVERSAL
+--       directive (and the pre-substrate behavior). Only genuinely-unclassified divisions hit
+--       this path (the 232 hub divisions whose parent tournament has NULL/'AAU' circuit). The
+--       architect's League-Play-uncapped carve-out is preserved via (1); the only deviation
+--       from the staged three-case design is this fallback constant. DEVIATION FLAGGED for
+--       architect: if the intended contract is "cap ONLY classified circuits, leave unknown at
+--       a looser 25," revert this constant — but the operator's standing rule is 20 universal.
 --
--- (2) DUAL POINT-DIFFERENTIAL (architect §1/§2). The RPC now returns BOTH per team:
---       • real_point_diff  — true aggregate margin, for DISPLAY ("+40 overall").
---       • capped_point_diff — per-game margin capped per circuit, for ORDERING ("+20 for seeding").
---     The real score is never rewritten; the cap sits beside it as a seeding rule.
---
--- (3) EXHIBITION EXCLUSION (architect §3, correctness bug independent of the re-grain). Exhibition
---     games (the '*' on TourneyMachine) must count toward NOTHING. Adds is_exhibition to
---     division_games and filters it out of every standings input. SAFE TO STAGE NOW: the flag
---     defaults false, so the filter is a no-op until the paired ingest change starts capturing the
---     '*' (today _parse.ts STRIPS and discards it at lines 78/256 — that ingest fix is the paired
---     follow-up; this migration makes the column + filter ready for it).
---
--- (4) FORFEIT → OUT (architect §4). Adds is_forfeit to division_games so the exact-status engine can
---     encode forfeit as a hard advancement exclusion (overrides a qualifying W-L). Exposed per team
---     in the output; the OUT logic itself lives in the A3 engine. Capture rides with the ingest fix.
---
--- Output adds fields; existing 'rating'/'gp' kept for predictor compat (A2). Re-test after apply:
---   a known division's W-L + ordering match the bracket; League Play shows uncapped PD; ZG capped 20.
+-- RE-TEST AFTER APPLY: get_public_tournament_standings('<a hub ZG division>') → rules.pointDiffCap
+--   = 20 and a 20+ blowout margin caps at 20; a hub League Play division → pointDiffCap = null
+--   (uncapped). The live Grand Finale Girls 5th/6th (bf16b329-…) → 20.
 -- ============================================================================
 
--- (3)+(4) additive flags — default false, so all existing standings math is unchanged until ingest
--- starts setting them. NOT NULL with default keeps the RPC filters simple.
-ALTER TABLE public.division_games
-  ADD COLUMN IF NOT EXISTS is_exhibition boolean NOT NULL DEFAULT false,
-  ADD COLUMN IF NOT EXISTS is_forfeit    boolean NOT NULL DEFAULT false;
+-- (1) hub-org circuit_rules — make the per-circuit cap bind on the public/scraped data.
+INSERT INTO public.circuit_rules (org_id, circuit_name, point_differential_cap, tiebreaker_rules, defensive_rules)
+VALUES
+  ('a51e2a00-aa17-4d12-9e00-000000000001', 'AAU Zero Gravity', 20,
+   'Two teams tied? The team that won head-to-head advances. Three teams tied? Point differential decides it. Max PD from any single game is capped at +20.',
+   'Man-to-man only in the first half. Man-to-man press allowed in the second half. No zone defense. No restrictions in the final 2 minutes.'),
+  ('a51e2a00-aa17-4d12-9e00-000000000001', 'League Play', NULL,
+   'League standings determined by win percentage. Head-to-head is the primary tiebreaker, followed by point differential against tied opponents.',
+   'Zone defense permitted. Standard FIBA rules apply. Each team allowed 4 timeouts per game.')
+ON CONFLICT (org_id, circuit_name) DO UPDATE
+  SET point_differential_cap = EXCLUDED.point_differential_cap,
+      tiebreaker_rules       = EXCLUDED.tiebreaker_rules,
+      defensive_rules        = EXCLUDED.defensive_rules;
 
--- (1) one-time circuit backfill from the parent tournament (div.circuit was NULL on every row).
-UPDATE public.tournament_divisions td
-   SET circuit = t.circuit
-  FROM public.tournaments t
- WHERE t.id = td.tournament_id
-   AND td.circuit IS NULL
-   AND t.circuit IS NOT NULL;
-
+-- (2) restore the unmatched/unknown default 25 → 20 (operator's universal rule). Only the
+--     three `25` literals in the cap CASE + rules.pointDiffCap ELSE change; everything else is
+--     byte-identical to 20260628000000.
 CREATE OR REPLACE FUNCTION public.get_public_tournament_standings(p_division_id uuid)
  RETURNS jsonb
  LANGUAGE sql
@@ -59,8 +68,8 @@ AS $function$
     WHERE td.id = p_division_id AND public.org_is_public_listed(td.org_id)
   ),
   cap AS (
-    -- (1) three-case cap. circuit_matched + circuit_cap drive the CASE in `capm` below.
-    --   matched & cap NOT NULL -> that cap (ZG 20) · matched & cap NULL -> uncapped · unmatched -> 25
+    -- three-case cap. matched & cap NOT NULL -> that cap (ZG 20) · matched & cap NULL ->
+    --   uncapped (League Play) · unmatched -> 20 (operator's universal default).
     SELECT (cr.id IS NOT NULL) AS circuit_matched, cr.point_differential_cap AS circuit_cap
     FROM d
     LEFT JOIN public.circuit_rules cr ON cr.org_id = d.org_id AND cr.circuit_name = d.circuit
@@ -69,7 +78,6 @@ AS $function$
     SELECT tdt.id, tdt.external_team_key AS key, tdt.display_name, (tdt.team_id IS NOT NULL) AS is_ours
     FROM public.tournament_division_teams tdt JOIN d ON d.id = tdt.tournament_division_id
   ),
-  -- every non-exhibition final in THIS division, one row per game, real + capped margin.
   fin AS (
     SELECT th.external_team_key AS hk, ta.external_team_key AS ak,
            dg.home_score AS hs, dg.away_score AS as_,
@@ -77,9 +85,9 @@ AS $function$
            CASE
              WHEN (SELECT circuit_matched FROM cap) AND (SELECT circuit_cap FROM cap) IS NULL
                THEN (dg.home_score - dg.away_score)  -- matched & uncapped (League Play): no cap
-             ELSE greatest(-COALESCE((SELECT circuit_cap FROM cap), 25),
-                           least(COALESCE((SELECT circuit_cap FROM cap), 25),
-                                 dg.home_score - dg.away_score))      -- ZG 20 / unknown 25
+             ELSE greatest(-COALESCE((SELECT circuit_cap FROM cap), 20),
+                           least(COALESCE((SELECT circuit_cap FROM cap), 20),
+                                 dg.home_score - dg.away_score))      -- ZG 20 / unknown 20
            END AS cap_m
     FROM public.division_games dg
     JOIN d ON d.id = dg.tournament_division_id
@@ -89,13 +97,11 @@ AS $function$
       AND NOT dg.is_exhibition                                       -- (3) exclude exhibition
       AND th.external_team_key IS NOT NULL AND ta.external_team_key IS NOT NULL
   ),
-  -- both directions for per-team aggregation (team / opp / my+opp score / real+capped margin).
   long AS (
     SELECT hk AS team, ak AS opp, hs AS my_s, as_ AS opp_s, real_m, cap_m FROM fin
     UNION ALL
     SELECT ak AS team, hk AS opp, as_ AS my_s, hs AS opp_s, -real_m, -cap_m FROM fin
   ),
-  -- (2) per-team tiebreak inputs the A3 engine reads.
   team_stats AS (
     SELECT team,
            count(*) FILTER (WHERE my_s > opp_s) AS wins,
@@ -107,7 +113,6 @@ AS $function$
            count(*) AS gp
     FROM long GROUP BY team
   ),
-  -- existing rating (predictor compat, A2) — avg capped margin + opponent adjustment.
   raw AS (SELECT team, avg(cap_m) AS rm FROM long GROUP BY team),
   ratings AS (
     SELECT l.team AS rkey,
@@ -118,7 +123,6 @@ AS $function$
     WHERE l.team IN (SELECT key FROM units)
     GROUP BY l.team, r.rm
   ),
-  -- forfeit per team (any non-exhibition game flagged forfeit) → engine encodes OUT.
   forfeits AS (
     SELECT t.external_team_key AS team_key
     FROM public.division_games dg
@@ -182,10 +186,9 @@ AS $function$
   SELECT CASE WHEN EXISTS (SELECT 1 FROM d) THEN jsonb_build_object(
     'division', jsonb_build_object('id',(SELECT id FROM d),'name',(SELECT name FROM d),'circuit',(SELECT circuit FROM d),'advance_count',(SELECT advance_count FROM d)),
     'rules', jsonb_build_object(
-      -- pointDiffCap: the effective per-circuit cap (null = uncapped), for the seeding-label UI.
       'pointDiffCap', CASE WHEN (SELECT circuit_matched FROM cap)
                             THEN (SELECT circuit_cap FROM cap)        -- ZG 20 · League Play null(uncapped)
-                            ELSE 25 END,                              -- unknown default
+                            ELSE 20 END,                              -- unknown default (operator universal 20)
       'tiebreakers', jsonb_build_array('head_to_head','capped_point_diff','points_allowed','points_scored')
     ),
     'teams', COALESCE((SELECT jsonb_agg(jsonb_build_object(
