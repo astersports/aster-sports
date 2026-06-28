@@ -24,6 +24,9 @@ export default function SeasonRolloverPage() {
 
   useEffect(() => {
     if (!orgId) return;
+    // Reset stale error when orgId changes so a retry/re-render can recover.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setError(null);
     (async () => {
       const { data: s, error: sErr } = await supabase.from('seasons').select('*').eq('org_id', orgId).eq('status', 'active').maybeSingle();
       if (sErr) { console.error('SeasonRolloverPage season:', sErr.message); setError(sErr); setSeason(null); return; }

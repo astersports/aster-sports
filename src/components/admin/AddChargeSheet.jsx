@@ -26,6 +26,7 @@ export default function AddChargeSheet({ accountId, orgId, onClose, onSaved }) {
       reference: reason || null, occurred_at: new Date().toISOString(), recorded_by: user.id,
     });
     if (error) { savingRef.current = false; setSaving(false); setErr('Looks like that didn’t go through. Try again?'); return; }
+    savingRef.current = false; setSaving(false);
     onSaved();
   };
 

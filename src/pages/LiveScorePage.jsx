@@ -30,6 +30,10 @@ export default function LiveScorePage() {
   const [showSubs, setShowSubs] = useState(false);
 
   useEffect(() => {
+    // Reset to loading + clear the prior event when eventId changes so a stale
+    // error/notfound terminal state isn't shown for the new event.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoadState('loading'); setEvent(null);
     supabase.from('events').select('*, teams(id, name, team_color, org_id)').eq('id', eventId).maybeSingle()
       .then(({ data, error }) => {
         if (error) { console.error('LiveScorePage event:', error.message); setLoadState('error'); return; }

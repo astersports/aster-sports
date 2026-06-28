@@ -15,13 +15,13 @@ import { ButtonsVariant, SegmentedVariant } from './ChildRsvpVariants';
 export default function ChildRsvp({ child, eventId, eventType, disabled = false, onSave, initialResponse, initialActivated, variant = 'buttons' }) {
   const { guardianId } = useAuth(), { showToast } = useToast();
   const batchFed = initialResponse !== undefined;
-  const [response, setResponse] = useState(() => batchFed ? initialResponse : (responseCache.get(cacheKey(eventId, child?.playerId)) ?? null));
+  const [response, setResponse] = useState(() => batchFed ? initialResponse : (child?.playerId ? (responseCache.get(cacheKey(eventId, child.playerId)) ?? null) : null));
 
   const needsActivation = child?.memberType === 'futures_academy' && (eventType === 'game' || eventType === 'tournament');
   const [isActivated, setIsActivated] = useState(() => initialActivated !== undefined ? (initialActivated || !needsActivation) : !needsActivation);
 
   useEffect(() => {
-    if (!needsActivation || initialActivated !== undefined) return;
+    if (!needsActivation || initialActivated !== undefined || !child?.playerId) return;
     let cancelled = false;
     supabase.from('player_activations').select('player_id')
       .eq('event_id', eventId).eq('player_id', child?.playerId).maybeSingle()
@@ -30,6 +30,7 @@ export default function ChildRsvp({ child, eventId, eventType, disabled = false,
   }, [eventId, child?.playerId, needsActivation, initialActivated]);
 
   const fetchRsvp = useCallback(async () => {
+    if (!child?.playerId) return;
     const { data, error } = await supabase.from('event_rsvps').select('response')
       .eq('event_id', eventId).eq('player_id', child?.playerId).maybeSingle();
     if (error) console.error('fetchRsvp:', error.message);
