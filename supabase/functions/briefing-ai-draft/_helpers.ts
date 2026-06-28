@@ -75,3 +75,24 @@ export function parseAiDraftOutput(raw: unknown): {
     warnings: Array.isArray(obj.warnings) ? obj.warnings : [],
   };
 }
+
+// Polish (T1 voice-polish): rewrite an EXISTING admin-authored body in the org
+// voice per a style directive. Facts-preserving (never adds/drops/alters a
+// fact), so no new sub-processor or data class beyond the existing AI-draft
+// path. The model returns the same locked shape, parsed by parseAiDraftOutput.
+export const POLISH_STYLES: Record<string, string> = {
+  warmer: "Make the tone warmer, friendlier, and more personable while staying professional.",
+  shorter: "Make it more concise and easier to skim: tighten the wording and cut filler.",
+  clearer: "Make it clearer and better organized: simpler sentences, logical order, easy to scan.",
+};
+
+export function buildPolishPrompt(
+  { body, styleDirective, framing }: { body: string; styleDirective: string; framing: string },
+): string {
+  return [
+    `Rewrite the following briefing message for ${framing}. ${styleDirective}`,
+    "Keep ALL facts, names, numbers, dates, times, scores, and venues EXACTLY as written: never add, drop, or alter a fact, and never invent new specifics. Preserve the original meaning. Do NOT sign off by name (the signature is added separately, not by you). Keep paragraphs short.",
+    `Message to rewrite:\n"""\n${String(body == null ? "" : body).trim()}\n"""`,
+    'Return ONLY minified JSON (no markdown, no code fence) with exactly these keys: body (the rewritten message), card_summary (one ~10-second summary line), facts_used (array of {"k","v"} pairs for the key facts you preserved), warnings (array of short strings; empty if none). NO em dashes (use periods, commas, colons, or the middot/pipe), no corporate jargon.',
+  ].join("\n\n");
+}
