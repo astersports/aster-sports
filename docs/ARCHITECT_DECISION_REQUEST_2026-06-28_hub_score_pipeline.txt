@@ -180,6 +180,27 @@ Q4. Schedule source of truth on conflict: if a tournament's scraped schedule
    ingest-game-results.
 4) Hub load front-door consolidation (Fork 1A) — UX, low risk.
 
+=====================================================================================
+5. CONCRETE INPUTS + PROVISIONING GATE (added 2026-06-28 from Frank)
+=====================================================================================
+- WINTER WPCYO link (Frank): tourneymachine.com/Public/mobile/webapp/index.aspx?
+  IDTournament=h2025101202581936100f208cca85d49  →  tm_id_tournament =
+  "h2025101202581936100f208cca85d49". This is St Patrick's winter league-play season
+  (~25 teams). Note: the app scraper uses the Public/Results/ path and the codebase
+  notes TM BLOCKS bot URL-fetch (PastePane.jsx) — ingest is server-side scrape, not a
+  naive GET.
+- ORG STATE [GROUNDED]: organizations has exactly two rows — "Aster Sports AAU"
+  (e3e95e21…, the pilot tenant, ex-Legacy Hoopers) and "AAU Tournaments"
+  (a51e2a00-…-000000000001, the public-tournament holder org). THERE IS NO ST PATRICK
+  ORG. So the winter WPCYO splits into:
+    (i) LOAD AS PUBLIC tournament under the "AAU Tournaments" holder → surfaces on the
+        AAU website. Doable now, no tenant needed.
+    (ii) FAN OUT to St Patrick (its app's games + scores) → BLOCKED: St Patrick has no
+        org/teams to attach to. Requires St Patrick onboarded as a tenant (org +
+        teams) first, THEN the team↔tournament-team mapping (Fork 3).
+  => St Patrick's tenant fan-out is gated on TENANT ONBOARDING, a prerequisite project
+     to this pipeline, not part of it.
+
 GATING: all of this is architect-scoped (schema touches on feed_source_mapping +
 events provenance; cross-tenant fan-out; money/credit untouched). Per §2.4 + §11.8 it
 holds for architect ratification before any PR. game_results writes are family-facing
