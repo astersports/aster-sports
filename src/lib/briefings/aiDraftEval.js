@@ -32,20 +32,34 @@ export const BANNED_CONTEXT_TERMS = [
 ];
 
 const numbersIn = (s) => (String(s == null ? '' : s).match(/\d+/g) || []);
-const norm = (s) => String(s == null ? '' : s).toLowerCase();
+// Lowercase + collapse runs of whitespace so grounding checks ignore spacing.
+const norm = (s) => String(s == null ? '' : s).toLowerCase().replace(/\s+/g, ' ').trim();
+// Word-boundary matcher for a (possibly multi-word) term, so "quarter" does not
+// match "headquarters". Term is regex-escaped first.
+const wordRe = (term) => new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
 
-// Flatten a facts object (or pre-built "label: value" lines) into one lowercase
-// blob + the set of every number that legitimately appears in the facts.
+// Flatten a facts object (or pre-built "label: value" lines) into a normalized
+// blob + the set of every number that legitimately appears in the facts + a Set
+// of the exact normalized fact VALUES (for strict facts_used grounding).
 export function factsIndex(facts) {
-  let text = '';
-  if (Array.isArray(facts)) text = facts.join('\n');
-  else if (facts && typeof facts === 'object') {
-    text = Object.entries(facts)
-      .filter(([, v]) => v != null && String(v).trim() !== '')
-      .map(([k, v]) => `${k}: ${String(v)}`)
-      .join('\n');
+  let entries = [];
+  if (Array.isArray(facts)) {
+    entries = facts.map((line) => {
+      const i = String(line).indexOf(':');
+      return i >= 0 ? [String(line).slice(0, i), String(line).slice(i + 1)] : ['', String(line)];
+    });
+  } else if (facts && typeof facts === 'object') {
+    entries = Object.entries(facts);
   }
-  return { text: norm(text), numbers: new Set(numbersIn(text)) };
+  const values = new Set();
+  const parts = [];
+  for (const [k, v] of entries) {
+    if (v == null || String(v).trim() === '') continue;
+    values.add(norm(v));
+    parts.push(`${k}: ${String(v)}`);
+  }
+  const blob = parts.join('\n');
+  return { text: norm(blob), numbers: new Set(numbersIn(blob)), values };
 }
 
 // Single source of the verdict. `raw` is the model's raw output string.
@@ -82,14 +96,15 @@ export function evaluateAiDraft(raw, facts) {
 
   if (Array.isArray(obj.facts_used)) {
     for (const f of obj.facts_used) {
-      const v = f && typeof f === 'object' ? String(f.v == null ? '' : f.v).trim() : '';
-      if (v && !idx.text.includes(norm(v))) add('invented_fact', `facts_used value "${v}" not in facts`);
+      const rawV = f && typeof f === 'object' ? String(f.v == null ? '' : f.v).trim() : '';
+      if (rawV && !idx.values.has(norm(rawV))) add('invented_fact', `facts_used value "${rawV}" not in facts`);
     }
   }
 
   const lowProse = norm(prose);
   for (const term of BANNED_CONTEXT_TERMS) {
-    if (lowProse.includes(term) && !idx.text.includes(term)) {
+    const re = wordRe(term);
+    if (re.test(lowProse) && !re.test(idx.text)) {
       add('unsupported_context', `"${term}" asserted but not in the facts`);
     }
   }

@@ -61,6 +61,25 @@ describe('aiDraftEval — evaluateAiDraft units', () => {
     expect(codes).toContain('unsupported_context');
   });
 
+  it('banned term uses word boundaries (no "quarter" inside "headquarters")', () => {
+    const raw = JSON.stringify({ body: 'We met at the team headquarters before tip.', card_summary: '', facts_used: [], warnings: [] });
+    const codes = evaluateAiDraft(raw, { result: 'Win' }).violations.map((v) => v.code);
+    expect(codes).not.toContain('unsupported_context');
+  });
+
+  it('invented_fact uses exact value set (a substring of a real fact is flagged)', () => {
+    // "Rye" is a substring of the opponent value "Rye Tigers" but is not itself
+    // a provided fact value, so it must be flagged (strict exact-set grounding).
+    const facts = { opponent: 'Rye Tigers' };
+    const raw = JSON.stringify({ body: 'A win.', card_summary: '', facts_used: [{ k: 'opponent', v: 'Rye' }], warnings: [] });
+    expect(evaluateAiDraft(raw, facts).violations.map((v) => v.code)).toContain('invented_fact');
+  });
+
+  it('factsIndex exposes a normalized exact value set', () => {
+    const idx = factsIndex({ opponent: '  Rye Tigers ', final_score: '42-38' });
+    expect(idx.values).toEqual(new Set(['rye tigers', '42-38']));
+  });
+
   it('malformed JSON short-circuits to a single violation', () => {
     const v = evaluateAiDraft('not json at all', {});
     expect(v.ok).toBe(false);
