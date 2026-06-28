@@ -1,0 +1,270 @@
+ASTER — NEXT-LEVEL TECH SCOUTING PASS
+Pillar: Aster Sports app (management) — aster-sports @ main
+Date: 2026-06-28 · Architect-scoped research (NOT a build) · re-runnable
+Author: CC (three parallel read-only research agents synthesized here).
+Nothing in this pass flips dark→live. Architect ratifies; Frank owns every
+key/flip/spend ceiling. Code only lands later as a normal dark-flagged gated PR.
+
+═══════════════════════════════════════════════════════════════════════════
+PILLAR HEADER
+═══════════════════════════════════════════════════════════════════════════
+REPO / BRANCH: astersports/aster-sports @ main
+WHAT THIS PILLAR IS FOR: the multi-tenant youth-sports management SaaS —
+  schedules, rosters, RSVPs, team messaging/briefings, financials, and AAU
+  tournament ingest. Pilot tenant: Legacy Hoopers.
+HARD INVARIANTS THAT APPLY (all of them apply on this pillar):
+  · MONEY PATH — the ledger is the sole source of balance; no bill-for-a-no-op;
+    writes must be idempotent. (Today: NO Stripe; admin-hand-entered.)
+  · CHILD DATA / COPPA — guardian-verified gate; a child's row stays false-by-
+    default to anyone but a verified guardian + org staff.
+  · TENANT ISOLATION — one org can never read/spend another's data.
+  · HONEST CLAIMS — UI/labels must never contradict the data.
+  · SCHEMA MIGRATIONS — owner-applied only; CC mirrors, never applies.
+  · AI DETERMINISM QUARANTINE — generative output stays out of the money/
+    schema/child paths; facts in, prose out, admin-gated.
+
+═══════════════════════════════════════════════════════════════════════════
+STEP 1 — GROUNDED INVENTORY (file:line cited; [GROUNDED] vs [FIT])
+═══════════════════════════════════════════════════════════════════════════
+STACK [GROUNDED package.json]: React 19.2.7 + Vite 8.0.16 + Tailwind 4 +
+  @supabase/supabase-js 2.108 + react-router-dom 7; Sentry 10.61 + PostHog 1.391
+  (both lazy-loaded via requestIdleCallback, AuthContext.jsx:80,88). Tests: Vitest
+  4.1.9 + Playwright 1.61; knip for dead code. 312 migrations; 20 edge functions.
+  Hosting: Vercel (auto-deploy from main).
+
+MONEY PATH [GROUNDED]:
+  · `financial_transactions` ledger — integer `amount_cents`, type ∈ {payment,
+    refund,adjustment,fee} (20260505120640_wave_7a_financials_schema.sql:21-22).
+    Money math is integer-cents throughout (formatters.js:65-69); no float drift.
+  · `family_balances` is a VIEW (security_invoker), the single canonical money
+    source — balance is DERIVED, never stored, so SUM(ledger)==balance is
+    STRUCTURALLY guaranteed (20260613192058...:5-22). Void-netting excludes a
+    reversal AND its target.
+  · Append-only now enforced at DB (BEFORE UPDATE/DELETE trigger fin_tx_no_mutate,
+    20260613210010:39-44); double-void closed by UNIQUE INDEX on
+    reverses_transaction_id (:35-36).
+  · SOLE WRITER = the human admin. There is NO Stripe/webhook/payment_intent
+    anywhere ("stripe" is only a payment_method label). Writes: RecordPaymentForm
+    .jsx:44, AddChargeSheet.jsx:23, void at FinancialFamilyDetailPage.jsx:39,
+    submit_registration() RPC, pay_coach() RPC. submit_registration + pay_coach
+    are idempotent SECDEF RPCs; the hand-entry forms are NOT idempotent (a
+    double-submit posts two transactions — only a `saving` flag guards them).
+  · LIVE BUG (honest-claims + under-collection): the `payment_overdue` alert uses
+    `.lt('last_payment_at', threshold)` (src/lib/alerts/queries.js:117), which is
+    never true when last_payment_at IS NULL — so a billed family that has NEVER
+    paid (the worst debtor class) is INVISIBLE to the overdue alert. The audit's
+    fix (`.or(last_payment_at.is.null,…)`) did not land. [GROUNDED]
+  · No automated/periodic reconciliation test in src/ (structurally safe via the
+    view, but unguarded — a §6 gap). [GROUNDED]
+
+PRIVACY / TENANT ISOLATION [GROUNDED]:
+  · Child gate is RLS via SECDEF helpers, not a JS predicate: current_user_player_
+    ids() (022_rls_privacy_lockdown...:39-48) → players_select_parent (own child
+    only); teammate NAMES via current_user_teammate_player_ids() gated by
+    programs.roster_visibility with a fail-safe COALESCE chain (20260611104945...).
+    False-by-default holds.
+  · NO film/media/storage exists yet — zero Supabase Storage usage in src/ or
+    supabase/. If child film is added later it is the highest-risk new surface
+    (no storage-RLS scaffold to inherit). [GROUNDED]
+  · COPPA consent: guardian_consents append-only ledger EXISTS, but the consent
+    VERSIONS are null ("not yet drafted", consentVersions.js:9-11) and the
+    signup-accept UI is not wired → consent is SCAFFOLDED, NOT ENFORCED. Biggest
+    compliance gap. [GROUNDED]
+  · Multi-tenant RLS is mature: current_user_org_id()/_ids(), (SELECT auth.uid())
+    initplan wrapping, cmd=ALL policies given mirrored WITH CHECK (Wave 1H). One
+    PAST fail-open-by-spec deviation (org-wide PII read) was since narrowed
+    (20260610141449_pr0b...) — but it relied on "no UI reads it yet," a fragile
+    pattern under refactor. [GROUNDED]
+  · Auth: Supabase Auth; roles admin/coach/parent; claim chain gated on confirmed
+    email. View-as is CLIENT-SIDE presentation only (RLS role never changes;
+    useHomeRole.js) → safe, but NO server-side impersonation audit log. [GROUNDED]
+  · WEAK SPOT: there is NO automated cross-tenant / cross-child isolation test in
+    CI — isolation is verified by ad-hoc impersonated-JWT MCP replays (manual).
+    [GROUNDED: absence]
+
+AI / COMMS ENGINE / AAU INGEST [GROUNDED]:
+  · AI = Anthropic Claude via raw HTTPS fetch (no SDK) in 3 admin-gated edge fns:
+    briefing-ai-draft (drafts prose), suggest-briefing-closer, parse-tournament-
+    schedule. Key from app_secrets.anthropic_api_key (AP#33). Quarantine is
+    STRONG: facts-verbatim prompts, prose-only, never writes comms_messages /
+    money / schema. [GROUNDED]
+  · Model pinned `claude-sonnet-4-5` ×3 — STALE; current Sonnet is
+    claude-sonnet-4-6. No structured-output: output is fence-strip + single JSON-
+    parse retry (briefing-ai-draft/index.ts:113-118) — best-effort, no schema. [GROUNDED]
+  · Comms engine is TEMPLATE-based (calendar-as-spine): RESOLVER_REGISTRY maps ~11
+    kinds → {resolve,compose,sendPath} (registry.js:75-160); resolvers/composers
+    pure with injected IO (AP#27); renderer-emit parity enforced (AP#38). AI only
+    optionally fills the free-prose body/signoff. [GROUNDED]
+  · AAU ingest fragility (the #1 hand-rolled surface): aau-ingest-tournament/
+    _parse.ts (425 lines of positional <td>-index regex + datetime regex +
+    duplicated Eastern-DST math) and aau-scrape-tournament — break on any
+    TourneyMachine markup change. The one LLM path (parse-tournament-schedule)
+    hardcodes a brittle 7-line pattern + Legacy-Hoopers team mappings (won't
+    generalize to St Patrick) and hardcodes EDT (-04:00) "fine for Spring 2026"
+    (scheduleValidation.js:30-32 — latent off-DST bug). [GROUNDED]
+  · PERF: code-split via React.lazy/Suspense at route/heavy-component level, BUT
+    no manualChunks / rollupOptions in vite.config.js and NO CI bundle-size gate
+    (350KB budget §16.10 checked by hand; entry ~115KB gz and growing). [GROUNDED]
+  · No offline eval harness for the AI drafter (no golden-set fact-fidelity test).
+    [GROUNDED: absence]
+
+═══════════════════════════════════════════════════════════════════════════
+STEP 2/3 — CANDIDATES (what · where it fits · win · cost · privacy · GATE ·
+collision · lean). Gate legend: 🔴 HUMAN (money/schema/child/user-visible) ·
+🟡 BENCH (model/algo swap, offline eval first) · 🟢 ROUTINE.
+═══════════════════════════════════════════════════════════════════════════
+
+— MONEY PATH —
+M2. FIX THE OVERDUE PREDICATE (never-paid debtors) + one shared overdue source.
+  Where: src/lib/alerts/queries.js:117. Win: the worst debtor class stops being
+  invisible; the admin lane + the alert stop contradicting on one screen (honest-
+  claims). Cost: very low (read/alert logic only; no ledger write). Privacy: none.
+  GATE 🟢 ROUTINE. Collision: none. LEAN: SHIP FIRST (live bug).
+
+M1. AUTOMATED LEDGER-RECONCILIATION CHECK (SUM(transactions)==balance + void-pair
+  integrity). Where: behind useSeasonFinancials.js / family_balances; a vitest
+  fixture + periodic SQL check. Win: catches a corrupted void-pair or a BYPASSRLS
+  mutation before a parent sees it; fills the §6 reconciliation invariant that has
+  no automated guard. Cost: low (read-only). Privacy: none. GATE 🟢 ROUTINE (read-
+  only verification). Collision: none — it ENFORCES the money invariant. LEAN: PILOT→ship.
+
+M3. STRIPE (or Connect) + webhook-sole-writer ingestion. Where: replaces the
+  admin-hand-entry model (RecordPaymentForm, submit_registration). A stripe-
+  webhook-receiver edge fn becomes the SOLE automated writer of `payment` rows,
+  idempotent on event.id/payment_intent.id (model it on the existing app_secrets +
+  verify_jwt=false pattern, AP#31/#33). Win: online registration checkout;
+  eliminates manual double-submit risk. Cost: HIGH — PCI scope, refund/dispute
+  reconciliation, signing-secret handling. Privacy: new sub-processor (Stripe);
+  card data tokenized client-side (never touches our DB). GATE 🔴 HUMAN (money
+  path; Architect-scoped + Frank confirm). Collision: redefines "who writes the
+  ledger" — hand-entry must reconcile against the webhook. LEAN: PROTOTYPE in a
+  test-mode harness; ratify before any prod key.
+
+M4. SERVER-SIDE void/charge via SECDEF RPC + idempotency key. Where: the 3 raw
+  client inserts (RecordPaymentForm.jsx:44, AddChargeSheet.jsx:23, void :39). Win:
+  enforces void-pair field integrity at the DB; true idempotency; removes the last
+  raw client writes to the ledger. Cost: medium (3 RPCs + caller migration). GATE
+  🔴 HUMAN (changes who writes the ledger). LEAN: PROTOTYPE; pairs with M3.
+
+M5. INVOICE PDF + dunning (the invoices table + ar_aging view ALREADY exist,
+  20260613203959 / 20260613210010). Where: dormant invoices substrate + parent
+  receipt gap. Win: parent-facing receipts; automated overdue follow-up off
+  ar_aging buckets. Cost: medium (server-side PDF render — keep off the 350KB
+  bundle; reminder cron on the existing briefing-auto-draft-tick scheduler). GATE
+  🟡 — PDF/read is routine, but AUTO-SENDING dunning emails collides with the
+  Stream-B "auto-DRAFT only, never auto-fire" doctrine (§16.5): keep draft-only
+  (🟢) or gate any auto-send (🔴). LEAN: PROTOTYPE draft-only.
+
+— PRIVACY / ISOLATION —
+P1. AUTOMATED CROSS-TENANT + CROSS-CHILD ISOLATION TEST HARNESS. Where: the whole
+  RLS surface (current_user_player_ids, _teammate_player_ids, registrations PII
+  split). Seeds 2 orgs + 2 families, mints real JWTs per role, asserts the
+  NEGATIVE (tenant A reads 0 of B; parent A reads 0 of child B), runs in CI. Win:
+  converts manual impersonated-JWT replays into a regression gate — the single
+  highest-ROI guard on this pillar. Cost: medium (JWT minting + seed fixtures; run
+  on a Supabase branch). Privacy: synthetic data, none. GATE 🔴 HUMAN (touches the
+  child/auth surface) but it ENFORCES the invariants. Collision: none. LEAN: PILOT.
+
+P2. RLS ADVISOR / LINTER IN CI. Where: supabase/migrations/*. Scheduled get_advisors
+  (security+perf) + a static linter asserting every cmd=ALL policy has WITH CHECK
+  (AP#20) and every org-scoped SELECT references current_user_org_ids() (AP#37);
+  fail the PR on a new violation. Win: the past org-wide-PII deviation would have
+  flagged at author time. Cost: low. GATE 🟢 ROUTINE. Collision: none. LEAN: ship.
+
+P4. COPPA / PHOTO-VIDEO-RELEASE CONSENT FLOW + enforcement. Where: consentVersions
+  .js + guardian_consents (scaffold exists). Draft the docs, populate CONSENT_
+  VERSIONS, wire the signup-accept UI + a re-affirm gate on version bump. Win:
+  legal/COPPA defensibility for youth PII; the natural gate any future media/film
+  must join on. Cost: medium (legal copy + UI). GATE 🔴 HUMAN (child data). LEAN:
+  PROTOTYPE — MUST precede any film/media feature.
+
+P3. IMPERSONATION / VIEW-AS AUDIT LOG. Where: useHomeRole.js / RoleSwitcherSheet.
+  An append-only view_as_audit row (admin, target_guardian, org, started_at) when
+  view-as fires. Win: accountability trail for an admin previewing a family. Cost:
+  low. GATE 🔴 HUMAN (auth-adjacent). Collision: none (view-as stays client-side;
+  RLS unchanged). LEAN: PROTOTYPE.
+
+P5. PII-REDACTION LINT FOR THE COMMS ENGINE. Where: src/lib/engine/resolvers/* (the
+  per-recipient leak class). A test asserting no other-family contact/medical data
+  crosses into a recipient body, extending the existing signoff_enabled phone gate
+  (familyGuide.js:118) into a structural guard. Win: catches a future composer
+  that forgets the contact gate. Cost: low-medium. GATE 🟢 ROUTINE. LEAN: ship.
+
+— AI / ENGINE / PERF —
+A5. OFFLINE EVAL HARNESS FOR THE AI DRAFTER (fact-fidelity + voice). Where: gives
+  the BENCH gate teeth for A1/A2/A3; protects the §1 "never invent a fact"
+  invariant (briefing-ai-draft/_helpers.ts:38-52). Golden facts → assert no
+  fabricated numbers/names/venues, JSON shape, em-dash absence. NONE exists today.
+  Cost: medium (harness + golden set; synthetic fixtures). GATE 🟢 ROUTINE to
+  build — it is the ENABLING CONTROL for every AI change below. LEAN: BUILD FIRST.
+
+A4. manualChunks + CI BUNDLE-SIZE GATE. Where: vite.config.js (no manualChunks
+  today) + a CI assertion vs the 350KB budget. Win: smaller entry chunk, faster
+  FCP/TTI, automated regression guard. Cost: low. GATE 🟢 ROUTINE. LEAN: ship.
+
+A6. PROMPT CACHING (cache_control: ephemeral) on the static instruction prefixes.
+  Where: the callClaude bodies (parse-tournament-schedule/index.ts:47-58 etc.).
+  Win: ~90% cost cut on the cached prefix + lower TTFT. Cost: low (verify the
+  prefix ≥2048 tokens with count_tokens first). GATE 🟢 ROUTINE. LEAN: ship.
+
+A2. MODEL UPGRADE claude-sonnet-4-5 → claude-sonnet-4-6 (+ consider claude-haiku-4-5
+  for the parser: $1/$5 vs $3/$15). Where: the 3 model: strings. Win: newer model
+  quality; ~3× cost cut on the parser if Haiku holds accuracy. GATE 🟡 BENCH.
+  ACCEPTANCE BAR (declare before run): re-run the AAU "CT Rumble" ground-truth —
+  require ≥10/10 row match on ≥3 real pastes, ZERO hallucinated games, before
+  promotion; for the drafter, ZERO fact-fabrication on the A5 golden set. Re-run
+  the 4-5 baseline in the same pass. LEAN: PILOT after A5.
+
+A1. STRUCTURED OUTPUTS (json_schema) for the drafter + parser. Where: replaces the
+  fence-strip + single-retry parse (briefing-ai-draft/_helpers.ts:65-77, parse-
+  tournament-schedule/_helpers.ts:70-89). Win: eliminates the malformed-JSON
+  failure class; removes the retry round-trip. Cost: low (request-param; hand-roll
+  output_config.format on the raw-HTTP path). GATE 🔴 HUMAN (output is user-visible
+  + feeds the comms pipeline — verify rendered briefings don't change). LEAN:
+  PILOT after A5.
+
+A3. LLM TOURNAMENT-HTML PARSING as a FALLBACK to the regex scrapers. Where: when
+  the regex parse yields zero rows, feed cleaned TM HTML to Claude w/ structured
+  output. Win: robustness to TM markup drift (the #1 fragility) without losing the
+  regex determinism on the happy path. Cost: medium ($ per ingest, latency). GATE
+  🟡 BENCH + partial 🔴 (writes division_games schema substrate). ACCEPTANCE BAR:
+  byte-equal row set vs the regex parser on a saved-TM-page corpus before it
+  touches the writer. LEAN: PROTOTYPE as fallback-only.
+
+REJECTED / OUT OF SCOPE THIS PASS:
+  · Wiring any AI output INTO the money/credit/schema path — breaks the AI-
+    quarantine + determinism invariants. The current quarantine is clean; keep it.
+  · A child film/media surface — none exists; do NOT add one before P4 (COPPA
+    consent) lands as its gate. 🔴
+
+═══════════════════════════════════════════════════════════════════════════
+STEP 4 — PRIORITIZATION (sequenced; what each gates/unblocks)
+═══════════════════════════════════════════════════════════════════════════
+P1  M2  Fix overdue predicate            🟢  LIVE honest-claims bug — ship now.
+P2  M1  Ledger-reconciliation check      🟢  guards the §6 money invariant.
+P3  P1  Cross-tenant/child isolation CI  🔴* foundational isolation guard (*enforcing).
+P4  P2  RLS advisor/linter CI            🟢  auto-catches the next broad-policy slip.
+P5  A5  AI offline eval harness          🟢  ENABLING control for all AI changes.
+P6  A4  manualChunks + bundle CI gate    🟢  perf + regression guard.
+P7  A6  Prompt caching                   🟢  cheap AI cost/latency win.
+P8  P5  Comms PII-redaction lint         🟢  hardens the per-recipient leak class.
+P9  A2  Model 4-5→4-6 (+Haiku parser)    🟡  after A5; quality + cost (offline eval).
+P10 A1  Structured outputs               🔴🟡 after A5; kills malformed-JSON class.
+P11 P4  COPPA consent flow               🔴  biggest compliance gap; gates media/film.
+P12 M3  Stripe webhook-sole-writer       🔴  online checkout; the big money upgrade.
+P13 M4  SECDEF write RPCs + idempotency  🔴  pairs with M3; removes raw ledger writes.
+P14 A3  LLM ingest fallback              🟡  ingest robustness (fallback-only).
+P15 P3  Impersonation audit log          🔴  accountability trail.
+P16 M5  Invoice PDF + draft-only dunning 🟡  parent receipts; respects §16.5.
+
+SEQUENCING LOGIC: P1–P2 are cheap, ungated, and fix/guard live money correctness.
+P3–P8 are the GUARD RAILS + enabling controls (isolation test, RLS linter, AI eval
+harness, bundle gate, PII lint) — they make every gated bet below them safe to
+attempt. P9–P16 are the gated upgrades, each now backed by a control: model/output
+swaps ride the A5 eval (🟡), the money-path bets (M3/M4) and child-data/COPPA (P4)
+ride the 🔴 human flip after Architect ratify and an offline harness, never on a
+synthetic-only pass.
+
+RE-RUN: re-runnable per pillar on cadence/request. This pass is a DOC. Per §2.4/§11.8
+every candidate is Architect-scoped: CC prepares, the Architect ratifies, Frank owns
+the key/flip/spend ceiling. No code changed in this pass.
