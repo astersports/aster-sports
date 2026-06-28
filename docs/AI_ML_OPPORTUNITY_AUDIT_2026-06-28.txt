@@ -1,0 +1,122 @@
+AI / ML OPPORTUNITY AUDIT — aster-sports
+Date: 2026-06-28
+Author: CC (Claude Code). Read-only audit across all app surfaces via 5 partitioned agents
+(comms, scheduling/RSVP, financial/registration, roster/standings, home/insights).
+Status: ARCHITECT-DECISION artifact (per CLAUDE.md §11.8 / §2.4). Identify phase complete;
+implement phase is operator/architect-gated per the gates below.
+
+=====================================================================================
+0. EXECUTIVE SUMMARY
+=====================================================================================
+- AI is ALREADY wired: Anthropic Claude (claude-sonnet-4-5) via 3 admin-gated edge
+  functions — briefing-ai-draft, suggest-briefing-closer, parse-tournament-schedule —
+  each reading app_secrets.anthropic_api_key (AP#33), JWT-verified, admin-authz, using
+  organizations.voice_config.ai_draft_profile as the system prompt. MOST opportunities
+  EXTEND this proven path; few need new infra.
+- Two constraints dominate every recommendation:
+  (A) DATA SPARSITY — ~60 active families / 5 teams / ~12 games per player / ~2 seasons.
+      Transparent heuristics + well-calibrated probabilities beat trained ML. The
+      doctrine's own scale-detector calibration history (false-rejects ~1/3) is the
+      cautionary precedent.
+  (B) §16.12 GAME-STATS LOCK — per-player GAME stats (pts/reb/ast…) are team-level-only.
+      player_game_stats IS already populated by the live scorer, which makes per-player
+      game-stat AI features trivially buildable and exactly what the lock forbids.
+      Engagement stats (attendance, RSVP timeliness) ARE per-player allowed.
+- Live data census (queried 2026-06-28): event_rsvps=1701 (all have responded_at; median
+  lead 24h) — RICH. check_ins=0, event_arrivals=21, ride_claims=0, player_activations=2,
+  guardians have NO home lat/lon. => attendance ground-truth is essentially unlabeled
+  (RSVP-going is the only proxy); ride-matching is cold-start-blocked.
+
+=====================================================================================
+1. GATE CLASSIFICATION (what can ship routine vs. what needs ratification)
+=====================================================================================
+ROUTINE (extends already-blessed admin-only Claude path on admin-authored facts; no new
+sub-processor, no money path, no schema): voice-polish/rewrite, recap-draft assist,
+expand AI-draft to more kinds, voice-profile bootstrapper, few-shot voice grounding,
+deterministic insight chips/heuristics that only READ existing views.
+
+ARCHITECT-SCOPED (must be ratified before build):
+- Any flow sending PARENT/family free-text to an LLM (translation, DM reply-assist,
+  smart-collections message gen on family data) => NEW sub-processor/PII boundary (§6/§16.7).
+- Any new SCHEMA (the shared baseline snapshot table for trend/anomaly items) => migration.
+- Anything touching backend credit/ledger/Stripe/submit_registration => money path (§2.4).
+- Any per-player GAME-stat surfacing => BLOCKED by §16.12 (not a gate — a hard no).
+
+=====================================================================================
+2. UNIFIED RANKED MENU (top picks; full per-group lists below)
+=====================================================================================
+TIER 1 — safe, high-value, routine, extends existing infra (build first):
+ T1. AI voice-polish / "rewrite in our voice / warmer / shorter" on the briefing composer.
+     S effort. Pure extension of briefing-ai-draft (mode=redraft already exists).
+     Admin-authored text only. No new PII/sub-processor/schema. [LEAN: build first]
+ T2. One-tap AI game-recap / score narration draft (game_recap/games_recap/tournament_recap
+     already ANCHORED_KINDS in briefing-ai-draft; mostly UI wiring). S. §16.12 guardrail:
+     facts-allowlist must EXCLUDE per-player game stats; team result + PoG first name OK.
+ T3. AI bracket/standings scenario narration — turn deterministic predictBracket output into
+     org-voice plain-English, auto-populating the hand-authored championship_scenarios table.
+     S-M. Team-level only (§16.12-clean).
+ T4. RSVP flip-propensity / reliability scoring (pure data, NO LLM) to order the existing
+     Stream-B nudge draft by who's most likely to flip → going. S-M. Built from the rich
+     event_rsvps history; family-private (§16.7). No infra, no gate.
+ T5. Voice-profile bootstrapper on AdminSettings — generate the ≥200-char
+     voice_config.ai_draft_profile the edge fn requires, so tenant #2 (St Patrick) gets
+     working AI drafts without hand-authoring it. M. Multi-tenant unblocker.
+
+TIER 2 — high value, needs one new schema (baseline snapshot table) OR more design:
+ - "What needs your attention" per-role AI digest (synthesis of existing alert/needs-you
+   signals into prioritized prose). Highest leverage; one shared synth edge fn. Needs
+   role-scoped fact cropping; cache per signal-hash to control cost.
+ - Program-health / engagement anomaly narration + new statistical alert-evaluator keys.
+   Detection deterministic (z-score vs baseline); LLM only for the sentence. Needs a shared
+   program_health_snapshots table (architect-scoped migration).
+ - Delinquency / late-payer heuristic chip + ledger-anomaly (duplicate-charge) read-only
+   panel + family segmentation — all read-only over family_balances/financial_transactions
+   (ungated as long as they never WRITE the ledger). Build on ONE shared useFamilyRiskSignals
+   hook (AP#42/#63).
+ - margin-aware predictBracket (close the documented 1-0-margin limitation) — sparsity risk;
+   empirical margin sampler, not a trained model.
+
+TIER 3 — architect-scoped (new sub-processor/PII) — ratify first:
+ - Bidirectional EN↔ES translation (§16.6, locked-but-unbuilt) for outbound briefings +
+   inbound parent replies. Greenfield; needs sub-processor disclosure (§6/§16.7).
+ - DM/inbox reply-assist (parent/coach free-text → LLM).
+ - Smart-collections message generation on family financial data.
+
+DEFER (data too sparse / low actionability now):
+ - Intelligent ride-matching (0 ride claims, no guardian geo) — ship a rule-based
+   time-overlap matcher + START capturing opt-in pickup coords for a future model.
+ - Optimal scheduling suggestions (gym/league-constrained — low actionability).
+ - Fee/pricing elasticity (one tenant, ~5 divisions — guesswork until multi-tenant).
+ - Trained churn / attendance models — revisit once tenant #2 adds cross-tenant data.
+
+=====================================================================================
+3. CROSS-CUTTING ARCHITECTURE NOTES
+=====================================================================================
+- ONE shared synthesis edge fn should back all "facts → org-voice prose" items (clone the
+  proven suggest-briefing-closer scaffold: getAppSecret + callClaude + JWT/authz + AP#30
+  mirror). Do not stand up four functions.
+- ONE shared baseline snapshot table backs all trend/anomaly items — build once.
+- ONE shared per-family risk-signal hook backs all financial-insight items (AP#42/#63 —
+  one source, one scope, labeled).
+- DETECTION ≠ NARRATION: keep detection deterministic/statistical (testable, free, no
+  hallucination); reserve the LLM for the human-readable sentence.
+- COST control: gate model calls on explicit action or threshold-cross + cache per
+  signal-hash. NEVER call the model on the 60s alert poll.
+- §16.12 enforcement point: a shared facts-allowlist that strips player_id-keyed game-stat
+  fields before ANY AI call that touches game data.
+- PRIVACY default: every synthesis call role-scoped server-side before facts leave the app
+  (parent=own kids, coach=own team, admin=all).
+
+=====================================================================================
+4. RECOMMENDED SEQUENCE (CC labeled lean per AP#39)
+=====================================================================================
+1) Ship T1 (voice-polish) now — smallest, zero-gate, demonstrates the pattern. (in progress)
+2) Then T2 (recap assist) + T4 (RSVP propensity) — both routine, high daily value.
+3) Architect ratifies: the shared snapshot table (Tier 2 trend/anomaly) and the Tier 3
+   PII/sub-processor items (translation first — it's locked doctrine, §16.6).
+4) Build the "needs your attention" digest on the shared synth fn once the role-scoping
+   contract is ratified.
+5) Defer the sparsity-blocked items; revisit at tenant #2 onboarding.
+
+FULL PER-GROUP FINDINGS (comms / scheduling / financial / roster / home) are retained in
+the session transcript and summarized per tier above; reproduce on request.
