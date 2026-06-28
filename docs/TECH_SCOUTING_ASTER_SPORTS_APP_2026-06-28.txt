@@ -40,7 +40,10 @@ make the UI claim something the data does not support.
 ================================================================================
 STEP 1 — GROUND AGAINST THE REAL CODE
 ================================================================================
-Verified this pass against /home/user/aster-sports @ main:
+Verified this pass against the aster-sports repo @ main, commit
+7dbcf86 (the doc branch's merge-base). All greps below were scoped to
+`src/` + `package.json` (NOT repo-wide — this doc itself now contains the
+package names, so a repo-wide grep is no longer reproducible).
 
 G1. [GROUNDED] Data layer is hand-rolled. 163 files in src/hooks/; ~60+ are
     bespoke `useEffect(() => { ... supabase.from(...) ... }, [deps])` fetchers
@@ -49,12 +52,14 @@ G1. [GROUNDED] Data layer is hand-rolled. 163 files in src/hooks/; ~60+ are
     SWR anywhere in package.json or src/ (grep: "none found"). Consequences we
     already pay for: each hook re-implements loading/error/cancel/refetch;
     AP#36 (destructured-default swallows supabase errors) is a recurring class
-    BECAUSE every hook hand-writes the fetch; no request dedup or shared cache
+    BECAUSE every hook hand-writes the fetch (grep of src/ + package.json for
+    @tanstack/react-query / swr: "none found"); no request dedup or shared cache
     (two components mounting useOrgTeams = two queries); manual
     useRefetchOnVisible.js / useInterval.js stand in for stale-while-revalidate.
 
-G2. [GROUNDED] No list virtualization exists. grep for react-window /
-    react-virtuoso / @tanstack/react-virtual = "none found". Long lists render a
+G2. [GROUNDED] No list virtualization exists. grep of src/ + package.json for
+    react-window / react-virtuoso / @tanstack/react-virtual = "none found". Long
+    lists render a
     full `.map()` (RosterSection.jsx, PlayerRow.jsx, UpcomingEvents.jsx;
     Records/Schedule/Inbox likewise). This DIRECTLY violates the standing
     doctrine §16.10: "Long lists (>30 items) must virtualize." Today the org has
@@ -62,7 +67,8 @@ G2. [GROUNDED] No list virtualization exists. grep for react-window /
     is unmet platform-wide and a 2nd/3rd tenant (St Patrick) trips it.
 
 G3. [GROUNDED] No React Compiler. vite.config.js plugins = [react(),
-    tailwindcss(), sentry?]. There is no babel-plugin-react-compiler /
+    tailwindcss(), and @sentry/vite-plugin (added conditionally only when
+    SENTRY_AUTH_TOKEN is set)]. There is no babel-plugin-react-compiler /
     vite-plugin-react-compiler. React is 19.2.7 (compiler-eligible). All
     memoization is manual (useMemo/useCallback scattered, or absent).
 
