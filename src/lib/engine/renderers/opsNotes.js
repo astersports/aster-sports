@@ -1,5 +1,5 @@
 // Template T5 — Operational notes.
-// Navy eyebrow (operator-titled) + bullet list with cobalt bullets.
+// Navy eyebrow (operator-titled) + bullet list with gold bullets.
 
 import { escapeHtml } from './_util';
 import { BRAND_GOLD } from '../colors';

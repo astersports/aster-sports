@@ -33,7 +33,7 @@ export default function RecordsTeamList({ teams, recordsByTeam, loading, error, 
         <span>Couldn&apos;t load the records. Try again in a moment.</span>
         {onRetry && (
           <button type="button" className="as-press" onClick={onRetry}
-            style={{ minHeight: 44, padding: '0 18px', display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 8, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', fontSize: 13, color: '#fff', background: 'var(--as-bc-cobalt)', border: '1px solid var(--as-bc-cobalt)' }}>
+            style={{ minHeight: 44, padding: '0 18px', display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 8, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', fontSize: 13, color: '#151525', background: 'var(--as-bc-cobalt)', border: '1px solid var(--as-bc-cobalt)' }}>
             <RotateCw size={14} strokeWidth={1.75} aria-hidden="true" /> Retry
           </button>
         )}

@@ -24,7 +24,7 @@ function Chip({ on, onClick, label, icon: Icon }) {
         ...CHIP,
         border: on ? '1px solid var(--as-bc-cobalt)' : '1px solid rgba(255,255,255,0.15)',
         background: on ? 'var(--as-bc-cobalt)' : 'rgba(255,255,255,0.05)',
-        color: on ? '#fff' : 'rgba(255,255,255,0.7)',
+        color: on ? '#151525' : 'rgba(255,255,255,0.7)',
       }}
     >
       {Icon ? <Icon size={14} strokeWidth={1.75} aria-hidden="true" /> : null}
