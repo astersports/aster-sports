@@ -3,12 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import { useTeams } from '../hooks/useTeams';
 import { useOrgTeamRecords } from '../hooks/useOrgTeamRecords';
 import { usePublicTournaments } from '../hooks/usePublicTournaments';
-import { EMPTY_SUMMARY } from '../lib/teamRecords';
 import { isCompetitiveTeam } from '../lib/teamTypes';
 import { supabase } from '../lib/supabase';
 import StatHeroBar from '../components/broadcast/StatHeroBar';
 import TournamentCard from '../components/broadcast/TournamentCard';
-import TeamAccordion from '../components/records/TeamAccordion';
+import RecordsTeamList from '../components/records/RecordsTeamList';
 import AdminBackHeader from '../components/admin/AdminBackHeader';
 
 const EYEBROW = { fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--as-bc-cobalt)' };
@@ -19,8 +18,7 @@ export default function RecordsPage() {
   // C-12: standings are AAU-semantics — exclude camp/clinic/academy teams.
   const teams = useMemo(() => allTeams.filter(isCompetitiveTeam), [allTeams]);
   const { data: tournaments } = usePublicTournaments(orgId);
-  const { byTeamId: recordsByTeam } = useOrgTeamRecords(orgId);
-  const [expandedTeam, setExpandedTeam] = useState(null);
+  const { byTeamId: recordsByTeam, loading: recordsLoading, error: recordsError, refetch: refetchRecords } = useOrgTeamRecords(orgId);
   const [picked, setPicked] = useState(null);
   const [seasons, setSeasons] = useState([]);
 
@@ -80,7 +78,7 @@ export default function RecordsPage() {
               const on = s.id === seasonId;
               return (
                 <button key={s.id} type="button" role="tab" aria-selected={on} className="as-press"
-                  onClick={() => { setPicked(s.id); setExpandedTeam(null); }}
+                  onClick={() => setPicked(s.id)}
                   style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', padding: '8px 16px', borderRadius: 8, cursor: 'pointer',
                     border: on ? '1px solid var(--as-bc-cobalt)' : '1px solid rgba(255,255,255,0.15)',
                     background: on ? 'var(--as-bc-cobalt)' : 'rgba(255,255,255,0.05)', color: on ? '#fff' : 'rgba(255,255,255,0.7)' }}>
@@ -103,19 +101,13 @@ export default function RecordsPage() {
         <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, textTransform: 'uppercase', color: '#fff', lineHeight: 1.05, marginBottom: 16 }}>
           SEASON <span style={{ color: 'var(--as-bc-cobalt)' }}>RECORDS</span>
         </h2>
-        <div role="status" aria-live="polite" aria-atomic="true" style={{ position: 'absolute', left: -9999, width: 1, height: 1, overflow: 'hidden' }}>
-          {teamsLoading ? 'Loading records...' : `Loaded ${seasonTeams.length} teams.`}
-        </div>
-        {teamsLoading && Array.from({ length: 5 }).map((_, i) => <div key={i} className="bc-team-skeleton" />)}
-        {seasonTeams.map((team) => (
-          <TeamAccordion
-            key={team.id}
-            team={team}
-            summary={recordsByTeam[team.id] || EMPTY_SUMMARY}
-            expanded={expandedTeam === team.id}
-            onToggle={() => setExpandedTeam(expandedTeam === team.id ? null : team.id)}
-          />
-        ))}
+        <RecordsTeamList
+          teams={seasonTeams}
+          recordsByTeam={recordsByTeam}
+          loading={teamsLoading || recordsLoading}
+          error={recordsError}
+          onRetry={refetchRecords}
+        />
         {showTournaments && tournaments.length > 0 && (
           <div style={{ marginTop: 32 }}>
             <div style={{ ...EYEBROW, fontSize: 14, marginBottom: 8 }}>Tournaments</div>
