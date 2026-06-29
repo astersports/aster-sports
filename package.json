@@ -50,7 +50,7 @@
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "knip": "^6.23.0",
-    "lint-staged": "^16.4.0",
+    "lint-staged": "^17.0.8",
     "supabase": "^2.108.0",
     "tailwindcss": "^4.2.2",
     "vite": "^8.1.0",
