@@ -1,0 +1,163 @@
+CONSOLIDATION — PHASED BUILD PLAN (functionality per stage)
+CC lane · 2026-06-29 · companion to CONSOLIDATION_AUDIT + CONSOLIDATION_TIERS_AND_FUNCTIONALITY
+Target: aster-sports / astersports.app · Status: architect-ratified; P0-P1 unblocked
+
+=====================================================================
+HOW TO READ
+=====================================================================
+7 phases (P0-P6). Each lists: GOAL · FUNCTIONALITY the user can now do (by tier) · WHAT'S
+BUILT (grounded: IN-APP reuse vs NEW) · DEPENDS ON · EXIT CRITERIA · SCOPE. Tiers:
+T0 free public Hub · T1 Hub Plus ($20/mo, 7-day trial) · P0-P2 program ladder. "Super-admin
+first" (DR-R) is honored: P0-P1 stand up the rails Frank operates before parent/coach open.
+
+Dependency spine: P0→P1 are the money/entitlement rails (independent, cheapest proof).
+P2 is the free gateway (the big UI unit). P3 lights up paid features (needs P1+P2). P4 is
+cutover. P5 is the B2B program ladder (parallelizable). P6 (film/AI premium) is last.
+
+=====================================================================
+P0 — SETUP & SUPER-ADMIN + ENTITLEMENT BRIDGE
+=====================================================================
+GOAL: stand up the substrate Frank drives as super-admin; flip the inert gate live. No
+consumer-facing change yet.
+FUNCTIONALITY:
+  • [super-admin] Frank operates platform-wide: grant/revoke a test account's entitlement,
+    see the gate flip. (Restrict down to coach/parent in later phases.)
+  • [internal] The app reads real entitlement instead of the hardcoded stub.
+WHAT'S BUILT:
+  • IN-APP: `family_entitlements` (exists), `is_entitled()` (exists, counts trialing),
+    role/RLS (exists). Super-admin/cross-org per the existing cross-org decision doc.
+  • NEW: add `plan` column (free/plus) to `family_entitlements`; replace
+    `entitlement.ts` hardcode (`isPlusEntitled` super-admin-only) with an `is_entitled` read.
+DEPENDS ON: nothing (cheapest proof).
+EXIT: Frank grants a test user → `is_entitled` true → the (still-dark) Plus surfaces unlock
+for that user only; revoke → relock. No public change.
+SCOPE: architect-scoped (entitlement/schema).
+
+=====================================================================
+P1 — MONEY-PATH (7-day trial → $20/mo rails)
+=====================================================================
+GOAL: the platform's first consumer money-path, end-to-end + testable, before any UI port.
+FUNCTIONALITY:
+  • [T1 rails] A user can start a 7-day trial and convert to $20/mo: Stripe checkout,
+    customer portal (manage/cancel), trial reminder BEFORE the first charge with one-tap
+    cancel, explicit pre-charge consent copy. (Features gated dark until P3.)
+WHAT'S BUILT:
+  • NEW Supabase edge fns: `billing-checkout` (Stripe Checkout session, trial-mode-AGNOSTIC
+    + `trial_end`; default card-up-front — DR-T) and `billing-webhook` (Stripe-signature-
+    validated; SOLE writer of `family_entitlements`: created/updated/deleted/past_due →
+    status). Studio `server/{stripe,billing,webhook,shadowBilling}.ts` as TEMPLATE only.
+  • NEW: trial-reminder cron (edge fn + pg_cron); Stripe keys in `app_secrets` (platform
+    secret convention); customer-portal link.
+DEPENDS ON: P0 (entitlement schema/read).
+EXIT: in Stripe test mode a test parent runs trial→charge; webhook writes status idempotently;
+cancel/refund + reminder verified. ONE writer; Scout/leads never write entitlement.
+SCOPE: architect-scoped + onboarding-gate (money-path); owner-applied.
+
+=====================================================================
+P2 — FREE GATEWAY (T0: the public Hub becomes the parent's home)
+=====================================================================
+GOAL: the consolidated FREE Hub live on astersports.app — any parent, no login. The wedge.
+FUNCTIONALITY (T0, free forever):
+  • Search any AAU team; tournament directory/browse; live scores; team schedule;
+    standings/records/bracket; team detail; up-next countdown; constellation home; Ask-Scout.
+  • Track teams: anonymous (localStorage); on sign-in, tracks SYNC to the account so a
+    no-org parent persists across devices.
+  • A signed-in parent with NO program lands on the family Hub (not a dead-end).
+WHAT'S BUILT (the architect's "step 3" unit):
+  • IN-APP: all `get_public_*` RPCs (shipped, anon-gated), `useWeather`, `getDirectionUrls`,
+    public-route pattern (`App.jsx:74-82`), `family_subscriptions` (DR-P target).
+  • NEW: no-org family-Hub home route; make `SeasonProvider`/`WeatherProvider` no-org-
+    tolerant; DR-A role-type routing (anon→Hub, parent→family Hub, staff→role home);
+    DR-P localStorage store + sync-on-login → `family_subscriptions` (public team refs only).
+  • PORT (.tsx→.jsx) over the existing RPCs: tracking, schedule, standings/bracket, find/
+    discovery, constellation home, conflict radar (read), Scout (re-point SSE).
+DEPENDS ON: P0 (for the gated-but-present Plus surfaces). Independent of P1.
+EXIT: an anonymous visitor uses the full free Hub on astersports.app; a no-org signed-in
+parent persists tracked teams; zero org required; public read indexable.
+SCOPE: mostly routine UI port + one additive auth seam (architect-aware: the no-org route).
+
+=====================================================================
+P3 — HUB PLUS (T1: the paid assistant goes live)
+=====================================================================
+GOAL: light up the weekend-assistant layer behind the P1 trial/paywall.
+FUNCTIONALITY (T1, 7-day trial → $20/mo per account):
+  • Leave-by + traffic-aware ETA; per-game weather across the list (+severe/feels-like);
+    schedule-change + low-RSVP push alerts; conflict/"babysitter" radar incl. travel-time
+    (back-to-back across venues); whole-weekend multi-kid agenda; bracket scenarios;
+    calendar sync (webcal subscribe); add-a-tournament (paste-to-track).
+WHAT'S BUILT:
+  • IN-APP: web-push (`send-push`), ICS feeds (`team-feed`/`family-feed`), the P1 money-path.
+  • NEW: wire `PlusGate`→`is_entitled` + trial CTA/consent; the weekend agenda (cross-team);
+    travel-time conflicts (driveTime); traffic ETA via a provider (DR-6/N1: TomTom or Google
+    Routes); push wiring for alerts.
+DEPENDS ON: P1 (billing) + P2 (the Hub UI to gate).
+EXIT: a parent starts a trial, uses the assistant, converts to $20/mo; entitlement gates
+correctly; surprise-charge guards (consent + reminder) verified.
+SCOPE: architect-scoped (gated surface + the traffic-vendor pick, DR-6).
+
+=====================================================================
+P4 — CUTOVER & CONSOLIDATION
+=====================================================================
+GOAL: make astersports.app THE front door; retire the standalone; unify the host.
+FUNCTIONALITY: no new user features — operational unification + no broken links.
+WHAT'S BUILT:
+  • Public Hub = the .app front door (DR-A); 301 `astersports.io/aau` + the legacy-hoopers
+    Railway URL → astersports.app; sitemap/canonicals (no SEO loss).
+  • Host swap Vercel→Railway (DR-H, endorsed) — atomic, sequenced here.
+  • Retire legacy-hoopers; slim astersports-web to Studio + landing (delete the AAU route/dir;
+    the pointer doc PR #242 records this).
+DEPENDS ON: P2 (front door exists), ideally P3.
+EXIT: one app, one front door, one host; old URLs redirect; traffic preserved.
+SCOPE: architect-scoped (domain/deploy cutover).
+
+=====================================================================
+P5 — PROGRAM LADDER (B2B: AAU programs sign on)
+=====================================================================
+GOAL: programs adopt the platform to maintain their content + run registration. ("if not
+only parents like the app, the AAU programs sign on … schedules … then registration.")
+FUNCTIONALITY:
+  • P0 claimed listing — a verified org claims its public Hub presence (likely free).
+  • P1 Program Hub — org maintains schedules / rosters / scores / announcements (reuse the
+    app's coach/admin surfaces + comms engine).
+  • P2 Registration + payments — program registration/enrollment + fee collection.
+WHAT'S BUILT:
+  • IN-APP: org `subscription_plan`, `RegisterFlowPage`, financials substrate, comms engine,
+    coach/admin surfaces.
+  • NEW: program claim/verify flow; program subscription money-path writer; wire registration
+    charging; program onboarding (super-admin → org-admin → coach).
+DEPENDS ON: P0-P1 (entitlement pattern reused); parallelizable with P2-P4.
+EXIT: a program self-onboards, maintains its schedule, runs a registration with payment.
+SCOPE: architect-scoped (B2B money-path + tenancy). Charging models defined as we progress.
+
+=====================================================================
+P6 — PREMIUM · AI · FILM (last)
+=====================================================================
+GOAL: the evergreen/premium layer; the biggest net-new build, gated.
+FUNCTIONALITY:
+  • Family film room — saved clips / auto-highlights; COPPA-gated (`can_access_child`,
+    guardian-verified) — locked for everyone (incl. super-admin) until verification.
+  • Advanced AI recaps/insights; T1+ premium add-ons (bundle vs add-on — TBD).
+WHAT'S BUILT:
+  • NEW: media pipeline (Supabase Storage), capture/clip, AI auto-highlight; COPPA consent
+    flow; premium gating. Latest AI models throughout (DR-AI), no-fabrication guardrail.
+DEPENDS ON: P3 (entitlement) + COPPA verification flow.
+EXIT: guardian-verified parents access film; COPPA boundary holds at the DB.
+SCOPE: architect-scoped (COPPA + storage + money).
+
+=====================================================================
+PHASE → TIER → "READY WHEN" SUMMARY
+=====================================================================
+P0 rails(super-admin)        · internal      · gate flips for a test user
+P1 money-path                · T1 rails      · trial→charge works in test mode
+P2 free gateway              · T0            · anyone uses the free Hub, no login
+P3 Hub Plus                  · T1            · parent converts to $20/mo, assistant live
+P4 cutover                   · —             · one app/host/front-door, 301s
+P5 program ladder            · P0/P1/P2      · a program onboards + runs registration
+P6 premium/AI/film           · T1+/T2        · guardian-verified film, COPPA held
+
+OPEN (define as we progress): program-ladder pricing; T1+ add-on bundling; trial default
+(card vs no-card — flippable experiment, DR-T); super-admin cross-org scoping specifics.
+
+=====================================================================
+END — phased plan. Build begins at P0-P1 on greenlight.
+=====================================================================
