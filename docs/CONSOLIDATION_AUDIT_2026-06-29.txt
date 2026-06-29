@@ -1,0 +1,201 @@
+CONSOLIDATION AUDIT — AAU Hub + Legacy Hoopers → astersports.app, free→tiered
+CC lane · 2026-06-29 · for architect ratification
+Target repo: aster-sports (astersports.app) · companion to AAU_FAMILY_HUB_BUILD_SPEC_2026-06-26.txt
+
+=====================================================================
+0. PURPOSE & INPUTS
+=====================================================================
+Objective (Frank): consolidate the AAU Hub (astersports-web) + the legacy-hoopers
+public program functionality INTO aster-sports (astersports.app) as the FREE parent
+gateway, then a tiered roll-out — Tier 0 free, a 7-day trial, then a monthly charge.
+
+This doc is the grounded audit + decision register. Inputs: the architect's deep review
+(2026-06-29), 8 CC code-grounding agents across all 5 repos + both live deployments, and
+Frank's in-session decisions. Every claim is file:line / config / live-probe grounded.
+HEADLINE: this is far more BUILT and RATIFIED than the "two apps to merge" framing — it
+is a frontend port + a thin no-org home + the first consumer money-path, on a backbone
+aster-sports ALREADY owns.
+
+GROUNDING: [G] verified · [UX] judgment · [V] to verify. SCOPE: routine / architect.
+
+=====================================================================
+1. CORRECTED TOPOLOGY (live-probed)
+=====================================================================
+| Repo | Live | Host | Role | Data |
+|---|---|---|---|---|
+| aster-sports | astersports.app | **Vercel** (server:Vercel) | Authed AAU family platform — THE target | Supabase `vrwwpsbfbnveawqwbdmj` only |
+| astersports-web | astersports.io(/aau) | **Railway** | AAU Hub + **Print Studio** + landing/scout + platform-admin + **live Stripe billing** | Supabase (AAU anon reads) + own Postgres (studio/billing) |
+| legacy-hoopers | railway | **Railway** | One org's public AAU site (cut-down Hub) | Supabase anon (2 RPCs) + stale MySQL residue |
+| st-patricks-armonk | (separate acct) | Railway | **Parish website — different vertical** | own MySQL, NOT on the backbone |
+| aster-weather | — | not deployed | shared `@aster/weather` library | — |
+
+Three framing corrections from the inherited CC view:
+- C1 [G] astersports-web is NOT "just the Hub" — Hub + Studio + landing + admin + a
+  live tested Stripe subscription/trial system. AAU↔Studio have ZERO cross-imports
+  (cleanly separable).
+- C2 [G] aster-sports is JS/JSX + **Vercel + Supabase, no Node server**; the Hub is
+  TS/tRPC on Railway. Porting = .tsx→.jsx + dropping the tRPC server layer (weather/scout
+  re-home to Supabase-native paths).
+- C3 [G] The AAU data + the family/entitlement schema ALREADY LIVE in aster-sports'
+  Supabase (§2). Consolidation is a frontend + thin-auth job, not a DB migration.
+
+=====================================================================
+2. WHAT ALREADY EXISTS IN THE TARGET (the reason this is ~70-80% done)
+=====================================================================
+2.1 AAU BACKBONE [G] — native to aster-sports' Supabase:
+  ~30 `aau_*` migrations (2026-06-26→28), edge fns `aau-{ingest,scrape,submit}-tournament`,
+  the standings engine `src/lib/standings/*` + parser `src/lib/aau/*`, and a FROZEN public
+  contract `docs/aau/PUBLIC_RPC_CONTRACT.md`. Public AAU data lives in a dedicated isolated
+  org "AAU Tournaments" (`a51e2a00-…0001`, public_listing_enabled=true), separate from the
+  pilot tenant.
+2.2 ANON PUBLIC GATEWAY [G] — already shipped, anon-safe:
+  `get_public_tournament_directory/standings/teams/games`, `get_public_aau_team_schedule`,
+  `search_public_aau`, `get_public_live_now`, `get_public_team_records/schedule`,
+  `get_aau_ingest_status` — all `GRANT EXECUTE TO anon`, gated by `org_is_public_listed()`,
+  PII-stripped. Anon public ROUTES already exist shell-less in `src/App.jsx:74-82`
+  (`/schedule/:teamId`, `/r/:slug`) with the `usePublic*` hook pattern.
+2.3 ENTITLEMENT + FAMILY SUBSTRATE [G] — ALREADY BUILT (this is the big one):
+  `family_entitlements` (20260626152720): `user_id` PK, `stripe_customer_id`,
+  `stripe_subscription_id`, `status ∈ {active,trialing,past_due,canceled,inactive}`,
+  `current_period_end` — the per-user SaaS subscription table. Plus `family_children`,
+  `family_subscriptions`, `child_links`. Gates are DB-ENFORCED: `is_entitled(uuid)` and
+  `can_access_child(uuid,uuid)` are SECURITY DEFINER with EXECUTE revoked from anon/PUBLIC;
+  `can_access_child = is_entitled AND guardian-verified`. COPPA boundary = tier boundary,
+  at the database. AAU public tables carry ZERO child PII and have NO FK to `players`.
+2.4 AAU PLUS ALREADY DESIGNED [G] — astersports-web `PlusGate.tsx`/`entitlement.ts`:
+  **$20/mo per account (every kid/team), $200/yr**, gating exactly the weekend-assistant
+  layer (leave-by/weather/directions, schedule alerts, conflict radar, bracket scenarios,
+  add-a-tournament). Money path deliberately inert (`isPlusEntitled` false except super-admin).
+
+=====================================================================
+3. THE MONETIZATION MODEL (resolved + one open sub-fork)
+=====================================================================
+RECONCILIATION [architect, accepted]: do NOT 7-day-paywall the WHOLE Hub. The anon public
+read (search any team, standings/schedule/scores) is the acquisition wedge + SEO surface —
+**free forever**. Apply the **7-day trial → $20/mo to the ASSISTANT layer only** — exactly
+what `PlusGate` already gates. Gateway AND revenue; matches the price already in code.
+This refines Frank's "Tier 0 free 7 days then monthly": the *public read* is free always;
+the *assistant* is the trial→subscription.
+
+MONEY-PATH WRITER [Frank-decided 2026-06-29]: a **NEW Supabase edge function** in
+aster-sports is the SOLE writer of `family_entitlements` (Stripe webhook → edge fn →
+status). Keeps billing on the same backbone as `is_entitled` (which already reads it),
+host-independent, the architect's "one writer, Stripe-only" honored. Reuses the studio's
+proven Stripe code (`astersports-web/server/{stripe,billing,webhook,shadowBilling}.ts`,
+`trial_end`, `trialReminders`) as a TEMPLATE — but stays independent of the Railway studio
+server. Flip `entitlement` to read `is_entitled` (the "only change needed" per the comment).
+
+WHAT'S NET-NEW for the money path: the checkout + webhook edge functions (aster-sports has
+NO Stripe today — confirmed: no dep, no fns), a `plan` column on `family_entitlements`
+(free/plus), trial-reminder cron, customer portal, SCA/3DS handling, dunning UX.
+
+OPEN SUB-FORK [DR-T, lean]: trial SHAPE — (a) card-up-front reverse-trial (matches
+`shadowBilling` rails, far higher conversion) vs (b) Stripe-native `trial_period_days`
+no-card "free 7 days then charge" (lower friction, what Frank's phrasing implies). CC LEAN:
+(a) card-up-front for the ASSISTANT trial — the public read is already the zero-friction
+free wedge, so asking for a card to start the premium trial is fair and converts ~2-3×.
+
+=====================================================================
+4. THE ONE REAL STRUCTURAL BLOCKER (and why it's bounded)
+=====================================================================
+[G] aster-sports REQUIRES an org. `user_roles.organization_id` is NOT NULL (mig 016);
+`current_user_org_id()` returns NULL for a no-org user; every org-scoped RLS then returns
+zero rows; `HomePage` routes role=null → a "account is ready" PLACEHOLDER
+(`HomePage.jsx:57-64`). So a signed-in parent NOT yet in a program has no home today.
+
+WHY BOUNDED: the public gateway (anon `get_public_*` RPCs) and the family layer
+(`family_*`, user_id-scoped, NOT org-scoped) do NOT depend on `current_user_org_id()` —
+they already work without an org. So the fix is NOT "rip out org-scoping"; it is:
+  (a) a NO-ORG FAMILY HOME route that renders the Hub from the public RPCs + family_*
+      tables (not the org-scoped contexts), and
+  (b) make the global providers anon/no-org-tolerant (SeasonProvider hard-gates on orgId
+      `SeasonContext.jsx:23,47`; WeatherProvider only fetches when user truthy) — the Hub
+      should consume public hooks directly, not `useSeason()`.
+Tier 2 (onboarded) keeps the existing org model untouched.
+
+TRACKING PERSISTENCE GAP [DR-P]: astersports-web's Hub tracks anon via localStorage
+(`trackingStore.ts`); aster-sports' `tracked_teams` is authenticated-only with NO
+localStorage→account sync. Decide: port the anon localStorage store + a sync-on-login
+migration (keeps the no-login track-then-convert funnel) vs account-only tracking (forces
+signup to track). CC LEAN: port localStorage + sync-on-login — preserves the wedge.
+
+=====================================================================
+5. SCOPE BOUNDARIES [Frank-directed]
+=====================================================================
+- PRINT STUDIO — **OUT of scope.** Stays in astersports-web (own Postgres/Stripe/Railway).
+  Cleanly separable (zero AAU cross-imports). Frank's carve-out: *may later be added to
+  the app as a separate independent service module* — if so, it could share the AAU Plus
+  billing rails; that's a separate effort, not this consolidation.
+- st-patricks-armonk — **OUT.** Different vertical (parish), separate account/Archdiocese
+  separation, not on the AAU backbone. Folding it in is a category error.
+- aster-weather — shared library, unchanged.
+- legacy-hoopers — **folds into the public Hub and retires** (README calls it a 2-day
+  prototype; its 2 RPCs are a strict subset of the Hub's). Port presentation, not its
+  team-level record math (single-source standings — §7).
+- HOST — Frank can move astersports.app **Vercel→Railway**; aligns with a swap already
+  noted in the aster-sports README. Sequence it SEPARATELY from the cutover (never
+  mid-migration). It does NOT change the money-path writer (Supabase edge fn is right on
+  either host); its one benefit is a Node server that eases a future Scout-SSE re-home.
+
+=====================================================================
+6. MIGRATION INVENTORY (condensed; full ledger in agent findings)
+=====================================================================
+ALREADY-IN-PLATFORM (backend done, frontend port only): the entire AAU tournament data
+model + RPCs + ingest + standings engine + parser; weather (use `src/hooks/useWeather.js`,
+drop the Hub's tRPC); maps (`src/lib/mapsUrls.js getDirectionUrls`); ICS feeds
+(`team-feed`/`family-feed` edge fns); public schedule (`src/components/public-schedule/*`);
+register flow (`RegisterFlowPage`); org records; entitlement/family schema (§2.3).
+PORT (TS→JSX component over existing RPCs): team tracking, tracked-team schedule, conflict
+radar, tournament standings/bracket, find/discovery, constellation home, leave-by drive-time
+(novel — keep), tournament-upload UI, Scout chat (re-point SSE).
+REBUILD (no real backend): film/highlights (needs storage + the COPPA `can_access_child`
+hold — staged last), legacy Dashboard/AI surfaces (all `aiMock.ts` — build vs real data).
+
+=====================================================================
+7. GUARDRAILS (architect rulings, confirmed in code)
+=====================================================================
+- SINGLE-SOURCE STANDINGS: `get_public_tournament_standings` is canonical; do NOT
+  reintroduce legacy-hoopers' team-level record math (collides with the in-flight
+  forfeit/division-pool honesty work).
+- COPPA = TIER BOUNDARY, DB-enforced; film stays locked for everyone (incl. super-admin)
+  until real guardian verification (`can_access_child` honors the A5 ruling).
+- MONEY PATH: one Stripe-only writer of `family_entitlements`; Scout/lead capture writes a
+  leads table, NEVER entitlement. Architect-scoped + onboarding-gate — never auto-merged.
+- Honor aster-sports conventions on port: 150-line file cap, `--as-*` tokens, RLS
+  REVOKE-from-anon-and-PUBLIC discipline (AP #23/#57) on every new public RPC.
+
+=====================================================================
+8. DECISION REGISTER
+=====================================================================
+DR-1 Placement — CONSOLIDATE into aster-sports, public Hub as the anonymous front door.
+   [RATIFIED — architect D-FV1(b) + this audit.]
+DR-2 Money-path writer — NEW Supabase edge fn, sole writer of `family_entitlements`.
+   [DECIDED — Frank, 2026-06-29.]
+DR-T Trial shape — card-up-front reverse-trial vs Stripe-native no-card trial.
+   [OPEN — CC lean: card-up-front for the assistant; public read free/no-card.]
+DR-P Tracking persistence — port anon localStorage + sync-on-login vs account-only.
+   [OPEN — CC lean: port + sync, preserve the wedge.]
+DR-A Anon default route — does astersports.app `/` land anon visitors on the Hub or on
+   /login? [OPEN — CC lean: anon → public Hub; signed-in-no-org → family Hub home;
+   signed-in-with-org → today's role home.]
+DR-S Studio-as-module — out now; revisit only if Frank wants it as an independent service
+   in the app (shares billing rails). [DEFERRED — Frank-directed.]
+DR-H Host swap Vercel→Railway — optional, sequence separately from the cutover. [Frank can do.]
+
+=====================================================================
+9. SEQUENCE (cheapest proof first)
+=====================================================================
+1. Entitlement bridge — sign-in → read `is_entitled`; add `plan` to `family_entitlements`
+   (thin; flips the inert gate).
+2. AAU Plus money-path — new Supabase Stripe webhook + checkout edge fns writing
+   `family_entitlements`; 7-day trial (DR-T). ← the monetization, on proven patterns.
+3. No-org family Hub home + anon-tolerant providers (the §4 blocker fix) + port the Hub UI
+   over the existing public RPCs; tracking persistence (DR-P).
+4. Public Hub becomes the .app front door (DR-A); public read stays free/indexable;
+   domain 301s `astersports.io/aau` + legacy-hoopers → astersports.app.
+5. Fold legacy-hoopers in; retire the standalone; slim astersports-web to Studio + landing.
+6. Tier-2 family/child features gated (COPPA); film room staged last behind its bench gate.
+
+=====================================================================
+END — single consolidation artifact. Decisions DR-1/DR-2 set; DR-T/DR-P/DR-A await ruling.
+=====================================================================
