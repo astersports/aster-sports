@@ -1,88 +1,21 @@
-# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
-#
-# IMPORTANT: Dependabot PRs are NOT covered by the §15 auto-merge rule.
-# §15 explicitly scopes to "Claude Code's own PRs" — i.e. PRs Claude Code
-# opens itself with the verifications it ran. Dependabot's PRs are
-# external; they go through branch-protection's required CI check and
-# then sit pending manual review. CI green ≠ test coverage of the
-# surface a dep bump touches. Until hook coverage is materially better,
-# manual triage of every Dependabot PR is the safety policy.
-#
-# If you ever want auto-merge for Dependabot's grouped minor+patch PRs
-# specifically, the right way is a separate workflow with a `gh pr merge
-# --auto` step gated on a label (e.g. `dependencies-auto-merge`) — not by
-# extending §15.
-
 version: 2
 updates:
-  # ─── JavaScript / npm ───
-  - package-ecosystem: npm
+  - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: weekly
-      day: monday
-      time: "06:00"
-      timezone: America/New_York
-    open-pull-requests-limit: 8
-    versioning-strategy: increase
-    commit-message:
-      prefix: chore(deps)
-      prefix-development: chore(deps-dev)
-      include: scope
+      interval: "weekly"
+    open-pull-requests-limit: 5
     groups:
-      # Risky runtime deps get their own grouped PR per week. Reviewing one
-      # batched PR for these is easier than reviewing five separate PRs;
-      # batching them WITH the safe deps below is what got us in trouble.
-      # All of these touch user-visible surface (auth, UI tree, error
-      # capture) where CI green doesn't equal "safe to ship."
-      risky-runtime-deps:
-        applies-to: version-updates
-        patterns:
-          - "@sentry/*"
-          - "@supabase/*"
-          - "react"
-          - "react-dom"
-          - "react-router-dom"
+      npm-minor-patch:
         update-types:
-          - minor
-          - patch
-      # Everything else (dev deps, build tools, lint plugins, etc.).
-      # Lower-risk class — happy path is "merge after CI green skim."
-      safe-minor-and-patch:
-        applies-to: version-updates
-        exclude-patterns:
-          - "@sentry/*"
-          - "@supabase/*"
-          - "react"
-          - "react-dom"
-          - "react-router-dom"
-        update-types:
-          - minor
-          - patch
-    ignore:
-      # Hold majors for manual review — major version bumps tend to have
-      # breaking changes that warrant a deliberate look. Dependabot still
-      # files security advisories for these regardless.
-      - dependency-name: "*"
-        update-types:
-          - version-update:semver-major
-
-  # ─── GitHub Actions ───
-  - package-ecosystem: github-actions
+          - "minor"
+          - "patch"
+  - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: weekly
-      day: monday
-      time: "06:00"
-      timezone: America/New_York
+      interval: "weekly"
     open-pull-requests-limit: 3
-    commit-message:
-      prefix: chore(actions)
-      include: scope
-    ignore:
-      # Action major bumps frequently rename inputs or change runtime
-      # contracts (e.g. setup-node v6 dropped Node 16 support). Hold for
-      # manual review like the npm block does.
-      - dependency-name: "*"
-        update-types:
-          - version-update:semver-major
+    groups:
+      github-actions-all:
+        patterns:
+          - "*"
