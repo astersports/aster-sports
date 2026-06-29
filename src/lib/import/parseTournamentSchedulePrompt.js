@@ -75,7 +75,7 @@ export function parseClaudeOutput(rawText) {
   const trimmed = rawText.trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
   let parsed;
   try { parsed = JSON.parse(trimmed); }
-  catch (e) { throw new Error(`Malformed JSON from parser: ${e.message}`); }
+  catch (e) { throw new Error(`Malformed JSON from parser: ${e.message}`, { cause: e }); }
   if (!Array.isArray(parsed)) throw new Error('Parser output is not an array');
   return parsed.map((row, i) => {
     if (!row || typeof row !== 'object') throw new Error(`Row ${i} is not an object`);

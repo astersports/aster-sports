@@ -64,7 +64,7 @@ export function useScheduleChangeAudit() {
   // NULL — admin can retry without losing the change record.
   const recordAndDispatch = useCallback(async (diff, state) => {
     setBusy(true); setError(null);
-    let auditId = null;
+    let auditId;
     try { auditId = await writeAuditRow({ diff, dispatchEmailId: null }); }
     catch (e) { setError(e); setBusy(false); return { error: e }; }
 
