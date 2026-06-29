@@ -306,20 +306,29 @@ Deno.serve(async (req) => {
         if (ptErr) throw new Error(`pool_teams upsert: ${ptErr.message}`);
       }
 
-      // games — external-vs-external only. Skip: placeholder sides, sides not in
-      // the standings (unresolved seeds), and any side that is one of our teams.
-      // Each kept game carries its TM location string (g.location) so we can attach
-      // a venue (build-bible §3.2; "every game, every venue").
+      // games — external-vs-external only. Two shapes persist:
+      //   • pool/resolved games: both sides resolve to a division team (FK).
+      //   • BRACKET games (B-prefix code): an unresolved side is a SEED PLACEHOLDER
+      //     ("National Green 1st Place") — we keep its time/court and store the seed text as a
+      //     placeholder label (team FK null) so the championship shows on the schedule + can be a
+      //     team's next game. Non-bracket games with an unresolved side stay skipped (data quirk).
+      // Any side that is one of OUR teams still skips (belongs in events/game_results; the
+      // assert_division_game_external trigger would reject it). Each kept game carries its TM
+      // location string (g.location) so we can attach a venue ("every game, every venue").
       const gameRows: Array<Record<string, unknown> & { __location?: string }> = [];
       let skipped = 0;
       for (const g of games as DivisionGame[]) {
         const homeNorm = normalizeName(g.homeName);
         const awayNorm = normalizeName(g.awayName);
-        if (g.homePlaceholder || g.awayPlaceholder) { skipped++; continue; }
         if (ourTeamNames.has(homeNorm) || ourTeamNames.has(awayNorm)) { skipped++; continue; }
-        const homeId = teamIdByName.get(homeNorm);
-        const awayId = teamIdByName.get(awayNorm);
-        if (!homeId || !awayId) { skipped++; continue; }
+        const homeId = teamIdByName.get(homeNorm) ?? null;
+        const awayId = teamIdByName.get(awayNorm) ?? null;
+        const isBracket = /^B/i.test(g.externalGameId);
+        // a non-bracket game with an unresolved side isn't a real game — skip (unchanged behavior)
+        if ((!homeId || !awayId) && !isBracket) { skipped++; continue; }
+        // a bracket side must resolve to a team OR carry seed text for its placeholder label (no
+        // empty side — the CHECK constraint + no-fabrication both require this)
+        if ((!homeId && !g.homeName) || (!awayId && !g.awayName)) { skipped++; continue; }
         const homePool = poolNameByTeam.get(homeNorm);
         const awayPool = poolNameByTeam.get(awayNorm);
         const poolId = homePool && homePool === awayPool ? poolIdByName.get(homePool) ?? null : null;
@@ -329,6 +338,9 @@ Deno.serve(async (req) => {
           tournament_pool_id: poolId,
           home_division_team_id: homeId,
           away_division_team_id: awayId,
+          home_placeholder_label: homeId ? null : g.homeName,
+          away_placeholder_label: awayId ? null : g.awayName,
+          is_bracket: isBracket,
           home_score: g.homeScore,
           away_score: g.awayScore,
           status: g.status,
