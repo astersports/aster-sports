@@ -38,7 +38,7 @@ self.addEventListener('fetch', (e) => {
 // posts an aes128gcm JSON payload { title, body, url, tag }. Defensive
 // parse so a plain-text payload still shows something.
 self.addEventListener('push', (e) => {
-  let data = {};
+  let data;
   try { data = e.data ? e.data.json() : {}; } catch { data = { body: e.data ? e.data.text() : '' }; }
   const title = data.title || 'Aster AAU';
   const options = {
