@@ -105,7 +105,12 @@ zero rows; `HomePage` routes role=null → a "account is ready" PLACEHOLDER
 
 WHY BOUNDED: the public gateway (anon `get_public_*` RPCs) and the family layer
 (`family_*`, user_id-scoped, NOT org-scoped) do NOT depend on `current_user_org_id()` —
-they already work without an org. So the fix is NOT "rip out org-scoping"; it is:
+they already work without an org. [G re-verified 2026-06-29] `organization_id` IS NOT
+NULL (`016_user_preferences.sql:39-40`) — so a no-org parent has NO `user_roles` row at
+all (not a null-org row); `current_user_org_id()` returns NULL → empty org scope. The fix
+is therefore PURELY ADDITIVE — no constraint relaxation, no migration risk. (This corrects
+the architect's "org_id nullable" phrasing; the additive conclusion is unchanged.) The fix
+is NOT "rip out org-scoping"; it is:
   (a) a NO-ORG FAMILY HOME route that renders the Hub from the public RPCs + family_*
       tables (not the org-scoped contexts), and
   (b) make the global providers anon/no-org-tolerant (SeasonProvider hard-gates on orgId
@@ -171,16 +176,38 @@ DR-1 Placement — CONSOLIDATE into aster-sports, public Hub as the anonymous fr
    [RATIFIED — architect D-FV1(b) + this audit.]
 DR-2 Money-path writer — NEW Supabase edge fn, sole writer of `family_entitlements`.
    [DECIDED — Frank, 2026-06-29.]
-DR-T Trial shape — card-up-front reverse-trial vs Stripe-native no-card trial.
-   [OPEN — CC lean: card-up-front for the assistant; public read free/no-card.]
-DR-P Tracking persistence — port anon localStorage + sync-on-login vs account-only.
-   [OPEN — CC lean: port + sync, preserve the wedge.]
-DR-A Anon default route — does astersports.app `/` land anon visitors on the Hub or on
-   /login? [OPEN — CC lean: anon → public Hub; signed-in-no-org → family Hub home;
-   signed-in-with-org → today's role home.]
+DR-T Trial shape — [RATIFIED — architect 2026-06-29] build the writer/checkout
+   TRIAL-MODE-AGNOSTIC (card-vs-no-card is a Stripe Checkout flag + `trial_end`, not a code
+   fork — `status='trialing'` already entitles). Default = card-up-front for the assistant.
+   HARD conditions: (a) unambiguous pre-charge consent copy ("free 7 days, then $20/mo,
+   cancel anytime"); (b) reminder cron fires BEFORE the first charge with one-tap cancel
+   (negative-option flow for youth-sports parents — surprise charges = chargebacks).
+DR-P Tracking persistence — [RATIFIED] port anon localStorage + sync-on-login. Sync target
+   = `family_subscriptions` (`UNIQUE(user_id, resolved_key)`, user-scoped — confirmed
+   2026-06-29). Anon store holds ONLY public team refs (no PII); sync target never
+   org-scoped. Ships with the §4 blocker fix (step 3).
+DR-A Anon default route — [RATIFIED w/ correction] route on ROLE TYPE, not org-presence:
+   anon → public Hub; signed-in PARENT (org OR no-org) → family Hub (org features light up
+   if onboarded/entitled); signed-in STAFF (coach/admin) → role home. (Corrects the prior
+   "org → role home", which would wrongly bounce an onboarded parent off the family Hub.)
 DR-S Studio-as-module — out now; revisit only if Frank wants it as an independent service
    in the app (shares billing rails). [DEFERRED — Frank-directed.]
-DR-H Host swap Vercel→Railway — optional, sequence separately from the cutover. [Frank can do.]
+DR-H Host swap Vercel→Railway — [ENDORSED — Frank 2026-06-29 "best to streamline the build
+   and process"]. Unifies the deploy platform (everything on Railway) + gives the app a
+   Node server (eases Scout-SSE re-home). Still sequence the cutover atomically; does NOT
+   change DR-2 (Supabase edge fn is the right writer on either host).
+DR-R Roles — [Frank-directed] build/operate the SUPER-ADMIN role first (Frank is super-admin
+   platform-wide), then restrict down to coach/parent — the app already has the
+   parent/coach/admin role structure + RLS to layer onto.
+DR-AI Tech — [Frank-directed] deploy the latest AI techniques/models across the build
+   (Scout concierge, briefing/recap generation, schedule-paste parsing) — see the
+   companion tier+functionality map.
+
+RATIFICATION: architect approved PR #1154 to proceed (2026-06-29); DR-1/DR-2 set,
+DR-T/DR-P/DR-A closed above. Steps 1–2 (entitlement bridge + money-path) may start
+immediately against the held `family_entitlements` schema. Full ratified detail, the
+tier/charging model, and the complete functionality migration map are in the companion:
+docs/CONSOLIDATION_TIERS_AND_FUNCTIONALITY_2026-06-29.txt.
 
 =====================================================================
 9. SEQUENCE (cheapest proof first)

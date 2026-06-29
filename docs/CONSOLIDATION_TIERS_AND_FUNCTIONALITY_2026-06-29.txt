@@ -1,0 +1,180 @@
+CONSOLIDATION — TIER MODEL + FULL FUNCTIONALITY MIGRATION MAP
+CC lane · 2026-06-29 · companion to CONSOLIDATION_AUDIT_2026-06-29.txt
+Target: aster-sports / astersports.app · Status: architect-RATIFIED, build steps 1-2 unblocked
+
+=====================================================================
+0. PURPOSE
+=====================================================================
+The durable, detailed record so no decision is lost. Three parts:
+  §1 Architect ratification record (both lanes tracked) + CC verification.
+  §2 The TIER MODEL + charging (parents AND programs; refined as we progress).
+  §3 The COMPLETE functionality migration map — every feature from the AAU Hub,
+     legacy-hoopers web, and the existing app: MIGRATE / EXPAND / ALREADY-IN-APP /
+     NEW / RETIRE, with its tier.
+  §4 Roles plan · §5 AI techniques · §6 Sequence · §7 Open items to define.
+
+=====================================================================
+1. ARCHITECT RATIFICATION RECORD (2026-06-29) — tracked both sides
+=====================================================================
+The architect independently re-verified CC's target-side claims against aster-sports
+source and APPROVED PR #1154 to proceed. Verbatim-substance rulings:
+- VERIFIED: family substrate built (`family_entitlements` user-scoped w/ Stripe fields +
+  `status CHECK in active/trialing/past_due/canceled/inactive`; `family_subscriptions`;
+  `family_children`); `is_entitled` already counts `trialing` (so the 7-day trial is wired
+  into the gate — only the WRITER is missing; the migration literally says the Stripe
+  webhook is "HELD for the money-path review"). COPPA is WRITE-enforced (a trigger blocks
+  `family_children` insert without a confirmed guardian link), not just read-gated. Anon
+  gateway shipped; 45 `aau_*` migrations (more than CC's ~30); no Node server.
+- DR-2 RATIFIED: new Supabase edge function, SOLE writer of `family_entitlements`,
+  Stripe-signature-validated, studio Stripe code as TEMPLATE only. One writer; Scout/leads
+  never write entitlement.
+- DR-T RATIFIED: trial-mode-AGNOSTIC build; default card-up-front; +2 hard consent
+  conditions (pre-charge consent copy; reminder cron before first charge + one-tap cancel).
+- DR-P RATIFIED: port anon localStorage + sync-on-login; target `family_subscriptions`;
+  anon store = public team refs only.
+- DR-A RATIFIED w/ correction: route on ROLE TYPE not org-presence (onboarded parent still
+  lands on the family Hub).
+- GREENLIGHT: steps 1-2 first (cheapest proof, independent of the blocker); step 3 bundles
+  no-org Hub + anon-tolerant providers + DR-A routing + DR-P sync; film last, COPPA-held.
+
+CC VERIFICATION of the architect's two refinements [G 2026-06-29]:
+- R1 PARTIAL CORRECTION: architect said `user_roles.organization_id` is nullable — it is
+  NOT: `016_user_preferences.sql:39-40` sets it NOT NULL. The mechanism is "no `user_roles`
+  ROW at all" for a no-org parent, not a null-org row. The architect's CONCLUSION stands
+  (fix is purely additive, no constraint change). Audit §4 reworded accordingly.
+- R2 CONFIRMED: `family_subscriptions` `UNIQUE(user_id, resolved_key)` (20260626152720:18-20),
+  user-scoped RLS — the DR-P sync target. `resolved_key` is the qualified team key.
+
+=====================================================================
+2. TIER MODEL + CHARGING (parents + programs)
+=====================================================================
+Two ladders share one app and one entitlement spine (`family_entitlements` for parents;
+org `subscription_plan` for programs). Charging is illustrative — refine as we progress.
+
+PARENT LADDER (B2C — the gateway)
+  T0 · FREE BASIC HUB — public, no login, indexable. Search any AAU team, schedule,
+       live scores, standings/records, tournament browse. FREE FOREVER (acquisition wedge).
+  T1 · HUB PLUS (family assistant) — the weekend-assistant layer: leave-by/weather/
+       directions, schedule-change + low-RSVP alerts, conflict/"babysitter" radar, bracket
+       scenarios, add-a-tournament, multi-kid agenda, calendar sync, push. 7-DAY FREE TRIAL
+       → $20/mo per ACCOUNT (every kid, every team) / $200/yr. (Price already in code.)
+  [future] T1+ premium add-ons (film room, AI recaps) — define later (DR-6/film, AI).
+
+PROGRAM LADDER (B2B — orgs sign on; "if not only parents like the app, the AAU programs
+sign on") — Frank: define charging as we progress:
+  P0 · CLAIMED LISTING — a program claims its public Hub presence (verified). Likely free
+       (drives the directory + parent acquisition).
+  P1 · PROGRAM HUB — the org maintains its own content: schedules, rosters, scores,
+       announcements (the "maintaining their … schedules" tier). Subscription TBD.
+  P2 · REGISTRATION + PAYMENTS — program registration/enrollment + fee collection (the
+       existing register flow + financials). Per-registration fee or SaaS tier — TBD.
+  [future] P3 communications/comms-engine, P4 advanced ops — define as adopted.
+NOTE: the platform already carries `organizations.subscription_plan` (starter/pro/elite)
+and a register/financials substrate — the program ladder reuses it; we wire the charging.
+
+ENTITLEMENT MECHANICS (built): parent tier = `family_entitlements.status`; add a `plan`
+column (free/plus) for future T1+ differentiation. `is_entitled = status in
+(active,trialing)`. Program tier = `organizations.subscription_plan`. One Stripe-only
+writer each.
+
+=====================================================================
+3. FULL FUNCTIONALITY MIGRATION MAP (every feature, every source)
+=====================================================================
+Disposition key: MIGRATE (port as-is) · EXPAND (port + enhance) · IN-APP (already in
+aster-sports, reuse) · NEW (build) · RETIRE.
+
+3.A — FROM THE AAU HUB (astersports-web/client/src/components/aau, lib/aau)
+| Feature | Disposition | Tier | Notes |
+|---|---|---|---|
+| Team tracking (track any team) | MIGRATE | T0 browse / T1 persist | data: `tracked_teams`/`family_subscriptions` (in-app); DR-P sync |
+| Tracked-team schedule | MIGRATE | T0 | RPC `get_public_aau_team_schedule` (in-app) |
+| Up-next countdown card | MIGRATE | T0 | the proven hook |
+| Weather (game-time) | EXPAND | T1 | use in-app `useWeather`; drop tRPC; +severe/feels-like |
+| Directions + leave-by | EXPAND | T1 | port OSRM leave-by; emit links via in-app `getDirectionUrls`; +traffic (DR-6/N1) |
+| Conflict/"babysitter" radar | EXPAND | T1 | port `conflicts.ts`; +travel-time conflicts |
+| Whole-weekend agenda (multi-kid) | NEW | T1 | cross-team, the missing JTBD piece |
+| Standings / records / bracket | MIGRATE | T0 | RPC `get_public_tournament_standings` (canonical) |
+| Find / discovery + multi-slicer filter | MIGRATE+EXPAND | T0 | RPC `search_public_aau`/directory |
+| Constellation Hub home | MIGRATE | T0 | the IA shell |
+| Tournament upload (self-serve paste) | MIGRATE | T1/P1 | `aau-submit-tournament` (in-app) |
+| AAU Plus paywall (PlusGate) | EXPAND | T1 | wire to `is_entitled` + the new money-path |
+| Print Studio | OUT OF SCOPE | — | stays in astersports-web (possible future module) |
+
+3.B — FROM LEGACY-HOOPERS WEB (public program site)
+| Surface | Disposition | Tier | Notes |
+|---|---|---|---|
+| Constellation/"orbit" home + brand | EXPAND | T0 | strongest IA; fold into the Hub front door |
+| Schedule (slicers, live-poll, tourney groups) | MIGRATE+EXPAND | T0/P1 | port the FILTER/poll UX; data is in-app |
+| Records (form-dots, streaks, win-rate viz) | MIGRATE | T0 | team-level only (doctrine-safe) |
+| Programs catalog + matcher quiz | EXPAND | P0/P2 | marketing catalog → wire to in-app register |
+| Register / "join" funnel | IN-APP | P2 | platform `RegisterFlowPage` — replace LeagueApps link |
+| AskAsterScout (live SSE Claude concierge) | MIGRATE | T0/T1 | re-point SSE; lead capture → leads table (never entitlement) |
+| Mission / Coach pages (story, social proof) | MIGRATE | T0 | wire metrics to real `programTotals()` |
+| Dashboard (KPIs/charts) | NEW | T2 | cosmetic mock → build against real engagement data |
+| Highlights / film room | NEW | T1+ | cosmetic facade; needs storage + COPPA gate; staged last |
+| AgentScanConsole | MIGRATE(brand) | marketing | cosmetic; keep on entry/marketing, not functional surfaces |
+| AI surfaces (records/programs/dashboard) | NEW | varies | all `aiMock.ts` → real models (see §5) |
+| Standalone deployment | RETIRE | — | fold in; 301 to astersports.app |
+
+3.C — FROM THE EXISTING APP (aster-sports) — reuse + expand
+| Capability | Disposition | Tier | Notes |
+|---|---|---|---|
+| Family entitlement substrate (`family_*`, is_entitled, can_access_child) | IN-APP | T1 | wire the writer (DR-2) |
+| Anon public-RPC gateway (`get_public_*`) | IN-APP | T0 | already shipped |
+| Org-scoped parent/coach/admin home | IN-APP+EXPAND | T2 | add the no-org family-Hub home (§4 blocker) |
+| RSVPs / briefings / comms engine / push / ICS feeds | IN-APP | T2/P1/P3 | reuse for onboarded tiers |
+| Register flow + financials | IN-APP+EXPAND | P2 | wire program registration charging |
+| Maps (`getDirectionUrls`), weather (`useWeather`) | IN-APP | T1 | the canonical versions (no dup) |
+| Roles + RLS (parent/coach/admin) | IN-APP+EXPAND | all | super-admin first, restrict down (DR-R) |
+| Money-path (Stripe) | NEW | T1 | none today; the first consumer money-path (DR-2) |
+| No-org family Hub route + anon-tolerant providers | NEW | T0/T1 | the one structural lift (§4 audit) |
+
+=====================================================================
+4. ROLES PLAN (DR-R — super-admin first)
+=====================================================================
+Frank is super-admin platform-wide. Build/operate the SUPER-ADMIN capability first (full
+cross-org + platform control), then restrict DOWN to coach, then parent. The app already
+has the parent/coach/admin role + RLS structure (`user_roles`, `current_user_org_id`,
+role-gated routes) to layer onto — no new role model, just the super-admin tier on top +
+the no-org parent path. (Cross-org super-admin scoping: see existing
+ARCHITECT_DECISION_REQUEST_2026-06-25_cross_org_superadmin.txt.)
+
+=====================================================================
+5. AI TECHNIQUES TO DEPLOY (DR-AI — "latest AI techniques and technology")
+=====================================================================
+- Scout concierge — real SSE Claude (already live in legacy `useScoutChat`); port + expand
+  to "ask anything about any AAU team / your weekend." Lead capture to a leads table.
+- Generative briefings/recaps — reuse the platform's `briefing-ai-draft` /
+  `parse-tournament-schedule` (Claude edge fns) for game/weekend recaps + paste-to-track.
+- Latest models — default to the newest Claude tier for these surfaces; keep the
+  "honest/no-fabrication" discipline (label AI; never fabricate scores/standings).
+- Film AI (later, T1+/T2) — auto-clip/highlight reel, gated behind COPPA + storage build.
+- Guardrail: AI writes NEVER touch entitlement or standings; AI is presentation/assist only.
+
+=====================================================================
+6. SEQUENCE (ratified bundling)
+=====================================================================
+1. Entitlement bridge — read `is_entitled`; add `plan` to `family_entitlements`. [unblocked now]
+2. AAU Plus money-path — new Supabase Stripe webhook + checkout edge fns → write
+   `family_entitlements`; trial-mode-agnostic; consent + reminder cron (DR-T). [unblocked now]
+3. ONE UNIT: no-org family-Hub home + anon-tolerant providers + DR-A role-type routing +
+   DR-P localStorage→`family_subscriptions` sync + port the Hub UI over the public RPCs.
+4. Public Hub becomes the .app front door; public read free/indexable; domain 301s
+   (astersports.io/aau + legacy-hoopers → astersports.app). Host swap Vercel→Railway
+   (DR-H, endorsed) sequenced here, atomically.
+5. Fold legacy-hoopers in; retire standalone; slim astersports-web to Studio + landing.
+6. Program ladder (P0 claim → P1 program hub → P2 registration) + Tier-2 family/child
+   features (COPPA-gated); film room last.
+
+=====================================================================
+7. OPEN ITEMS TO DEFINE AS WE PROGRESS (Frank: "help define … as we progress")
+=====================================================================
+- Program-ladder pricing (P1 program hub, P2 registration) — model TBD.
+- T1+ premium add-ons (film, AI recaps) — bundle vs add-on; price TBD.
+- Annual vs monthly mix; family/multi-account discounts.
+- Trial default (card vs no-card) is a flippable experiment (DR-T) — measure conversion.
+- Super-admin cross-org scoping specifics (reference the existing cross-org decision doc).
+
+=====================================================================
+END — companion to CONSOLIDATION_AUDIT_2026-06-29.txt. Decisions durable both sides.
+=====================================================================
