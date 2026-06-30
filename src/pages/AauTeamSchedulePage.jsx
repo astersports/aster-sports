@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAauTeamSchedule } from '../hooks/useAauTeamSchedule';
+import { useAauTeamBracket } from '../hooks/useAauTeamBracket';
 import { usePlatformBrand } from '../hooks/usePlatformBrand';
 import AauHubHeader from '../components/aau-hub/AauHubHeader';
 import AauGameCard from '../components/aau-hub/AauGameCard';
+import AauBracketPath from '../components/aau-hub/AauBracketPath';
 import AauTrackButton from '../components/aau-hub/AauTrackButton';
 import PoweredByFooter from '../components/shared/PoweredByFooter';
 
@@ -36,6 +38,7 @@ export default function AauTeamSchedulePage() {
   usePlatformBrand();
   const { teamKey } = useParams();
   const { games, teamName, loading, error } = useAauTeamSchedule(teamKey);
+  const bracketPaths = useAauTeamBracket(teamKey);
 
   // Compact ⇄ Detailed schedule density, mirroring the app. Persisted so the
   // choice sticks across visits; storage-disabled falls back to detailed.
@@ -103,6 +106,8 @@ export default function AauTeamSchedulePage() {
           )}
         </>
       )}
+
+      <AauBracketPath paths={bracketPaths} />
 
       <PoweredByFooter links />
       </main>
