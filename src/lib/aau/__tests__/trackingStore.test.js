@@ -6,7 +6,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  getTrackedTeams, isTeamTracked, toggleTrackedTeam, TRACKED_CHANGE_EVENT, untrackTeam,
+  getTrackedTeams, isHubSignedIn, isTeamTracked, toggleTrackedTeam, TRACKED_CHANGE_EVENT, untrackTeam,
 } from '../trackingStore';
 
 beforeEach(() => localStorage.clear());
@@ -41,6 +41,13 @@ describe('trackingStore', () => {
     untrackTeam('a');
     window.removeEventListener(TRACKED_CHANGE_EVENT, spy);
     expect(spy).toHaveBeenCalledTimes(2);
+  });
+
+  it('is in anon/local mode by default (no DB sync until sign-in)', () => {
+    expect(isHubSignedIn()).toBe(false);
+    toggleTrackedTeam({ teamKey: 'a:M:5th', name: 'A' });
+    // anon writes land in localStorage and read back fresh (not an in-memory cache)
+    expect(JSON.parse(localStorage.getItem('aau:tracked-teams:v1'))).toEqual([{ teamKey: 'a:M:5th', name: 'A' }]);
   });
 
   it('ignores a no-key toggle and tolerates corrupted storage', () => {
