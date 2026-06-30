@@ -2,13 +2,14 @@ import { formatCountdown, formatTime } from '../../lib/formatters';
 import { getDirectionUrls } from '../../lib/mapsUrls';
 
 // One game on a team's public Hub schedule (R1·PR-A). Pure presentational —
-// receives one element of get_public_aau_team_schedule(). --as-* tokens only,
-// no hardcoded hex, 44px+ tap targets on the direction links.
+// receives one element of get_public_aau_team_schedule(). `compact` renders a
+// dense single row (date/time + opponent + result chip); the default detailed
+// card adds venue + directions + badges. Mirrors the app's Compact/Detailed
+// schedule density. --as-* tokens only, no hardcoded hex.
 
 const NY_TZ = 'America/New_York';
 
-// "Sat, Jun 27" — NY-pinned per the timezone-audit invariant (AP #31). The
-// time half reuses the shared NY-anchored formatTime().
+// "Sat, Jun 27" — NY-pinned per the timezone-audit invariant (AP #31).
 function gameDay(startAt) {
   if (!startAt) return 'Date TBD';
   return new Date(startAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: NY_TZ });
@@ -23,13 +24,36 @@ const linkStyle = {
   fontSize: 13, fontWeight: 500, borderRadius: 10, textDecoration: 'none',
   color: 'var(--as-accent)', border: '1px solid var(--as-border-default)', backgroundColor: 'var(--as-bg-card)',
 };
-const badge = (bg, fg) => ({ fontSize: 11, fontWeight: 500, padding: '2px 6px', borderRadius: 6, backgroundColor: bg, color: fg });
+const badge = (bg, fg) => ({ fontSize: 11, fontWeight: 500, padding: '2px 6px', borderRadius: 6, backgroundColor: bg, color: fg, whiteSpace: 'nowrap' });
 
-export default function AauGameCard({ game }) {
+export default function AauGameCard({ game, compact = false }) {
   const g = game || {};
   const isFinal = g.status === 'final';
   const win = isFinal && g.myScore != null && g.oppScore != null && g.myScore > g.oppScore;
   const tie = isFinal && g.myScore === g.oppScore;
+  const matchup = `${g.isHome ? 'vs' : '@'} ${g.opponent || 'TBD'}`;
+
+  const resultChip = isFinal ? (
+    <span style={badge(win ? 'var(--as-success-soft)' : tie ? 'var(--as-neutral-soft)' : 'var(--as-danger-soft)',
+      win ? 'var(--as-success)' : tie ? 'var(--as-text-secondary)' : 'var(--as-danger)')}>
+      {win ? 'W' : tie ? 'T' : 'L'} {g.myScore}–{g.oppScore}
+    </span>
+  ) : (
+    <span style={badge('var(--as-accent-soft)', 'var(--as-accent)')}>{formatCountdown(g.startAt)}</span>
+  );
+
+  if (compact) {
+    return (
+      <article style={{ ...cardStyle, padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ minWidth: 0 }}>
+          <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{matchup}</p>
+          <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--as-text-tertiary)' }}>{gameDay(g.startAt)} · {formatTime(g.startAt)}</p>
+        </div>
+        {resultChip}
+      </article>
+    );
+  }
+
   const dir = g.venue ? getDirectionUrls(g.venue.address, g.venue.lat, g.venue.lng, null) : null;
   const venueLine = g.venue ? [g.venue.name, g.venue.city && g.venue.state ? `${g.venue.city}, ${g.venue.state}` : (g.venue.city || g.venue.state)].filter(Boolean).join(' · ') : null;
   const meta = [g.tournament, g.division].filter(Boolean).join(' · ');
@@ -40,19 +64,10 @@ export default function AauGameCard({ game }) {
         <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--as-text-secondary)' }}>
           {gameDay(g.startAt)} · {formatTime(g.startAt)}
         </span>
-        {isFinal ? (
-          <span style={badge(win ? 'var(--as-success-soft)' : tie ? 'var(--as-neutral-soft)' : 'var(--as-danger-soft)',
-            win ? 'var(--as-success)' : tie ? 'var(--as-text-secondary)' : 'var(--as-danger)')}>
-            {win ? 'W' : tie ? 'T' : 'L'} {g.myScore}–{g.oppScore}
-          </span>
-        ) : (
-          <span style={badge('var(--as-accent-soft)', 'var(--as-accent)')}>{formatCountdown(g.startAt)}</span>
-        )}
+        {resultChip}
       </div>
 
-      <p style={{ margin: '8px 0 0', fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)' }}>
-        {g.isHome ? 'vs' : '@'} {g.opponent || 'TBD'}
-      </p>
+      <p style={{ margin: '8px 0 0', fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)' }}>{matchup}</p>
 
       {meta && <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--as-text-tertiary)' }}>{meta}</p>}
 

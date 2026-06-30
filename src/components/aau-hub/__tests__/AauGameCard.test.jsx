@@ -71,4 +71,13 @@ describe('AauGameCard', () => {
     const { container } = render(<AauGameCard game={{ ...baseFinal, venue: null }} />);
     expect(container.querySelector('a[href]')).toBeNull();
   });
+
+  it('compact mode shows matchup + result but hides venue, directions, and badges', () => {
+    const { container } = render(<AauGameCard game={{ ...baseFinal, isBracket: true }} compact />);
+    expect(container.textContent).toMatch(/vs CT Northstars/);
+    expect(container.textContent).toMatch(/W\s*54–22/);            // result chip still shown
+    expect(container.textContent).not.toMatch(/Harry S\. Truman/); // venue hidden
+    expect(container.textContent).not.toMatch(/Bracket/);          // badges hidden
+    expect(container.querySelector('a[href]')).toBeNull();         // no direction links
+  });
 });
