@@ -1225,8 +1225,10 @@ If OS notifications disabled: show inline red banner on any notification-depende
    surfaces are ALL-SEASONS (§4.AW decision); collection-% surfaces are season-scoped
    and labeled as such.
 10. **Primary calendar:** admin@legacyhoopers.org. LeagueApps auto-syncs a read-only
-    imported calendar — never write to it.
-11. **Admin email:** admin@legacyhoopers.org.
+    imported calendar — never write to it. (This is the Google **calendar** account, an
+    external integration — NOT migrated with the admin login; left as-is pending a
+    separate calendar move.)
+11. **Admin email:** frank@astersports.co (was admin@legacyhoopers.org, retired 2026-06-30).
 12. **iCal sync lag warning:** always display "Calendar events can take up to 24 hours to
     update in subscribed apps" near any calendar subscription feature.
 
@@ -1305,7 +1307,7 @@ If OS notifications disabled: show inline red banner on any notification-depende
 - **Seasons:** Fall 2025 (archived) · Winter 2025-26 (archived) · **Spring 2026
   (active, Mar 23 – Jun 14)**.
 - **Spring 2026 families:** 60 `financial_accounts` / 60 distinct guardians.
-- **Org:** `e3e95e21-3571-4e9a-985a-d5d01480d4a6` · Admin: admin@legacyhoopers.org.
+- **Org:** `e3e95e21-3571-4e9a-985a-d5d01480d4a6` · Admin: frank@astersports.co.
 
 ## 9b. Claude Code Session Notes
 
@@ -1313,7 +1315,7 @@ If OS notifications disabled: show inline red banner on any notification-depende
 
 **Environment:** HP Chromebook · ChromeOS Crostini (Linux) · Node.js · Claude Code
 
-**Auth user:** admin@legacyhoopers.org (Admin role)
+**Auth user:** frank@astersports.co (Admin role)
 
 **App ran locally at:** localhost:5173 · **Production:** https://astersports.app
 

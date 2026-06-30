@@ -86,7 +86,7 @@ Multi-tenant SaaS platform for youth sports organizations. Replaces LeagueApps, 
 - App: https://astersports.app
 - Repo: github.com/astersports/aster-sports (public; org move 2026-06-11 — was LegacyHoopers)
 - Supabase project: `vrwwpsbfbnveawqwbdmj`
-- Admin: admin@legacyhoopers.org (user_id: `1e06a3d4-769b-42c0-b90b-92787410ee5a`, org_id: `e3e95e21-3571-4e9a-985a-d5d01480d4a6`)
+- Admin: frank@astersports.co (user_id: `ff9e2065-8394-4115-ad87-56108c3631d4`, org_id: `e3e95e21-3571-4e9a-985a-d5d01480d4a6`) — the admin role was migrated here 2026-06-30; the prior `admin@legacyhoopers.org` (`1e06a3d4-…`) is retired (no role).
 - Local path: `~/aster-sports` | branch: `main`
 - Deploy chain: PR against main, auto-merge per §15 once CI green (see section 12)
 
@@ -444,7 +444,7 @@ to prevent drift.
 ### Staff
 | Name | Role | Email |
 |---|---|---|
-| Frank Samaritano | Program Director | admin@legacyhoopers.org |
+| Frank Samaritano | Program Director | frank@astersports.co |
 | Kenny Lane | Coaching Director | coachkenny@legacyhoopers.org |
 | Darien Gonzalez | Assistant Coach | coachdarien@legacyhoopers.org |
 
