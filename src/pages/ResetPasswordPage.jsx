@@ -72,7 +72,7 @@ export default function ResetPasswordPage() {
             </Link>
           </>
         ) : hasSession === null ? (
-          <p aria-live="polite" style={{ color: 'var(--as-text-tertiary)', fontSize: 14 }}>Verifying your reset link…</p>
+          <p aria-live="polite" style={{ color: 'var(--as-text-meta)', fontSize: 14 }}>Verifying your reset link…</p>
         ) : (
           <form onSubmit={onSubmit}>
             <div style={{ marginBottom: 12, textAlign: 'left' }}>
