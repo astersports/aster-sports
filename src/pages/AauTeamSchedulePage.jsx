@@ -88,7 +88,7 @@ export default function AauTeamSchedulePage() {
           {upcoming.length > 0 && (
             <section>
               <h2 style={sectionLabel}>Upcoming · {upcoming.length}</h2>
-              <div style={{ display: 'grid', gap }}>
+              <div style={{ display: 'grid', gap, gridTemplateColumns: 'minmax(0, 1fr)' }}>
                 {upcoming.map((g) => <AauGameCard key={g.gameId} game={g} compact={compact} />)}
               </div>
             </section>
@@ -96,7 +96,7 @@ export default function AauTeamSchedulePage() {
           {results.length > 0 && (
             <section>
               <h2 style={sectionLabel}>Results · {results.length}</h2>
-              <div style={{ display: 'grid', gap }}>
+              <div style={{ display: 'grid', gap, gridTemplateColumns: 'minmax(0, 1fr)' }}>
                 {results.map((g) => <AauGameCard key={g.gameId} game={g} compact={compact} />)}
               </div>
             </section>

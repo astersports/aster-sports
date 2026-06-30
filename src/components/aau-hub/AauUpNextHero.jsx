@@ -96,8 +96,8 @@ export default function AauUpNextHero() {
 
     {afterThis.length > 0 && (
       <div style={{ marginTop: 10 }} aria-label="Games after the next one">
-        <p style={{ ...eyebrow, color: 'var(--as-text-tertiary)', margin: '0 0 6px' }}>After that</p>
-        <div style={{ display: 'grid', gap: 8 }}>
+        <p style={{ ...eyebrow, color: 'var(--as-text-meta)', margin: '0 0 6px' }}>After that</p>
+        <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'minmax(0, 1fr)' }}>
           {afterThis.map((g) => (
             <div key={g.gameId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 14px', backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)', borderRadius: 10, boxShadow: 'var(--as-shadow-sm)' }}>
               <div style={{ minWidth: 0 }}>
