@@ -1,0 +1,106 @@
+CC SESSION HANDOFF — AAU Hub R1·PR-A build status
+CC lane · 2026-06-30 · for architect review / fresh-chat pickup
+Repo of record: aster-sports (astersports.app) · companion to CONSOLIDATION_AUDIT_2026-06-29.txt
+
+=====================================================================
+0. WHAT THIS IS
+=====================================================================
+A short current-state snapshot of the AAU Hub build. The 2026-06-29 consolidation
+docs (audit / phased plan / tiers / decision request) are the ratified PLAN and remain
+the record — this doc is only "where the build actually is as of 2026-06-30." Hand it to
+the architect or paste it into a new chat to resume.
+
+Live surface: https://www.astersports.app/hub  (no login, anon Supabase public RPCs)
+
+=====================================================================
+1. SHIPPED THIS SESSION (live on /hub unless noted)
+=====================================================================
+R1·PR-A "free Hub" surfaces — all merged to main:
+  • Tournament directory + search (search_public_aau), tournaments tappable to a
+    tournament detail page; search surfaces tournaments-first; directory sorts by end date.
+  • Team schedule page (get_public_aau_team_schedule) with Upcoming/Results, venue +
+    Google/Apple directions, Compact/Detailed density toggle (label shows CURRENT view).
+  • Anonymous team tracking (localStorage 'aau:tracked-teams:v1'); track from search
+    results without re-typing; Tracked section separated from the directory on Home.
+  • NEXT-UP countdown + weather hero (gold-on-navy), deterministic game-day weather advice;
+    "After that" on-deck mini box for the next 1-2 games across all tracked teams (#1165 —
+    SEE §3, blocked on GitHub re-auth).
+  • Branding: navy header chrome + inline gold→flame constellation mark (AauMark); real
+    Aster Sports constellation logo on the welcome hero (optimized 1.9MB→82KB, Vite import).
+  • Contrast: card date/venue darkened to near-black (--as-text-primary); AA tokens.
+  • Layout: schedule grids pinned to minmax(0,1fr) so score chips don't run off-screen.
+  • Front-door cutover STARTED: astersports.io landing "AAU Hub" card now links to
+    astersports.app/hub (astersports-web #243, merged).
+
+=====================================================================
+2. DATA / INFRA CHANGES (production, applied via MCP)
+=====================================================================
+  • Tournament dates reconciled to actual games for all public tournaments (Westchester
+    Summer League end_date Jun 26 → Aug 18, etc.).
+  • NEW self-healing trigger on division_games — reconcile_tournament_dates_from_games()
+    (migration 20260630113500): extends a tournament's start/end to cover its games on
+    every ingest, so the TourneyMachine importer can no longer clobber the dates back to
+    the scraped summary range. Verified by simulated clobber.
+
+=====================================================================
+3. IN FLIGHT — BLOCKED ON GITHUB RE-AUTH
+=====================================================================
+GitHub MCP token expired mid-session. Until it is re-authorized (claude.ai connector
+settings, or /mcp interactively), these cannot merge/open:
+  • aster-sports #1165 — on-deck mini box + score-overflow + AA-label fixes. CI was green;
+    just needs the merge (cron couldn't fire). Branch: claude/aster-aau-nextup-card-srz61n.
+  • Docs PRs approved-to-merge by Frank, still open: aster-sports #1154 (consolidation
+    audit + phased plan + tiers); astersports-web #242 (pointer), #240 (decision request),
+    #239 (unified-plan amendment).
+  • This handoff doc's own PR.
+
+=====================================================================
+4. OPEN BUGS FROM LIVE TESTING
+=====================================================================
+B1 · TRACKING TAP-CANCELLATION (confirmed, fix designed, NOT yet built).
+  The track key is name:gender:grade (e.g. "legacy hoopers:F:5th"). The SAME real team
+  appears once PER tournament in search, all sharing one key. Tapping "Track" on a
+  duplicate card TOGGLES it OFF, so taps cancel out ("tracked 6, only 2 stuck"). Also the
+  tracked list shows the bare team name ("Legacy Hoopers") with no grade/gender, so
+  entries are indistinguishable.
+  FIX: dedup search results by teamKey (each distinct team once) + store a richer display
+  label (name + grade/gender) for the tracked list / on-deck / schedule link.
+B2 · 3 games in "Zero Gravity NY Grand Finale" have a NULL venue (minor).
+
+=====================================================================
+5. DATA-INTEGRITY AUDIT (Frank: "verify all tournament data ported correct")
+=====================================================================
+First pass across all 15 public tournaments: divisions/teams/games/scores all present;
+score coverage ~98%+ on completed events. No tournament with 0 teams or 0 games.
+Flags: Westchester later games unscored (expected — runs to Aug 18); Grand Finale 3
+no-venue games (B2). STILL TO VERIFY: standings correctness + champions (bracket finals)
+per division, and a TourneyMachine cross-check for a sampled tournament.
+
+=====================================================================
+6. NEXT (queued)
+=====================================================================
+  • Schedule FILTER bar — Frank wants it on ALL screens (directory, team schedule, and a
+    combined tracked-teams view): By Team / Age-Grade / By Date + Games/Practices/
+    Tournaments + Boys/Girls, adapted per surface (public AAU teams have games only, no
+    practices). Mirror the authed app's bar.
+  • Fix B1 (tracking dedup) — high priority, Frank actively hit it.
+  • Finish the §5 standings/champions audit.
+  • R1·PR-B standings/bracket port — GATED on the held standings/bracket substrate being
+    owner-applied to prod + PUBLIC_RPC_CONTRACT.md frozen (per phased plan).
+  • Per the plan: DR-P sync-on-login (anon localStorage → tracked_teams), the no-org auth
+    seam (family-Hub route + anon-tolerant SeasonProvider/WeatherProvider), then R3 money-path.
+
+=====================================================================
+7. FRESH-CHAT CONTEXT
+=====================================================================
+  • One shared Supabase project vrwwpsbfbnveawqwbdmj; public AAU data in the isolated
+    "AAU Tournaments" org, gated by org_is_public_listed(); anon RPCs are the frozen
+    contract (docs/aau/PUBLIC_RPC_CONTRACT.md).
+  • Hub code: src/pages/AauHubPage.jsx, src/pages/AauTeamSchedulePage.jsx,
+    src/components/aau-hub/*, src/hooks/useAau*/useTracked*, src/lib/aau/*.
+    Public routes in src/App.jsx: /hub, /hub/team/:teamKey, /hub/tournament/:tournamentId.
+  • Designated work branch: claude/aster-aau-nextup-card-srz61n. Doctrine: CLAUDE.md
+    (150-line cap, --as-* tokens only, AP #27 pure-helpers, AP #36 {data,error}, AP #46
+    *Card.jsx needs a test in the diff, AP #45 ledger guard).
+
+END — short build-status handoff. Decisions live in the 2026-06-29 consolidation docs.
