@@ -72,6 +72,17 @@ describe('AauGameCard', () => {
     expect(container.querySelector('a[href]')).toBeNull();
   });
 
+  it('renders meta/date text in the darker secondary token, not the AA-failing tertiary', () => {
+    const detailed = render(<AauGameCard game={baseFinal} />);
+    const detailedStyles = [...detailed.container.querySelectorAll('p, span')].map((el) => el.getAttribute('style') || '').join(' ');
+    expect(detailedStyles).not.toMatch(/--as-text-tertiary/);
+    expect(detailedStyles).toMatch(/--as-text-secondary/);
+    cleanup();
+    const compact = render(<AauGameCard game={baseFinal} compact />);
+    const compactStyles = [...compact.container.querySelectorAll('p')].map((el) => el.getAttribute('style') || '').join(' ');
+    expect(compactStyles).not.toMatch(/--as-text-tertiary/);
+  });
+
   it('compact mode shows matchup + result but hides venue, directions, and badges', () => {
     const { container } = render(<AauGameCard game={{ ...baseFinal, isBracket: true }} compact />);
     expect(container.textContent).toMatch(/vs CT Northstars/);

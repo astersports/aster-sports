@@ -47,7 +47,7 @@ export default function AauGameCard({ game, compact = false }) {
       <article style={{ ...cardStyle, padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ minWidth: 0 }}>
           <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{matchup}</p>
-          <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--as-text-tertiary)' }}>{gameDay(g.startAt)} · {formatTime(g.startAt)}</p>
+          <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--as-text-secondary)' }}>{gameDay(g.startAt)} · {formatTime(g.startAt)}</p>
         </div>
         {resultChip}
       </article>
@@ -69,7 +69,7 @@ export default function AauGameCard({ game, compact = false }) {
 
       <p style={{ margin: '8px 0 0', fontSize: 17, fontWeight: 600, color: 'var(--as-text-primary)' }}>{matchup}</p>
 
-      {meta && <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--as-text-tertiary)' }}>{meta}</p>}
+      {meta && <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--as-text-secondary)' }}>{meta}</p>}
 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
         {g.isBracket && <span style={badge('var(--as-academy-soft)', 'var(--as-academy)')}>Bracket</span>}

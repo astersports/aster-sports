@@ -52,7 +52,7 @@ export default function AauTournamentCard({ tournament }) {
         </span>
       </div>
       {meta.length > 0 && (
-        <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--as-text-tertiary)' }}>
+        <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--as-text-secondary)' }}>
           {meta.join(' · ')}
         </p>
       )}
