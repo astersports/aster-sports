@@ -22,9 +22,11 @@ function dateRange(start, end) {
 }
 
 export default function AauTournamentCard({ tournament }) {
-  const { name, circuit, states, start_date, end_date, divisions } = tournament || {};
+  const { name, circuit, states, start_date, end_date, division_count, divisions } = tournament || {};
   const stateList = Array.isArray(states) ? states.filter(Boolean) : [];
-  const divisionCount = Array.isArray(divisions) ? divisions.length : 0;
+  // `division_count` is the slim directory field; fall back to a legacy embedded
+  // `divisions` array so the card is resilient across the RPC-slim deploy.
+  const divisionCount = division_count ?? (Array.isArray(divisions) ? divisions.length : 0);
 
   const meta = [
     circuit,

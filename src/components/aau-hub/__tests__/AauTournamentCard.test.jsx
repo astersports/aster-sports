@@ -14,11 +14,11 @@ import AauTournamentCard from '../AauTournamentCard';
 afterEach(cleanup);
 
 describe('AauTournamentCard', () => {
-  it('renders name, date range, circuit, states, and division count', () => {
+  it('renders name, date range, circuit, states, and division count (from division_count)', () => {
     const t = {
       id: 't1', name: 'Spring Showcase', circuit: 'Zero Gravity',
       states: ['NY', 'CT'], start_date: '2026-04-11', end_date: '2026-04-12',
-      divisions: [{ id: 'd1' }, { id: 'd2' }, { id: 'd3' }],
+      division_count: 3, // slim directory field (replaced the embedded divisions array)
     };
     const { container } = render(<AauTournamentCard tournament={t} />);
     expect(container.textContent).toMatch(/Spring Showcase/);
@@ -26,6 +26,12 @@ describe('AauTournamentCard', () => {
     expect(container.textContent).toMatch(/Zero Gravity/);
     expect(container.textContent).toMatch(/NY, CT/);
     expect(container.textContent).toMatch(/3 divisions/);
+  });
+
+  it('falls back to a legacy embedded divisions[] array when division_count is absent', () => {
+    const t = { id: 't1b', name: 'Legacy Shape', divisions: [{ id: 'd1' }, { id: 'd2' }] };
+    const { container } = render(<AauTournamentCard tournament={t} />);
+    expect(container.textContent).toMatch(/2 divisions/);
   });
 
   it('date-only values render in the parsed day — no UTC-midnight drift (AP #43)', () => {

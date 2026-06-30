@@ -66,9 +66,13 @@ on-load read.
 
 ### `get_public_tournament_directory() -> jsonb`
 ```
-[{ id, name, circuit, start_date, end_date,
-   divisions: [{ id, name, grade_label, gender, advance_count, team_count }] }]
+[{ id, name, circuit, start_date, end_date, states: [..], division_count }]
 ```
+**Slimmed 2026-06-30** (migration `20260630141500`): the embedded `divisions` array was
+replaced with a scalar `division_count`. The directory cards only need the count; the
+detail page loads full divisions (with teams) via `get_public_tournament_teams`. Cut the
+home-page payload ~52 KB → ~3 KB. `states` = DISTINCT venue states reached via
+`division_games.venue_id` (A6, geocoded only; `[]` when none).
 Browse grouping (circuit → season → year) is derived client-side from `circuit` + dates.
 *Phase 2 (A4, deferred):* `get_public_division_browse(filters)` for division-level filter chips.
 
@@ -82,6 +86,12 @@ Browse grouping (circuit → season → year) is derived client-side from `circu
 ---
 
 ### Change log
+- **2026-06-30** — `get_public_tournament_directory` slimmed: embedded `divisions` array →
+  scalar `division_count` (home payload ~52 KB → ~3 KB; full divisions load on the detail
+  page via `get_public_tournament_teams`). `get_public_tournament_teams` now also returns a
+  per-team `team_key` (qkey) so the tournament → division → team drill-down links resolve
+  through `get_public_aau_team_schedule`. Additive index on `division_games(home/away team)`.
+  Migrations `20260630134500` / `20260630141000` / `20260630141500`.
 - **2026-06-27** — Opened. search v1 (`search_public_teams`) → v2 (`search_public_aau`,
   typed + program-grouped + valued + tier/day); added `get_public_live_now`. All additive;
   v1 retained. Architect-approved (A1+A2+A3+A5), Frank L99, owner-applied (migration
