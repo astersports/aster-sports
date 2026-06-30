@@ -61,7 +61,13 @@ export default function AauTournamentDetailPage() {
             Divisions · {divisions.length}
           </h2>
           <div style={{ display: 'grid', gap: 12 }}>
-            {divisions.map((d) => <AauDivisionCard key={d.id || d.name} division={d} />)}
+            {divisions.map((d) => (
+              <Link key={d.id || d.name} to={`/hub/tournament/${tournamentId}/division/${d.id}`}
+                aria-label={`${d.name || 'Division'} — standings, schedule, bracket`}
+                style={{ display: 'block', textDecoration: 'none' }}>
+                <AauDivisionCard division={d} />
+              </Link>
+            ))}
           </div>
         </>
       )}
