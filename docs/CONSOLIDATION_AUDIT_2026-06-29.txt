@@ -182,10 +182,12 @@ DR-T Trial shape — [RATIFIED — architect 2026-06-29] build the writer/checko
    HARD conditions: (a) unambiguous pre-charge consent copy ("free 7 days, then $20/mo,
    cancel anytime"); (b) reminder cron fires BEFORE the first charge with one-tap cancel
    (negative-option flow for youth-sports parents — surprise charges = chargebacks).
-DR-P Tracking persistence — [RATIFIED] port anon localStorage + sync-on-login. Sync target
-   = `family_subscriptions` (`UNIQUE(user_id, resolved_key)`, user-scoped — confirmed
-   2026-06-29). Anon store holds ONLY public team refs (no PII); sync target never
-   org-scoped. Ships with the §4 blocker fix (step 3).
+DR-P Tracking persistence — [RATIFIED; target CORRECTED 2026-06-29] port anon localStorage +
+   sync-on-login. Sync target = `tracked_teams` (`20260627044535`: `(user_id, team_key)`,
+   team_key = the `tournament_division_teams` id = the trackingStore key; owner-only RLS, anon
+   no access) — the purpose-built account-sync table. (NOT `family_subscriptions`, the
+   family-trust layer — earlier line corrected.) Anon store holds ONLY public team refs (no
+   PII). Ships in R1·PR-A.
 DR-A Anon default route — [RATIFIED w/ correction] route on ROLE TYPE, not org-presence:
    anon → public Hub; signed-in PARENT (org OR no-org) → family Hub (org features light up
    if onboarded/entitled); signed-in STAFF (coach/admin) → role home. (Corrects the prior

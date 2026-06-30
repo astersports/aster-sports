@@ -33,18 +33,41 @@ scores; team schedule; standings/records/bracket; team detail; up-next countdown
 constellation home. Track teams: anonymous (localStorage); optional free sign-in syncs to the
 account so a no-org parent persists. A no-org signed-in parent lands on the family Hub.
 (SCOUT is NOT in R1 — see Deferred Items.)
-BUILT: IN-APP reuse — `get_public_*` RPCs (shipped, anon-gated), `useWeather`,
-`getDirectionUrls`, public-route pattern (`App.jsx:74-82`), `family_subscriptions`. NEW —
-no-org family-Hub route; no-org-tolerant `SeasonProvider`/`WeatherProvider`; DR-A role-type
-routing; DR-P localStorage→`family_subscriptions` sync (public team refs only). PORT
-(.tsx→.jsx) over canonical RPCs.
-HARD REQ: port a STABLE HONESTY-CHECKPOINT SNAPSHOT of `components/aau` (the forfeit/
-division-pool/advancement honesty work is still in flux — porting a moving target ports
-half-fixed bugs); FREEZE the source after the snapshot; consume the canonical `get_public_*`
-RPCs ONLY — never carry over client-side record math.
-EXIT (corrected): the ported Hub handles a real-traffic CANARY at PARITY with the old Hub,
-over a stable honesty snapshot, old Hub frozen. (Not "anyone uses the free Hub.")
-SCOPE: routine reuse-heavy port + one additive auth seam (the no-org route).
+R1 SPLITS by blast radius (the same lens, one level down) into TWO PRs:
+
+R1·PR-A — INSULATED HALF (START NOW; independent of the honesty churn):
+  • Auth seam [architect-scoped]: no-org family-Hub route; no-org-tolerant `SeasonProvider`/
+    `WeatherProvider`; DR-A role-type routing (anon→Hub, parent→family Hub, staff→role home).
+  • DR-P sync: anon localStorage → `tracked_teams` (CORRECTED target — the purpose-built
+    account-sync table `20260627044535`: `(user_id, team_key)`, team_key = the
+    `tournament_division_teams` id = the trackingStore key; owner-only RLS, anon no access.
+    NOT `family_subscriptions`.)
+  • Stable reads (NO client-side math): `search_public_aau`, tournament directory,
+    `get_public_aau_team_schedule`, team-detail shell, weather (`useWeather`), directions
+    (`getDirectionUrls`), constellation-home shell, up-next countdown.
+
+R1·PR-B — HONESTY-DEPENDENT HALF (opens on the contract freeze):
+  • Standings, records, bracket, advancement, odds (`StandingsTable`, `BracketOdds`,
+    `DivisionSlice`, `BracketPath`, `TournamentHistory`).
+  • GATE: port ONLY once (a) the HELD standings/bracket substrate (#1127/#1130 STAGED) is
+    OWNER-APPLIED to prod AND (b) `PUBLIC_RPC_CONTRACT.md` is bumped + FROZEN for
+    `is_forfeit`/`advance_count`/`pool`/`bracket`.
+  • RULE: consume the RPC fields and DELETE the client-side tally/advancement math — the port
+    is where that math is RETIRED, not carried. That's how the live regressions (TO-ADVANCE
+    aggregate disagreement, legacy advancement ring, BracketOdds mislabel) die in the move.
+
+HONESTY SNAPSHOT — REFRAMED [grounded]: it is NOT a Hub commit to pick; it is the RPC CONTRACT
+to FREEZE. The truth is migrating server-side into the canonical RPCs (is_forfeit #1145,
+bracket #1144, advance_count/division/pool in `20260629024237`), but it is NOT frozen — the
+bracket/standings substrate is committed-and-HELD for owner apply, and the Hub UI is
+mid-migration with client-side math still live in the standings/bracket/odds files. So no
+stable snapshot exists yet on either side; PR-A is insulated from this, PR-B waits for the freeze.
+OWNER ACTION ON THE CRITICAL PATH (gates PR-B only): apply the held standings/bracket migrations
+to prod (the schema hard gate) + bump/freeze `PUBLIC_RPC_CONTRACT.md`. PR-A does not wait on it.
+EXIT (corrected): PR-A — the no-org Hub + stable reads + `tracked_teams` sync pass a real-traffic
+CANARY at PARITY with the old Hub's equivalent surfaces, old Hub frozen. PR-B — standings/bracket
+render from frozen RPCs with zero client math, at parity.
+SCOPE: PR-A architect-scoped (auth seam) + routine reads; PR-B architect-scoped (honesty consumption).
 
 =====================================================================
 R2 — FRONT-DOOR CUTOVER (front-door only; on Vercel; NO host swap)
@@ -149,8 +172,10 @@ outweigh adding risk to the one app already serving authed traffic.)
 =====================================================================
 CROSS-CUTTING HARD REQUIREMENTS (apply regardless of sequence)
 =====================================================================
-1. Snapshot-before-port: port a stable honesty-checkpoint snapshot; freeze the source; consume
-   canonical `get_public_*` RPCs only — never client-side record math.
+1. Snapshot-before-port = FREEZE THE RPC CONTRACT (not "pick a Hub commit"): standings/bracket
+   port (PR-B) only AFTER the held substrate is owner-applied + `PUBLIC_RPC_CONTRACT.md` frozen;
+   the port consumes RPC fields and DELETES client-side record math. The insulated reads +
+   auth seam + `tracked_teams` sync (PR-A) do NOT wait on it.
 2. Traffic vendor LOCKED before R3 (the paid build's headline value).
 3. Real RBAC before R5 (B2B / other orgs' data).
 4. Observability + TESTED rollback on the money-path (R3) and the cutover (R2): alert on ANY
@@ -161,7 +186,8 @@ CROSS-CUTTING HARD REQUIREMENTS (apply regardless of sequence)
 =====================================================================
 RELEASE → TIER → READY-WHEN
 =====================================================================
-R1 Free Hub        → T0           → ported Hub passes a real-traffic canary at parity; snapshot stable; old Hub frozen
+R1·PR-A Free Hub   → T0           → auth seam + stable reads + tracked_teams sync pass a canary at parity; old Hub frozen
+R1·PR-B standings  → T0           → standings/bracket render from FROZEN RPCs, zero client math (gated on owner-applied substrate + contract freeze)
 R2 Cutover         → —            → one canonical front door; 301s live; un-301 rollback rehearsed (Vercel; no host swap)
 R3 Hub Plus MVP    → T1           → parent converts to $20/mo; traffic-accurate single-game leave-by; webhook sole-writer verified
 R4 Hub Plus done   → T1           → push + multi-game travel conflicts + weekend agenda live
