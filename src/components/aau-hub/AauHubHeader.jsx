@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import AauMark from './AauMark';
 
 // Branded chrome for the no-login Hub (R1·PR-A) — matches the astersports.io
 // landing + the authenticated app: a navy bar with the gold constellation mark
@@ -10,7 +11,7 @@ export default function AauHubHeader() {
     <header style={{ backgroundColor: 'var(--as-header)' }}>
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <Link to="/hub" aria-label="Aster Sports AAU Hub home" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none', minWidth: 0 }}>
-          <img src="/brand/aster-mark-gold.svg" alt="" width={24} height={24} style={{ display: 'block', flexShrink: 0 }} />
+          <AauMark size={24} />
           <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.01em', color: 'var(--as-accent)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             Aster Sports AAU Hub
           </span>

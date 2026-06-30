@@ -21,7 +21,7 @@ export default function AauDivisionCard({ division }) {
       <p style={{ margin: 0, fontSize: 15, fontWeight: 600, lineHeight: 1.3, color: 'var(--as-text-primary)' }}>
         {d.name || 'Division'}
       </p>
-      {meta && <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--as-text-tertiary)' }}>{meta}</p>}
+      {meta && <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--as-text-secondary)' }}>{meta}</p>}
     </article>
   );
 }

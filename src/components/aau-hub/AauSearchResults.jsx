@@ -13,7 +13,7 @@ const cardStyle = {
   borderRadius: 10, boxShadow: 'var(--as-shadow-sm)', padding: 16, minHeight: 44,
 };
 const titleStyle = { fontSize: 15, fontWeight: 600, lineHeight: 1.3, color: 'var(--as-text-primary)', margin: 0 };
-const metaStyle = { margin: '4px 0 0', fontSize: 13, color: 'var(--as-text-tertiary)' };
+const metaStyle = { margin: '4px 0 0', fontSize: 13, color: 'var(--as-text-secondary)' };
 const sectionLabel = { margin: '0 0 8px', fontSize: 11, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)' };
 
 function genderLabel(g) {
