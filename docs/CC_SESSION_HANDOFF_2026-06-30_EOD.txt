@@ -1,0 +1,230 @@
+CC SESSION HANDOFF — AAU Hub R1·PR-A close + auth/identity hardening (END OF DAY)
+CC lane · 2026-06-30 EOD · for architect review / fresh-chat pickup
+Repo of record: aster-sports (astersports.app)
+Supersedes: docs/CC_SESSION_HANDOFF_2026-06-30.txt (mid-day snapshot — kept as a checkpoint;
+this EOD doc is the full-day record). Companion to docs/CONSOLIDATION_AUDIT_2026-06-29.txt
+(the ratified PLAN) and docs/aau/PUBLIC_RPC_CONTRACT.md (the frozen anon RPC contract).
+
+=====================================================================
+0. WHAT THIS IS
+=====================================================================
+Full record of the last ~24h of CC work + the plan for the next phases. Hand it to the
+architect or paste it into a fresh chat to resume. The 2026-06-29 consolidation docs remain
+the ratified plan/record; this is "where the build actually is at 2026-06-30 EOD" plus
+what's next. Live surface: https://www.astersports.app/hub (no login, anon Supabase RPCs).
+
+Operating frame unchanged: one shared Supabase project vrwwpsbfbnveawqwbdmj. The free,
+no-login AAU Hub is the parent-acquisition wedge; behind it sits the authed Legacy Hoopers
+(now "Aster Sports AAU LLC") tenant app. Public AAU data lives in an isolated "AAU
+Tournaments" org gated by org_is_public_listed(); anon RPCs are the frozen contract.
+
+=====================================================================
+1. SHIPPED IN THE LAST 24h (merged to main, live on prod)
+=====================================================================
+PRs are listed newest-first with the one-line intent. All auto-merged on green CI.
+
+AUTH / ACCOUNT
+  #1176 fix(auth): route coerced-to-root password-recovery links to /reset-password.
+        Root cause: GoTrue coerces a reset link's redirect_to to the project Site URL when
+        the requested path isn't in the auth redirect allow-list, so reset links landed at
+        "/" (a Protected route → bounce to /login) instead of /reset-password. Two-part fix:
+        (a) src/lib/recoveryRedirect.js runs at first import in main.jsx (before the supabase
+        client is built / detectSessionInUrl strips the hash) and reroutes a type=recovery
+        landing to /reset-password preserving the token hash; (b) ResetPasswordPage now
+        reports same-password reuse plainly ("must be different from your current one")
+        instead of mislabeling it as an expired link. Companion ROOT-CAUSE fix done by Frank
+        in the Supabase dashboard: added https://astersports.app/** , https://www.astersports.app/**
+        (+ .io variants) to Authentication → URL Configuration → Redirect URLs. Verified end
+        to end on Frank's device: reset link now lands on the set-password form.
+  #1174 feat(auth): /reset-password set-new-password page — the screen the recovery flow was
+        missing. Also fixed user_preferences.card_density DEFAULT (was '{"default":"medium"}',
+        which violated the minimal|maximum CHECK and blocked the user_roles→user_preferences
+        onboarding trigger for EVERY new user). Migration 20260630151249.
+  #1172 feat(hub): account-synced team tracking via magic-link sign-in. Anon users still use
+        localStorage; signed-in users persist to public.tracked_teams (RLS to authenticated).
+        trackingStore.js is auth-aware (dynamic import of supabase only on DB paths per AP#27);
+        AauSignInSheet (supabase.auth.signInWithOtp, emailRedirectTo /hub); useHubSession.
+
+HUB R1·PR-A FEATURE ARC
+  #1175 feat(hub): division detail page — Standings / Schedule / Bracket tabs. Route
+        /hub/tournament/:tournamentId/division/:divisionId. Standings grouped by pool
+        (W/L/PD/PA/PS) from get_public_tournament_teams (extended with pointsFor/pointsAgainst,
+        migration 20260630163000); Schedule/Bracket from get_public_tournament_games grouped
+        into NY-anchored day buckets. New AauDivisionGameRow + AauGameDayList + AauStandingsTable.
+        This realizes Frank's TourneyMachine structure (divisions → gender/grade → pool play +
+        bracket).
+  #1171 perf(hub): index division_games by home/away team id + slim the directory payload
+        (52KB → 3KB; division_count instead of nested teams). The "inventory is huge" scale pass.
+  #1170 feat(hub): tournament → division → team drill-down (interim inline team-expand on the
+        division card; superseded by #1175's full page).
+  #1169 feat(hub): filter pills on team schedule + search results.
+  #1168 feat(hub): filter pills — Live/Upcoming/Completed on the tournament directory.
+  #1167 feat(hub): playoff path — full bracket on a team schedule before it's played.
+  #1166 fix(hub): dedup search teams so "track 6" actually tracks 6 (B1 from the mid-day doc).
+        teamKey regrained to qkey = resolved_key:gender:grade; tracked entries carry a rich
+        display label (name + grade/gender).
+  #1165 feat(hub): on-deck mini box + score-row overflow + AA label fixes.
+  #1164 feat(hub): NEXT-UP countdown + weather hero with the constellation logo.
+  #1163 fix(hub): inline gradient mark + darker meta text (live-testing polish).
+  #1162 feat(hub): branded navy header + compact/detailed schedule toggle.
+  #1161 feat(hub): clear/back button to exit search results.
+  #1160 feat(hub): gold branding + track-from-search + end-date sort + Home Tracked separation.
+  #1159 feat(hub): tournament navigation + search reorder + team tracking.
+  #1158 feat(hub): team schedule view with Google/Apple directions.
+  #1157 feat(hub): search teams + tournaments on the no-login Hub.
+  #1155 feat(hub): no-login AAU Hub gateway route (first brick).
+
+INFRA / SECURITY / DOCS (rolling into the day)
+  #1173 chore: retire admin@legacyhoopers.org → frank@astersports.co in live docs + density
+        migration mirror.
+  #1154 docs: AAU Hub + legacy-hoopers consolidation audit (free gateway → tiered plan).
+  #1148–#1153 chore(deps/security): Dependabot + CodeQL tooling; npm-minor-patch + GitHub
+        Actions group bumps; eslint 9→10, lint-staged 16→17, @eslint/js 9→10.
+  #1145 feat(aau): detect + expose forfeits (Zero Gravity 20-0 → is_forfeit).
+
+=====================================================================
+2. DATA / IDENTITY / INFRA CHANGES (production — applied via MCP SQL + dashboard)
+=====================================================================
+These are LIVE-STATE changes not all visible in git; a migrating agent / fresh chat must know
+them. CLAUDE.md §1 + §10 were updated to match (admin line → frank@astersports.co, ff9e2065).
+
+IDENTITY CUTOVER (verified live at EOD — 3 org staff accounts, all password «shared temp test password — value intentionally omitted»):
+  • frank@astersports.co   (ff9e2065-8394-4115-ad87-56108c3631d4) — role admin, "Frank Samaritano".
+    Old admin@legacyhoopers.org (1e06a3d4-…) merged into frank: 18 actor-FK columns reassigned
+    (game_results.entered_by, comms_messages.sent_by, etc.), then the old user deleted.
+  • coach1@astersports.co   — role coach, display "Coach1" (was coachkenny@legacyhoopers.org,
+    9ac6a671-…; email-renamed in place via auth.users.email + identities.identity_data, so
+    user_id + all history preserved).
+  • coach2@astersports.co   — role coach, display "Coach2" (was coachdarien@legacyhoopers.org,
+    af40a751-…; same in-place rename).
+  • Shared password «shared temp test password — value intentionally omitted» is a TEMPORARY testing credential — see §4 OPERATOR CAVEATS.
+
+SCHEMA / RPC:
+  • tracked_teams sync table (migration 20260627044535; team_key regrained to qkey in
+    20260628023337): id/user_id/team_key/name(NOT NULL)/program/pool/tournament_id/
+    tournament_name/division_id/division_name/kid/created_at; PK(id), UNIQUE(user_id,team_key);
+    RLS to authenticated. NOTE the Supabase table default-privilege trap (table analog of
+    AP#57): new public tables auto-grant authenticated the full set incl TRUNCATE/UPDATE and
+    RLS does NOT gate TRUNCATE — fixed by REVOKE ALL + GRANT SELECT/INSERT/DELETE.
+  • get_public_tournament_teams extended with pointsFor/pointsAgainst (20260630163000).
+  • user_preferences.card_density DEFAULT fixed medium → minimal (20260630151249) — was
+    silently blocking ALL new-user onboarding via the user_roles_create_preferences() trigger.
+  • Self-healing trigger reconcile_tournament_dates_from_games() on division_games
+    (20260630113500) — extends a tournament's start/end to cover its games on every ingest so
+    the TourneyMachine importer can't clobber dates back to the scraped summary range.
+
+DASHBOARD (Frank, this evening): Supabase auth redirect allow-list now includes
+  https://astersports.app/** , https://www.astersports.app/** (+ .io variants).
+
+=====================================================================
+3. STATE AT EOD — what's clean, what's open
+=====================================================================
+CLEAN / DONE:
+  • No in-flight PRs. Everything opened today is merged. GitHub MCP re-auth that blocked the
+    mid-day doc is resolved (it merged #1165 onward).
+  • Password recovery works end to end (code fix + allow-list). Frank can also sign in directly
+    at /login with frank@astersports.co / «shared temp test password — value intentionally omitted».
+  • B1 tracking tap-cancellation (mid-day doc) — FIXED (#1166).
+
+OPEN / MINOR (not blocking):
+  • B2 · 3 games in "Zero Gravity NY Grand Finale" have a NULL venue (cosmetic; carried).
+  • Task #11 · preserve the search query on back-navigation out of a result page (small UX).
+  • §5 data-integrity audit tail (below) — standings/champions correctness not yet fully verified.
+
+=====================================================================
+4. DECISIONS AWAITING ARCHITECT RATIFICATION / OPERATOR CALL (§11.8 r4)
+=====================================================================
+  • R1·PR-A close-out: the free-Hub surface (search → tournament → division → team, tracking,
+    next-up/weather, branding) is functionally complete. Architect to ratify the phase close
+    against main (post-hoc SHA read) per §11.8 r4 before R1·PR-B opens.
+  • OPERATOR CAVEAT — shared password: «shared temp test password — value intentionally omitted» is set on all three org accounts for
+    testing. ROTATE to per-user passwords before any real family/coach is invited. Recommend
+    also enabling the in-app /forgot-password flow as the self-serve reset path now that it works.
+  • Auth seam for the family Hub (carried from the consolidation plan): a no-org / anon-tolerant
+    auth path so a parent can sign in on the Hub without a tenant org. Needs SeasonProvider /
+    WeatherProvider to tolerate a null org. Architect decision: family-Hub route shape + where
+    the anon→authed tracking sync lands (DR-P sync-on-login; partially shipped via #1172).
+  • .io vs .app: redirect allow-list now carries both .app and .io; .app is production, .io is a
+    front-door landing (astersports-web). Confirm .io stays a marketing front door, not an app host.
+
+=====================================================================
+5. DATA-INTEGRITY AUDIT — remaining tail (Frank: "verify all tournament data ported correct")
+=====================================================================
+First pass (mid-day) across all 15 public tournaments: divisions/teams/games/scores present;
+score coverage ~98%+ on completed events; no tournament with 0 teams/0 games. STILL TO VERIFY:
+standings correctness + champions (bracket finals) per division, and a TourneyMachine
+cross-check for a sampled tournament. Now easier to eyeball via the #1175 division page
+(Standings/Bracket tabs). Recommend this as the first task of the next session.
+
+=====================================================================
+6. NEXT PHASES — against the RATIFIED plan (not a new plan)
+=====================================================================
+CANONICAL PLAN: docs/CONSOLIDATION_PHASED_PLAN_2026-06-29.txt (rev 3, architect-ratified,
+blast-radius sequenced). Companions: CONSOLIDATION_AUDIT_2026-06-29.txt,
+CONSOLIDATION_TIERS_AND_FUNCTIONALITY_2026-06-29.txt. This section is NOT a substitute — it
+only maps today's progress onto that R1→R6 ladder. Read the plan doc for scope/gates/exits.
+
+Tiers: T0 Free Hub (free forever, no card) · T1 Hub Plus (7-day trial → $20/mo) · Program (B2B).
+Release order: R1 Free Hub → R2 Front-Door Cutover → R3 Hub Plus MVP → R4 Hub Plus completeness
+→ R5 Program ladder → R6 Premium/AI/Film. Super-admin operates from R1.
+
+WHERE WE ARE ON IT (2026-06-30 EOD):
+  • R1·PR-A (insulated half — stable reads + auth seam + tracked_teams sync): SUBSTANTIALLY
+    SHIPPED. Done: all stable reads (search, directory, team schedule, team/division detail,
+    up-next countdown, weather, directions, constellation home, branding), anon localStorage
+    tracking, and DR-P account-sync to tracked_teams via magic-link sign-in (#1172). STILL OPEN
+    in PR-A [architect-scoped]: the full no-org AUTH SEAM — no-org-tolerant SeasonProvider/
+    WeatherProvider, the family-Hub route a no-org signed-in parent lands on, and DR-A role-type
+    routing (anon→Hub, parent→family Hub, staff→role home). EXIT not yet claimed: a real-traffic
+    CANARY at parity with the old Hub, old Hub frozen. → Architect to ratify the PR-A close.
+  • R1·PR-B (honesty-dependent half — standings/records/bracket/advancement/odds): NOT STARTED,
+    GATED. Gate (cross-cutting req #1): the HELD standings/bracket substrate (#1127/#1130 staged)
+    must be OWNER-APPLIED to prod AND docs/aau/PUBLIC_RPC_CONTRACT.md bumped + FROZEN for
+    is_forfeit/advance_count/pool/bracket. The port then CONSUMES the RPC fields and DELETES the
+    client-side tally/advancement math (that's where the live standings regressions die). NOTE:
+    the #1175 division page renders standings from get_public_tournament_teams server fields, but
+    the deeper advancement/odds surfaces remain the gated PR-B work. → OWNER ACTION on the
+    critical path: apply the held migrations + freeze the contract.
+  • R2 Front-Door Cutover (on Vercel, NO host swap): NOT STARTED. Flip the 301s
+    (astersports.io/aau + legacy-hoopers → the app) only AFTER R1 canaries at parity; freeze the
+    old Hub; rehearse the un-301 rollback. (astersports-web pointer PR #242 is the front-door
+    slim.) Confirms the .io question: .io stays the marketing front door, app is .app.
+  • R3 Hub Plus MVP (T1 money-path + single-game leave-by assistant): NOT STARTED. HARD REQ
+    before it: traffic vendor LOCKED (TomTom/Google Routes); Stripe webhook as SOLE writer of
+    family_entitlements. Architect-scoped + onboarding-gate.
+  • R4 Hub Plus completeness, R5 Program ladder (B2B; needs real RBAC first), R6 Premium/AI/Film
+    (COPPA-gated): later, per the plan.
+  • DEFERRED (per plan): SCOUT (AI concierge) — out of R1, a security workstream (Turnstile +
+    rate-limit + hard daily spend cap) when it returns. HOST SWAP Vercel→Railway — KILLED unless
+    a concrete Node-runtime driver lands.
+
+IMMEDIATE NEXT (fits inside R1 close, no plan change):
+  1. Architect ratifies R1·PR-A close against main; build the remaining auth-seam piece.
+  2. Owner applies the held standings/bracket substrate + freezes PUBLIC_RPC_CONTRACT.md → unblocks R1·PR-B.
+  3. Finish the §5 standings/champions audit (use the #1175 division page); small UX (Task #11; B2).
+
+ALWAYS-ON before onboarding real families: rotate the shared TEST password to per-user (the
+/forgot-password self-serve flow now works as the path); plus the plan's cross-cutting reqs
+(observability + tested rollback on money-path/cutover; RBAC before R5; COPPA never bypassed).
+
+=====================================================================
+7. FRESH-CHAT CONTEXT
+=====================================================================
+  • Designated work branch: claude/aster-aau-nextup-card-srz61n (PRs → main, auto-merge on green).
+  • Hub code: src/pages/AauHubPage.jsx, AauTeamSchedulePage.jsx, AauTournamentDetailPage.jsx,
+    AauDivisionDetailPage.jsx; src/components/aau-hub/*; src/hooks/useAau*/useTracked*/useHubSession;
+    src/lib/aau/*; src/lib/aau/trackingStore.js (auth-aware). Public routes in src/App.jsx:
+    /hub, /hub/team/:teamKey, /hub/tournament/:tournamentId[/division/:divisionId].
+  • Auth: /login, /forgot-password, /reset-password (public, no shell); src/lib/recoveryRedirect.js
+    (boot-time recovery-hash guard); src/lib/supabase.js (anon client, implicit flow).
+  • Anon RPC contract: docs/aau/PUBLIC_RPC_CONTRACT.md (FROZEN — do not change a signature without
+    a contract bump). Public AAU data gated by org_is_public_listed().
+  • Doctrine: CLAUDE.md — 150-line file cap (P0); --as-* tokens only (no hardcoded hex);
+    --as-text-meta #6B7280 for text (AA), --as-text-tertiary non-text only; AP#27 pure helpers /
+    dynamic supabase import; AP#36 destructure {data,error}; AP#46 *Card/*Row/*Tile needs a test
+    in the diff; AP#45 ledger-reconcile-guard (a docs/CC_SESSION_HANDOFF_*.txt change MUST touch
+    docs/EMBER_PENDING_LEDGER.md §4 in the same commit — done for this doc); commits sign
+    "Claude Code", never a model identifier.
+
+END — EOD handoff. Ratified plan/decisions live in the 2026-06-29 consolidation docs;
+this is the 2026-06-30 close state + next-phase plan.
