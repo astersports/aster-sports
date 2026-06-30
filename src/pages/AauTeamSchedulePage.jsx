@@ -82,7 +82,7 @@ export default function AauTeamSchedulePage() {
               aria-pressed={compact}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 36, padding: '0 12px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: 'var(--as-accent)', backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)', borderRadius: 9999 }}
             >
-              ≡ {compact ? 'Detailed' : 'Compact'}
+              ≡ {compact ? 'Compact' : 'Detailed'}
             </button>
           </div>
           {upcoming.length > 0 && (
