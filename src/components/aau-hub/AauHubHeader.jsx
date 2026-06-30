@@ -17,7 +17,7 @@ export default function AauHubHeader() {
         </Link>
         <Link
           to="/login"
-          style={{ flexShrink: 0, fontSize: 13, fontWeight: 600, color: 'var(--as-text-on-dark)', textDecoration: 'none', padding: '8px 14px', borderRadius: 9999, border: '1px solid rgba(245,240,232,0.3)' }}
+          style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', minHeight: 44, fontSize: 13, fontWeight: 600, color: 'var(--as-text-on-dark)', textDecoration: 'none', padding: '0 14px', borderRadius: 9999, border: '1px solid var(--as-accent)' }}
         >
           Sign in
         </Link>
