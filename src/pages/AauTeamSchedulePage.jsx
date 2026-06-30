@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { useAauTeamSchedule } from '../hooks/useAauTeamSchedule';
+import { usePlatformBrand } from '../hooks/usePlatformBrand';
 import AauGameCard from '../components/aau-hub/AauGameCard';
 import AauTrackButton from '../components/aau-hub/AauTrackButton';
 import PoweredByFooter from '../components/shared/PoweredByFooter';
@@ -30,6 +31,7 @@ function Skeletons() {
 }
 
 export default function AauTeamSchedulePage() {
+  usePlatformBrand();
   const { teamKey } = useParams();
   const { games, teamName, loading, error } = useAauTeamSchedule(teamKey);
 

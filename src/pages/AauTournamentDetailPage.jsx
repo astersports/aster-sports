@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { useAauTournament } from '../hooks/useAauTournament';
+import { usePlatformBrand } from '../hooks/usePlatformBrand';
 import AauDivisionCard from '../components/aau-hub/AauDivisionCard';
 import PoweredByFooter from '../components/shared/PoweredByFooter';
 
@@ -28,6 +29,7 @@ function Skeletons() {
 }
 
 export default function AauTournamentDetailPage() {
+  usePlatformBrand();
   const { tournamentId } = useParams();
   const { tournament, divisions, loading, error } = useAauTournament(tournamentId);
 

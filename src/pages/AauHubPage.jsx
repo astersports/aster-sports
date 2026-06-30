@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAauDirectory } from '../hooks/useAauDirectory';
 import { useAauSearch } from '../hooks/useAauSearch';
+import { usePlatformBrand } from '../hooks/usePlatformBrand';
 import AauTournamentCard from '../components/aau-hub/AauTournamentCard';
 import AauTrackedTeams from '../components/aau-hub/AauTrackedTeams';
 import AauSearchResults from '../components/aau-hub/AauSearchResults';
@@ -35,6 +36,7 @@ function Notice({ children }) {
 }
 
 export default function AauHubPage() {
+  usePlatformBrand();
   const [query, setQuery] = useState('');
   const { tournaments, loading, error } = useAauDirectory();
   const search = useAauSearch(query);
@@ -79,6 +81,9 @@ export default function AauHubPage() {
               <p role="status" aria-live="polite" style={SR_ONLY}>
                 {tournaments.length} tournament{tournaments.length !== 1 ? 's' : ''} loaded.
               </p>
+              <h2 style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)' }}>
+                All tournaments
+              </h2>
               <div style={{ display: 'grid', gap: 12 }}>
                 {tournaments.map((t) => (
                   <Link key={t.id} to={`/hub/tournament/${t.id}`} aria-label={`${t.name || 'Tournament'} divisions`} style={{ display: 'block', textDecoration: 'none' }}>

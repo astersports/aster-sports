@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import AauTrackButton from './AauTrackButton';
 
 // Grouped results for the no-login Hub search (R1·PR-A). Presentational —
 // receives the { teams, divisions, tournaments } object from search_public_aau.
@@ -95,16 +96,23 @@ export default function AauSearchResults({ results }) {
                 {sub && <p style={metaStyle}>{sub}</p>}
               </>
             );
-            // teamKey IS the qkey the schedule route resolves; without it there's
-            // no stable handle to navigate by, so render a non-link card.
-            return t.teamKey ? (
-              <Link key={key} to={`/hub/team/${encodeURIComponent(t.teamKey)}`}
-                aria-label={`${t.name || 'Team'} schedule`}
-                style={{ ...cardStyle, display: 'block', textDecoration: 'none' }}>
-                {inner}
-              </Link>
-            ) : (
-              <article key={key} style={cardStyle}>{inner}</article>
+            // teamKey IS the qkey the schedule route resolves AND the track key.
+            // The card holds the schedule Link + a Track button side by side (not
+            // nested) so a parent can track several teams straight from one search
+            // — no navigating in and back, no re-typing the name.
+            return (
+              <article key={key} style={{ ...cardStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                {t.teamKey ? (
+                  <Link to={`/hub/team/${encodeURIComponent(t.teamKey)}`}
+                    aria-label={`${t.name || 'Team'} schedule`}
+                    style={{ flex: 1, minWidth: 0, textDecoration: 'none' }}>
+                    {inner}
+                  </Link>
+                ) : (
+                  <div style={{ flex: 1, minWidth: 0 }}>{inner}</div>
+                )}
+                {t.teamKey && <AauTrackButton teamKey={t.teamKey} name={t.name} />}
+              </article>
             );
           })}
         </Section>
