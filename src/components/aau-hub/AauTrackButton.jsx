@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { isTeamTracked, toggleTrackedTeam, TRACKED_CHANGE_EVENT } from '../../lib/aau/trackingStore';
+import { ensureTrackingInit, isTeamTracked, toggleTrackedTeam, TRACKED_CHANGE_EVENT } from '../../lib/aau/trackingStore';
 
 // ☆ Track / ★ Tracked toggle for the no-login Hub (R1·PR-A). Persists to the
 // anon localStorage tracking store; reflects state across every mounted button.
@@ -9,6 +9,7 @@ export default function AauTrackButton({ teamKey, name }) {
 
   useEffect(() => {
     if (!teamKey) return undefined;
+    ensureTrackingInit(); // wire DB sync wherever a track button mounts, not just the Hub home
     const sync = () => setTracked(isTeamTracked(teamKey));
     sync();
     window.addEventListener(TRACKED_CHANGE_EVENT, sync);
