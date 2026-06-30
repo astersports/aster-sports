@@ -56,6 +56,7 @@ const EXEMPT = new Set([
   '/',                   // Root / home default; always reachable
   '/records-preview',    // <Navigate to="/records"> destination; intentional alias
   '/admin/briefings/radar', // <Navigate to> destination from the /admin/briefings redirect (Track-R R-1 entry); reached via the redirect, not a direct Link
+  '/hub',                // R1·PR-A no-login AAU Hub gateway — public front door reached by direct URL / external marketing link / the consolidation cutover, intentionally NOT linked from inside the authenticated app (yet). In-app entry points land in a later R1 increment.
 ]);
 
 function extractRoutePaths(appSource) {
