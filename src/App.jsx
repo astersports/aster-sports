@@ -44,6 +44,7 @@ const AdminProgramsPage = lazy(() => import('./pages/admin/AdminProgramsPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
 const AauHubPage = lazy(() => import('./pages/AauHubPage'));
+const AauTeamSchedulePage = lazy(() => import('./pages/AauTeamSchedulePage'));
 
 const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Loading...</div>;
 
@@ -83,6 +84,7 @@ export default function App() {
       <Route path="/terms" element={<TermsOfServicePage />} />
       {/* R1·PR-A — no-login AAU Hub gateway (free parent acquisition wedge) */}
       <Route path="/hub" element={<AauHubPage />} />
+      <Route path="/hub/team/:teamKey" element={<AauTeamSchedulePage />} />
 
       {/* Authenticated routes */}
       <Route path="/"         element={<Protected><HomePage /></Protected>} />

@@ -1,6 +1,9 @@
-// Grouped results for the no-login Hub search (R1·PR-A). Pure presentational —
+import { Link } from 'react-router-dom';
+
+// Grouped results for the no-login Hub search (R1·PR-A). Presentational —
 // receives the { teams, divisions, tournaments } object from search_public_aau.
-// Cosmetic only: --as-* tokens, no hardcoded hex, 44px+ tap targets.
+// Team cards link to that team's public schedule (the teamKey is the qkey route
+// param). Cosmetic otherwise: --as-* tokens, no hardcoded hex, 44px+ tap targets.
 
 const SR_ONLY = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' };
 
@@ -58,12 +61,24 @@ export default function AauSearchResults({ results }) {
             const meta = [t.gradeLabel && g ? `${g} · ${t.gradeLabel}` : (t.gradeLabel || g),
               t.record ? `${t.record.w ?? 0}–${t.record.l ?? 0}` : null].filter(Boolean).join('  ·  ');
             const sub = [t.tournamentName, t.divisionName].filter(Boolean).join(' · ');
-            return (
-              <article key={t.teamKey || `${t.name}-${i}`} style={cardStyle}>
+            const key = t.teamKey || `${t.name}-${i}`;
+            const inner = (
+              <>
                 <p style={titleStyle}>{t.isLive && <LiveDot />}{t.name || 'Team'}</p>
                 {meta && <p style={metaStyle}>{meta}</p>}
                 {sub && <p style={metaStyle}>{sub}</p>}
-              </article>
+              </>
+            );
+            // teamKey IS the qkey the schedule route resolves; without it there's
+            // no stable handle to navigate by, so render a non-link card.
+            return t.teamKey ? (
+              <Link key={key} to={`/hub/team/${encodeURIComponent(t.teamKey)}`}
+                aria-label={`${t.name || 'Team'} schedule`}
+                style={{ ...cardStyle, display: 'block', textDecoration: 'none' }}>
+                {inner}
+              </Link>
+            ) : (
+              <article key={key} style={cardStyle}>{inner}</article>
             );
           })}
         </Section>
