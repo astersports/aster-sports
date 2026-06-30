@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { dedupeTeams } from '../lib/aau/aauSearch';
 
 const MIN_QUERY = 2;     // don't search on a single character
 const DEBOUNCE_MS = 300;
@@ -46,7 +47,10 @@ export function useAauSearch(query) {
         return;
       }
       setResults({
-        teams: data?.teams || [],
+        // Dedup to one card per distinct team (same team recurs once per
+        // tournament in the RPC) — otherwise duplicate Track buttons share a key
+        // and tapping one toggles the team back off.
+        teams: dedupeTeams(data?.teams),
         divisions: data?.divisions || [],
         tournaments: data?.tournaments || [],
       });
