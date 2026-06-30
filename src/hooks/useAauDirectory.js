@@ -8,7 +8,9 @@ import { supabase } from '../lib/supabase';
  * public-RPC contract (PUBLIC_RPC_CONTRACT.md) that aggregates tournaments from
  * public-listed orgs (gated server-side by org_is_public_listed()). Returns a
  * jsonb array; each element is { id, name, circuit, states, start_date,
- * end_date, divisions }.
+ * end_date, division_count }. (Slimmed from an embedded `divisions` array to a
+ * count — the list cards only need the count; the detail page loads full
+ * divisions via get_public_tournament_teams on demand.)
  *
  * Distinct from `usePublicTournaments(orgId)`, which is the single-org records
  * page reading the `tournaments` table directly. This hook is the cross-org
