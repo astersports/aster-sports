@@ -8,7 +8,9 @@ import AauUpNextHero from '../components/aau-hub/AauUpNextHero';
 import AauTournamentCard from '../components/aau-hub/AauTournamentCard';
 import AauTrackedTeams from '../components/aau-hub/AauTrackedTeams';
 import AauSearchResults from '../components/aau-hub/AauSearchResults';
+import AauFilterPills from '../components/aau-hub/AauFilterPills';
 import PoweredByFooter from '../components/shared/PoweredByFooter';
+import { filterTournaments, statusCounts } from '../lib/aau/tournamentStatus';
 
 // R1·PR-A — the no-login AAU Hub gateway, mounted inside aster-sports
 // (astersports.app) as the free parent acquisition wedge. No shell, no auth
@@ -40,8 +42,19 @@ function Notice({ children }) {
 export default function AauHubPage() {
   usePlatformBrand();
   const [query, setQuery] = useState('');
+  const [tStatus, setTStatus] = useState('all');
   const { tournaments, loading, error } = useAauDirectory();
   const search = useAauSearch(query);
+
+  const todayYmd = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const tCounts = statusCounts(tournaments, todayYmd);
+  const visibleTournaments = filterTournaments(tournaments, tStatus, todayYmd);
+  const statusOptions = [
+    { key: 'all', label: 'All', count: tCounts.all },
+    { key: 'live', label: 'Live', count: tCounts.live },
+    { key: 'upcoming', label: 'Upcoming', count: tCounts.upcoming },
+    { key: 'past', label: 'Completed', count: tCounts.past },
+  ].filter((o) => o.key === 'all' || o.count > 0);
 
   return (
     <>
@@ -91,11 +104,14 @@ export default function AauHubPage() {
               <p role="status" aria-live="polite" style={SR_ONLY}>
                 {tournaments.length} tournament{tournaments.length !== 1 ? 's' : ''} loaded.
               </p>
-              <h2 style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)' }}>
-                All tournaments
+              {statusOptions.length > 2 && (
+                <AauFilterPills options={statusOptions} value={tStatus} onChange={setTStatus} ariaLabel="Filter tournaments by status" />
+              )}
+              <h2 style={{ margin: '12px 0 8px', fontSize: 11, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)' }}>
+                {tStatus === 'all' ? 'All tournaments' : `${statusOptions.find((o) => o.key === tStatus)?.label} tournaments`}
               </h2>
               <div style={{ display: 'grid', gap: 12 }}>
-                {tournaments.map((t) => (
+                {visibleTournaments.map((t) => (
                   <Link key={t.id} to={`/hub/tournament/${t.id}`} aria-label={`${t.name || 'Tournament'} divisions`} style={{ display: 'block', textDecoration: 'none' }}>
                     <AauTournamentCard tournament={t} />
                   </Link>
