@@ -26,8 +26,10 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     let active = true;
+    // getSession() awaits client init (incl. detectSessionInUrl parsing the
+    // token hash), so it resolves to the recovery session — or definitively
+    // null — without a flash. Also listen, in case the session lands later.
     supabase.auth.getSession().then(({ data }) => { if (active) setHasSession(!!data?.session); });
-    // The recovery session can land just after mount (detectSessionInUrl) — listen too.
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (active && session) setHasSession(true);
     });
@@ -41,7 +43,15 @@ export default function ResetPasswordPage() {
     setSaving(true); setError(null);
     const { error: err } = await supabase.auth.updateUser({ password });
     setSaving(false);
-    if (err) { setError("Couldn't update your password — this link may have expired. Request a fresh one below."); return; }
+    if (err) {
+      // Surface the real reason — don't blame the link for every failure.
+      // GoTrue rejects re-using the current password (code 'same_password').
+      const samePw = err.code === 'same_password' || /should be different/i.test(err.message || '');
+      setError(samePw
+        ? 'Your new password must be different from your current one.'
+        : "Couldn't update your password — this link may have expired. Request a fresh one below.");
+      return;
+    }
     setDone(true);
   };
 

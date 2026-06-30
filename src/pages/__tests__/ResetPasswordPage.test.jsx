@@ -34,6 +34,16 @@ describe('ResetPasswordPage', () => {
     expect(h.updateUser).toHaveBeenCalledWith({ password: 'supersecret' });
   });
 
+  it('reports same-password reuse plainly (not as an expired link)', async () => {
+    h.getSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
+    h.updateUser.mockResolvedValue({ error: { code: 'same_password', message: 'New password should be different from the old password.' } });
+    const { findByLabelText, getByLabelText, getByRole, findByText } = renderPage();
+    fireEvent.change(await findByLabelText('New password'), { target: { value: 'supersecret' } });
+    fireEvent.change(getByLabelText('Confirm password'), { target: { value: 'supersecret' } });
+    fireEvent.click(getByRole('button', { name: /Save new password/ }));
+    await findByText(/different from your current one/i);
+  });
+
   it('rejects mismatched passwords without touching the DB', async () => {
     h.getSession.mockResolvedValue({ data: { session: { user: {} } } });
     const { findByLabelText, getByLabelText, getByRole, findByText } = renderPage();
