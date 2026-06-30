@@ -1,0 +1,203 @@
+CONSOLIDATION — RELEASE PLAN (rev 3, blast-radius sequenced)
+CC lane · 2026-06-29 · architect-ratified (phasing critique folded in)
+Target: aster-sports / astersports.app · companion to CONSOLIDATION_AUDIT + TIERS_AND_FUNCTIONALITY
+
+=====================================================================
+READ FIRST — WHAT REV 3 CHANGED (architect phasing critique)
+=====================================================================
+Rev 2 sequenced by PRODUCT STORY (free→paid→cutover→B2B→premium). Rev 3 sequences by
+BLAST RADIUS: isolate each irreversible/high-blast change into its own provable, reversible
+step; never run two concurrently. Four boundaries moved + Scout pulled:
+1. Front-door CUTOVER moved UP — right after a canaried R1, BEFORE any paid build. No two
+   live Hubs through the biggest build; cut over ONCE, early, on a proven free Hub.
+2. Hub Plus SPLIT — money-path + MVP assistant first (R3); assistant completeness as
+   fast-follows (R4). Don't hold the first paid launch hostage to every feature being done.
+3. HOST SWAP removed from the cutover — cut over on Vercel. Host is a function of RUNTIME
+   (serverless → Vercel; revisit Railway only on a named Node-runtime driver).
+4. Money-paths SERIALIZED — program charging waits until the consumer money-path is PROVEN
+   in production. One money-path reaches steady state before the next opens.
++ SCOUT deferred out of R1 (a security workstream, not a port — see Deferred Items).
+
+TIERS (unchanged): T0 Free Hub (free, NO trial/card, forever) · T1 Hub Plus (7-day trial →
+$20/mo per account) · Program tiers (B2B).
+RELEASE ORDER: R1 Free Hub → R2 Front-Door Cutover → R3 Hub Plus MVP → R4 Hub Plus
+completeness → R5 Program ladder → R6 Premium/AI/Film. Super-admin operates from R1.
+
+=====================================================================
+R1 — FREE HUB (Tier 0)
+=====================================================================
+GOAL: the consolidated FREE Hub on astersports.app — any parent, no login, no card, ever.
+The first level; built over a STABLE snapshot; proven by canary before anything else moves.
+FUNCTIONALITY (Tier 0, free forever): search any AAU team; tournament directory/browse; live
+scores; team schedule; standings/records/bracket; team detail; up-next countdown;
+constellation home. Track teams: anonymous (localStorage); optional free sign-in syncs to the
+account so a no-org parent persists. A no-org signed-in parent lands on the family Hub.
+(SCOUT is NOT in R1 — see Deferred Items.)
+R1 SPLITS by blast radius (the same lens, one level down) into TWO PRs:
+
+R1·PR-A — INSULATED HALF (START NOW; independent of the honesty churn):
+  • Auth seam [architect-scoped]: no-org family-Hub route; no-org-tolerant `SeasonProvider`/
+    `WeatherProvider`; DR-A role-type routing (anon→Hub, parent→family Hub, staff→role home).
+  • DR-P sync: anon localStorage → `tracked_teams` (CORRECTED target — the purpose-built
+    account-sync table `20260627044535`: `(user_id, team_key)`, team_key = the
+    `tournament_division_teams` id = the trackingStore key; owner-only RLS, anon no access.
+    NOT `family_subscriptions`.)
+  • Stable reads (NO client-side math): `search_public_aau`, tournament directory,
+    `get_public_aau_team_schedule`, team-detail shell, weather (`useWeather`), directions
+    (`getDirectionUrls`), constellation-home shell, up-next countdown.
+
+R1·PR-B — HONESTY-DEPENDENT HALF (opens on the contract freeze):
+  • Standings, records, bracket, advancement, odds (`StandingsTable`, `BracketOdds`,
+    `DivisionSlice`, `BracketPath`, `TournamentHistory`).
+  • GATE: port ONLY once (a) the HELD standings/bracket substrate (#1127/#1130 STAGED) is
+    OWNER-APPLIED to prod AND (b) `PUBLIC_RPC_CONTRACT.md` is bumped + FROZEN for
+    `is_forfeit`/`advance_count`/`pool`/`bracket`.
+  • RULE: consume the RPC fields and DELETE the client-side tally/advancement math — the port
+    is where that math is RETIRED, not carried. That's how the live regressions (TO-ADVANCE
+    aggregate disagreement, legacy advancement ring, BracketOdds mislabel) die in the move.
+
+HONESTY SNAPSHOT — REFRAMED [grounded]: it is NOT a Hub commit to pick; it is the RPC CONTRACT
+to FREEZE. The truth is migrating server-side into the canonical RPCs (is_forfeit #1145,
+bracket #1144, advance_count/division/pool in `20260629024237`), but it is NOT frozen — the
+bracket/standings substrate is committed-and-HELD for owner apply, and the Hub UI is
+mid-migration with client-side math still live in the standings/bracket/odds files. So no
+stable snapshot exists yet on either side; PR-A is insulated from this, PR-B waits for the freeze.
+OWNER ACTION ON THE CRITICAL PATH (gates PR-B only): apply the held standings/bracket migrations
+to prod (the schema hard gate) + bump/freeze `PUBLIC_RPC_CONTRACT.md`. PR-A does not wait on it.
+EXIT (corrected): PR-A — the no-org Hub + stable reads + `tracked_teams` sync pass a real-traffic
+CANARY at PARITY with the old Hub's equivalent surfaces, old Hub frozen. PR-B — standings/bracket
+render from frozen RPCs with zero client math, at parity.
+SCOPE: PR-A architect-scoped (auth seam) + routine reads; PR-B architect-scoped (honesty consumption).
+
+=====================================================================
+R2 — FRONT-DOOR CUTOVER (front-door only; on Vercel; NO host swap)
+=====================================================================
+GOAL: make astersports.app the canonical front door on a PROVEN free Hub — BEFORE money ever
+enters. Cut over once, early.
+STEPS: canary R1 → real-traffic soak at parity → flip the 301s (`astersports.io/aau` +
+legacy-hoopers → the app) → FREEZE the old Hub (it's maintenance/security-only from R1 until
+this flip) → retire legacy-hoopers public surface; slim astersports-web AAU route (pointer
+PR #242).
+HOST: stays VERCEL — atomic rollback is exactly the cutover safety net. "Other repos are on
+Railway" is KILLED as a driver (they're Express apps; this app is serverless SPA+Supabase).
+Revisit Railway ONLY if a concrete Node-runtime driver lands in the app.
+HARD REQ: observability + a TESTED un-301 rollback (revert the front door fast if the ported
+Hub buckles under peak-season load); sitemap/canonicals — no duplicate-content window.
+EXIT: one canonical front door; old URLs 301; traffic preserved; rollback rehearsed.
+SCOPE: domain cutover only (no host change, no money).
+
+=====================================================================
+R3 — HUB PLUS: MONEY-PATH + MVP ASSISTANT (Tier 1)   [was R2a]
+=====================================================================
+GOAL: the platform's first consumer money-path + the contained "the weekend works" assistant,
+on the single consolidated surface.
+FUNCTIONALITY (Tier 1, 7-day free trial → $20/mo per account):
+  • Upgrade flow: start 7-day trial → assistant unlocks → $20/mo, cancel anytime; explicit
+    pre-charge consent; reminder BEFORE the first charge + one-tap cancel.
+  • MVP assistant: TRAFFIC-AWARE single-game leave-by; per-game weather (severe/feels-like);
+    schedule-change alerts via IN-APP + the existing email/ICS family-feed (no new push dep).
+BUILT: entitlement bridge (read `is_entitled` — already counts `trialing`; +`plan` column).
+NEW Supabase edge fns: `billing-checkout` (trial-mode-agnostic + `trial_end`) and
+`billing-webhook` (Stripe-signature-validated; SOLE writer of `family_entitlements`).
+Trial-reminder cron; Stripe keys in `app_secrets`; customer portal. Studio Stripe code = TEMPLATE.
+HARD REQ (pre-R3): TRAFFIC VENDOR LOCKED (TomTom / Google Routes) — a trafficless leave-by on a
+Saturday morning is just distance÷speed (what every free maps app does) and wrong often enough
+to drive first-Saturday churn/chargebacks. Leave-by is the headline thing a parent pays for, so
+traffic ships in R3 for the single-game case. Vendor + cost model decided BEFORE R3.
+HARD REQ: observability — ALERT if anything but the webhook writes `family_entitlements`;
+webhook failure/dunning handling. One writer, Stripe-only; Scout/leads NEVER write entitlement.
+R3's ONLY new external dependency = the traffic vendor (nothing else).
+EXIT: a parent starts the trial from the free Hub, single-game leave-by is traffic-accurate,
+converts to $20/mo; consent+reminder verified; entitlement gates clean in prod.
+SCOPE: architect-scoped + onboarding-gate (money-path); owner-applied.
+
+=====================================================================
+R4 — HUB PLUS: ASSISTANT COMPLETENESS (Tier 1)   [was R2b]
+=====================================================================
+GOAL: extend the proven assistant to MULTI-game + richer delivery as fast-follows — without
+holding the first paid launch hostage to them.
+FUNCTIONALITY: PUSH delivery (upgrades the schedule-alert CHANNEL, not the detection) via the
+platform's `send-push`; MULTI-game travel-time conflicts across venues (the SAME traffic vendor
+from R3, extended); whole-weekend multi-kid agenda; bracket scenarios; calendar sync (webcal).
+BUILT: reuse `send-push` + team/family-feed ICS; the multi-game agenda + travel-conflict engine
+over the R3 vendor.
+DEPENDS ON: R3 (vendor + money-path proven). SCOPE: T1 feature build.
+
+=====================================================================
+R5 — PROGRAM LADDER (B2B — AAU programs sign on)   [was R4]
+=====================================================================
+GOAL: programs adopt the platform to maintain content + run registration.
+FUNCTIONALITY: Program-P0 claimed listing (verified org claims its public Hub presence, likely
+free) → Program-P1 Program Hub (maintain schedules/rosters/scores/announcements) → Program-P2
+registration + payments.
+SERIALIZATION: the NON-money parts (claim/verify, program-hub content) parallelize freely; the
+CHARGING (program subscription + registration) waits until the consumer money-path (R3) is
+PROVEN in production — clean entitlement writes, no incidents, webhook confirmed sole writer.
+HARD REQ (pre-R5): real RBAC must exist — B2B means OTHER orgs' data; cross-org super-admin
+without proper roles is a data-isolation risk. ("Super-admin first, restrict down" must land
+its restrict-down BEFORE this release.)
+BUILT: reuse org `subscription_plan`, `RegisterFlowPage`, financials, comms engine, coach/admin
+surfaces; NEW claim/verify flow + program money-path writer + registration charging.
+SCOPE: architect-scoped (B2B money-path + tenancy). Charging defined as we progress.
+
+=====================================================================
+R6 — PREMIUM · AI · FILM (last)   [was R5]
+=====================================================================
+GOAL: the evergreen/premium layer; biggest net-new build; gated.
+FUNCTIONALITY: family film room (clips / AI auto-highlights), COPPA-gated (`can_access_child`,
+guardian-verified — locked for everyone incl. super-admin until verified); advanced AI recaps;
+Tier-1+ add-ons (bundle vs add-on TBD).
+BUILT: NEW media pipeline (Supabase Storage) + capture/clip + AI auto-highlight + COPPA consent
+flow + premium gating. Latest AI models throughout (DR-AI), no-fabrication guardrail.
+SCOPE: architect-scoped (COPPA + storage + money).
+
+=====================================================================
+DEFERRED / FLAGGED ITEMS
+=====================================================================
+SCOUT (AI concierge) — OUT of R1. NOT a port: the target has no Node server, so Scout's server
+side (SSE + Turnstile + LLM key) is a net-new SUPABASE EDGE FUNCTION rebuild (rebuilding it as
+an edge fn keeps the app serverless → reinforces the Vercel call). It is the HIGHEST abuse
+surface in the plan — an anonymous LLM endpoint on a free, indexable tier: token-burn,
+scrape-for-free-compute, prompt injection → a SECURITY workstream, not a UI line item. When it
+returns it ships behind Turnstile + per-session RATE-LIMIT + a HARD DAILY SPEND CAP (bounded
+worst-case cost, not just throttled). OPEN (decide when it returns, NOT now): free-anonymous
+(best wedge, highest abuse) vs login-gated.
+
+HOST SWAP (Vercel→Railway) — NOT in the plan. Host = a function of RUNTIME: while aster-sports
+is serverless (SPA + Supabase), Vercel is the right tool and its atomic rollback is the cutover
+safety net. Revisit Railway ONLY if a concrete Node-runtime driver lands in the app. (Frank
+revised the earlier "to streamline" endorsement once grounded — ops-consolidation doesn't
+outweigh adding risk to the one app already serving authed traffic.)
+
+=====================================================================
+CROSS-CUTTING HARD REQUIREMENTS (apply regardless of sequence)
+=====================================================================
+1. Snapshot-before-port = FREEZE THE RPC CONTRACT (not "pick a Hub commit"): standings/bracket
+   port (PR-B) only AFTER the held substrate is owner-applied + `PUBLIC_RPC_CONTRACT.md` frozen;
+   the port consumes RPC fields and DELETES client-side record math. The insulated reads +
+   auth seam + `tracked_teams` sync (PR-A) do NOT wait on it.
+2. Traffic vendor LOCKED before R3 (the paid build's headline value).
+3. Real RBAC before R5 (B2B / other orgs' data).
+4. Observability + TESTED rollback on the money-path (R3) and the cutover (R2): alert on ANY
+   non-webhook write to `family_entitlements`; webhook failure/dunning; rehearsed un-301.
+5. COPPA gate NEVER bypassed — super-admin gets Plus, never `can_access_child`; DB-enforced;
+   holds through every release.
+
+=====================================================================
+RELEASE → TIER → READY-WHEN
+=====================================================================
+R1·PR-A Free Hub   → T0           → auth seam + stable reads + tracked_teams sync pass a canary at parity; old Hub frozen
+R1·PR-B standings  → T0           → standings/bracket render from FROZEN RPCs, zero client math (gated on owner-applied substrate + contract freeze)
+R2 Cutover         → —            → one canonical front door; 301s live; un-301 rollback rehearsed (Vercel; no host swap)
+R3 Hub Plus MVP    → T1           → parent converts to $20/mo; traffic-accurate single-game leave-by; webhook sole-writer verified
+R4 Hub Plus done   → T1           → push + multi-game travel conflicts + weekend agenda live
+R5 Program ladder  → Program tiers → program onboards (content first; charging AFTER R3 proven; RBAC in place)
+R6 Premium/AI/Film → T1+/T2       → guardian-verified film; COPPA held
+
+OPEN (define as we progress): program-ladder pricing; T1+ add-on bundling; trial default (card
+vs no-card — flippable, DR-T); Scout free-anon vs login-gated; super-admin cross-org scoping;
+the named Node-runtime driver (if any) that would reopen the Railway question.
+
+=====================================================================
+END — rev 3: blast-radius sequenced; architect phasing critique folded in. R1 green-lit.
+=====================================================================
