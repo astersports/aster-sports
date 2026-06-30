@@ -1,0 +1,107 @@
+ARCHITECT POST-HOC SHA READ — R1·PR-A (no-login AAU Hub gateway)
+CC lane · 2026-06-30 · for architect review, relayed by Frank
+
+WHY THIS DOC (§11.8 rule 1 + rule 4): R1·PR-A shipped to main and prod before the
+architect read this specific diff. Frank elected to merge it as operator (his call);
+CC did not self-merge an architect-scoped PR. The "hold for architect SHA read" intent
+is honored here POST-HOC: this is the exact merged diff handed to the architect to
+verify after the fact. Anything flagged becomes a fast follow-up PR — NOT a reopen of
+#1155 (it is merged/terminal).
+
+────────────────────────────────────────────────────────────────────────
+1. WHAT SHIPPED
+────────────────────────────────────────────────────────────────────────
+PR:        astersports/aster-sports#1155 (MERGED 2026-06-30 08:56 UTC, by franksamaritano)
+Merged SHA: 24e6f4b49932e05cd638699c116a1fdbe4f7e952  (squashed onto main as 3ff4667a)
+Scope:     R1·PR-A "first brick" — mount the FREE, no-login AAU Hub gateway INSIDE the
+           platform app (aster-sports / astersports.app) as the parent acquisition wedge,
+           rendering the public tournament directory over the frozen anon public-RPC
+           contract. The insulated increment of the consolidation plan
+           (docs/CONSOLIDATION_PHASED_PLAN_2026-06-29.txt, R1).
+
+Files (6 changed, +245; all ≤150 lines; --as-* tokens only; no hardcoded hex):
+  - src/App.jsx
+        Registers a SHELL-LESS, NO-GUARD public route `/hub` in the existing public
+        block (alongside /login, /schedule/:teamId, /r/:slug, /privacy, /terms). Lazy-
+        loaded. No change to any authenticated route or guard.
+  - src/pages/AauHubPage.jsx (71 lines)
+        The Hub home. Mirrors the canonical public-page pattern (PublicSchedulePage):
+        anon supabase client, `<main maxWidth:600>` + PoweredByFooter, loading / error /
+        empty states with kindness microcopy. No auth, no org context.
+  - src/hooks/useAauDirectory.js (47 lines)
+        Anon hook over `get_public_tournament_directory()`. Destructures { data, error }
+        and surfaces the error before use (AP #36 — no swallowed-error empty-array).
+  - src/components/aau-hub/AauTournamentCard.jsx (61 lines)
+        One directory element. Timezone-safe date-only formatting (parses YYYY-MM-DD
+        parts directly; never `new Date(ymd)` UTC-midnight, which drifts to the prior
+        day in NY).
+  - src/components/aau-hub/__tests__/AauTournamentCard.test.jsx (62 lines)
+        Invariant test (AP #46 / #43): locks the timezone-safe formatting, meta-line
+        composition, single-day collapse, division singularization, missing-field grace.
+  - src/__tests__/routeAccessibility.test.js
+        Adds `/hub` to the orphan-route audit EXEMPT set with justification (the gateway
+        is reached by direct URL / external link / the cutover, not in-app nav yet).
+
+────────────────────────────────────────────────────────────────────────
+2. GROUNDING / EVIDENCE (post-deploy smoke, all green) [GROUNDED 2026-06-30]
+────────────────────────────────────────────────────────────────────────
+  - Merge landed: PR #1155 state=closed, merged=true, merged_by=franksamaritano,
+    merged_at=2026-06-30T08:56:09Z. main head = 3ff4667a.
+  - Edge serves the route: GET https://astersports.app/hub → 308 apex→www →
+    https://www.astersports.app/hub → HTTP 200, text/html, <title>Aster Sports</title>,
+    SPA entry script present (client router mounts AauHubPage). No 404 at the edge.
+  - Deploy is fresh (not stale): the live entry bundle (index-Ctyns0PV.js) contains the
+    "/hub" route literal AND references the AauHubPage-Cvo2WjsH.js lazy chunk, which
+    itself serves HTTP 200 application/javascript.
+  - Anon data path: under the real `anon` role (SET LOCAL ROLE anon),
+    get_public_tournament_directory() returns 15 rows.
+  - CI on the merged SHA: lint-test-build ✅, e2e ✅, anti-pattern-46-guard ✅,
+    ledger-reconcile-guard ✅, Vercel preview ✅, Supabase preview skipped (expected).
+
+────────────────────────────────────────────────────────────────────────
+3. WHAT TO VERIFY (architect-scoped review surface — new unauthenticated surface)
+────────────────────────────────────────────────────────────────────────
+The architect-scoped concern here is "a new PUBLIC, UNAUTHENTICATED surface in the live
+platform repo." The questions worth the architect's read:
+
+  V1. Data-exposure boundary. The page reads ONLY get_public_tournament_directory(),
+      which is anon-EXECUTE by design and gated server-side by org_is_public_listed()
+      (public data lives in the dedicated "AAU Tournaments" org). No tenant/org/PII data
+      path is reachable from /hub. CONFIRM the RPC contract is the intended public
+      surface and nothing tenant-scoped leaks through it.
+  V2. Auth-seam isolation. /hub is in the no-shell/no-guard public block. It does NOT
+      touch RequireAuth, AppShell, SeasonProvider, WeatherProvider, or any org-scoped
+      hook. CONFIRM no regression to the authenticated routing/guards (the diff adds a
+      route; it changes none).
+  V3. No anon write / no token mint. Read-only; no localStorage sync, no token, no
+      mutation in this brick (tracked_teams sync is a LATER increment). CONFIRM that's
+      the right cut line for PR-A's first brick.
+  V4. Conventions. 150-line cap (largest new file 71), --as-* tokens only, no hardcoded
+      hex, AP #36 destructure, AP #46/#43 invariant test, AP #42 orphan-route exemption
+      documented. CONFIRM the discipline surface is complete for an architect-scoped UI
+      port.
+
+────────────────────────────────────────────────────────────────────────
+4. EXPLICITLY OUT OF THIS PR (so the deferred surface is visible)
+────────────────────────────────────────────────────────────────────────
+  - Standings / bracket path / odds / advancement (PR-B) — HELD until the held
+    standings/bracket migrations are owner-applied and PUBLIC_RPC_CONTRACT.md is frozen;
+    the port must DELETE client-side record math.
+  - Search (search_public_aau), team schedule (get_public_aau_team_schedule) + team-
+    detail shell, weather (useWeather), directions (getDirectionUrls) — next PR-A
+    increments.
+  - tracked_teams anon→localStorage sync (DR-P) — later PR-A increment.
+  - No in-app navigation INTO /hub yet (intentional; orphan-by-design front door).
+
+────────────────────────────────────────────────────────────────────────
+5. CC LABELED LEAN (AP #39 — committing to it)
+────────────────────────────────────────────────────────────────────────
+LEAN: ACCEPT as-shipped, no follow-up required. The brick is read-only over an
+already-public, anon-gated RPC; it adds a route and changes no guard, no auth seam, no
+tenant path. The blast radius is "a new public page that lists public tournaments." The
+one thing I would want the architect's eye on is V1 (is get_public_tournament_directory
+the fully intended public surface, with no field in its payload that shouldn't be public)
+— if the architect wants that minimized further, it is a one-RPC follow-up, independent
+of this UI. Recommend proceeding to the next PR-A increment in parallel with this read.
+
+— CC
