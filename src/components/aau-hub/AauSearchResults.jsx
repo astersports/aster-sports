@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import AauTrackButton from './AauTrackButton';
+import { aauTeamLabel } from '../../lib/aau/aauSearch';
 
 // Grouped results for the no-login Hub search (R1·PR-A). Presentational —
 // receives the { teams, divisions, tournaments } object from search_public_aau.
@@ -87,7 +88,9 @@ export default function AauSearchResults({ results }) {
             const g = genderLabel(t.gender);
             const meta = [t.gradeLabel && g ? `${g} · ${t.gradeLabel}` : (t.gradeLabel || g),
               t.record ? `${t.record.w ?? 0}–${t.record.l ?? 0}` : null].filter(Boolean).join('  ·  ');
-            const sub = [t.tournamentName, t.divisionName].filter(Boolean).join(' · ');
+            const sub = t.tournamentCount > 1
+              ? `In ${t.tournamentCount} tournaments`
+              : [t.tournamentName, t.divisionName].filter(Boolean).join(' · ');
             const key = t.teamKey || `${t.name}-${i}`;
             const inner = (
               <>
@@ -111,7 +114,7 @@ export default function AauSearchResults({ results }) {
                 ) : (
                   <div style={{ flex: 1, minWidth: 0 }}>{inner}</div>
                 )}
-                {t.teamKey && <AauTrackButton teamKey={t.teamKey} name={t.name} />}
+                {t.teamKey && <AauTrackButton teamKey={t.teamKey} name={aauTeamLabel(t)} />}
               </article>
             );
           })}
