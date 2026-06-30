@@ -2,9 +2,10 @@
 //
 // Two backends behind one API:
 //  - ANON (default): localStorage, keyed by qkey. Instant, no account.
-//  - SIGNED IN: the `tracked_aau_teams` table (RLS: own rows). Set once the
-//    parent signs in via the Hub magic link; their list then follows their id
-//    across devices. On sign-in we MERGE the local list into their account.
+//  - SIGNED IN: the ratified `tracked_teams` table (DR-P sync target; RLS: own
+//    rows, to authenticated). Set once the parent signs in via the Hub magic
+//    link; their list then follows their id across devices. On sign-in we MERGE
+//    the local list into their account.
 //
 // Sync reads (getTrackedTeams / isTeamTracked) stay synchronous off an in-memory
 // view; writes are optimistic (update view + emit immediately, persist in the
@@ -17,7 +18,7 @@ export const TRACKED_CHANGE_EVENT = 'aau-tracked-change';
 
 let userId = null;   // auth user id when signed in; null = anon/local
 let cache = [];      // in-memory list when signed in (DB is source of truth)
-let initStarted = false;
+let initPromise = null;
 
 function readLocal() {
   try {
@@ -64,26 +65,26 @@ async function persistDb(op, entry) {
   try {
     const { supabase } = await import('../supabase');
     if (op === 'insert') {
-      await supabase.from('tracked_aau_teams').upsert(
-        { user_id: userId, team_key: entry.teamKey, team_name: entry.name || entry.teamKey },
+      await supabase.from('tracked_teams').upsert(
+        { user_id: userId, team_key: entry.teamKey, name: entry.name || entry.teamKey },
         { onConflict: 'user_id,team_key', ignoreDuplicates: true });
     } else {
-      await supabase.from('tracked_aau_teams').delete().eq('user_id', userId).eq('team_key', entry.teamKey);
+      await supabase.from('tracked_teams').delete().eq('user_id', userId).eq('team_key', entry.teamKey);
     }
   } catch { /* offline / transient — the optimistic view already reflects intent */ }
 }
 
 async function loadFromDb(supabase) {
-  const { data, error } = await supabase.from('tracked_aau_teams').select('team_key, team_name').eq('user_id', userId);
+  const { data, error } = await supabase.from('tracked_teams').select('team_key, name').eq('user_id', userId);
   if (error) return;                       // AP #36: keep the prior view on error
-  cache = (data || []).map((r) => ({ teamKey: r.team_key, name: r.team_name || r.team_key }));
+  cache = (data || []).map((r) => ({ teamKey: r.team_key, name: r.name || r.team_key }));
 }
 
 async function mergeLocalIntoDb(supabase) {
   const local = readLocal();
   if (!local.length) return;
-  await supabase.from('tracked_aau_teams').upsert(
-    local.map((t) => ({ user_id: userId, team_key: t.teamKey, team_name: t.name || t.teamKey })),
+  await supabase.from('tracked_teams').upsert(
+    local.map((t) => ({ user_id: userId, team_key: t.teamKey, name: t.name || t.teamKey })),
     { onConflict: 'user_id,team_key', ignoreDuplicates: true });
 }
 
@@ -99,13 +100,15 @@ async function applySession(supabase, u) {
 }
 
 // Lazy one-time wiring: detect an existing session, then track auth changes.
-// Called by useTrackedTeams on mount (never at import — keeps tests supabase-free).
+// Called by useTrackedTeams/AauTrackButton on mount (never at import — keeps the
+// store supabase-free for tests). Returns the init promise so callers/tests can
+// await the first session resolution.
 export function ensureTrackingInit() {
-  if (initStarted) return;
-  initStarted = true;
-  import('../supabase').then(async ({ supabase }) => {
+  if (initPromise) return initPromise;
+  initPromise = import('../supabase').then(async ({ supabase }) => {
     const { data } = await supabase.auth.getSession();
     await applySession(supabase, data?.session?.user || null);
     supabase.auth.onAuthStateChange((_event, session) => { void applySession(supabase, session?.user || null); });
   }).catch(() => { /* no supabase / offline → stay on localStorage */ });
+  return initPromise;
 }
