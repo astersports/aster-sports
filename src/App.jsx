@@ -47,6 +47,7 @@ const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
 const AauHubPage = lazy(() => import('./pages/AauHubPage'));
 const AauTeamSchedulePage = lazy(() => import('./pages/AauTeamSchedulePage'));
 const AauTournamentDetailPage = lazy(() => import('./pages/AauTournamentDetailPage'));
+const AauDivisionDetailPage = lazy(() => import('./pages/AauDivisionDetailPage'));
 
 const LAZY_FALLBACK = <div style={{ padding: 32, textAlign: 'center', color: 'var(--as-text-tertiary)' }}>Loading...</div>;
 
@@ -89,6 +90,7 @@ export default function App() {
       <Route path="/hub" element={<AauHubPage />} />
       <Route path="/hub/team/:teamKey" element={<AauTeamSchedulePage />} />
       <Route path="/hub/tournament/:tournamentId" element={<AauTournamentDetailPage />} />
+      <Route path="/hub/tournament/:tournamentId/division/:divisionId" element={<AauDivisionDetailPage />} />
 
       {/* Authenticated routes */}
       <Route path="/"         element={<Protected><HomePage /></Protected>} />
