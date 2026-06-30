@@ -88,7 +88,7 @@ INFRA / SECURITY / DOCS (rolling into the day)
 These are LIVE-STATE changes not all visible in git; a migrating agent / fresh chat must know
 them. CLAUDE.md §1 + §10 were updated to match (admin line → frank@astersports.co, ff9e2065).
 
-IDENTITY CUTOVER (verified live at EOD — 3 org staff accounts, all password Captblack1!):
+IDENTITY CUTOVER (verified live at EOD — 3 org staff accounts, all password «shared temp test password — value intentionally omitted»):
   • frank@astersports.co   (ff9e2065-8394-4115-ad87-56108c3631d4) — role admin, "Frank Samaritano".
     Old admin@legacyhoopers.org (1e06a3d4-…) merged into frank: 18 actor-FK columns reassigned
     (game_results.entered_by, comms_messages.sent_by, etc.), then the old user deleted.
@@ -97,7 +97,7 @@ IDENTITY CUTOVER (verified live at EOD — 3 org staff accounts, all password Ca
     user_id + all history preserved).
   • coach2@astersports.co   — role coach, display "Coach2" (was coachdarien@legacyhoopers.org,
     af40a751-…; same in-place rename).
-  • Shared password Captblack1! is a TEMPORARY testing credential — see §4 OPERATOR CAVEATS.
+  • Shared password «shared temp test password — value intentionally omitted» is a TEMPORARY testing credential — see §4 OPERATOR CAVEATS.
 
 SCHEMA / RPC:
   • tracked_teams sync table (migration 20260627044535; team_key regrained to qkey in
@@ -123,7 +123,7 @@ CLEAN / DONE:
   • No in-flight PRs. Everything opened today is merged. GitHub MCP re-auth that blocked the
     mid-day doc is resolved (it merged #1165 onward).
   • Password recovery works end to end (code fix + allow-list). Frank can also sign in directly
-    at /login with frank@astersports.co / Captblack1!.
+    at /login with frank@astersports.co / «shared temp test password — value intentionally omitted».
   • B1 tracking tap-cancellation (mid-day doc) — FIXED (#1166).
 
 OPEN / MINOR (not blocking):
@@ -137,7 +137,7 @@ OPEN / MINOR (not blocking):
   • R1·PR-A close-out: the free-Hub surface (search → tournament → division → team, tracking,
     next-up/weather, branding) is functionally complete. Architect to ratify the phase close
     against main (post-hoc SHA read) per §11.8 r4 before R1·PR-B opens.
-  • OPERATOR CAVEAT — shared password: Captblack1! is set on all three org accounts for
+  • OPERATOR CAVEAT — shared password: «shared temp test password — value intentionally omitted» is set on all three org accounts for
     testing. ROTATE to per-user passwords before any real family/coach is invited. Recommend
     also enabling the in-app /forgot-password flow as the self-serve reset path now that it works.
   • Auth seam for the family Hub (carried from the consolidation plan): a no-org / anon-tolerant
@@ -157,29 +157,55 @@ cross-check for a sampled tournament. Now easier to eyeball via the #1175 divisi
 (Standings/Bracket tabs). Recommend this as the first task of the next session.
 
 =====================================================================
-6. NEXT PHASES (plan)
+6. NEXT PHASES — against the RATIFIED plan (not a new plan)
 =====================================================================
-PHASE A — close R1·PR-A + verify (short):
-  1. Architect ratifies R1·PR-A close against main.
-  2. Finish the §5 standings/champions audit using the new division page; fix any porting gaps.
-  3. Small UX: Task #11 (preserve search query on back); B2 null-venue cleanup.
+CANONICAL PLAN: docs/CONSOLIDATION_PHASED_PLAN_2026-06-29.txt (rev 3, architect-ratified,
+blast-radius sequenced). Companions: CONSOLIDATION_AUDIT_2026-06-29.txt,
+CONSOLIDATION_TIERS_AND_FUNCTIONALITY_2026-06-29.txt. This section is NOT a substitute — it
+only maps today's progress onto that R1→R6 ladder. Read the plan doc for scope/gates/exits.
 
-PHASE B — R1·PR-B (standings/bracket depth) [GATED]:
-  Port deeper standings/bracket surfaces. GATE (from the phased plan): the standings/bracket
-  substrate must be owner-applied to prod and docs/aau/PUBLIC_RPC_CONTRACT.md frozen for any
-  new RPC before client code lands. #1175 already consumes the extended teams RPC; PR-B is the
-  remaining bracket-advancement / live-status depth.
+Tiers: T0 Free Hub (free forever, no card) · T1 Hub Plus (7-day trial → $20/mo) · Program (B2B).
+Release order: R1 Free Hub → R2 Front-Door Cutover → R3 Hub Plus MVP → R4 Hub Plus completeness
+→ R5 Program ladder → R6 Premium/AI/Film. Super-admin operates from R1.
 
-PHASE C — auth seam + account-synced Hub (DR-P):
-  No-org/anon-tolerant auth so a parent signs in on the Hub without a tenant org; finish
-  anon-localStorage → tracked_teams sync-on-login (foundation in #1172); family-Hub route.
-  Rotate the shared test password to per-user before inviting real families.
+WHERE WE ARE ON IT (2026-06-30 EOD):
+  • R1·PR-A (insulated half — stable reads + auth seam + tracked_teams sync): SUBSTANTIALLY
+    SHIPPED. Done: all stable reads (search, directory, team schedule, team/division detail,
+    up-next countdown, weather, directions, constellation home, branding), anon localStorage
+    tracking, and DR-P account-sync to tracked_teams via magic-link sign-in (#1172). STILL OPEN
+    in PR-A [architect-scoped]: the full no-org AUTH SEAM — no-org-tolerant SeasonProvider/
+    WeatherProvider, the family-Hub route a no-org signed-in parent lands on, and DR-A role-type
+    routing (anon→Hub, parent→family Hub, staff→role home). EXIT not yet claimed: a real-traffic
+    CANARY at parity with the old Hub, old Hub frozen. → Architect to ratify the PR-A close.
+  • R1·PR-B (honesty-dependent half — standings/records/bracket/advancement/odds): NOT STARTED,
+    GATED. Gate (cross-cutting req #1): the HELD standings/bracket substrate (#1127/#1130 staged)
+    must be OWNER-APPLIED to prod AND docs/aau/PUBLIC_RPC_CONTRACT.md bumped + FROZEN for
+    is_forfeit/advance_count/pool/bracket. The port then CONSUMES the RPC fields and DELETES the
+    client-side tally/advancement math (that's where the live standings regressions die). NOTE:
+    the #1175 division page renders standings from get_public_tournament_teams server fields, but
+    the deeper advancement/odds surfaces remain the gated PR-B work. → OWNER ACTION on the
+    critical path: apply the held migrations + freeze the contract.
+  • R2 Front-Door Cutover (on Vercel, NO host swap): NOT STARTED. Flip the 301s
+    (astersports.io/aau + legacy-hoopers → the app) only AFTER R1 canaries at parity; freeze the
+    old Hub; rehearse the un-301 rollback. (astersports-web pointer PR #242 is the front-door
+    slim.) Confirms the .io question: .io stays the marketing front door, app is .app.
+  • R3 Hub Plus MVP (T1 money-path + single-game leave-by assistant): NOT STARTED. HARD REQ
+    before it: traffic vendor LOCKED (TomTom/Google Routes); Stripe webhook as SOLE writer of
+    family_entitlements. Architect-scoped + onboarding-gate.
+  • R4 Hub Plus completeness, R5 Program ladder (B2B; needs real RBAC first), R6 Premium/AI/Film
+    (COPPA-gated): later, per the plan.
+  • DEFERRED (per plan): SCOUT (AI concierge) — out of R1, a security workstream (Turnstile +
+    rate-limit + hard daily spend cap) when it returns. HOST SWAP Vercel→Railway — KILLED unless
+    a concrete Node-runtime driver lands.
 
-PHASE D — R3 money path (later, per the consolidation plan):
-  Tiered/paid surfaces. Architect-scoped; not started. Untouched by today's work.
+IMMEDIATE NEXT (fits inside R1 close, no plan change):
+  1. Architect ratifies R1·PR-A close against main; build the remaining auth-seam piece.
+  2. Owner applies the held standings/bracket substrate + freezes PUBLIC_RPC_CONTRACT.md → unblocks R1·PR-B.
+  3. Finish the §5 standings/champions audit (use the #1175 division page); small UX (Task #11; B2).
 
-ALWAYS-ON before onboarding real families: rotate shared password; per-user reset flow live
-(done — just enable as the default path); confirm .io front-door scope.
+ALWAYS-ON before onboarding real families: rotate the shared TEST password to per-user (the
+/forgot-password self-serve flow now works as the path); plus the plan's cross-cutting reqs
+(observability + tested rollback on money-path/cutover; RBAC before R5; COPPA never bypassed).
 
 =====================================================================
 7. FRESH-CHAT CONTEXT
