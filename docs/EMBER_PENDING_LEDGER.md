@@ -522,7 +522,13 @@ This index is the **trustworthy top-level "what's next"** — verified by
 grep + MCP query on 2026-05-27. Read this before trusting the detailed
 arc bodies.
 
-**OPEN at 2026-06-19 close (top-of-stack — read first):**
+**OPEN at 2026-06-30 close (top-of-stack — read first; full record in `docs/CC_SESSION_HANDOFF_2026-06-30_EOD.txt`):**
+- **AAU Hub R1·PR-A SHIPPED** end-to-end (#1155–#1175): no-login Hub gateway → search → tournament → division (Standings/Schedule/Bracket, #1175) → team schedule; team tracking (anon localStorage + account-synced via magic-link, #1172); NEXT-UP countdown + weather; branding; forfeit detection (#1145); directory perf slim (#1171). **Next: architect ratifies the R1·PR-A close against main; then R1·PR-B (deeper standings/bracket) — GATED on the standings/bracket substrate being owner-applied to prod + `docs/aau/PUBLIC_RPC_CONTRACT.md` frozen.**
+- **Auth/identity hardening SHIPPED** (#1173/#1174/#1176): /reset-password set-new-password page; recovery-link redirect guard (`src/lib/recoveryRedirect.js`) + Supabase redirect allow-list fix (Frank, dashboard); card_density DEFAULT fix (was blocking ALL new-user onboarding). Identity cutover live: admin@legacyhoopers.org merged into frank@astersports.co (ff9e2065); coachkenny/coachdarien renamed in place to coach1/coach2@astersports.co (history preserved). **OPERATOR CAVEAT: shared test password `Captblack1!` on all 3 org accounts — ROTATE before inviting real families.**
+- **Security tooling SHIPPED** (#1148–#1153): Dependabot + CodeQL; eslint 9→10, lint-staged 16→17 + group bumps.
+- **STILL OPEN (minor, carried):** B2 — 3 NULL-venue games in "Zero Gravity NY Grand Finale"; Task #11 — preserve search query on Hub back-nav; §5 data-integrity tail — verify standings/champions correctness per division (use the #1175 division page).
+
+**OPEN at 2026-06-19 close:**
 - **Financials management arc SHIPPED** end-to-end (#1015–#1069): redesign + family/coach detail routes + edits + coach-pay confidentiality RLS (#1065) + create-time pay-stamping trigger (#1068) + per-assignment rate editing (#1069). **Next build item: PR-5 invoices family arc** (per the #1069 close line).
 - **Weather parent-delight UX SHIPPED** (#1071–#1077): WeatherContext foundation + WeatherPopover + RainAlertBanner + forecastWindow. Complete.
 - **Teams redesign PR-0/PR-1/PR-2 SHIPPED** (#1078, #1080) + messaging season-scope (#1079): roster + coach/comp management live. (Any Teams PR-3+ not yet enumerated — verify next session.)
