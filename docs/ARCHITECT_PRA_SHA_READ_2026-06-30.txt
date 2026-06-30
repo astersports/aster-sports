@@ -16,8 +16,10 @@ Merged SHA: 24e6f4b49932e05cd638699c116a1fdbe4f7e952  (squashed onto main as 3ff
 Scope:     R1·PR-A "first brick" — mount the FREE, no-login AAU Hub gateway INSIDE the
            platform app (aster-sports / astersports.app) as the parent acquisition wedge,
            rendering the public tournament directory over the frozen anon public-RPC
-           contract. The insulated increment of the consolidation plan
-           (docs/CONSOLIDATION_PHASED_PLAN_2026-06-29.txt, R1).
+           contract. The insulated increment of the consolidation plan, R1
+           (the plan + audit live on the held consolidation PR #1154 / branch
+           claude/aau-consolidation-audit — NOT yet on main; the only contract
+           this PR-A consumes that IS on main is docs/aau/PUBLIC_RPC_CONTRACT.md).
 
 Files (6 changed, +245; all ≤150 lines; --as-* tokens only; no hardcoded hex):
   - src/App.jsx
