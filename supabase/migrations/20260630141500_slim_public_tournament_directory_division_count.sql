@@ -43,3 +43,12 @@ AS $function$
   ) ORDER BY t.start_date DESC), '[]'::jsonb)
   FROM t;
 $function$;
+
+-- Re-assert the public-RPC grant convention (AP #23/#57) + refresh the comment
+-- so this mirror stays faithful and self-contained (CREATE OR REPLACE preserves
+-- the prior ACL, so this is a no-op re-assertion, not a privilege change).
+REVOKE EXECUTE ON FUNCTION public.get_public_tournament_directory() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.get_public_tournament_directory() FROM anon;
+GRANT  EXECUTE ON FUNCTION public.get_public_tournament_directory() TO anon, authenticated;
+COMMENT ON FUNCTION public.get_public_tournament_directory() IS
+  'AAU Discovery directory (public-read, Plane A). Canonical-deduped tournaments. SLIMMED 2026-06-30: returns scalar division_count instead of the embedded divisions array (home cards only need the count; the detail page loads full divisions via get_public_tournament_teams). states = DISTINCT venues.state via division_games.venue_id (geocoded only; [] when none).';
