@@ -41,7 +41,7 @@ function Block({ n, label }) {
 
 export default function AauUpNextHero() {
   const teams = useTrackedTeams();
-  const { nextGame } = useTrackedSchedules(teams.map((t) => t.teamKey));
+  const { nextGame, afterThis } = useTrackedSchedules(teams.map((t) => t.teamKey));
   const weather = useWeather(nextGame?.venue?.lat, nextGame?.venue?.lng);
   const [now, setNow] = useState(() => Date.now());
 
@@ -69,6 +69,7 @@ export default function AauUpNextHero() {
   const advice = weatherAdvice(hour);
 
   return (
+    <>
     <section style={heroStyle} aria-label="Next tracked game">
       <p style={eyebrow}>★ Next up · {nextGame.trackedTeamName || 'Your team'}</p>
       <h1 style={{ margin: '6px 0 0', fontSize: 22, fontWeight: 700, lineHeight: 1.2, letterSpacing: '-0.01em', color: 'var(--as-text-on-dark)' }}>
@@ -92,5 +93,27 @@ export default function AauUpNextHero() {
         </p>
       )}
     </section>
+
+    {afterThis.length > 0 && (
+      <div style={{ marginTop: 10 }} aria-label="Games after the next one">
+        <p style={{ ...eyebrow, color: 'var(--as-text-tertiary)', margin: '0 0 6px' }}>After that</p>
+        <div style={{ display: 'grid', gap: 8 }}>
+          {afterThis.map((g) => (
+            <div key={g.gameId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 14px', backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)', borderRadius: 10, boxShadow: 'var(--as-shadow-sm)' }}>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--as-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {g.isHome ? 'vs' : '@'} {g.opponent || 'TBD'}
+                </p>
+                {g.trackedTeamName && <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--as-text-secondary)' }}>{g.trackedTeamName}</p>}
+              </div>
+              <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 600, color: 'var(--as-text-primary)', whiteSpace: 'nowrap' }}>
+                {gameDay(g.startAt)} · {formatTime(g.startAt)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+    </>
   );
 }
