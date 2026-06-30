@@ -26,16 +26,14 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     let active = true;
-    let settled = false;
-    const markHasSession = () => { if (active && !settled) { settled = true; setHasSession(true); } };
-    // The recovery session lands asynchronously (detectSessionInUrl parses the
-    // token hash after mount), so listen for it AND poll getSession once...
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => { if (session) markHasSession(); });
-    supabase.auth.getSession().then(({ data }) => { if (data?.session) markHasSession(); });
-    // ...but don't declare the link dead until the hash has had time to resolve,
-    // otherwise a valid link flashes the "expired" card before the session lands.
-    const timer = setTimeout(() => { if (active && !settled) { settled = true; setHasSession(false); } }, 3000);
-    return () => { active = false; clearTimeout(timer); sub?.subscription?.unsubscribe?.(); };
+    // getSession() awaits client init (incl. detectSessionInUrl parsing the
+    // token hash), so it resolves to the recovery session — or definitively
+    // null — without a flash. Also listen, in case the session lands later.
+    supabase.auth.getSession().then(({ data }) => { if (active) setHasSession(!!data?.session); });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (active && session) setHasSession(true);
+    });
+    return () => { active = false; sub?.subscription?.unsubscribe?.(); };
   }, []);
 
   const onSubmit = async (e) => {
