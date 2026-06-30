@@ -24,6 +24,12 @@ export function dedupeTeams(teams) {
 
 const GENDER = { M: 'Boys', B: 'Boys', F: 'Girls', W: 'Girls', G: 'Girls' };
 
+// "Boys"/"Girls" from a gender code (M/B, F/W/G), or null when unknown — the one
+// shared map so search cards and tracked labels read the same vocabulary.
+export function genderLabel(g) {
+  return GENDER[g] || null;
+}
+
 // "Legacy Hoopers · Girls 5th" — a distinguishing label so tracked entries for
 // the same club but different age/gender don't all read "Legacy Hoopers". Falls
 // back to the bare name when gender/grade are absent.

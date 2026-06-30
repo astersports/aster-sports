@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AauTrackButton from './AauTrackButton';
-import { aauTeamLabel } from '../../lib/aau/aauSearch';
+import AauFilterPills from './AauFilterPills';
+import { aauTeamLabel, genderLabel } from '../../lib/aau/aauSearch';
 
 // Grouped results for the no-login Hub search (R1·PR-A). Presentational —
 // receives the { teams, divisions, tournaments } object from search_public_aau.
@@ -16,12 +18,6 @@ const cardStyle = {
 const titleStyle = { fontSize: 15, fontWeight: 600, lineHeight: 1.3, color: 'var(--as-text-primary)', margin: 0 };
 const metaStyle = { margin: '4px 0 0', fontSize: 13, color: 'var(--as-text-secondary)' };
 const sectionLabel = { margin: '0 0 8px', fontSize: 11, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)' };
-
-function genderLabel(g) {
-  if (g === 'M' || g === 'B') return 'Boys';
-  if (g === 'F' || g === 'W' || g === 'G') return 'Girls';
-  return null;
-}
 
 function LiveDot() {
   return <span aria-label="live now" title="Live now" style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 9999, backgroundColor: 'var(--as-danger)', marginRight: 6, verticalAlign: 'middle' }} />;
@@ -42,6 +38,17 @@ export default function AauSearchResults({ results }) {
   const tournaments = results?.tournaments || [];
   const total = teams.length + divisions.length + tournaments.length;
 
+  // Type filter — a long mixed result set scrolls; narrow to one kind (pills
+  // appear only when more than one kind is present).
+  const [type, setType] = useState('all');
+  const typeOptions = [
+    { key: 'all', label: 'All' },
+    ...(tournaments.length ? [{ key: 'tournaments', label: 'Tournaments', count: tournaments.length }] : []),
+    ...(teams.length ? [{ key: 'teams', label: 'Teams', count: teams.length }] : []),
+    ...(divisions.length ? [{ key: 'divisions', label: 'Divisions', count: divisions.length }] : []),
+  ];
+  const active = typeOptions.some((o) => o.key === type) ? type : 'all';
+  const show = (key) => active === 'all' || active === key;
   if (total === 0) {
     return (
       <div style={{ ...cardStyle, textAlign: 'center' }}>
@@ -56,9 +63,13 @@ export default function AauSearchResults({ results }) {
     <div>
       <p role="status" aria-live="polite" style={SR_ONLY}>{total} result{total !== 1 ? 's' : ''} found.</p>
 
+      {typeOptions.length > 2 && (
+        <AauFilterPills options={typeOptions} value={active} onChange={setType} ariaLabel="Filter results by type" />
+      )}
+
       {/* Tournaments first — a parent searching a tournament name shouldn't have
           to scroll past a long team list to find it. */}
-      {tournaments.length > 0 && (
+      {show('tournaments') && tournaments.length > 0 && (
         <Section label={`Tournaments · ${tournaments.length}`}>
           {tournaments.map((t, i) => {
             const meta = [t.circuit, t.divisionCount ? `${t.divisionCount} division${t.divisionCount !== 1 ? 's' : ''}` : null].filter(Boolean).join(' · ');
@@ -82,7 +93,7 @@ export default function AauSearchResults({ results }) {
         </Section>
       )}
 
-      {teams.length > 0 && (
+      {show('teams') && teams.length > 0 && (
         <Section label={`Teams · ${teams.length}`}>
           {teams.map((t, i) => {
             const g = genderLabel(t.gender);
@@ -121,7 +132,7 @@ export default function AauSearchResults({ results }) {
         </Section>
       )}
 
-      {divisions.length > 0 && (
+      {show('divisions') && divisions.length > 0 && (
         <Section label={`Divisions · ${divisions.length}`}>
           {divisions.map((d, i) => {
             const meta = [d.tournamentName, d.teamCount ? `${d.teamCount} team${d.teamCount !== 1 ? 's' : ''}` : null].filter(Boolean).join(' · ');
