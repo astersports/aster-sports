@@ -5,6 +5,7 @@ import RequireAuth from './components/layout/RequireAuth';
 import { useRouteMemory } from './hooks/useRouteMemory';
 import LoginPage from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import HomePage from './pages/HomePage';
 import SchedulePage from './pages/SchedulePage';
@@ -77,6 +78,7 @@ export default function App() {
       {/* Public auth routes — no shell, no guard */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
       <Route path="/schedule/:teamId" element={<PublicSchedulePage />} />
       <Route path="/r/:slug" element={<RegisterEntryPage />} />

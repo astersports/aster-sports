@@ -18,7 +18,9 @@ export default function SecuritySection({ email }) {
   const sendPasswordReset = async () => {
     if (!email || resetting || cooling) return;
     setResetting(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
     setResetting(false);
     if (error) {
       showToast("Couldn't send reset email. Try again?", 'error');
