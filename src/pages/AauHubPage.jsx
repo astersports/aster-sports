@@ -55,14 +55,26 @@ export default function AauHubPage() {
         </p>
       </header>
 
-      <input
-        type="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search teams, tournaments…"
-        aria-label="Search AAU teams and tournaments"
-        style={{ width: '100%', height: 44, padding: '0 14px', fontSize: 15, color: 'var(--as-text-primary)', backgroundColor: 'var(--as-bg-tertiary)', border: '1.5px solid var(--as-border-default)', borderRadius: 10, outline: 'none', boxSizing: 'border-box' }}
-      />
+      <div style={{ position: 'relative' }}>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search teams, tournaments…"
+          aria-label="Search AAU teams and tournaments"
+          style={{ width: '100%', height: 44, padding: query ? '0 46px 0 14px' : '0 14px', fontSize: 15, color: 'var(--as-text-primary)', backgroundColor: 'var(--as-bg-tertiary)', border: '1.5px solid var(--as-border-default)', borderRadius: 10, outline: 'none', boxSizing: 'border-box' }}
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery('')}
+            aria-label="Clear search"
+            style={{ position: 'absolute', right: 4, top: 0, height: 44, width: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--as-accent)', fontSize: 17, fontWeight: 600, lineHeight: 1 }}
+          >
+            ✕
+          </button>
+        )}
+      </div>
 
       {search.active ? (
         <div style={{ marginTop: 4 }}>
