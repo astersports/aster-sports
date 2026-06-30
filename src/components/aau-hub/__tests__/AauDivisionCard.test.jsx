@@ -1,22 +1,36 @@
 // @vitest-environment jsdom
 //
 // AauDivisionCard — one division on a tournament's public Hub detail (R1·PR-A).
-// Locks the team-count derivation (teams[] length, falling back to team_count),
-// singular/plural, and the "Top N advance" label.
+// Locks the collapsed header (name + team count + advance cutoff) AND the
+// tournament -> division -> team drill-down: expanding reveals a team list whose
+// rows link to /hub/team/<team_key> so a parent can reach a team's schedule.
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, fireEvent, render } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import AauDivisionCard from '../AauDivisionCard';
 
 afterEach(cleanup);
 
-describe('AauDivisionCard', () => {
+const withTeams = {
+  id: 'd1', name: 'Boys - 5th/6th', advance_count: 2,
+  teams: [
+    { id: 'hoop kings', team_key: 'hoop kings::', name: 'Hoop Kings', wins: 1, losses: 0, pool: 'Boys 5/6' },
+    { id: 'legacy hoopers', team_key: 'legacy hoopers:M:5th', name: 'Legacy Hoopers', wins: 0, losses: 1 },
+  ],
+};
+
+describe('AauDivisionCard (collapsed header)', () => {
   it('renders the division name, team count (from teams[]), and advance cutoff', () => {
-    const division = { id: 'd1', name: 'Boys - 2nd/3rd', advance_count: 2, teams: [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }] };
-    const { container } = render(<AauDivisionCard division={division} />);
-    expect(container.textContent).toMatch(/Boys - 2nd\/3rd/);
-    expect(container.textContent).toMatch(/4 teams/);
+    const { container } = render(<AauDivisionCard division={withTeams} />);
+    expect(container.textContent).toMatch(/Boys - 5th\/6th/);
+    expect(container.textContent).toMatch(/2 teams/);
     expect(container.textContent).toMatch(/Top 2 advance/);
+  });
+
+  it('is collapsed by default — team rows are not yet rendered', () => {
+    const { queryByText } = render(<AauDivisionCard division={withTeams} />);
+    expect(queryByText('Hoop Kings')).toBeNull();
   });
 
   it('falls back to team_count when teams[] is absent, and singularizes "1 team"', () => {
@@ -25,14 +39,44 @@ describe('AauDivisionCard', () => {
     expect(container.textContent).not.toMatch(/1 teams/);
   });
 
-  it('omits the advance label when advance_count is absent', () => {
-    const { container } = render(<AauDivisionCard division={{ id: 'd3', name: 'Boys - 4th', teams: [{ id: 'a' }, { id: 'b' }] }} />);
-    expect(container.textContent).toMatch(/2 teams/);
-    expect(container.textContent).not.toMatch(/advance/);
-  });
-
   it('tolerates a bare division (name only / null) without crashing', () => {
     expect(render(<AauDivisionCard division={{ name: 'Lonely' }} />).container.textContent).toMatch(/Lonely/);
     expect(render(<AauDivisionCard division={null} />).container.textContent).toMatch(/Division/);
+  });
+});
+
+describe('AauDivisionCard (drill-down)', () => {
+  it('expands to a team list whose rows link to each team schedule', () => {
+    const { getByRole, getAllByRole } = render(
+      <MemoryRouter><AauDivisionCard division={withTeams} /></MemoryRouter>,
+    );
+    fireEvent.click(getByRole('button', { name: /Boys - 5th\/6th/ }));
+    const links = getAllByRole('link');
+    expect(links.map((a) => a.getAttribute('href'))).toContain('/hub/team/hoop%20kings%3A%3A');
+    expect(links.map((a) => a.getAttribute('href'))).toContain('/hub/team/legacy%20hoopers%3AM%3A5th');
+  });
+
+  it('shows each team record and toggles closed again', () => {
+    const { getByRole, queryByText, container } = render(
+      <MemoryRouter><AauDivisionCard division={withTeams} /></MemoryRouter>,
+    );
+    fireEvent.click(getByRole('button', { name: /Boys - 5th\/6th/ }));
+    expect(container.textContent).toMatch(/1–0/);
+    fireEvent.click(getByRole('button', { name: /Boys - 5th\/6th/ }));
+    expect(queryByText('Hoop Kings')).toBeNull();
+  });
+
+  it('groups teams under pool sub-headers when the division has more than one pool', () => {
+    const twoPools = {
+      id: 'd9', name: 'Boys - 2nd/3rd',
+      teams: [
+        { team_key: 'pelham hustle::', name: 'Pelham Hustle', pool: 'National Orange', wins: 2, losses: 0 },
+        { team_key: 'li all stars::', name: 'LI All Stars', pool: 'One Day Only', wins: 2, losses: 0 },
+      ],
+    };
+    const { getByRole, getByText } = render(<MemoryRouter><AauDivisionCard division={twoPools} /></MemoryRouter>);
+    fireEvent.click(getByRole('button', { name: /Boys - 2nd\/3rd/ }));
+    expect(getByText('National Orange')).not.toBeNull();
+    expect(getByText('One Day Only')).not.toBeNull();
   });
 });

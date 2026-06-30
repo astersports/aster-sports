@@ -6,7 +6,7 @@
 // singular/plural counts, the team→schedule link, and the no-match empty state.
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, fireEvent, render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import AauSearchResults from '../AauSearchResults';
 
@@ -87,5 +87,25 @@ describe('AauSearchResults', () => {
   it('tolerates a null results prop without crashing', () => {
     const { container } = renderResults(null);
     expect(container.textContent).toMatch(/No matches yet/);
+  });
+});
+
+describe('AauSearchResults type filter', () => {
+  it('shows the filter pills only when more than one result kind is present', () => {
+    const oneKind = renderResults({ ...RESULTS, tournaments: [], divisions: [] });
+    expect(oneKind.queryByRole('group', { name: /Filter results by type/ })).toBeNull();
+    cleanup();
+    const multi = renderResults(RESULTS);
+    expect(multi.getByRole('group', { name: /Filter results by type/ })).not.toBeNull();
+  });
+
+  it('narrows to the chosen kind, then falls back to All when that kind disappears', () => {
+    const { getByRole, queryByText, rerender } = renderResults(RESULTS);
+    fireEvent.click(getByRole('button', { name: /Teams · 1/ }));
+    expect(queryByText('Westchester Summer League')).toBeNull(); // tournaments hidden
+    expect(queryByText('Bearpack Basketball')).not.toBeNull();   // teams still shown
+    // A new result set with no teams must not strand the view empty on the stale filter.
+    rerender(<MemoryRouter><AauSearchResults results={{ teams: [], divisions: [], tournaments: RESULTS.tournaments }} /></MemoryRouter>);
+    expect(queryByText('Westchester Summer League')).not.toBeNull();
   });
 });
