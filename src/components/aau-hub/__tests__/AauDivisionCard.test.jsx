@@ -65,4 +65,18 @@ describe('AauDivisionCard (drill-down)', () => {
     fireEvent.click(getByRole('button', { name: /Boys - 5th\/6th/ }));
     expect(queryByText('Hoop Kings')).toBeNull();
   });
+
+  it('groups teams under pool sub-headers when the division has more than one pool', () => {
+    const twoPools = {
+      id: 'd9', name: 'Boys - 2nd/3rd',
+      teams: [
+        { team_key: 'pelham hustle::', name: 'Pelham Hustle', pool: 'National Orange', wins: 2, losses: 0 },
+        { team_key: 'li all stars::', name: 'LI All Stars', pool: 'One Day Only', wins: 2, losses: 0 },
+      ],
+    };
+    const { getByRole, getByText } = render(<MemoryRouter><AauDivisionCard division={twoPools} /></MemoryRouter>);
+    fireEvent.click(getByRole('button', { name: /Boys - 2nd\/3rd/ }));
+    expect(getByText('National Orange')).not.toBeNull();
+    expect(getByText('One Day Only')).not.toBeNull();
+  });
 });
