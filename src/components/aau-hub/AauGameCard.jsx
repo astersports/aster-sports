@@ -47,7 +47,7 @@ export default function AauGameCard({ game, compact = false }) {
       <article style={{ ...cardStyle, padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ minWidth: 0 }}>
           <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: 'var(--as-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{matchup}</p>
-          <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--as-text-secondary)' }}>{gameDay(g.startAt)} · {formatTime(g.startAt)}</p>
+          <p style={{ margin: '2px 0 0', fontSize: 12, fontWeight: 500, color: 'var(--as-text-primary)' }}>{gameDay(g.startAt)} · {formatTime(g.startAt)}</p>
         </div>
         {resultChip}
       </article>
@@ -61,7 +61,7 @@ export default function AauGameCard({ game, compact = false }) {
   return (
     <article style={cardStyle}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--as-text-secondary)' }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--as-text-primary)' }}>
           {gameDay(g.startAt)} · {formatTime(g.startAt)}
         </span>
         {resultChip}
@@ -79,7 +79,7 @@ export default function AauGameCard({ game, compact = false }) {
 
       {venueLine && (
         <div style={{ marginTop: 12 }}>
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--as-text-secondary)' }}>{venueLine}</p>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--as-text-primary)' }}>{venueLine}</p>
           {dir && (
             <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
               <a href={dir.google} target="_blank" rel="noopener noreferrer" style={linkStyle} aria-label={`Directions to ${g.venue.name} on Google Maps`}>Google Maps</a>

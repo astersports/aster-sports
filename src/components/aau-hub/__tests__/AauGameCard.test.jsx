@@ -72,15 +72,25 @@ describe('AauGameCard', () => {
     expect(container.querySelector('a[href]')).toBeNull();
   });
 
-  it('renders meta/date text in the darker secondary token, not the AA-failing tertiary', () => {
-    const detailed = render(<AauGameCard game={baseFinal} />);
-    const detailedStyles = [...detailed.container.querySelectorAll('p, span')].map((el) => el.getAttribute('style') || '').join(' ');
-    expect(detailedStyles).not.toMatch(/--as-text-tertiary/);
-    expect(detailedStyles).toMatch(/--as-text-secondary/);
-    cleanup();
-    const compact = render(<AauGameCard game={baseFinal} compact />);
-    const compactStyles = [...compact.container.querySelectorAll('p')].map((el) => el.getAttribute('style') || '').join(' ');
-    expect(compactStyles).not.toMatch(/--as-text-tertiary/);
+  it('renders the date/time + venue lines in near-black primary (Frank: "too light"), meta one tier back', () => {
+    const { container } = render(<AauGameCard game={baseFinal} />);
+    const all = [...container.querySelectorAll('p, span')];
+    const styleOf = (re) => all.find((el) => re.test(el.textContent))?.getAttribute('style') || '';
+    // The scannable info — date/time + venue — is near-black, not gray. Hierarchy
+    // comes from weight/size, not from lightening the color (Linear/Stripe rule).
+    expect(styleOf(/Jun 27/)).toMatch(/--as-text-primary/);
+    expect(styleOf(/Harry S\. Truman/)).toMatch(/--as-text-primary/);
+    // The verbose tournament·division meta stays the single recessed tier (AA secondary).
+    expect(styleOf(/Grand Finale/)).toMatch(/--as-text-secondary/);
+    // Nothing falls back to the AA-failing tertiary.
+    expect(all.map((el) => el.getAttribute('style') || '').join(' ')).not.toMatch(/--as-text-tertiary/);
+  });
+
+  it('compact mode keeps the date line near-black too', () => {
+    const { container } = render(<AauGameCard game={baseFinal} compact />);
+    const dateP = [...container.querySelectorAll('p')].find((el) => /Jun 27/.test(el.textContent));
+    expect(dateP.getAttribute('style')).toMatch(/--as-text-primary/);
+    expect(dateP.getAttribute('style')).not.toMatch(/--as-text-tertiary|--as-text-secondary/);
   });
 
   it('compact mode shows matchup + result but hides venue, directions, and badges', () => {

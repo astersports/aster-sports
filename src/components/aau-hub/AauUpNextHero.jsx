@@ -64,9 +64,9 @@ export default function AauUpNextHero() {
   }
 
   const { d, h, m } = countdownParts(new Date(nextGame.startAt).getTime() - now);
-  const advice = weatherAdvice(getWeatherForTime(weather, nextGame.startAt));
   const matchup = `${nextGame.isHome ? 'vs' : '@'} ${nextGame.opponent || 'TBD'}`;
-  const hour = getWeatherForTime(weather, nextGame.startAt);
+  const hour = getWeatherForTime(weather, nextGame.startAt); // reduce over the forecast once
+  const advice = weatherAdvice(hour);
 
   return (
     <section style={heroStyle} aria-label="Next tracked game">
