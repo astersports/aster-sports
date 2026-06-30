@@ -26,7 +26,8 @@ export default function AauTrackButton({ teamKey, name }) {
       style={{
         minHeight: 44, padding: '0 16px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer',
         color: tracked ? 'var(--as-text-inverse)' : 'var(--as-accent)',
-        backgroundColor: tracked ? 'var(--as-accent)' : 'var(--as-bg-card)',
+        // Tracked uses the signature gold→flame gradient (existing tokens) for pop.
+        background: tracked ? 'linear-gradient(135deg, var(--as-flame-mid), var(--as-accent))' : 'var(--as-bg-card)',
         border: `1px solid ${tracked ? 'var(--as-accent)' : 'var(--as-border-default)'}`,
       }}
     >

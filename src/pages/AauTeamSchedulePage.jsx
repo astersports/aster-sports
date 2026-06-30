@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAauTeamSchedule } from '../hooks/useAauTeamSchedule';
 import { usePlatformBrand } from '../hooks/usePlatformBrand';
+import AauHubHeader from '../components/aau-hub/AauHubHeader';
 import AauGameCard from '../components/aau-hub/AauGameCard';
 import AauTrackButton from '../components/aau-hub/AauTrackButton';
 import PoweredByFooter from '../components/shared/PoweredByFooter';
@@ -35,11 +37,25 @@ export default function AauTeamSchedulePage() {
   const { teamKey } = useParams();
   const { games, teamName, loading, error } = useAauTeamSchedule(teamKey);
 
+  // Compact ⇄ Detailed schedule density, mirroring the app. Persisted so the
+  // choice sticks across visits; storage-disabled falls back to detailed.
+  const [compact, setCompact] = useState(() => {
+    try { return localStorage.getItem('aau:schedule-density') === 'compact'; } catch { return false; }
+  });
+  const toggleDensity = () => setCompact((c) => {
+    const next = !c;
+    try { localStorage.setItem('aau:schedule-density', next ? 'compact' : 'detailed'); } catch { /* storage disabled */ }
+    return next;
+  });
+  const gap = compact ? 6 : 12;
+
   const upcoming = games.filter((g) => g.status !== 'final');
   const results = games.filter((g) => g.status === 'final').reverse(); // most recent first
 
   return (
-    <main style={{ maxWidth: 600, margin: '0 auto', padding: '16px 16px 80px', backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' }}>
+    <>
+      <AauHubHeader />
+      <main style={{ maxWidth: 600, margin: '0 auto', padding: '16px 16px 80px', backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' }}>
       <Link to="/hub" style={{ display: 'inline-block', fontSize: 13, fontWeight: 500, color: 'var(--as-accent)', textDecoration: 'none', padding: '4px 0' }}>
         ← AAU Hub
       </Link>
@@ -59,19 +75,29 @@ export default function AauTeamSchedulePage() {
           <p role="status" aria-live="polite" style={SR_ONLY}>
             {games.length} game{games.length !== 1 ? 's' : ''} loaded for {teamName || 'this team'}.
           </p>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+            <button
+              type="button"
+              onClick={toggleDensity}
+              aria-pressed={compact}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 36, padding: '0 12px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: 'var(--as-accent)', backgroundColor: 'var(--as-bg-card)', border: '1px solid var(--as-border-default)', borderRadius: 9999 }}
+            >
+              ≡ {compact ? 'Detailed' : 'Compact'}
+            </button>
+          </div>
           {upcoming.length > 0 && (
             <section>
               <h2 style={sectionLabel}>Upcoming · {upcoming.length}</h2>
-              <div style={{ display: 'grid', gap: 12 }}>
-                {upcoming.map((g) => <AauGameCard key={g.gameId} game={g} />)}
+              <div style={{ display: 'grid', gap }}>
+                {upcoming.map((g) => <AauGameCard key={g.gameId} game={g} compact={compact} />)}
               </div>
             </section>
           )}
           {results.length > 0 && (
             <section>
               <h2 style={sectionLabel}>Results · {results.length}</h2>
-              <div style={{ display: 'grid', gap: 12 }}>
-                {results.map((g) => <AauGameCard key={g.gameId} game={g} />)}
+              <div style={{ display: 'grid', gap }}>
+                {results.map((g) => <AauGameCard key={g.gameId} game={g} compact={compact} />)}
               </div>
             </section>
           )}
@@ -79,6 +105,7 @@ export default function AauTeamSchedulePage() {
       )}
 
       <PoweredByFooter links />
-    </main>
+      </main>
+    </>
   );
 }

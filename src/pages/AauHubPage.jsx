@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAauDirectory } from '../hooks/useAauDirectory';
 import { useAauSearch } from '../hooks/useAauSearch';
 import { usePlatformBrand } from '../hooks/usePlatformBrand';
+import AauHubHeader from '../components/aau-hub/AauHubHeader';
 import AauTournamentCard from '../components/aau-hub/AauTournamentCard';
 import AauTrackedTeams from '../components/aau-hub/AauTrackedTeams';
 import AauSearchResults from '../components/aau-hub/AauSearchResults';
@@ -42,12 +43,11 @@ export default function AauHubPage() {
   const search = useAauSearch(query);
 
   return (
-    <main style={{ maxWidth: 600, margin: '0 auto', padding: '16px 16px 80px', backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' }}>
+    <>
+      <AauHubHeader />
+      <main style={{ maxWidth: 600, margin: '0 auto', padding: '16px 16px 80px', backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' }}>
       <header style={{ padding: '8px 0 16px' }}>
-        <p style={{ margin: 0, fontSize: 11, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)' }}>
-          AAU Hub
-        </p>
-        <h1 style={{ margin: '4px 0 0', fontSize: 24, fontWeight: 700, lineHeight: 1.2, letterSpacing: '-0.02em', color: 'var(--as-text-primary)' }}>
+        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, lineHeight: 1.2, letterSpacing: '-0.02em', color: 'var(--as-text-primary)' }}>
           Tournaments
         </h1>
         <p style={{ margin: '6px 0 0', fontSize: 15, lineHeight: 1.5, color: 'var(--as-text-secondary)' }}>
@@ -109,6 +109,7 @@ export default function AauHubPage() {
       )}
 
       <PoweredByFooter links />
-    </main>
+      </main>
+    </>
   );
 }
