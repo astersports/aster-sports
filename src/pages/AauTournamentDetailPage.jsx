@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { useAauTournament } from '../hooks/useAauTournament';
 import { usePlatformBrand } from '../hooks/usePlatformBrand';
+import AauHubHeader from '../components/aau-hub/AauHubHeader';
 import AauDivisionCard from '../components/aau-hub/AauDivisionCard';
 import PoweredByFooter from '../components/shared/PoweredByFooter';
 
@@ -37,7 +38,9 @@ export default function AauTournamentDetailPage() {
   const sub = [tournament?.circuit, Array.isArray(tournament?.states) ? tournament.states.join(', ') : null].filter(Boolean).join(' · ');
 
   return (
-    <main style={{ maxWidth: 600, margin: '0 auto', padding: '16px 16px 80px', backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' }}>
+    <>
+      <AauHubHeader />
+      <main style={{ maxWidth: 600, margin: '0 auto', padding: '16px 16px 80px', backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' }}>
       <Link to="/hub" style={{ display: 'inline-block', fontSize: 13, fontWeight: 500, color: 'var(--as-accent)', textDecoration: 'none', padding: '4px 0' }}>
         ← AAU Hub
       </Link>
@@ -64,6 +67,7 @@ export default function AauTournamentDetailPage() {
       )}
 
       <PoweredByFooter links />
-    </main>
+      </main>
+    </>
   );
 }

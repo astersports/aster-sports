@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { useAauTeamSchedule } from '../hooks/useAauTeamSchedule';
 import { usePlatformBrand } from '../hooks/usePlatformBrand';
+import AauHubHeader from '../components/aau-hub/AauHubHeader';
 import AauGameCard from '../components/aau-hub/AauGameCard';
 import AauTrackButton from '../components/aau-hub/AauTrackButton';
 import PoweredByFooter from '../components/shared/PoweredByFooter';
@@ -39,7 +40,9 @@ export default function AauTeamSchedulePage() {
   const results = games.filter((g) => g.status === 'final').reverse(); // most recent first
 
   return (
-    <main style={{ maxWidth: 600, margin: '0 auto', padding: '16px 16px 80px', backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' }}>
+    <>
+      <AauHubHeader />
+      <main style={{ maxWidth: 600, margin: '0 auto', padding: '16px 16px 80px', backgroundColor: 'var(--as-bg-page)', minHeight: '100vh' }}>
       <Link to="/hub" style={{ display: 'inline-block', fontSize: 13, fontWeight: 500, color: 'var(--as-accent)', textDecoration: 'none', padding: '4px 0' }}>
         ← AAU Hub
       </Link>
@@ -79,6 +82,7 @@ export default function AauTeamSchedulePage() {
       )}
 
       <PoweredByFooter links />
-    </main>
+      </main>
+    </>
   );
 }
