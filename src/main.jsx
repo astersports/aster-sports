@@ -1,3 +1,7 @@
+// Runs first — reroutes a coerced-to-root password-recovery landing to
+// /reset-password before the supabase client is constructed (and strips the
+// hash). See src/lib/recoveryRedirect.js.
+import './lib/recoveryRedirect';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';

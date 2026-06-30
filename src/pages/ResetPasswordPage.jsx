@@ -26,12 +26,16 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     let active = true;
-    supabase.auth.getSession().then(({ data }) => { if (active) setHasSession(!!data?.session); });
-    // The recovery session can land just after mount (detectSessionInUrl) — listen too.
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (active && session) setHasSession(true);
-    });
-    return () => { active = false; sub?.subscription?.unsubscribe?.(); };
+    let settled = false;
+    const markHasSession = () => { if (active && !settled) { settled = true; setHasSession(true); } };
+    // The recovery session lands asynchronously (detectSessionInUrl parses the
+    // token hash after mount), so listen for it AND poll getSession once...
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => { if (session) markHasSession(); });
+    supabase.auth.getSession().then(({ data }) => { if (data?.session) markHasSession(); });
+    // ...but don't declare the link dead until the hash has had time to resolve,
+    // otherwise a valid link flashes the "expired" card before the session lands.
+    const timer = setTimeout(() => { if (active && !settled) { settled = true; setHasSession(false); } }, 3000);
+    return () => { active = false; clearTimeout(timer); sub?.subscription?.unsubscribe?.(); };
   }, []);
 
   const onSubmit = async (e) => {
