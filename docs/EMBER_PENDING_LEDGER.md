@@ -5135,7 +5135,7 @@ Created `docs/DISASTER_RECOVERY.md` — 250-line runbook structured for use-at-3
 4. **Migration drift recovery** — AP #21 mirror-discipline failure modes
 5. **pg_cron job recovery** — including PATTERN HOTEL guard (SQL "success" ≠ HTTP success per Wave 3.A #22 P0-1)
 6. **Public status sources** — supabase, vercel, resend, anthropic, github
-7. **On-call contacts** — Frank (admin@legacyhoopers.org + olivejuiceinc1@gmail.com), Kenny
+7. **On-call contacts** — Frank (frank@astersports.co + olivejuiceinc1@gmail.com), Kenny
 8. **Secret rotation cadence** — recommended baseline per secret class (HMAC tokens 12mo, cron_secret 6mo, vapid avoid-rotation, service_role rotate-on-exposure)
 9. **Drill history** — empty (3B.25.P0-2 is the standing P0-2 below)
 10. **Standing owner action items** — 3B.25.P0-2 (backup-to-staging drill), 3B.25.P1 (off-platform pg_dump, Sentry source-map upload, LeagueApps source archive), 3B.27.P0-2 (breach-notification policy cross-link)

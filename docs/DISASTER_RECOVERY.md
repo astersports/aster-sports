@@ -2,7 +2,7 @@
 
 **Created:** 2026-06-02 to close Wave 3.B #25 P0-1 from `AUDIT_WAVE_3B_2026-05-29.md`.
 **Status:** runbook only — procedures here have NOT been drilled against staging (P0-2 is the standing owner-action item; see §10).
-**Owner:** admin@legacyhoopers.org (Frank Samaritano)
+**Owner:** frank@astersports.co (Frank Samaritano)
 **Audience:** the human who finds production broken at 11 PM. Skim §1 for orientation, jump to the §3 scenario that matches the failure, do the steps.
 
 ---
@@ -239,7 +239,7 @@ $$);
 
 | Surface | Person | Contact |
 |---|---|---|
-| Platform owner | Frank Samaritano | `admin@legacyhoopers.org` (auth login) · `olivejuiceinc1@gmail.com` (operational) |
+| Platform owner | Frank Samaritano | `frank@astersports.co` (auth login + admin) · `olivejuiceinc1@gmail.com` (operational) |
 | Coaching | Kenny Lane | `coachkenny@legacyhoopers.org` |
 | Supabase support (Pro tier) | Supabase | dashboard support widget; ~24 hr response |
 | Vercel support (free tier) | Vercel | community Discord / email |
