@@ -59,4 +59,20 @@ describe('AauTournamentCard', () => {
     expect(container.textContent).not.toMatch(/1 divisions/);
     expect(container.textContent).toMatch(/Untitled tournament/);
   });
+
+  it('renders the meta line in the darker secondary token, not the AA-failing tertiary', () => {
+    // WCAG AA: tertiary (#8896AB) is 3.8:1 and fails for text; the circuit ·
+    // states · division-count meta must use secondary (#4A5568). Locks the
+    // tournament-card half of the #1163 contrast fix (Copilot caught this card
+    // was missed in the first pass).
+    const t = {
+      id: 't6', name: 'Contrast Check', circuit: 'Zero Gravity',
+      states: ['NY'], divisions: [{ id: 'd1' }, { id: 'd2' }],
+    };
+    const { container } = render(<AauTournamentCard tournament={t} />);
+    const meta = [...container.querySelectorAll('p')].find((p) => /Zero Gravity/.test(p.textContent));
+    const style = meta?.getAttribute('style') || '';
+    expect(style).toMatch(/--as-text-secondary/);
+    expect(style).not.toMatch(/--as-text-tertiary/);
+  });
 });
