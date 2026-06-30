@@ -30,7 +30,7 @@ export default function AauDivisionDetailPage() {
   usePlatformBrand();
   const { tournamentId, divisionId } = useParams();
   const { divisions, loading, error } = useAauTournament(tournamentId);
-  const { games, loading: gamesLoading } = useAauTournamentGames(tournamentId);
+  const { games, loading: gamesLoading, error: gamesError } = useAauTournamentGames(tournamentId);
   const [tab, setTab] = useState('standings');
 
   const division = divisions.find((d) => d.id === divisionId) || null;
@@ -64,8 +64,11 @@ export default function AauDivisionDetailPage() {
               {active === 'standings' && (pools.length > 0
                 ? pools.map((p, i) => <AauStandingsTable key={p.pool || i} pool={pools.length > 1 ? p.pool : null} teams={p.teams} />)
                 : <Notice>Standings post once games are played.</Notice>)}
-              {active === 'schedule' && (gamesLoading ? <Skeletons /> : <AauGameDayList games={divGames} emptyText="No games scheduled yet — check back soon." />)}
-              {active === 'bracket' && <AauGameDayList games={bracketGames} emptyText="Bracket isn’t set yet." />}
+              {active === 'schedule' && (gamesLoading ? <Skeletons />
+                : gamesError ? <Notice>Couldn’t load the schedule. Try again in a moment.</Notice>
+                : <AauGameDayList games={divGames} emptyText="No games scheduled yet — check back soon." />)}
+              {active === 'bracket' && (gamesError ? <Notice>Couldn’t load the bracket. Try again in a moment.</Notice>
+                : <AauGameDayList games={bracketGames} emptyText="Bracket isn’t set yet." />)}
             </div>
           </>
         )}

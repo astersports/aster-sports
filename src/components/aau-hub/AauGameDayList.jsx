@@ -5,7 +5,7 @@ import AauDivisionGameRow from './AauDivisionGameRow';
 // (R1·PR-A) — shared by the division page's Schedule and Bracket tabs. Empty
 // list → a brand-voice notice. --as-* tokens only.
 
-const dayLabel = { margin: '16px 0 8px', fontSize: 11, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--as-text-tertiary)' };
+const dayLabel = { margin: '16px 0 8px', fontSize: 11, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--as-text-meta)' };
 
 export default function AauGameDayList({ games, emptyText }) {
   const days = groupGamesByDay(games);
