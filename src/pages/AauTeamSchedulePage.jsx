@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { useAauTeamSchedule } from '../hooks/useAauTeamSchedule';
 import AauGameCard from '../components/aau-hub/AauGameCard';
+import AauTrackButton from '../components/aau-hub/AauTrackButton';
 import PoweredByFooter from '../components/shared/PoweredByFooter';
 
 // R1·PR-A — a team's public schedule on the no-login Hub gateway. Reached from
@@ -40,10 +41,11 @@ export default function AauTeamSchedulePage() {
       <Link to="/hub" style={{ display: 'inline-block', fontSize: 13, fontWeight: 500, color: 'var(--as-accent)', textDecoration: 'none', padding: '4px 0' }}>
         ← AAU Hub
       </Link>
-      <header style={{ padding: '4px 0 8px' }}>
+      <header style={{ padding: '4px 0 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, lineHeight: 1.2, letterSpacing: '-0.02em', color: 'var(--as-text-primary)' }}>
           {teamName || 'Team schedule'}
         </h1>
+        <AauTrackButton teamKey={teamKey} name={teamName} />
       </header>
 
       {loading && <Skeletons />}

@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAauDirectory } from '../hooks/useAauDirectory';
 import { useAauSearch } from '../hooks/useAauSearch';
 import AauTournamentCard from '../components/aau-hub/AauTournamentCard';
+import AauTrackedTeams from '../components/aau-hub/AauTrackedTeams';
 import AauSearchResults from '../components/aau-hub/AauSearchResults';
 import PoweredByFooter from '../components/shared/PoweredByFooter';
 
@@ -68,6 +70,7 @@ export default function AauHubPage() {
         </div>
       ) : (
         <div style={{ marginTop: 20 }}>
+          <AauTrackedTeams />
           {loading && <Skeletons />}
           {!loading && error && <Notice>Couldn’t reach the server. Try again in a moment.</Notice>}
           {!loading && !error && tournaments.length === 0 && <Notice>No tournaments listed yet — check back soon.</Notice>}
@@ -78,7 +81,9 @@ export default function AauHubPage() {
               </p>
               <div style={{ display: 'grid', gap: 12 }}>
                 {tournaments.map((t) => (
-                  <AauTournamentCard key={t.id} tournament={t} />
+                  <Link key={t.id} to={`/hub/tournament/${t.id}`} aria-label={`${t.name || 'Tournament'} divisions`} style={{ display: 'block', textDecoration: 'none' }}>
+                    <AauTournamentCard tournament={t} />
+                  </Link>
                 ))}
               </div>
             </>

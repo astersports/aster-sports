@@ -54,6 +54,32 @@ export default function AauSearchResults({ results }) {
     <div>
       <p role="status" aria-live="polite" style={SR_ONLY}>{total} result{total !== 1 ? 's' : ''} found.</p>
 
+      {/* Tournaments first — a parent searching a tournament name shouldn't have
+          to scroll past a long team list to find it. */}
+      {tournaments.length > 0 && (
+        <Section label={`Tournaments · ${tournaments.length}`}>
+          {tournaments.map((t, i) => {
+            const meta = [t.circuit, t.divisionCount ? `${t.divisionCount} division${t.divisionCount !== 1 ? 's' : ''}` : null].filter(Boolean).join(' · ');
+            const key = t.tournamentId || `${t.name}-${i}`;
+            const inner = (
+              <>
+                <p style={titleStyle}>{t.isLive && <LiveDot />}{t.name || 'Tournament'}</p>
+                {meta && <p style={metaStyle}>{meta}</p>}
+              </>
+            );
+            return t.tournamentId ? (
+              <Link key={key} to={`/hub/tournament/${t.tournamentId}`}
+                aria-label={`${t.name || 'Tournament'} divisions`}
+                style={{ ...cardStyle, display: 'block', textDecoration: 'none' }}>
+                {inner}
+              </Link>
+            ) : (
+              <article key={key} style={cardStyle}>{inner}</article>
+            );
+          })}
+        </Section>
+      )}
+
       {teams.length > 0 && (
         <Section label={`Teams · ${teams.length}`}>
           {teams.map((t, i) => {
@@ -79,20 +105,6 @@ export default function AauSearchResults({ results }) {
               </Link>
             ) : (
               <article key={key} style={cardStyle}>{inner}</article>
-            );
-          })}
-        </Section>
-      )}
-
-      {tournaments.length > 0 && (
-        <Section label={`Tournaments · ${tournaments.length}`}>
-          {tournaments.map((t, i) => {
-            const meta = [t.circuit, t.divisionCount ? `${t.divisionCount} division${t.divisionCount !== 1 ? 's' : ''}` : null].filter(Boolean).join(' · ');
-            return (
-              <article key={t.tournamentId || `${t.name}-${i}`} style={cardStyle}>
-                <p style={titleStyle}>{t.isLive && <LiveDot />}{t.name || 'Tournament'}</p>
-                {meta && <p style={metaStyle}>{meta}</p>}
-              </article>
             );
           })}
         </Section>

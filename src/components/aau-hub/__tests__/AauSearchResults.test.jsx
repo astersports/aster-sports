@@ -53,6 +53,19 @@ describe('AauSearchResults', () => {
     expect(container.querySelector('a[href]')).toBeNull();
   });
 
+  it('links a tournament result to its detail page by tournamentId', () => {
+    const { container } = renderResults({ teams: [], divisions: [], tournaments: RESULTS.tournaments });
+    const link = container.querySelector('a[href]');
+    expect(link.getAttribute('href')).toBe('/hub/tournament/t1');
+  });
+
+  it('renders Tournaments before Teams so a tournament search is not buried under the team list', () => {
+    const { container } = renderResults({ ...RESULTS, divisions: [] });
+    const text = container.textContent;
+    expect(text.indexOf('Tournaments ·')).toBeGreaterThanOrEqual(0);
+    expect(text.indexOf('Teams ·')).toBeGreaterThan(text.indexOf('Tournaments ·'));
+  });
+
   it('singularizes "1 division" on a tournament result', () => {
     const { container } = renderResults({ teams: [], divisions: [], tournaments: RESULTS.tournaments });
     expect(container.textContent).toMatch(/Westchester Summer League/);
