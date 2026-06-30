@@ -36,7 +36,13 @@ export function useAauDirectory() {
         setLoading(false);
         return;
       }
-      setTournaments(Array.isArray(data) ? data : []);
+      // Sort by end_date DESC (latest-ending first) so still-running leagues
+      // surface above finished ones — a multi-week league like Westchester
+      // (ends in August) sorts ahead of a single-weekend event that already
+      // ended. Falls back to start_date for ties / missing end dates.
+      const sorted = (Array.isArray(data) ? [...data] : []).sort((a, b) =>
+        String(b.end_date || b.start_date || '').localeCompare(String(a.end_date || a.start_date || '')));
+      setTournaments(sorted);
       setLoading(false);
     })();
 
