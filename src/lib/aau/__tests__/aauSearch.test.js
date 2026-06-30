@@ -2,7 +2,7 @@
 // one-card-per-team dedup (the tap-cancellation fix) and the distinguishing label.
 
 import { describe, expect, it } from 'vitest';
-import { aauTeamLabel, dedupeTeams } from '../aauSearch';
+import { aauTeamLabel, dedupeTeams, genderLabel } from '../aauSearch';
 
 describe('dedupeTeams', () => {
   it('collapses the same teamKey across tournaments into one entry with a count', () => {
@@ -34,5 +34,14 @@ describe('aauTeamLabel', () => {
   it('falls back to the bare name when gender/grade are absent', () => {
     expect(aauTeamLabel({ name: 'Legacy Hoopers 3AB' })).toBe('Legacy Hoopers 3AB');
     expect(aauTeamLabel({})).toBe('Team');
+  });
+});
+
+describe('genderLabel', () => {
+  it('maps every gender code to Boys/Girls and unknown to null', () => {
+    expect(['M', 'B'].map(genderLabel)).toEqual(['Boys', 'Boys']);
+    expect(['F', 'W', 'G'].map(genderLabel)).toEqual(['Girls', 'Girls', 'Girls']);
+    expect(genderLabel('X')).toBeNull();
+    expect(genderLabel(undefined)).toBeNull();
   });
 });

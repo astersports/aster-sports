@@ -6,6 +6,7 @@ import { usePlatformBrand } from '../hooks/usePlatformBrand';
 import AauHubHeader from '../components/aau-hub/AauHubHeader';
 import AauGameCard from '../components/aau-hub/AauGameCard';
 import AauBracketPath from '../components/aau-hub/AauBracketPath';
+import AauFilterPills from '../components/aau-hub/AauFilterPills';
 import AauTrackButton from '../components/aau-hub/AauTrackButton';
 import PoweredByFooter from '../components/shared/PoweredByFooter';
 
@@ -55,6 +56,19 @@ export default function AauTeamSchedulePage() {
   const upcoming = games.filter((g) => g.status !== 'final');
   const results = games.filter((g) => g.status === 'final').reverse(); // most recent first
 
+  // Section filter — long schedules scroll forever, so let a parent narrow to
+  // one section. Playoff appears only when a live bracket exists.
+  const [section, setSection] = useState('all');
+  const hasPlayoff = Array.isArray(bracketPaths) && bracketPaths.length > 0;
+  const sectionOptions = [
+    { key: 'all', label: 'All' },
+    ...(upcoming.length ? [{ key: 'upcoming', label: 'Upcoming', count: upcoming.length }] : []),
+    ...(results.length ? [{ key: 'results', label: 'Results', count: results.length }] : []),
+    ...(hasPlayoff ? [{ key: 'playoff', label: 'Playoff' }] : []),
+  ];
+  const active = sectionOptions.some((o) => o.key === section) ? section : 'all';
+  const show = (key) => active === 'all' || active === key;
+
   return (
     <>
       <AauHubHeader />
@@ -78,6 +92,9 @@ export default function AauTeamSchedulePage() {
           <p role="status" aria-live="polite" style={SR_ONLY}>
             {games.length} game{games.length !== 1 ? 's' : ''} loaded for {teamName || 'this team'}.
           </p>
+          {sectionOptions.length > 2 && (
+            <AauFilterPills options={sectionOptions} value={active} onChange={setSection} ariaLabel="Filter schedule by section" />
+          )}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
             <button
               type="button"
@@ -88,7 +105,7 @@ export default function AauTeamSchedulePage() {
               ≡ {compact ? 'Compact' : 'Detailed'}
             </button>
           </div>
-          {upcoming.length > 0 && (
+          {show('upcoming') && upcoming.length > 0 && (
             <section>
               <h2 style={sectionLabel}>Upcoming · {upcoming.length}</h2>
               <div style={{ display: 'grid', gap, gridTemplateColumns: 'minmax(0, 1fr)' }}>
@@ -96,7 +113,7 @@ export default function AauTeamSchedulePage() {
               </div>
             </section>
           )}
-          {results.length > 0 && (
+          {show('results') && results.length > 0 && (
             <section>
               <h2 style={sectionLabel}>Results · {results.length}</h2>
               <div style={{ display: 'grid', gap, gridTemplateColumns: 'minmax(0, 1fr)' }}>
@@ -107,7 +124,7 @@ export default function AauTeamSchedulePage() {
         </>
       )}
 
-      <AauBracketPath paths={bracketPaths} />
+      {show('playoff') && <AauBracketPath paths={bracketPaths} />}
 
       <PoweredByFooter links />
       </main>
