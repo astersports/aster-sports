@@ -31,4 +31,17 @@ describe('AauDivisionGameRow', () => {
   it('degrades to TBD on a bare game', () => {
     expect(render(<AauDivisionGameRow game={{}} />).container.textContent).toMatch(/TBD/);
   });
+
+  // §15/§27 honest-state — a scheduled game with no venue must say "Location TBD",
+  // never a silent omission. Cross-surface invariant with AauGameCard (AP #43/#46).
+  it('renders "Location TBD" when a scheduled game has no venue or court', () => {
+    const { container } = render(<AauDivisionGameRow game={{ home: 'A', away: 'B', status: 'scheduled', startAt: '2026-08-05T21:30:00Z', venue: null, court: null }} />);
+    expect(container.textContent).toMatch(/Location TBD/);
+  });
+
+  it('shows the venue (not "Location TBD") when one is present', () => {
+    const { container } = render(<AauDivisionGameRow game={{ home: 'A', away: 'B', status: 'scheduled', startAt: '2026-08-05T21:30:00Z', venue: { name: 'House of Sports' }, court: 'Court 1' }} />);
+    expect(container.textContent).toMatch(/House of Sports · Court 1/);
+    expect(container.textContent).not.toMatch(/Location TBD/);
+  });
 });

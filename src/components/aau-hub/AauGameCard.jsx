@@ -77,7 +77,7 @@ export default function AauGameCard({ game, compact = false }) {
         {g.court && <span style={badge('var(--as-bg-secondary)', 'var(--as-text-secondary)')}>{g.court}</span>}
       </div>
 
-      {venueLine && (
+      {venueLine ? (
         <div style={{ marginTop: 12 }}>
           <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--as-text-primary)' }}>{venueLine}</p>
           {dir && (
@@ -87,6 +87,10 @@ export default function AauGameCard({ game, compact = false }) {
             </div>
           )}
         </div>
+      ) : (
+        // §15/§27 honest-state: show what we have, else "Location TBD" — never a
+        // silent omission. (A non-null court still renders its badge above.)
+        <p style={{ margin: '12px 0 0', fontSize: 13, color: 'var(--as-text-meta)' }}>Location TBD</p>
       )}
     </article>
   );

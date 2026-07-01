@@ -39,7 +39,8 @@ export default function AauDivisionGameRow({ game }) {
       <div style={{ flex: 1, minWidth: 0, display: 'grid', gap: 4 }}>
         <Side name={g.home} score={g.homeScore} show={isFinal} win={homeWin} />
         <Side name={g.away} score={g.awayScore} show={isFinal} win={awayWin} />
-        {venue && <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--as-text-meta)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{venue}</p>}
+        {/* §15/§27 honest-state: venue · court when we have it, else "Location TBD" — never a silent omission. */}
+        <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--as-text-meta)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{venue || 'Location TBD'}</p>
       </div>
       <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', borderLeft: '1px solid var(--as-border-subtle)', paddingLeft: 12, minWidth: 52 }}>
         <span style={{ fontSize: 13, fontWeight: 600, color: isFinal ? 'var(--as-text-secondary)' : 'var(--as-text-primary)' }}>
