@@ -73,6 +73,20 @@ export function cleanPlaceName(name) {
 }
 
 /**
+ * Extract the court label from a game-location cell. The cell is
+ * "4 - House of Sports - Court 1" (ordinal + building + optional court suffix);
+ * cleanPlaceName strips the ordinal + "- Court X" to key the building, so the
+ * court is exactly that trailing suffix. Returns a normalized "Court 1" /
+ * "Court 2A", or null when there is no court segment (single-court gyms).
+ * Additive only — does NOT affect venue resolution (venue stays the deduped
+ * building); it recovers the within-building court the building-dedup drops.
+ */
+export function parseCourt(location) {
+  const m = (location || '').match(/-\s*court\s*([0-9A-Za-z]+)\s*$/i);
+  return m ? `Court ${m[1].toUpperCase()}` : null;
+}
+
+/**
  * Parse the "Complexes" places panel on Tournament.aspx into venue addresses.
  * Each place renders as a `.js-list-group-item-place` (data-id + <h4> name)
  * followed by a dropdown carrying an <address> (street <br> "City, ST ZIP").

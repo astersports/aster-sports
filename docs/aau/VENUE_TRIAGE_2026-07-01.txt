@@ -1,0 +1,97 @@
+AAU HUB — VENUE/COURT TRIAGE + FIX RECORD
+Date: 2026-07-01
+Author: Claude Code (CC)
+Grounding: live prod (Supabase project vrwwpsbfbnveawqwbdmj), read-only triage
+Trigger: Frank's live-Hub screenshots (East Coast Storm Black schedule) showing game
+cards with no court/venue vs TourneyMachine showing "House of Sports - Court 1/2".
+
+================================================================================
+0. HEADLINE
+================================================================================
+The feared "our matching is sending games to the wrong/no venue" (architect's STATE 2)
+is ZERO across every tournament. Venue matching works. The real gaps are two, and
+neither is a wrong-venue risk:
+  (1) COURT is null on matched-venue games — the dominant, visible gap (what Frank saw).
+  (2) GEOCODE pending — venue matched but no coords, so Apple Maps degrades (Google works).
+
+================================================================================
+1. TRIAGE QUERY (all three states, per tournament, scoped in-DB)
+================================================================================
+division_games -> tournament_divisions -> tournaments; LEFT JOIN venues.
+States, per the architect's model:
+  s1_no_upstream_text   venue_id IS NULL AND source_facility_ref empty  -> genuine "Location TBD"
+  s2_unmatched_key      venue_id IS NULL AND source_facility_ref present -> OUR pipeline bug
+  s3_geocode_pending    venue_id set AND (venue.lat IS NULL OR geocode_status<>'ok')
+  venue_ok_court_null   venue_id set AND court empty                     -> court-split gap
+
+RESULTS (non-archived tournaments, 2026-07-01):
+  - s2_unmatched_key = 0 in ALL 16 tournaments. No matching bug.
+  - s1_no_upstream_text = 3 total (all in "Zero Gravity NY Grand Finale"). Genuinely TBD;
+    #1185's "Location TBD" fallback now labels them honestly.
+  - venue_ok_court_null is large and widespread:
+        Westchester Summer League ....... 169/169  (the screenshot tournament)
+        WPCYO Spring League 2026 ......... 766/766
+        WPCYO Basketball 2025-2026 ....... 1106/1106
+        + partial in most others
+  - s3_geocode_pending was large pre-fix:
+        WPCYO 2025-2026 732, Summer Slam 155, BBallshootout 110, Girls Nationals 101, ...
+
+================================================================================
+2. ROOT CAUSE — COURT NULL (state discovered by triage; not in the original 3-state model)
+================================================================================
+- division_games.source_facility_ref is an OPAQUE TM facility id (e.g.
+  h202606041542226344c6972f899ba43), NOT human text. Westchester Summer League has TWO
+  such ids (96 + 73 games) both resolving to the single "House of Sports" building venue.
+  Those two ids ARE Court 1 and Court 2 — the venue-dedup ("dedupe_venues_to_buildings")
+  correctly collapsed them to the building for directions, but that dropped the court label.
+- The facility-id -> "Court N" map is NOT recoverable in-DB (the venue's tm_venue_key does
+  not equal either facility id; the court names lived only in the TM Complexes panel).
+- BUT the human location cell (g.location = "4 - House of Sports - Court 1") IS available at
+  ingest time: it's held transiently in __location, used to resolve the building venue via
+  cleanPlaceName (which strips the ordinal + "- Court X"), then discarded. The COURT is
+  exactly the "- Court X" suffix cleanPlaceName strips. So court parses from g.location with
+  NO facility panel and NO re-scrape beyond the ingest that already runs.
+
+================================================================================
+3. FIXES
+================================================================================
+FIX A — GEOCODE BACKFILL (DONE, 2026-07-01) — SAFE, venues-only, no game touch
+- Invoked geocode-venues edge function (idempotent, atomic SKIP-LOCKED claim, confidence
+  gate; writes ONLY venues.lat/lng, never games/scores). 3 batches of 25 via pg_net
+  (ingest_secret read server-side, never echoed).
+- Result: venues 43 ok / 61 pending / 1 failed  ->  101 ok / 0 pending / 4 failed.
+  58 venues newly geocoded; Apple Maps now resolves for those games.
+- The 4 'failed' are low-confidence rejects the gate refused (never a wrong pin): they have
+  spelled-out street numbers ("ONE Cross Road", "One Mount Hope Boulevard") Google returns
+  as APPROXIMATE. They fall back to address/name links. Separately fixable (normalize
+  "One"->"1"); not blocking. Venues: Marian Athletic Center, OLPH-Ardsley,
+  St Matthew-Hastings HS2, St Matthews-Hasting HS1.
+
+FIX B — COURT SPLIT (PREPARED as a reviewable PR; NOT run against live data yet)
+- parseCourt(location) added to BOTH mirror files in one commit (AP #30):
+  src/lib/aau/parseTournament.js (vitest source of truth) + the Deno mirror _parse.ts.
+  Returns "Court 1"/"Court 2A" from the "- Court X" suffix, null for single-court gyms.
+  Symmetric with cleanPlaceName: it keeps exactly what cleanPlaceName strips.
+- index.ts sets court: parseCourt(g.location) on the game row. ADDITIVE — venue resolution
+  is unchanged (still the deduped building), so the "fragment one gym into many venues"
+  risk the original TODO worried about does NOT apply.
+- Idempotent + scoped by external_game_id: the games upsert is onConflict
+  (tournament_division_id, external_game_id), so re-ingest UPDATES court in place. A live
+  tournament backfills court automatically on the next 5-min poll — no separate re-scrape.
+  Past (non-polled) tournaments would need a one-time scoped re-ingest per tm_id_tournament
+  if we want their court filled; that's an operator/architect call, kept OUT of this PR.
+- CI-gating test: 10 parseCourt cases added to parseTournament.test.js (21 pass locally).
+
+HELD FOR ARCHITECT REVIEW: merging FIX B means the next poll starts writing court on LIVE
+tournaments mid-event. It's an idempotent same-key column write (not a re-scrape), but per
+the architect's "review the ingest fix before it runs against a live tournament" it's opened
+as a DRAFT for review rather than auto-merged.
+
+================================================================================
+4. GUARDRAILS HONORED
+================================================================================
+- Split-over-merge for venues: unchanged. FIX B does not merge venues; it only adds a court
+  column value. Err-toward-null preserved: no court suffix -> court null (card shows venue,
+  no court), never a guessed court.
+- No live re-scrape: FIX A touches venues only; FIX B rides the existing idempotent upsert.
+- Secrets never echoed: geocode invoked via pg_net reading ingest_secret server-side.
