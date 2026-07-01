@@ -7,8 +7,9 @@ so the architect + a fresh chat can work from them. Companion to the ratified pl
 =====================================================================
 0. WHAT THIS IS + THE MASTER DOC
 =====================================================================
-Frank relayed a full next-phase package (7 mockups + gallery, 2 HTML renderings, 3
-planning docs). All are now committed under docs/aau/next-phase/. The MASTER is:
+Frank relayed a full next-phase package (6 North-Star mockup screens + a gallery board
+= 7 images, 2 HTML renderings, 3 planning docs). All are now committed under
+docs/aau/next-phase/. The MASTER is:
 
   → AAU_HUB_FULL_PHASED_APPROACH_2026-06-30.txt  (architect, grounded vs origin/main 06-30)
 
