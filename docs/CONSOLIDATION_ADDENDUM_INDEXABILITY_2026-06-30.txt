@@ -1,0 +1,139 @@
+CONSOLIDATION — ADDENDUM: T0 INDEXABILITY (R1 build req + R2 exit gate)
+Architect lane · 2026-06-30 · companion to CONSOLIDATION_PHASED_PLAN_2026-06-29.txt (rev 3)
+Grounds a stated-but-unmechanized requirement in a live check. CC executes.
+
+=====================================================================
+0. FINDING [grounded — live, 2026-06-30]
+=====================================================================
+CONSOLIDATION_TIERS_AND_FUNCTIONALITY (L55) requires T0 to be "public, no login,
+INDEXABLE," and R2 301s the legacy surfaces onto it. The shipped Hub does not meet that
+requirement, and no doc specifies the mechanism that would.
+
+Evidence (raw HTML, no JS executed, https://www.astersports.app):
+  • /hub         → <title>Aster Sports</title>, generic platform <meta description>, <body> EMPTY pre-JS.
+  • /hub/browse  → IDENTICAL title, IDENTICAL description, <body> EMPTY pre-JS.
+Every route serves one generic shell; all page content (directory, schedule, standings)
+is fetched client-side via the anon RPCs after hydration. A crawler that does not execute
+JS sees nothing; a crawler that does sees the same title/description on every page.
+
+Consequence: the capability the entire free-wedge thesis rests on — a parent googling
+"<team> schedule" and landing on the Hub — is asserted in the canon but unbuilt. And it
+has a sharp edge at R2: flipping the 301s onto a non-indexable, single-title SPA front
+door LOSES whatever SEO the legacy surfaces hold, at the exact moment of consolidation.
+
+=====================================================================
+1. REQUIREMENT — what "indexable" must mean for T0
+=====================================================================
+For the public tournament / division / team routes (the SEO landing surfaces):
+  R-1 Crawlable content WITHOUT JS execution — the route's primary content (team name,
+      tournament, division, schedule, standings) present in the served HTML, not only
+      after hydration.
+  R-2 UNIQUE per-route <title> and <meta description> — "East Coast Storm (Black) —
+      Zero Gravity NY Grand Finale," not one shared "Aster Sports" across all routes.
+      (Unique titles are a ranking requirement independent of R-1.)
+  R-3 Canonical URL per route + a sitemap that enumerates the public tournament/team
+      routes (extends R2's existing "sitemap/canonicals" line from a duplicate-content
+      guard into a positive enumeration).
+  R-4 og/twitter tags per route (share-preview correctness; same source as R-2).
+
+=====================================================================
+2. WHERE IT ATTACHES
+=====================================================================
+R1 — BUILD REQUIREMENT (new, folds into the R1 goal "free, indexable"):
+  • The directory / team-schedule / team-detail SHELL indexability rides the PR-A stable
+    reads (search_public_aau, tournament directory, get_public_aau_team_schedule) — those
+    RPCs are already anon-readable, so a prerender layer can source content server-side
+    from the SAME reads. No new data dependency for the shell.
+  • STANDINGS/BRACKET content inside prerendered pages INHERITS the PR-B gate: do NOT
+    prerender client-side-math standings that PR-B is about to retire. Prerender standings
+    only from the FROZEN RPCs (post owner-applied substrate + PUBLIC_RPC_CONTRACT freeze).
+    Shell/schedule indexability need not wait; standings-in-HTML does.
+
+R2 — EXIT GATE (new criterion, added to R2's existing exit):
+  • Do NOT flip the 301s until the new front door INDEXES AT PARITY: representative
+    tournament/team routes serve unique-title, crawlable HTML, and are confirmed
+    fetchable/renderable by a crawler. 301-ing onto a non-indexable front door is a
+    self-inflicted SEO regression and is the one irreversible-at-peak risk R2 exists to
+    avoid.
+
+=====================================================================
+3. MECHANISM CONSTRAINT (architect states WHAT; CC picks HOW)
+=====================================================================
+  • MUST stay serverless / Vercel — this app is a Vite SPA, not Next, so native SSR is a
+    lift; the lighter paths are build-time prerender (SSG) of the public routes and/or an
+    on-demand serverless prerender that returns crawlable HTML + per-route meta. Either
+    keeps the app serverless and preserves R2's atomic-rollback safety net. Do NOT let
+    "we need SSR" reopen the host question (host ruling stands: Vercel).
+  • The prerender layer calls the SAME frozen public RPCs — no second data path, no
+    client-side math baked into HTML.
+  • No child data on any indexable route (team-level only; the anon RPC contract is
+    already team-level — this simply must not regress).
+
+=====================================================================
+4. ACCEPTANCE / VERIFICATION (reproducible, the way the finding was made)
+=====================================================================
+  • curl -sS <route> | grep <title>  → UNIQUE per route (team/tournament in the title).
+  • curl -sS <route> (no JS)          → primary content present in <body> pre-hydration.
+  • Two different team routes           → different title, description, and body content.
+  • sitemap.xml enumerates the public tournament/team routes; each has a canonical.
+  • A JS-off crawler (or Search Console URL inspection) renders real content at parity.
+
+=====================================================================
+5. ACTIONS
+=====================================================================
+  • CC 🟡 BENCH: build the R1 prerender/meta layer for the public shell routes (PR-A
+    reads); wire unique per-route title/description/canonical/og; sitemap. Standings-in-
+    HTML deferred to the PR-B freeze.
+  • ARCHITECT: R2 does not flip 301s until the parity-index check passes (this addendum's
+    §2 gate).
+  • OWNER: none new — this rides existing R1/R2 gates; no schema, no money-path.
+
+=====================================================================
+END — indexability is now a build requirement, not an adjective.
+=====================================================================
+
+
+=====================================================================
+CC GROUNDING CONFIRMATION [GROUNDED — CC lane, 2026-06-30 EOD]
+=====================================================================
+Re-ran the architect's live check + inspected the routing entry point. Finding CONFIRMED,
+and one detail is WORSE than stated:
+  • https://www.astersports.app/hub — served HTML: <title>Aster Sports</title>; generic
+    platform <meta description>; og:title/og:description generic; og:url = the ROOT
+    (https://astersports.app), not the route; <body> carries no page content pre-JS.
+  • /sitemap.xml AND /robots.txt both return the SPA index.html shell (HTTP 200, doctype
+    html) — there is NO real sitemap and NO real robots.txt today. So R-3 is not merely
+    "incomplete," it is absent, and a crawler hitting /sitemap.xml gets an HTML page.
+  • ROOT CAUSE / ATTACH POINT: vercel.json has a blanket rewrite
+    { "source": "/(.*)", "destination": "/index.html" } — every path resolves to the SPA
+    shell, which is exactly why per-route meta, /sitemap.xml, and /robots.txt all collapse
+    to one generic document. index.html carries a single static <title>/<meta>/<og> block;
+    nothing rewrites it per route.
+
+CC MECHANISM LEAN (AP#39 — the architect left HOW to CC; committing to it):
+  Serverless on-demand prerender for the public routes on Vercel, NOT build-time SSG.
+  Rationale: the public content is LIVE (scores/standings update through the day) and the
+  route set is large + dynamic (every tournament/division/team). SSG of thousands of
+  live-updating routes is stale-prone and a rebuild treadmill; an on-demand Vercel function
+  that server-fetches the SAME anon RPCs returns fresh crawlable HTML + correct per-route
+  meta, and the SPA hydrates over it. Stays serverless → R2 atomic-rollback intact.
+
+  Proposed sequencing (blast-radius, smallest first):
+   1. QUICK WINS (independent of prerender; ship first):
+      - Real /robots.txt + /sitemap.xml as serverless routes (or a build step): exclude both
+        from the vercel.json catch-all; sitemap enumerates public tournament/team routes from
+        the directory RPC. Fixes R-3.
+      - Per-route <title>/<meta description>/<canonical>/og via a Vercel function/middleware
+        on the public routes that injects them into the shell (meta-only; light). Fixes R-2/R-4.
+   2. R-1 crawlable BODY: serverless prerender of the public SHELL + SCHEDULE routes
+      (/hub/tournament/:id, /hub/tournament/:id/division/:id, /hub/team/:key) sourcing the
+      anon PR-A reads server-side. Fixes R-1 for the non-honesty surfaces.
+   3. STANDINGS/BRACKET in HTML: DEFERRED to the PR-B RPC freeze (per §2) — prerender those
+      only from the frozen RPCs, never the client-side math being retired in PR-B.
+
+  Verification per §4 is a curl-based smoke (unique titles, real body, two-route diff,
+  sitemap enumerates + canonicals) → doubles as the R2 parity-index exit check.
+
+STATUS: logged to EMBER_PENDING_LEDGER §4 (2026-06-30 close block) as an R1 build item +
+R2 exit gate. On the bench (🟡) — not started; queued for the next CC session unless the
+operator says go. No schema / no money-path / no owner action.

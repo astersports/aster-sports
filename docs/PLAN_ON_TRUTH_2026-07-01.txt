@@ -1,0 +1,374 @@
+AAU HUB — THE PLAN ON THE TRUTH
+CC lane · 2026-07-01 · grounded against all five in-scope repos @ origin/main
+Architect-ratified 2026-07-01 (both halves; sharpenings folded — see REVIEW DISPOSITION).
+Companion to: CONSOLIDATION_PHASED_PLAN_2026-06-29 (CC, rev 3) ·
+AAU_HUB_FULL_PHASED_APPROACH_2026-06-30 (architect) ·
+CONSOLIDATION_ADDENDUM_INDEXABILITY_2026-06-30.
+
+Three halves of one plan (the tell it's right: they converge on one spine —
+"honest or silent" = the TRUTH gate; "free logistics → paid calm → film pride"
+= R1 → R3 → R6):
+  PART A — parent-satisfaction DESIGN plan (the AAU parent's experience).
+  PART B — the ENGINEERING plan on the truth (grounded reality + sequence).
+  PART C — the ARCHITECTURE (invariants, seams, forks, the keystone decision).
+
+=====================================================================
+GROUNDING — what the 48h + all-repo sweep established (verified)
+=====================================================================
+Sweep window 2026-06-29 → 07-01, 89 commits across five repos:
+  • aster-sports (34) — R1·PR-A Free Hub built in one ~17h push + the auth-
+    recovery arc. The product core.
+  • astersports-web/.io (31) — marketing landing on the constellation motif;
+    Aster Scout concierge hardened; Stripe M1 wired (stripe@22.3.0, apiVersion
+    2026-06-24.dahlia); brand cobalt→gold; Sentry; consolidation pointer
+    (landing AAU card → astersports.app/hub).
+  • legacy-hoopers (11) — infra + live Scout concierge. The R2 retirement target.
+  • st-patricks-armonk (10) — infra; @aster/weather pin fix. Sandbox.
+  • aster-weather (3) — infra. The shared private weather package (consumed
+    cross-repo).
+
+Truths that shape the plan:
+  1. A COORDINATED 5-REPO SECURITY BASELINE landed 06-29 (Dependabot + CodeQL
+     everywhere; CI added where missing). Correct posture — but it exposed a
+     DEEPER DEFECT than the dep storm it triggered: the repos AUTO-MERGE
+     major-version bumps on green CI, and two of them carry the money path and
+     child data. cookie 1→2 (session/auth-adjacent) ALREADY auto-merged on green
+     — proof it's a hole, not a hypothetical. A major bump to stripe or a
+     session lib slipping in without owner sign-off is a money/child-path change
+     evading the gate at the CI layer. The storm is the symptom; the faucet is
+     the defect. (→ Phase 0.0 closes the faucet; 0.1 mops the storm.)
+  2. R1·PR-A Hub is LIVE but carries a live-contact bug tail — tracking took TWO
+     bugs (dedup #1166 + durable cross-device storage #1172); auth took a
+     fix-on-fix (#1174 → #1176). Pattern predicts 1–2 more latent.
+  3. INDEXABILITY GAP confirmed: vercel.json is a blanket /(.*) → /index.html
+     rewrite; robots/sitemap resolve to the SPA shell; every route serves one
+     contentless <title>Aster Sports</title>. The free-wedge acquisition loop is
+     unbuilt.
+  4. SCOUT is live on .io + legacy AND already carries its guards (VERIFIED in
+     server/_core/landingAgent/scoutRequest.ts + routes/landingScout.ts):
+     Turnstile, per-IP spend cap keyed per-identity, global fail-closed ceiling,
+     Haiku MAX_OUTPUT_TOKENS=512, MAX_MESSAGES=16, 2000-char clamp. The plan's
+     "Scout deferred" is scoped to the FREE INDEXABLE HUB tier, not the
+     marketing landing — no contradiction, no live cost-DoS hole.
+  5. STRIPE PLUMBING IS A PORT — .io has M1 Stripe wired. But THE ENTITLEMENT
+     WRITER IS THE BUILD: the two-source, client-never-writes writer is net-new.
+     "Port" describes the checkout plumbing, NOT R3's money core.
+  6. CONSOLIDATION IS PHYSICALLY STAGED — .io landing already points at
+     astersports.app/hub (soft pointer, ahead of the hard 301).
+  7. FORFEIT-HONESTY IS DUPLICATED (aster-sports #1145 + astersports-web #214).
+     Dies in R2 consolidation — but between now and R2 the two engines can
+     DIVERGE, and forfeit feeds BOTH the honest-standings TRUTH gate and the R4
+     push triggers. Can't merge yet; can PIN (→ Phase 0.2 shared fixture).
+  8. PR-B HONESTY SUBSTRATE is committed-and-HELD for owner apply — the single
+     owner-gated unblock for the standings/odds truth port.
+  9. APPLE/IAP POLICY RESOLVED (2026-07-01 grounding): on the US storefront, an
+     external Stripe-link checkout is the DEFAULT-permitted path (post-2025
+     injunction), StoreKit IAP OPTIONAL. The two-signed-source writer shape is
+     RETAINED regardless (web Stripe today; Apple ASN if/when StoreKit is added).
+     Re-verify policy at R3 build — it's regulatorily live.
+
+=====================================================================
+PART A — THE AAU PARENT EXPERIENCE (design plan)
+=====================================================================
+
+WHO THIS PARENT IS
+Not a Tuesday-rec parent. AAU = logistics under stress, punctuated by pride: a
+schedule that dropped Wednesday night, three pool games Saturday across two gyms,
+a bracket seed unknown until other teams finish, a 7:40 tip = leave at 6:55, a
+second kid on another team, a grandparent asking "did they win?" Lived in a loud
+gym, one bar of signal, one hand, two-second glances. Judged in the first 30
+seconds of the first Saturday on one question: calm and in control, or behind?
+
+THE NORTH-STAR PROMISE
+By Sunday night, a parent never once had to wonder where to be, when to leave, or
+whether their kid's team was still in it — and at least twice, the app gave them
+a reason to feel proud. Calm as the floor. Pride as the ceiling.
+
+FIVE PARENTS, ONE HOME, ZERO CONFIGURATION
+The home self-assembles around THEIR family (tracked teams + their kids):
+  • Logistics Parent (majority) — where/when/court/leave-by → the Up-Next hero.
+  • Proud Parent — score/result/who's-next/clip → pride surfaces itself.
+  • New/Anxious Parent — what happens, what to bring → first-run warmth.
+  • Multi-Kid Parent — two teams, one brain → one merged agenda, never two apps.
+  • Remote Family (grandparent/away) — follow along → live scores now, film later.
+  • (cross-cutting) Spanish-speaking Parent — full EN↔ES parity, never second-class.
+
+  ASSEMBLY MUST BE LEGIBLE, NOT MAGIC. AAU is multi-kid/multi-team, so the
+  assembly has more ways to guess wrong than a single-subject app — a silent
+  wrong-kid-first makes the Anxious Parent MORE anxious (confident-wrongness in
+  UI form). Degrade gracefully: when assembly is uncertain (new user, ambiguous
+  multi-kid) show an obviously-correct plain "here's your day"; make the hero
+  LEGIBLE — the parent sees WHY this game is first (next chronologically), one
+  tap to the other kid. Legibility beats cleverness.
+
+DESIGN PRINCIPLES (gym-reality, explicit)
+  1. Glanceable in 2s, one-handed. Next game + when-to-leave is the hero, always,
+     above the fold, thumb-reachable. Everything else one tap deeper (§16.14).
+  2. TWO NOTIFICATION LANES — do NOT put a human in the path of a time-critical
+     fact.
+       • FACTS (court/time change, clinch) — SYSTEM-SENT, immediate, TRUTH-gated.
+         The truth gate already prevents fabrication, so admin-gating a CONFIRMED
+         fact adds latency without adding safety — a 6:40am court change that
+         waits for an admin can reach the parent at 6:55, after they left for the
+         wrong gym. Leave-by is the paid headline; nothing human in its path.
+       • MESSAGES (social/discretionary — "great game today") — admin-DRAFTED,
+         reviewed, sent. Calm-by-default; never floods the parent.
+  3. Honest or silent — never confidently wrong. Exact where we have it;
+     "Schedule releases Wednesday" over a fake time; no invented odds until
+     calibrated. Silence beats fabrication. A design value, not just eng.
+  4. Pride is engineered, not hoped — and OBEYS THE TRUTH GATE. "You're in the
+     bracket" fires on CLINCHED (monotonic exact) ONLY — never on projected/
+     likely. A false "you're in!" is a trust-killer dressed as joy, worse than no
+     pride moment. Team-level + engagement only, never per-kid game stats (§16.12).
+  5. Works on one bar of signal. Fast first paint, tiny payloads, cached
+     last-known truth (the 52KB→3KB work is this principle).
+  6. Progressive depth — paywall the SOLUTION, never the PROBLEM. The existence
+     of a two-gyms-overlapping-times conflict is a FREE honest truth the parent
+     must see ("you can't be in two places — here's the overlap"). The travel-
+     math that RESOLVES it is Plus. Hiding the collision behind the wall violates
+     "free logistics = the trust deposit." Free shows the collision; Plus routes.
+
+SURFACE PLAN (tiered by trust)
+FREE — "I always know where to be" (anxiety killer / trust deposit):
+  • Up-Next Hero — next game · opponent · court · time · weather · one-tap
+    directions. The whole app in one card (AauUpNextHero exists; make it the
+    unmistakable center of gravity).
+  • Self-assembling family agenda — legible per above; one team or four merged.
+  • Live scores + honest bracket — Playoff Path before it's played, honest TBD
+    for unresolved seeds, never a fabricated matchup.
+  • Track-from-search, synced across devices — tap Track, it follows you on your
+    account (the #1172 fix is a DESIGN requirement: losing a tracked team loses
+    faith).
+  • Findable from a Google search — indexability = part of the experience.
+  • HANDOFF PRIMITIVE (free, acquisition) — one-tap READ-ONLY share of a tracked
+    team's schedule/scores. AAU parents hand off mid-tournament constantly
+    ("watch game 3, I'll be back for the bracket"); the shared-to adult lands on
+    the Hub, tracks, converts. Schedule/score is public data → safe + frictionless.
+    Film share stays guardian-gated.
+PLUS — "I leave at the right minute, and the weekend just works" (paid calm):
+  • Traffic-aware leave-by — real traffic, not distance÷speed. "Leave by 6:52" is
+    the most valuable sentence you can hand an AAU parent at 6:40am.
+  • Multi-game / multi-gym travel-conflict ROUTING (the collision itself is free
+    per principle 6; the routing is Plus).
+  • Schedule-change alerts that feel like a heads-up from a friend — but delivered
+    on the FACTS lane (immediate), not gated behind an admin draft.
+PREMIUM — "I got to see it, and so did Grandma" (shareable pride):
+  • Family Film Room — clips, guardian-gated, jersey-not-face, one-tap delete.
+
+TRUST & SAFETY AS FELT EXPERIENCE
+Kid privacy is visceral to an AAU parent. The design SHOWS the guardian gate,
+never invents a stat/matchup, never floods the phone (two-lane model), makes film
+consent + deletion one obvious tap. The parent should feel — without being told —
+that the app treats their kid the way they would.
+
+INCLUSION (table stakes, not a phase)
+Full EN↔ES parity — PARITY OF TONE, not just coverage. The honest-state and pride
+microcopy ("Schedule releases Wednesday," "clinched," "TBD seed") is emotional
+register, not literal words — it needs a bilingual copy pass by someone who feels
+both, or the Spanish-speaking parent gets the calm floor without the warmth (a
+subtly second-class path). Plus VoiceOver, Dynamic Type, ≥4.5:1 contrast, 44px.
+
+SATISFACTION SIGNALS
+  • First-Saturday retention · zero "where do we go?" texts in the team thread ·
+    track-rate · time-to-answer ~2s · Free→Plus conversion after a good weekend.
+
+=====================================================================
+PART B — THE ENGINEERING PLAN ON THE TRUTH
+=====================================================================
+
+PHASE 0 — STABILIZE + CLOSE THE FAUCET (before one new feature)
+The 48h lesson: the failure mode is live-contact bugs, not bad architecture.
+  0.0 CLOSE THE AUTO-MERGE FAUCET (config fix, alongside 0.1 — else re-inherited
+      every Dependabot cycle). Supply-chain policy across all repos, gated by what
+      the dependency TOUCHES, not only by version-jump size:
+        (a) ANY major-version bump → human review; AND
+        (b) ANY change — major OR MINOR — to a money/child/auth-adjacent dep
+            (stripe, session/cookie libs, supabase-js, auth) → human review.
+      cookie 1→2 proves rule (a); a MINOR stripe/auth bump is still a money/child-
+      path change that must not slip on green, which is why (b) is path-based.
+      Same gate philosophy the app enforces, applied at CI. OWNER-SCOPED (touches
+      money/child-repo CI) — CC preps as a draft for architect review vs the
+      money/child gates.
+  0.1 SMOKE WHERE EACH MAJOR ACTUALLY BITES (targeted, not a generic boot):
+        • cookie 1→2 → verify where cookie is CONSUMED, then exercise the full
+          auth / session / recovery / merge flow (the security-sensitive one).
+        • react-day-picker 9→10 → the date UI in schedule + register.
+        • vitest 2→4 → don't trust green as regression proof; spot-check the suite
+          still ASSERTS what it did.
+        • one prod build+deploy DRY-RUN on aster-sports BEFORE Phase 1 touches
+          vercel.json (indexability rides the same toolchain the storm moved).
+  0.2 PIN THE TWO FORFEIT ENGINES to a SHARED canonical-cases fixture (ZG
+      auto-hard-out 20-0 vs BBallshootout 25-0 + DQ) that BOTH #1145 and #214 must
+      pass — single-engine discipline applied to the interim two-engine reality,
+      until R2 merges them. TREAT THE FIXTURE AS A MINI-CONTRACT (same discipline
+      as the RPC contract, Part C seam #1): it lives in ONE place both repos read;
+      changing a canonical case is a REVIEWED change, not a casual test-file edit —
+      else you've rebuilt a smaller version of the divergence you're containing.
+      It's a GATE, not a test file; it dissolves at R2 when the engines merge.
+  0.3 HARDEN THE R1·PR-A HUB TAIL — one real-device/real-data pass (multi-
+      tournament clubs, bracket-TBD, forfeit rows, sign-in merge, recovery
+      end-to-end). This IS the R1 "canary at parity" — treat it as a gate.
+  Nothing competes with Phase 0.
+
+PHASE 1 — FINISH R1 (free wedge) · ungated, highest funnel leverage
+  • Indexability — serverless prerender (content live, route set dynamic),
+    smallest-blast-first: (1) real robots/sitemap + per-route
+    title/meta/canonical/og carved ABOVE the catch-all rewrite; (2) crawlable
+    <body> for shell + schedule; (3) standings-in-HTML waits on the PR-B freeze.
+    Fetches ONLY anon/public RPCs (never behind the guardian gate — keeps the
+    CHILD contract true from R1).
+  • PR-B truth port — OWNER-GATED: apply the held standings/bracket substrate +
+    freeze PUBLIC_RPC_CONTRACT.md, then port standings/odds to frozen RPCs and
+    DELETE client-side math (where the live regressions die).
+
+PHASE 2 — R2 FRONT-DOOR CUTOVER · on Vercel, reversible
+  Cut over once, early, on a proven Hub, BEFORE money. Soft pointer staged. Hard
+  301s wait on: G1 anon-tracking cross-origin handoff (localStorage origin-scoped
+  — serialize keys into the redirect + qkey remap, OR pre-cutover sign-in nudge);
+  G2 route-level 301 map (legacy has real schedule/records routes); G3
+  index-at-parity. Retire the legacy Hub + the duplicated forfeit engine here.
+
+PHASE 3 — R3 HUB PLUS MONEY-PATH · plumbing ports, THE WRITER IS THE BUILD
+  READ-THIS-RIGHT: "plumbing ports; the writer is the build" does NOT mean "R3 is
+  mostly done." The writer is NET-NEW, the SOLE money-path enforcement point, and
+  where 🔴 MONEY actually lives. Only the .io checkout plumbing ports.
+  ONE entitlement-writer service (NET-NEW — the .io Stripe plumbing ports, this
+  does not), TWO signed upstream sources, client never writes, super-user OR's
+  into the CHECK. Traffic vendor (TomTom/Google Routes) LOCKED before build —
+  leave-by is the paid headline. Test-mode-first, owner-applied; ALERT on any
+  non-writer write to family_entitlements.
+  APPLE/IAP (RESOLVED 2026-07-01): US storefront — external Stripe-link checkout
+  is the DEFAULT-permitted path, StoreKit IAP OPTIONAL. Ship web Stripe now; keep
+  the TWO-SOURCE writer shape so Apple ASN can be a second validated source later
+  without a rewrite. RE-VERIFY policy at build (regulatorily live).
+
+PHASE 4–6
+  R4 completeness — push (FACTS lane) + multi-game/multi-gym travel-conflict
+    ROUTING + weekend agenda; odds un-suppress only after calibration (Brier
+    earned). Push fires on forward-stable/monotonic truths only (same discipline
+    as pride).
+  R5 Program B2B — REAL RBAC lands BEFORE B2B opens (super-admin-first "restrict-
+    down" must ship first — cross-org super-admin without roles is a tenancy
+    defect the moment a 2nd org's data exists); charging serialized behind a
+    proven R3; claim/verify → program hub → registration+payments.
+  R6 Premium/Film — family film room, jersey-not-face, canAccessChild false even
+    for super-admin, guardian consent + one-tap delete. Last, hardest-gated.
+    COMPLIANCE LABEL (grounded): GENERAL-AGE app, explicitly NOT the App Store
+    Kids Category; ACTUAL-KNOWLEDGE COPPA standard; retention-MINIMIZED. The
+    guardian gate + jersey-not-face posture already align with what review wants.
+  PARALLEL — Apple: start Developer Program enrollment NOW (long-lead D-U-N-S +
+    identity verification); native build sequences after R2; the money path is
+    IAP-AWARE from R3 (two-source writer); push (R4) + film capture (R6) justify
+    native. Submit only when R3 paywall + R6 child posture are review-ready.
+
+STANDING GATES (never move)
+  MONEY  — one writer, two signed sources, client never writes.
+  SCHEMA — owner-applied; CC prepares, owner runs.
+  CHILD  — guardian-verified only; canAccessChild false even for super-admin.
+  TRUTH  — exact-or-silent; facts + pride + push all fire on monotonic truths.
+
+OWNER CRITICAL-PATH (yours, not the chat's)
+  1. Phase 0.0/0.1 — close the auto-merge faucet + smoke the five apps where the
+     majors bite. Before anything builds on the moved toolchain.
+  2. Apply the held PR-B substrate + freeze PUBLIC_RPC_CONTRACT.md → unblocks the
+     truth port (and, per Part C, the prerender + native simultaneously).
+  3. Start Apple Developer enrollment (long-lead).
+  4. Rotate the shared test password before inviting families; reconcile #1130.
+
+THE SINGLE NEXT MOVE
+  Phase 0, item 1 — smoke the five apps, AND close the auto-merge faucet in the
+  same move (so you're not back here next Dependabot cycle). Then Phase 1
+  indexability is the ungated build to start.
+
+=====================================================================
+PART C — THE ARCHITECTURE
+=====================================================================
+THESIS: one backend, one ingest, one truth engine, one entitlement writer —
+every guarantee enforced at the DATA layer, never the UI — feeding progressively-
+enhanced clients across three trust planes. The pilot is TENANT #1 of a multi-
+tenant system, not a single-tenant app to generalize later.
+
+THE SPINE — four invariants, true at the database regardless of client:
+  1. Security boundary = RLS + SECURITY DEFINER helpers, NEVER the client. anon
+     reads only the public-read RPC surface; everything else guardian-gated;
+     canAccessChild false even for super-admin, DB-enforced. A client is a
+     renderer with zero authority.
+  2. Money is a closed write-path. Client never writes entitlement. ONE writer is
+     the sole mutator of family_entitlements, accepting TWO independently-signed
+     sources (Stripe + Apple ASN), each validated. Super-user OR's into the CHECK.
+  3. Truth flows ONE direction: server RPC → client render. No client tally/
+     advancement/odds math. "Exact-or-silent" is a data contract, not a UI choice.
+  4. Schema owner-applied + mirrored. Schema is the system of record; code conforms.
+
+THE SEAMS — where the system is deliberately cut:
+  1. PUBLIC_RPC_CONTRACT — THE KEYSTONE. The frozen interface between the truth
+     engine and THREE consumers: web SPA, serverless prerender, native app.
+     Freeze once → truth port + indexability + native all build against a stable
+     surface. This is the critical path, not a task.
+  2. Anon/authenticated seam — free wedge (anon+web+prerendered, indexable, no
+     PII) vs paid/child half (authenticated+native). Drawn at the RPC boundary.
+     Why the web-first build isn't wasted; why a binary can't be the wedge.
+  3. Prerender seam — serverless fn fetches ONLY anon RPCs, returns crawlable
+     HTML, SPA hydrates. Architecturally INCAPABLE of reaching guarded data.
+  4. Entitlement seam — read is_entitled everywhere, write only via the one
+     service; two sources behind one writer so web+native never hold two "paid"
+     truths. Keep it a Supabase edge fn, service-role write, explicit user_id
+     param — do NOT reintroduce client-JWT minting (flagged smell; never in money).
+  5. Origin seam — localStorage (anon, origin-scoped) vs account-synced tracking;
+     the R2 cross-origin 301 strands origin-scoped anon state → G1 handoff is an
+     architectural gate, not an afterthought.
+
+EVOLUTION — single pilot → multi-tenant, no rewrite: schema is org_id-scoped with
+FK-inherited tenancy today; RLS helpers are tenant-aware. Tenant #2 differs on
+data, not structure. What becomes tenant-customizable is governed by the two-
+bucket config doctrine: CONSUMPTION is the gate — build a config surface only when
+a shipped surface reads it or multi-tenant onboarding needs it; else hardcoded-
+and-dormant.
+
+FAILURE CONTAINMENT — blast-radius isolation (each irreversible change its own
+reversible step; cutover before money; money-paths serialized); money
+observability (alert on any non-writer write); fail-loud honesty (broken artifact
+visible in smoke, not silent in a parent's inbox); atomic rollback on Vercel
+(host follows runtime; no Railway question while serverless).
+
+OPEN FORKS (architect frames; owner ratifies) — with leans:
+  1. Prerender: on-demand serverless (LEAN — live content, dynamic routes) vs SSG/ISR.
+  2. Entitlement writer host: edge fn service-role (LEAN) vs anything minting client JWTs.
+  3. Traffic vendor: decide on cost-per-request at R3 volume (LEAN), not features.
+  4. RBAC: land restrict-down as real roles BEFORE R5 (LEAN — tenancy defect otherwise).
+  5. Scout return tier: keep OFF the free indexable Hub (LEAN) until guarded like .io.
+  6. Native submission: only when R3 paywall (IAP-aware) + R6 child posture ready (LEAN).
+
+THE KEYSTONE: freeze the RPC contract. It unblocks the truth port, the prerender,
+and the native client in ONE act — the one decision whose absence forces three
+consumers to chase a moving target.
+
+=====================================================================
+REVIEW DISPOSITION (architect ratification, 2026-07-01)
+=====================================================================
+Both halves ratified; converge on one spine. FOLDED this pass:
+  MUST-RIDE — Apple/IAP resolved into Phase 3 (§9 grounding); general-age/COPPA
+    label into R6/film.
+  DEV — auto-merge faucet as the defect-under-the-defect (Phase 0.0); targeted
+    smoke per-major (0.1); forfeit shared fixture (0.2); "writer is the build,
+    not a port" (§5, Phase 3).
+  DESIGN — two-lane notifications (facts vs messages); paywall the solution not
+    the problem (free shows collision); pride on clinched-only; legible self-
+    assembly; handoff primitive; ES parity-of-tone.
+DEFERRED (noted, not scheduled): none blocking — all edge-discipline folded.
+
+RATIFICATION ROUND 2 (architect, 2026-07-01) — ratified; three refinements folded:
+  1. Faucet rule is PATH-BASED, not only semver — Phase 0.0(b): any change (major
+     OR minor) to money/child/auth-adjacent deps → human review. Gate by what the
+     dep touches, not the version-jump size.
+  2. The 0.2 forfeit fixture is a MINI-CONTRACT — one shared location, reviewed
+     changes to canonical cases, a gate not a test file; dissolves at R2.
+  3. Framing guard on "plumbing ports; the writer is the build" (Phase 3) — must
+     not be read as "R3 mostly done"; the writer is net-new + where 🔴 MONEY lives.
+
+=====================================================================
+END — one spine, three lenses: calm/pride/honesty (design) = stabilize/wedge/
+gate (eng) = invariants/seams/keystone (architecture). Close the faucet, finish
+the free wedge and make it findable, cut over once, then money → depth →
+programs → film. Freeze the contract; the rest has a clean order.
+=====================================================================
