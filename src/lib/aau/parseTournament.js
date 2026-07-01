@@ -248,7 +248,7 @@ export function computeIngestCompleteness(divisionList, results) {
     .map((d) => ({
       name: d.name,
       key: d.externalDivisionKey,
-      reason: errorByKey.has(d.externalDivisionKey) ? errorByKey.get(d.externalDivisionKey) : 'not attempted (loop deadline)',
+      reason: errorByKey.get(d.externalDivisionKey) ?? 'not attempted (loop deadline)',
     }));
   const divisionsIngested = expected.filter((d) => succeededKeys.has(d.externalDivisionKey)).length;
   return {

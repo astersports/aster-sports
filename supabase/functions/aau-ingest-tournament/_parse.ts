@@ -283,8 +283,8 @@ export function computeIngestCompleteness(
   const succeededKeys = new Set(
     rows.filter((r) => r && !('error' in r) && r.externalDivisionKey).map((r) => r.externalDivisionKey as string),
   );
-  const errorByKey = new Map<string, unknown>(
-    rows.filter((r) => r && 'error' in r && r.externalDivisionKey).map((r) => [r.externalDivisionKey as string, r.error]),
+  const errorByKey = new Map<string, string>(
+    rows.filter((r) => r && 'error' in r && r.externalDivisionKey).map((r) => [r.externalDivisionKey as string, r.error as string]),
   );
   const expected = Array.isArray(divisionList) ? divisionList : [];
   const missingDivisions = expected
@@ -292,7 +292,7 @@ export function computeIngestCompleteness(
     .map((d) => ({
       name: d.name,
       key: d.externalDivisionKey,
-      reason: errorByKey.has(d.externalDivisionKey) ? String(errorByKey.get(d.externalDivisionKey)) : 'not attempted (loop deadline)',
+      reason: errorByKey.get(d.externalDivisionKey) ?? 'not attempted (loop deadline)',
     }));
   const divisionsIngested = expected.filter((d) => succeededKeys.has(d.externalDivisionKey)).length;
   return {
