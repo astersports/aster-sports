@@ -124,8 +124,9 @@ describe('isAdminDivision (admin/internal division signature filter)', () => {
   });
 
   it('never rejects a real competition division (the safety property)', () => {
-    // the 14 live WPCYO 2025-26 divisions + representative ZG divisions —
-    // NONE may match, or the ingest would silently drop real games.
+    // the 13 REAL WPCYO 2025-26 divisions (the 14th discovered, ADMIN TEAMS, is
+    // filtered + asserted true separately) + representative ZG divisions — NONE
+    // may match, or the ingest would silently drop real games.
     for (const name of [
       '3rd Grade Boys', '3rd Grade Girls', '4th Grade Boys', '5th Grade Girls',
       '6th Grade Boys', '7th Grade Girls', '8th Grade Boys', '8th - HS Girls',

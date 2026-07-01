@@ -230,3 +230,40 @@ COMPLETE-WPCYO ITEM (deliberate, gated — restores the 184 real games)
   guards live ones. Standings-path review discipline applies.
 - Keep public.canary_backup_wpcyo_2526 (1106 rows, the e8faac6a baseline) until the completion
   promotes; the shadow diff verifies against it. Drop AFTER, not before.
+
+--------------------------------------------------------------------------------
+6.1 RELEASE GATE — binds before the FIRST large multi-division tournament goes
+    live-polling, ANY circuit (architect-ratified 2026-07-01). None reachable today
+    (nothing large is live; small tournaments never hit the retry budget).
+--------------------------------------------------------------------------------
+(1) #1189 merged — fetchTM retry + completeness gate (discovered-vs-ingested) + admin filter.
+    Gate reviewed line-by-line + approved: partial success keeps good divisions (per-division
+    catch records `error` + continues; upserts already committed), 502+retain ONLY when
+    divisionsIngested===0, isAdminDivision is a word-boundaried SIGNATURE with a safety test
+    locking real divisions (incl. the two saga divisions + a "GIRLS HIGH SCHOOL") to false.
+
+(2) SURFACE GUARD (d) — persist completeness on the tournament row + an honest "still syncing
+    (N sections pending)" state, so no surface presents a partial league as whole. #1189 does
+    NOT close the honesty hole by design: `complete`/`missingDivisions` live in the RESPONSE,
+    not a persisted column, so a later Hub read can't tell the last ingest was partial. #1189
+    buys ingest robustness + run-time detectability; (d) is what actually stops the false-
+    complete surface. Split accepted (avoid shipping dead schema ahead of its consumer, §16.16)
+    — but BOUND to this release gate, not an open-ended follow-up, because the false-complete
+    surface is only reachable when a large tournament is live.
+
+(3) GLOBAL LOOP DEADLINE + SUCCESS-BASED ACCOUNTING — the retry (3x serial x FETCH_TIMEOUT_MS
+    20s => ~61s per fully-failing division, no global deadline) can push a many-slow-page
+    tournament past the edge-function wall-clock and KILL the run INSIDE the loop, before the
+    gate at the bottom ever executes. And the accounting is only sound because the loop
+    currently visits every division: `divisionsIngested = divisionList.length - missingDivisions.length`
+    counts a NEVER-ATTEMPTED division (loop broken / function killed) as INGESTED — it has no
+    result entry, so it's not in missingDivisions -> a time-pressured run FALSE-COMPLETES by
+    construction. Fix (small, pre-live): (a) a global loop deadline that breaks before wall-clock;
+    (b) compute divisionsIngested from actual SUCCESS entries, missing = expected - ingested, so
+    never-attempted divisions count as missing by construction -> honest complete:false + the
+    unprocessed list instead of dying or false-completing.
+
+COMPLETION PATH is separately protected: the complete-WPCYO shadow-table proof requires
+BYTE-IDENTICAL across two consecutive runs. A wall-clock-killed run produces a different
+partial subset each time, so two runs won't match and it won't promote. That backstops the
+timeout risk on the COMPLETION path; condition (3) is what backstops the LIVE path.
