@@ -101,4 +101,19 @@ describe('AauGameCard', () => {
     expect(container.textContent).not.toMatch(/Bracket/);          // badges hidden
     expect(container.querySelector('a[href]')).toBeNull();         // no direction links
   });
+
+  // §15/§27 honest-state — venue is null often (feed gap / unmatched cleaned key);
+  // the card must say "Location TBD", never silently omit "where." Cross-surface
+  // invariant with AauDivisionGameRow (AP #43/#46).
+  it('renders "Location TBD" when the game has no venue (detailed mode)', () => {
+    const { container } = render(<AauGameCard game={{ ...baseFinal, venue: null, court: null }} />);
+    expect(container.textContent).toMatch(/Location TBD/);
+    expect(container.querySelector('a[href]')).toBeNull();
+  });
+
+  it('does NOT show "Location TBD" when a venue is present', () => {
+    const { container } = render(<AauGameCard game={baseFinal} />);
+    expect(container.textContent).not.toMatch(/Location TBD/);
+    expect(container.textContent).toMatch(/Harry S\. Truman/);
+  });
 });
