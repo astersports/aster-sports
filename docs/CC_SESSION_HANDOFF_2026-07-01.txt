@@ -1,0 +1,116 @@
+CC SESSION HANDOFF — 2026-07-01
+For: architect (via Frank) · Lane: CC (Claude Code) · Repo focus: astersports/aster-sports (+ all-repo faucet roll)
+
+=====================================================================
+ONE-LINE STATE
+=====================================================================
+The AAU-Hub plan is ratified and on main (three lenses, rounds 1+2 folded); the
+next-phase design package is on main; and the Phase-0.0 supply-chain "faucet" is
+CLOSED across all five repos (lockfile-aware, self-guarding, label-integrity —
+architect-reviewed, owner-approved, merged). Remaining = Frank's per-repo
+branch-protection settings, then the plan's owner critical-path.
+
+=====================================================================
+1. WHAT SHIPPED (merged to main this session)
+=====================================================================
+Planning / design:
+• #1181  PLAN_ON_TRUTH_2026-07-01.txt — consolidated three-lens plan (A parent-
+         experience design · B engineering-on-truth · C architecture), grounded
+         vs all five in-scope repos. (ce5037ca)
+• #1182  Architect ratification ROUND 2 folded into PLAN_ON_TRUTH (path-based
+         faucet rule, forfeit-fixture-as-mini-contract, "writer is the build"
+         framing guard) + disposition block. (9179044)
+• #1180  AAU Hub next-phase design package → docs/aau/next-phase/ now on main
+         (master AAU_HUB_FULL_PHASED_APPROACH_2026-06-30.txt + IA spec + pass-1a
+         decisions + 2 HTML renders + 6 mockups + INDEX). (e8aacf0d) — this
+         fixes the dead handoff pointer flagged at session start; a fresh chat's
+         pre-flight now finds the plan where the handoff said it would be.
+         Landed via a main-merge that resolved one EMBER_PENDING_LEDGER §4.0
+         conflict (kept BOTH the next-phase bullet and the T0-indexability bullet).
+
+Phase 0.0 — the faucet, CLOSED across all five repos (lockfile-aware guard +
+CODEOWNERS + label-integrity), architect-reviewed then owner-approved:
+  Repo                 PR    merge
+  aster-sports         #1183 e49833ba
+  astersports-web      #244  2f9dc514
+  legacy-hoopers       #40   5b641f52
+  st-patricks-armonk   #34   b5458393
+  aster-weather        #6    34dfa624
+
+  Guard mechanics (per architect work-order P1-A/B/C + P2):
+  • P1-A LOCKFILE-AWARE — the founding-example hole is closed. The guard now
+    scans the RESOLVED dependency tree (npm package-lock.json v3 AND pnpm-lock.yaml
+    v9, auto-detected) across direct AND transitive deps — because `cookie` is
+    TRANSITIVE in aster-sports and a `cookie 1→2` moves only the lockfile. Verified
+    against the real lockfiles: transitive cookie 1→2 → FAIL (npm & pnpm). Still
+    no install (lockfile parsed as data). package.json diff kept as a belt.
+  • P2 — 0.x minor bump (0.4→0.5) now flags (breaking under semver).
+  • P1-B CODEOWNERS — /.github/** + scripts/dependency-gate.mjs require an owner
+    (guard the guard; activates when "Require review from Code Owners" is on).
+  • P1-C dep-review-label-guard workflow — non-owner applying `dep-review-approved`
+    → removed + fails; new commit drops the label (approval re-binds to the tree).
+  • Rule (path-based): FAIL on (a) any major bump OR (b) any change to a money/
+    child/auth-adjacent dep; a human owner releases with `dep-review-approved`.
+    Minor/patch to non-sensitive deps still auto-merge.
+  Verified green in each repo's real CI post-fix.
+
+=====================================================================
+2. AWAITING OWNER (Frank) — per repo ×5, to make the closed faucet BLOCK
+=====================================================================
+The guard job is MERGED and runs on every PR, but a job only REPORTS until branch
+protection makes it gate. Per repo:
+  1. Mark `dependency-gate` a REQUIRED status check on main.
+  2. Create the `dep-review-approved` label + set the OWNER allowlist the P1-C
+     workflow checks (currently ['franksamaritano'] in dep-review-label-guard.yml).
+  3. Enable "Require review from Code Owners" on main (activates P1-B CODEOWNERS).
+  4. Confirm branch protection FORBIDS direct pushes to main (so a non-PR push
+     can't bypass the PR-only gate).
+Do #244 (money path) first if sequencing. When 1–4 are set in all five, Phase 0.0
+is complete: required, lockfile-aware, self-guarding, approval owner+commit-bound.
+
+Plan owner critical-path (from PLAN_ON_TRUTH — unchanged):
+  • Phase 0.1 — smoke the five apps where the dep-storm majors bite (cookie→auth/
+    session/recovery; day-picker→date UI; vitest→assertions; prod deploy dry-run
+    before Phase-1 vercel.json).
+  • Apply the held PR-B standings/bracket substrate + FREEZE PUBLIC_RPC_CONTRACT.md
+    → unblocks the R1 truth port AND (Part C keystone) prerender + native at once.
+  • Start Apple Developer enrollment (long-lead D-U-N-S).
+  • Rotate the shared test password before inviting families; reconcile #1130.
+
+=====================================================================
+3. AWAITING ARCHITECT (you)
+=====================================================================
+Nothing pending. The plan is ratified (rounds 1+2). The faucet design + classifier
+were APPROVED in the work order; the P1-A/B/C fixes landed and are merged. The
+plan's forks (prerender mechanism, entitlement-writer host, traffic vendor,
+RBAC-before-B2B, Scout tier, native submission) carry committed leans in
+PLAN_ON_TRUTH Part C for phase-time ratification — none block today.
+(Design-effect render set delivered this session is a design artifact; fold into
+PLAN_ON_TRUTH Part A as visual reference OR keep standalone — your call.)
+
+=====================================================================
+4. NEXT ACTION WHEN THE OWNER STEPS LAND
+=====================================================================
+Owner steps 1–4 in all five → Phase 0.0 complete → Phase 0.1 smoke the five apps
+→ Phase 1 indexability (ungated: serverless prerender, robots/sitemap + per-route
+meta above the catch-all rewrite, anon RPCs only) → PR-B truth port once the RPC
+contract is frozen.
+
+=====================================================================
+5. SESSION NOTES (transparency)
+=====================================================================
+• Local main was found stale/divergent early (≈#1095, 63 behind origin); realigned
+  via a LOCAL reset --hard origin/main only. A stop-hook proposed a rebase+force-
+  push over main — REFUSED (rewrites shared history; the flagged commits were
+  upstream, not mine). All deliverables merged via GitHub's verified squash path.
+• The all-repo sweep cleared one plausible risk by verification: Scout is already
+  guarded on .io/legacy (Turnstile + per-IP spend cap + global fail-closed ceiling)
+  — its plan "deferral" is scoped to the free indexable Hub tier only. Stripe is a
+  PORT for plumbing but the entitlement WRITER is net-new (the R3 build).
+• The faucet's own founding example (cookie) turned out to be TRANSITIVE in
+  aster-sports — the architect's P1-A catch; the package.json-only v1 guard would
+  have missed it. Fixed to lockfile-aware before the gate went live.
+
+END — plan + design package on main; faucet closed and merged across five repos
+(lockfile-aware, self-guarding, label-bound); next is Frank's per-repo branch-
+protection settings, then Phase 0.1 smoke.
