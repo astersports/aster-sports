@@ -95,3 +95,46 @@ as a DRAFT for review rather than auto-merged.
   no court), never a guessed court.
 - No live re-scrape: FIX A touches venues only; FIX B rides the existing idempotent upsert.
 - Secrets never echoed: geocode invoked via pg_net reading ingest_secret server-side.
+
+================================================================================
+5. COURT-SPLIT CANARY — Westchester Summer League (DONE, 2026-07-01)
+================================================================================
+FIX B shipped (#1187 merged, squash 2de35190) and auto-deployed via
+deploy-edge-functions.yml. Architect-approved canary on Westchester Summer League
+(tm h20260604153514074daef72b6bd0d4b) — the screenshot tournament, live 6/24-onward —
+to prove the re-ingest is COURT-ONLY (no score/standings/schedule drift) before batching
+the historicals.
+
+Method: capture a game-level fingerprint over every field EXCEPT court, re-ingest, compare.
+
+BEFORE (pre-deploy): games=169, finals=28, sum_home=1063, sum_away=1175, court_filled=0.
+AFTER  (post re-ingest): games=169, finals=28, sum_home=1063, sum_away=1175,
+                         court_filled=169, distinct_courts=2 (Court 1 + Court 2 — the two
+                         House of Sports courts the building-dedup had collapsed).
+
+Standings-integrity proof: finals count + score sums are IDENTICAL across BEFORE and three
+post-deploy re-ingests. Standings derive from finals+scores → no standings drift. Not one
+score or final changed.
+
+Idempotency proof: the first ex-court md5 appeared to change run-to-run — traced to a
+MEASUREMENT artifact, not data drift: external_game_id is unique only PER DIVISION (49
+distinct codes vs 169 distinct (division_id, external_game_id) pairs), so an
+ORDER BY external_game_id has ties whose string_agg order is nondeterministic. Re-measured
+with a division-keyed stable order: fingerprint = aa9b5eaa8c840a6014d58c01bb1d4df2, and it
+was BYTE-IDENTICAL across two consecutive full re-ingests. So the re-ingest is deterministic
+on every field except court — no team swap, no schedule change, no score rewrite.
+
+Verdict: CANARY CLEAN. Court fills correctly (0->169, 2 courts), re-ingest is court-only and
+idempotent. Live tournaments now self-heal court on the 5-min poll.
+
+Batching the historicals (WPCYO 2025-2026 1106 court-null, WPCYO Spring 766) is CLEARED by
+this canary but HELD for Frank's explicit go + a low-traffic window; skip dead tournaments.
+
+Forward-flags (architect, 2026-07-01), not #1187 changes:
+- R4 push: a court null->"Court 1" via this backfill is a FIRST-POPULATE, not a court CHANGE.
+  The push engine must not read the fill as a "court moved" event and notify.
+- Geocode "One"->"1" normalize (the 4 failed venues): scope to the LEADING street-number
+  token only, never global (no "One World Trade" -> "1 World Trade").
+- parseCourt theoretical false-positive: "...- Courtyard" -> "Court YARD". Left as-is;
+  tightening it would drop real letter-courts ("Court A"/"Court B"), and it yields obvious
+  junk, not a plausible-wrong court.
