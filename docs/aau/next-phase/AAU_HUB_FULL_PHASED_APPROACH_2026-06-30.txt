@@ -1,0 +1,178 @@
+AAU HUB — FULL PHASED APPROACH (start → finish)
+Architect lane · 2026-06-30 · L99
+Reconciles: spec-v2 (2026-06-25) · North Star + build-target renders (06-27) ·
+CONSOLIDATION_PHASED_PLAN / TIERS / AUDIT (06-29) · migration + indexability addenda.
+Status markers are GROUNDED against astersports/aster-sports @ origin/main (verified 06-30).
+Companion render: AAU_HUB_PHASED_APPROACH_RENDER.html
+
+=====================================================================
+0. WHERE SPEC-V2 LANDED (repo reconciliation, grounded)
+=====================================================================
+Spec-v2 (06-25) and the last-72h build are the SAME architecture; the repo shows
+spec-v2 has largely been absorbed, not diverged from:
+  • This repo (.app) serves /hub, /hub/team, /hub/tournament, /hub/.../division — the
+    Tracking Hub. Spec-v2's purple /aau PORTAL lives in a DIFFERENT repo (astersports-web);
+    the two barely intersect now.
+  • Spec-v2's "HELD" P2 migration LANDED 06-25 (same day): feed_source_mapping,
+    get_public_team_records, external_game_id, org_id are on main
+    (20260625120000_aau_ingest_phase1.sql). The public-read RPC family then EXPANDED
+    (team schedule, teams, standings, games, team_key, points, is_forfeit). You GO'd it.
+  • The "product" is WEB-FIRST behind the guardian gate — 24 roster + 16 register
+    components, 176 files touching guardian/canAccessChild, guardian-privacy tests on
+    PlayerRow. No capacitor/expo/react-native anywhere. spec-v2's "product = native P2
+    App Store app" premise is superseded by the web app itself.
+Net: both drifts resolve — and the owner confirmed the two open calls (06-30):
+  • Q2 RESOLVED — astersports.io is the MARKETING PLATFORM. spec-v2's gold portal
+    (identity, results, schedule, register CTA, no roster) lands there; the tracking
+    product stays on .app. The /aau restyle is worth cycles AS the .io marketing surface.
+  • Q1 RESOLVED — a native iOS app IS planned (App Store submission). This does NOT
+    mean "the web absorbed the native app." It's a TIER SPLIT: the public free Hub
+    stays WEB (an App Store binary is not SEO-indexable — the indexable wedge only works
+    on the web), and the native app is the COMPANION for the AUTHENTICATED tiers, where
+    native earns its keep (push in R4, camera/photo-library film capture in R6). spec-v2's
+    "the product wants to live in the app" is half-right — for the authenticated half,
+    not the public wedge. The web-first build is not wasted.
+
+=====================================================================
+1. END STATE (what "finish" means)
+=====================================================================
+ONE product, two clients — astersports.app (WEB, all tiers) + a native iOS companion
+(authenticated tiers). Progressively enhanced across three planes:
+  T0 Free Hub (no login, indexable, WEB-only wedge) · T1 Hub Plus ($20/account, web +
+  native) · Program B2B (register/pay, org-scoped).
+Two front doors retired into it: legacy-hoopers public → gone; astersports-web /aau →
+pointer. astersports.io → the MARKETING PLATFORM (gold portal + register CTA). One
+Supabase backend, one ingest path, one exact-vs-estimate engine feeding every surface.
+Child data always behind the guardian gate; money always through the entitlement writer;
+schema always owner-applied.
+
+=====================================================================
+2. THE PHASES (R0 → R6)
+=====================================================================
+
+── R0 · FOUNDATION ─────────────────────────────────  [SUBSTANTIALLY DONE]
+Plane: infra · Gate: 🔴 schema (owner-applied)
+Ships: one backend; ingest converged to one path (spec-v2 B1, landed); public-read RPC
+  family + PUBLIC_RPC_CONTRACT; qualified-team-key **C** grain live (program·grade·
+  gender+variant); is_forfeit dimension; auth seam; roster/register/guardian modules.
+Grounded: ingest_phase1 migration on main; get_public_tournament_* RPCs answer anon.
+Delivers: the substrate every surface reads from.
+
+── R1 · FREE HUB (T0) ──────────────────────────────  [PR-A SHIPPED · PR-B GATED]
+Plane: T0 free · Gate: 🔴 schema (PR-B substrate) · 🟡 bench (truth port)
+PR-A [SHIPPED]: insulated public reads, search→track→division→team, anon tracking
+  (localStorage→account on sign-in), weather/directions/next-up, auth seam.
+PR-B [GATED]: standings/bracket/odds truth → FROZEN RPCs; DELETE client-side math.
+  Gate: owner-apply held standings/bracket substrate + FREEZE PUBLIC_RPC_CONTRACT.
+Indexability [doc merged #1178, build pending]: crawlable-without-JS content, unique
+  per-route title/description, canonical + sitemap. (Ships shell off PR-A; standings-in-
+  HTML inherits the PR-B freeze.)
+R1 EXIT: real-traffic canary at parity vs old Hub · old Hub frozen · index-at-parity.
+Delivers North Star: 01 Command center (shipped) · 03 Division-first leaf (shipped) ·
+  02 Odds card + 04 Exact-math (on PR-B, honest-held state until A4).
+
+── R2 · FRONT-DOOR CUTOVER ─────────────────────────  [SEQUENCED — consolidation completes]
+Plane: infra · Gate: 🟡 bench (cutover) · reversible
+Ships: 301 astersports.io/aau + legacy-hoopers → .app (ROUTE-LEVEL, not domain-level);
+  freeze + retire old surfaces; astersports-web /aau → pointer (PR #242); .io becomes
+  the marketing home (spec-v2's gold PORTAL can live here). Vercel, NO host swap,
+  rehearsed un-301 rollback.
+EXIT GATES (do not flip 301s until all pass):
+  G1 🔴 anon tracking handoff — localStorage is origin-scoped; a cross-origin 301 strands
+     every anonymous user's tracked teams. Nudge sign-in pre-cutover OR build a one-time
+     cross-origin handoff (serialize keys into the redirect, re-track with qkey remap).
+  G2 route-level 301 map — legacy-hoopers has real schedule/records routes; map each to
+     its .app equivalent, not a homepage dump.
+  G3 index-at-parity — new front door indexes at parity before the flip (indexability addendum).
+  Do NOT spend fix budget on the retiring .io/aau surface (its H1–H5 bugs die here).
+
+── R3 · HUB PLUS (T1) · MONEY-PATH ─────────────────  [SEQUENCED]
+Plane: T1 paid · Gate: 🔴 MONEY (one entitlement writer) · owner-applied, test-mode-first
+Ships: 7-day trial → $20/mo per ACCOUNT; super-user = role flag OR'd into the entitlement
+  CHECK (never a write). Plus unlocks: leave-by/directions/weather, schedule-change +
+  conflict + split-up, Saturday-night bracket model. Traffic vendor (TomTom/Google Routes)
+  locked pre-R3.
+🔴 IAP GATE (design in from the start — do NOT retrofit): if Hub Plus sells inside the iOS
+  app, Apple generally requires StoreKit In-App Purchase for the digital subscription
+  (Guideline 3.1.1); a web-view wrapper routing to Stripe web checkout is what Apple
+  rejects. IAP makes Apple App Store Server Notifications a SECOND upstream source of
+  "this account is entitled." RECONCILE the money gate precisely, don't abandon it:
+  keep ONE entitlement-writer service that accepts TWO SIGNED upstream sources — Stripe
+  events AND Apple server notifications — each validated; client never writes. Gate
+  becomes "one writer, two trusted sources."
+  [VERIFY at R3 design] external-purchase-link / steering rules are in flux (2024 DMA +
+  2025 US injunction on external links) — pull Apple's CURRENT policy before building the
+  paywall; it may change whether a Stripe-link path is even permitted.
+Delivers North Star: 06 $20/account + super-user; the Plus tier of 01/02.
+
+── R4 · COMPLETENESS (T1 depth) ────────────────────  [SEQUENCED]
+Plane: T1 paid · Gate: 🟡 bench (output-changing)
+Ships: push notifications (design-first, validated on a live tournament — the first
+  capability that justifies the NATIVE app: reliable background push beats web push,
+  especially on iOS); weekend agenda / multi-game via the SHARED next-game selector
+  (forfeit-aware from day one); schedule-change diffs. Odds calibration (A4): once Brier
+  is earned, the weighted % UN-suppresses — the North Star 02 post-calibration state
+  (exact conditions lead, % labeled). Until earned: exact count/status only.
+
+── R5 · PROGRAM B2B ────────────────────────────────  [SEQUENCED — needs real RBAC]
+Plane: Program · Gate: 🔴 money · 🔴 schema (roles)
+Ships: program register/pay, org-scoped admin, real roles. Roster/register (already
+  building in-web) graduate into the paid program product. Two-entity feed_source_mapping
+  (spec-v2 §4) serves the shared-transition window; histories fork on the real event, no
+  backfill (D1: Legacy keeps its record).
+
+── R6 · PREMIUM · FILM · AI (verified tier) ────────  [SEQUENCED — last, hard-gated]
+Plane: verified · Gate: 🔴 CHILD (guardian/COPPA; canAccessChild stays false for super-admin)
+Ships: Film room + grounded AI review — jersey-not-face, consent + one-tap deletion,
+  reviews footage never invents. North Star 04-child / 05-AI-review. Native camera /
+  photo-library capture is the SECOND capability that justifies the app. Apple's kids-
+  privacy review is strictest here — the guardian gate + jersey-not-face posture already
+  match what Apple wants (App Store Kids/age-gate + no facial data). Print-studio SAM3 /
+  LaMa upgrades are a separate bench-gated lane.
+
+── PARALLEL LANE · APPLE / NATIVE iOS ──────────────  [START ENROLLMENT NOW]
+Runs alongside the whole arc; it is NOT a release in the R-sequence.
+NOW (long-lead, blocks nothing technical): start Apple Developer Program ENROLLMENT
+  today. Org enrollment needs a D-U-N-S number + identity verification and can take days
+  to weeks — it's the slow administrative step, so starting early de-risks submission.
+BUILD (sequences AFTER R2): the native app is the companion for AUTHENTICATED tiers, not
+  the public wedge — the free Hub stays web (App Store binaries aren't SEO-indexable).
+  • IAP-aware from the money-path on (R3) — see the R3 IAP gate.
+  • Push (R4) and camera/photo-library film capture (R6) are the two capabilities that
+    justify going native.
+  • R6 Film is where Apple's kids-privacy review is strictest; the guardian gate +
+    jersey-not-face posture already align.
+SUBMISSION: after the R3 paywall + R6 child posture are IAP/kids-review-ready. Don't
+  submit a shell early — Apple review is faster on a complete, compliant build.
+
+=====================================================================
+3. STANDING GATES (hold at every phase, auto-mode included)
+=====================================================================
+  🔴 MONEY  — ONE entitlement-writer service is the sole writer of is_entitled/
+              family_entitlements, accepting TWO signed upstream sources (Stripe events +
+              Apple App Store Server Notifications), each validated. Client never writes.
+              Super-user OR's into the CHECK, never writes. Checkout test-mode-first.
+  🔴 SCHEMA — migrations owner-applied. CC prepares; owner runs.
+  🔴 CHILD  — guardian-verified only. canAccessChild false even for super-admin.
+  🟢 TRUTH  — exact where we have it; weighted % suppressed until calibration (A4) earns it.
+              Labels track the math. Silence before fabrication.
+
+=====================================================================
+4. OWNER ITEMS
+=====================================================================
+RESOLVED (06-30):
+  Q1  Native app → YES. Native iOS companion for the AUTHENTICATED tiers; public Hub
+      stays web. Enrollment starts now (parallel lane); build sequences after R2; IAP-
+      aware from R3. See the PARALLEL LANE + R3 IAP gate.
+  Q2  .io role → MARKETING PLATFORM. spec-v2's gold portal + register CTA lands on .io;
+      tracking product stays on .app.
+STILL OPEN (block the sequence):
+  • Apply the held PR-B standings/bracket substrate to prod + freeze PUBLIC_RPC_CONTRACT
+    (unblocks R1 truth port).
+  • Start Apple Developer Program enrollment (long-lead — D-U-N-S + identity verification).
+  • Reconcile the #1130 number collision.
+  • Rotate the shared test password before inviting families.
+
+=====================================================================
+END — one product, three planes, six releases; the substrate and the gates already hold.
+=====================================================================

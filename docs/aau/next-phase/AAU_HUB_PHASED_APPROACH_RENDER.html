@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aster · AAU Hub — Phased Approach + 48-Hour Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#161d2b; --navy-2:#1e2740; --navy-line:#2b3650;
+    --g1:#E0631C; --g2:#E8902A; --g3:#F6CC55; --g4:#FBD56B;
+    --green:#1f9d5f; --green-l:#5fce95; --violet:#8b6df0; --violet-l:#b39ff7;
+    --red:#e8604f; --amber:#e89a2a; --cobalt:#4f8fe0;
+    --ink:#e8ebf2; --soft:#9aa6bd; --faint:#78859e;
+    --card:rgba(22,29,43,.62); --line:#28324e;
+    --shadow:0 18px 50px -20px rgba(4,7,12,.7);
+    --gold-grad:linear-gradient(100deg,var(--g1),var(--g2) 42%,var(--g3) 78%,var(--g4));
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Inter',system-ui,sans-serif; color:var(--ink); min-height:100vh;
+    -webkit-font-smoothing:antialiased; padding:0 0 80px;
+    background:
+      radial-gradient(900px 520px at 50% -8%, rgba(246,204,85,.10), transparent 60%),
+      radial-gradient(1200px 800px at 82% 8%, rgba(91,108,160,.10), transparent 55%),
+      linear-gradient(180deg,#0c1018,#0a0d14 60%,#080a10);
+  }
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+    background-image:
+      radial-gradient(1.4px 1.4px at 12% 18%, rgba(255,255,255,.45), transparent),
+      radial-gradient(1.2px 1.2px at 78% 12%, rgba(255,255,255,.30), transparent),
+      radial-gradient(1.1px 1.1px at 42% 30%, rgba(246,204,85,.40), transparent),
+      radial-gradient(1.3px 1.3px at 88% 40%, rgba(255,255,255,.25), transparent),
+      radial-gradient(1.1px 1.1px at 26% 8%, rgba(255,255,255,.30), transparent),
+      radial-gradient(1.2px 1.2px at 62% 52%, rgba(255,255,255,.22), transparent);}
+  .wrap{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:0 20px}
+
+  /* masthead */
+  header.top{padding:52px 0 22px;text-align:center}
+  .mark{display:inline-flex;align-items:center;gap:12px;margin-bottom:22px}
+  .star{width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 50% 38%,#1c2438,#0c1018);
+    border:1px solid #2a3450;display:grid;place-items:center;box-shadow:0 0 26px rgba(246,204,85,.18)}
+  .star svg{width:20px;height:20px}
+  .wordmark{font-family:'Space Grotesk';font-weight:700;letter-spacing:.14em;font-size:12.5px;color:#cdd4e2;text-transform:uppercase}
+  .eyebrow{font-family:'Space Mono';font-size:11.5px;letter-spacing:.32em;text-transform:uppercase;color:var(--g3);margin-bottom:14px}
+  h1{font-family:'Space Grotesk';font-weight:700;font-size:clamp(27px,5vw,44px);line-height:1.05;letter-spacing:-.02em;color:#fff;margin-bottom:15px}
+  h1 .grad{background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  p.sub{max-width:600px;margin:0 auto;color:var(--soft);font-size:15px;line-height:1.6}
+  .meta-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+  .meta{font-family:'Space Mono';font-size:11px;letter-spacing:.03em;color:#aeb8cd;border:1px solid #283250;background:rgba(22,29,43,.6);padding:6px 12px;border-radius:999px}
+  .meta b{color:var(--g3);font-weight:700}
+
+  /* legend */
+  .legend{display:flex;gap:7px 16px;flex-wrap:wrap;justify-content:center;margin:26px auto 6px;max-width:640px}
+  .lg{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:#b6bfd2}
+  .dot{width:9px;height:9px;border-radius:50%}
+  .dot.ship{background:var(--green)} .dot.flight{background:var(--amber)} .dot.gate{background:var(--violet)} .dot.seq{background:var(--cobalt)}
+
+  /* section label */
+  .band-label{font-family:'Space Mono';font-size:11.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--faint);
+    margin:38px 0 14px;display:flex;align-items:center;gap:12px}
+  .band-label::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+
+  /* NEXT 48H panel */
+  .now{border:1px solid rgba(246,204,85,.32);border-radius:18px;background:
+      linear-gradient(180deg,rgba(232,144,42,.08),rgba(22,29,43,.5));padding:20px 18px;box-shadow:var(--shadow)}
+  .now h2{font-family:'Space Grotesk';font-weight:700;font-size:19px;color:#fff;margin-bottom:3px}
+  .now .h2sub{color:var(--soft);font-size:12.5px;margin-bottom:16px}
+  .task{display:flex;gap:12px;padding:12px 0;border-top:1px solid rgba(40,50,78,.7)}
+  .task:first-of-type{border-top:none}
+  .tnum{font-family:'Space Mono';font-size:11px;color:var(--g3);flex:none;width:22px;padding-top:2px}
+  .tbody{flex:1;min-width:0}
+  .tbody .th{font-weight:600;font-size:14.5px;color:#fff;margin-bottom:3px;display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+  .tbody .td{font-size:12.8px;line-height:1.5;color:var(--soft)}
+  .tbody .td code{font-family:'Space Mono';font-size:11.5px;color:#c9d2e5;background:rgba(40,50,78,.5);padding:1px 5px;border-radius:4px}
+
+  /* status + gate chips */
+  .chip{font-family:'Space Mono';font-size:10px;letter-spacing:.03em;padding:2px 7px;border-radius:5px;white-space:nowrap;text-transform:uppercase}
+  .s-ship{background:rgba(31,157,95,.16);color:var(--green-l);border:1px solid rgba(31,157,95,.34)}
+  .s-flight{background:rgba(232,154,42,.16);color:#f0b35e;border:1px solid rgba(232,154,42,.34)}
+  .s-gate{background:rgba(139,109,240,.16);color:var(--violet-l);border:1px solid rgba(139,109,240,.34)}
+  .s-seq{background:rgba(79,143,224,.14);color:#8fb6ea;border:1px solid rgba(79,143,224,.3)}
+  .g-red{background:rgba(232,96,79,.14);color:#f0897c;border:1px solid rgba(232,96,79,.32)}
+  .g-amber{background:rgba(232,154,42,.14);color:#f0b35e;border:1px solid rgba(232,154,42,.3)}
+  .g-cobalt{background:rgba(79,143,224,.12);color:#8fb6ea;border:1px solid rgba(79,143,224,.28)}
+
+  /* phase spine */
+  .spine{position:relative;margin-top:6px;padding-left:34px}
+  .spine::before{content:"";position:absolute;left:14px;top:8px;bottom:26px;width:2px;
+    background:linear-gradient(180deg,var(--g2),rgba(79,143,224,.5) 55%,rgba(43,54,80,.5))}
+  .phase{position:relative;margin-bottom:16px}
+  .node{position:absolute;left:-34px;top:16px;width:30px;height:30px;border-radius:50%;
+    display:grid;place-items:center;background:radial-gradient(circle at 50% 38%,#1c2438,#0c1018);border:1px solid #2a3450}
+  .node svg{width:15px;height:15px}
+  .node.ship{box-shadow:0 0 20px rgba(31,157,95,.5);border-color:rgba(31,157,95,.6)}
+  .node.flight{box-shadow:0 0 20px rgba(232,154,42,.5);border-color:rgba(232,154,42,.6)}
+  .node.gate{box-shadow:0 0 18px rgba(139,109,240,.45);border-color:rgba(139,109,240,.55)}
+  .node.seq{opacity:.6}
+  .pcard{border:1px solid var(--line);border-radius:16px;background:var(--card);padding:16px 16px 15px;box-shadow:var(--shadow)}
+  .pcard.hot{border-color:rgba(232,154,42,.4)}
+  .phead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:4px}
+  .pn{font-family:'Space Mono';font-size:12px;color:var(--g3);font-weight:700;letter-spacing:.05em}
+  .pt{font-family:'Space Grotesk';font-weight:600;font-size:17px;color:#fff;letter-spacing:-.01em;flex:1;min-width:120px}
+  .plane{font-family:'Space Mono';font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+  .pcard ul{list-style:none;margin:9px 0 0}
+  .pcard li{position:relative;padding-left:15px;font-size:13px;line-height:1.55;color:#c3cbdc;margin-bottom:4px}
+  .pcard li::before{content:"";position:absolute;left:0;top:8px;width:5px;height:5px;border-radius:50%;background:var(--g3);opacity:.7}
+  .pcard li b{color:#fff;font-weight:600}
+  .pcard li.g::before{background:var(--violet)} .pcard li.s::before{background:var(--green)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+  .delivers{margin-top:11px;font-size:11.5px;color:var(--faint)}
+  .delivers b{font-family:'Space Mono';font-size:10px;letter-spacing:.05em;color:#9fb0cf;font-weight:400}
+  .sfc{display:inline-block;font-family:'Space Mono';font-size:10px;color:#c9d2e5;background:rgba(40,50,78,.45);
+    border:1px solid #2b3650;padding:1px 6px;border-radius:4px;margin:2px 3px 0 0}
+
+  /* gates panel */
+  .gates{border:1px solid var(--line);border-radius:16px;background:rgba(20,26,40,.55);padding:16px 18px;margin-top:8px}
+  .gates .gt{display:flex;gap:11px;padding:9px 0;border-top:1px solid rgba(40,50,78,.6);font-size:13px;line-height:1.5}
+  .gates .gt:first-child{border-top:none}
+  .gates .gk{font-family:'Space Mono';font-size:11px;flex:none;width:74px;letter-spacing:.04em}
+  .gates .gd{color:var(--soft)} .gates .gd b{color:#dfe4ee;font-weight:600}
+  .k-red{color:#f0897c}.k-green{color:var(--green-l)}
+
+  /* calls */
+  .calls{border:1px solid rgba(139,109,240,.3);border-radius:16px;background:linear-gradient(180deg,rgba(139,109,240,.07),rgba(22,29,43,.4));padding:16px 18px;margin-top:8px}
+  .calls .c{display:flex;gap:11px;padding:9px 0;border-top:1px solid rgba(40,50,78,.6);font-size:13px;line-height:1.5}
+  .calls .c:first-child{border-top:none}
+  .calls .ck{font-family:'Space Mono';font-size:11px;color:var(--violet-l);flex:none;width:26px}
+  .calls .cd{color:var(--soft)} .calls .cd b{color:#fff;font-weight:600}
+
+  footer{margin-top:34px;text-align:center;font-size:11.5px;color:var(--faint);line-height:1.7}
+  footer b{color:var(--g3);font-weight:400;font-family:'Space Mono';font-size:10.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="mark">
+      <span class="star"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l1.9 6.4L20 10l-6.1 1.6L12 18l-1.9-6.4L4 10l6.1-1.6L12 2z" fill="url(#g)"/><defs><linearGradient id="g" x1="4" y1="2" x2="20" y2="18"><stop stop-color="#E0631C"/><stop offset="1" stop-color="#FBD56B"/></linearGradient></defs></svg></span>
+      <span class="wordmark">Aster Sports</span>
+    </div>
+    <div class="eyebrow">AAU Hub · 48-Hour Plan + Full Arc</div>
+    <h1>From three front doors to <span class="grad">one product</span></h1>
+    <p class="sub">The full phased approach, R0→R6 — grounded against <b style="color:#c9d2e5">astersports/aster-sports</b> @ main. Status is honest: shipped, in-flight, gated, or sequenced. The next 48 hours sit inside R1.</p>
+    <div class="meta-row">
+      <span class="meta">verified <b>2026-06-30</b></span>
+      <span class="meta">live · <b>astersports.app/hub</b></span>
+      <span class="meta">one backend · <b>one ingest</b></span>
+    </div>
+  </header>
+
+  <div class="legend">
+    <span class="lg"><span class="dot ship"></span>Shipped (on main / live)</span>
+    <span class="lg"><span class="dot flight"></span>In flight (next 48h)</span>
+    <span class="lg"><span class="dot gate"></span>Gated (owner action)</span>
+    <span class="lg"><span class="dot seq"></span>Sequenced</span>
+  </div>
+
+  <!-- NEXT 48 HOURS -->
+  <div class="band-label">The next 48 hours · inside R1</div>
+  <div class="now">
+    <h2>Harden the free Hub, then unlock the truth port</h2>
+    <div class="h2sub">Grounded from the 06-30 build handoff. PR-A is live; these close R1 to the PR-B gate.</div>
+
+    <div class="task">
+      <div class="tnum">01</div>
+      <div class="tbody">
+        <div class="th">Fix B1 — tracking tap-cancellation <span class="chip s-flight">in flight</span> <span class="chip g-amber">bench</span></div>
+        <div class="td">Same real team appears once per tournament in search, all sharing one <code>name:gender:grade</code> key — a second tap toggles it <i>off</i>, so tracks cancel out. Dedup search by teamKey; store a richer label (name + grade/gender) for the tracked list, on-deck, and schedule link. Frank hit this live; highest priority.</div>
+      </div>
+    </div>
+    <div class="task">
+      <div class="tnum">02</div>
+      <div class="tbody">
+        <div class="th">Schedule filter bar — all surfaces <span class="chip s-flight">in flight</span></div>
+        <div class="td">By Team / Age-Grade / By Date + Games/Tournaments + Boys/Girls, adapted per surface (public teams have games only), mirroring the authed app's bar. Directory, team schedule, and a combined tracked-teams view.</div>
+      </div>
+    </div>
+    <div class="task">
+      <div class="tnum">03</div>
+      <div class="tbody">
+        <div class="th">Standings + champions audit <span class="chip s-flight">in flight</span></div>
+        <div class="td">First integrity pass is clean (15 tournaments, ~98% score coverage). Still to verify: standings correctness + bracket-final champions per division, cross-checked against TourneyMachine on a sample.</div>
+      </div>
+    </div>
+    <div class="task">
+      <div class="tnum">04</div>
+      <div class="tbody">
+        <div class="th">Indexability build <span class="chip s-flight">in flight</span></div>
+        <div class="td">Addendum merged (<code>#1178</code>); build pending. Crawlable-without-JS shell + unique per-route title/description + canonical/sitemap, off the PR-A reads. Standings-in-HTML waits on the PR-B freeze.</div>
+      </div>
+    </div>
+    <div class="task">
+      <div class="tnum">05</div>
+      <div class="tbody">
+        <div class="th">PR-B truth port <span class="chip s-gate">gated · owner</span> <span class="chip g-red">schema</span></div>
+        <div class="td">Standings/bracket/odds move to <b>frozen RPCs</b> and client-side math is <b>deleted</b>. Unblocks only when you apply the held standings/bracket substrate to prod and freeze <code>PUBLIC_RPC_CONTRACT.md</code>. This is the R1→R2 hinge.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FULL ARC -->
+  <div class="band-label">The full arc · R0 → R6</div>
+  <div class="spine">
+
+    <!-- R0 -->
+    <div class="phase">
+      <div class="node ship"><svg viewBox="0 0 24 24"><path d="M12 3l1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3z" fill="#5fce95"/></svg></div>
+      <div class="pcard">
+        <div class="phead"><span class="pn">R0</span><span class="pt">Foundation</span><span class="chip s-ship">substantially done</span></div>
+        <span class="plane">infra · schema-gated</span>
+        <ul>
+          <li class="s">One backend; ingest converged to <b>one path</b> (spec-v2 B1 landed 06-25).</li>
+          <li class="s">Public-read RPC family live + <code style="font-family:'Space Mono';font-size:11px">PUBLIC_RPC_CONTRACT</code>; <b>is_forfeit</b> dimension.</li>
+          <li class="s">Qualified-team-key <b>C</b> grain (program·grade·gender+variant); self-healing tournament-date trigger.</li>
+          <li class="s">Roster / register / guardian modules — <b>in-web</b>, not a native app.</li>
+        </ul>
+        <div class="delivers"><b>DELIVERS</b> &nbsp;the substrate every surface reads from.</div>
+      </div>
+    </div>
+
+    <!-- R1 -->
+    <div class="phase">
+      <div class="node flight"><svg viewBox="0 0 24 24"><path d="M12 3l1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3z" fill="#f0b35e"/></svg></div>
+      <div class="pcard hot">
+        <div class="phead"><span class="pn">R1</span><span class="pt">Free Hub (T0)</span><span class="chip s-ship">PR-A shipped</span><span class="chip s-gate">PR-B gated</span></div>
+        <span class="plane">tier 0 · free · the wedge</span>
+        <ul>
+          <li class="s"><b>PR-A [shipped]:</b> search→track→division→team, anon tracking, next-up + weather + directions, auth seam.</li>
+          <li class="g"><b>PR-B [gated]:</b> standings/bracket/odds → frozen RPCs; delete client math. Owner-apply substrate + freeze contract.</li>
+          <li><b>+</b> B1 dedup · filter bar · integrity audit · indexability (the 48h band above).</li>
+          <li><b>Exit:</b> real-traffic canary at parity · old Hub frozen · index-at-parity.</li>
+        </ul>
+        <div class="chips"><span class="chip g-red">schema</span><span class="chip g-amber">bench</span></div>
+        <div class="delivers"><b>DELIVERS</b> <span class="sfc">01 Command center</span><span class="sfc">03 Division leaf</span><span class="sfc">02 Odds (held)</span><span class="sfc">04 Exact-math</span></div>
+      </div>
+    </div>
+
+    <!-- R2 -->
+    <div class="phase">
+      <div class="node seq"><svg viewBox="0 0 24 24"><path d="M12 4l1.4 4.6L18 10l-4.6 1.4L12 16l-1.4-4.6L6 10l4.6-1.4L12 4z" fill="#8fb6ea"/></svg></div>
+      <div class="pcard">
+        <div class="phead"><span class="pn">R2</span><span class="pt">Front-door cutover</span><span class="chip s-seq">sequenced</span></div>
+        <span class="plane">infra · consolidation completes · reversible</span>
+        <ul>
+          <li>301 <b>.io/aau + legacy-hoopers → .app</b> (route-level); retire old surfaces; astersports-web /aau → pointer. .io becomes the marketing home. <i>(Soft-started: the .io "AAU Hub" card already links to /hub.)</i></li>
+          <li class="g"><b>Gate G1:</b> anon tracking handoff — localStorage is origin-scoped; a cross-origin 301 strands anon tracked teams. Sign-in nudge or one-time handoff with qkey remap.</li>
+          <li class="g"><b>Gate G2:</b> route-level 301 map (legacy has real schedule/records routes).</li>
+          <li class="g"><b>Gate G3:</b> index-at-parity before the flip. Don't fix the retiring surface.</li>
+        </ul>
+        <div class="chips"><span class="chip g-amber">bench</span><span class="chip g-cobalt">reversible</span></div>
+      </div>
+    </div>
+
+    <!-- R3 -->
+    <div class="phase">
+      <div class="node seq"><svg viewBox="0 0 24 24"><path d="M12 4l1.4 4.6L18 10l-4.6 1.4L12 16l-1.4-4.6L6 10l4.6-1.4L12 4z" fill="#8fb6ea"/></svg></div>
+      <div class="pcard">
+        <div class="phead"><span class="pn">R3</span><span class="pt">Hub Plus · money-path</span><span class="chip s-seq">sequenced</span><span class="chip g-red">iap gate</span></div>
+        <span class="plane">tier 1 · paid · web + native · owner-applied, test-mode-first</span>
+        <ul>
+          <li><b>One entitlement-writer service</b>, two signed sources — Stripe events + Apple server notifications, each validated; client never writes. 7-day trial → $20/mo per <b>account</b>.</li>
+          <li class="g"><b>IAP gate (design in, don't retrofit):</b> selling Plus in the iOS app means Apple StoreKit IAP (Guideline 3.1.1) — a web-view to Stripe checkout gets rejected. Apple server notifications become the 2nd entitlement source. <i>[verify at R3: external-link/steering rules are in flux — 2024 DMA + 2025 US injunction.]</i></li>
+          <li>Plus unlocks: leave-by/weather, schedule-change + conflict + split-up, Saturday-night bracket model. Traffic vendor locked pre-R3.</li>
+        </ul>
+        <div class="chips"><span class="chip g-red">money</span><span class="chip g-red">apple iap</span></div>
+        <div class="delivers"><b>DELIVERS</b> <span class="sfc">06 $20/account + super-user</span></div>
+      </div>
+    </div>
+
+    <!-- R4 -->
+    <div class="phase">
+      <div class="node seq"><svg viewBox="0 0 24 24"><path d="M12 4l1.4 4.6L18 10l-4.6 1.4L12 16l-1.4-4.6L6 10l4.6-1.4L12 4z" fill="#8fb6ea"/></svg></div>
+      <div class="pcard">
+        <div class="phead"><span class="pn">R4</span><span class="pt">Completeness</span><span class="chip s-seq">sequenced</span></div>
+        <span class="plane">tier 1 · depth</span>
+        <ul>
+          <li>Push notifications — the first capability that justifies <b>native</b> (reliable background push, esp. iOS); weekend agenda / multi-game via the <b>shared</b> next-game selector, forfeit-aware.</li>
+          <li><b>Odds calibration (A4):</b> once Brier is earned, the weighted % un-suppresses — conditions lead, % labeled. Until then, exact only.</li>
+        </ul>
+        <div class="chips"><span class="chip g-amber">bench</span></div>
+        <div class="delivers"><b>DELIVERS</b> <span class="sfc">02 Odds (calibrated state)</span></div>
+      </div>
+    </div>
+
+    <!-- R5 -->
+    <div class="phase">
+      <div class="node seq"><svg viewBox="0 0 24 24"><path d="M12 4l1.4 4.6L18 10l-4.6 1.4L12 16l-1.4-4.6L6 10l4.6-1.4L12 4z" fill="#8fb6ea"/></svg></div>
+      <div class="pcard">
+        <div class="phead"><span class="pn">R5</span><span class="pt">Program B2B</span><span class="chip s-seq">sequenced</span></div>
+        <span class="plane">program tier · needs real RBAC</span>
+        <ul>
+          <li>Register/pay, org-scoped admin, real roles. Roster/register graduate into the paid program product.</li>
+          <li>Two-entity <b>feed_source_mapping</b> serves the shared window; histories fork on the real event — Legacy keeps its record (D1).</li>
+        </ul>
+        <div class="chips"><span class="chip g-red">money</span><span class="chip g-red">schema</span></div>
+      </div>
+    </div>
+
+    <!-- R6 -->
+    <div class="phase">
+      <div class="node seq"><svg viewBox="0 0 24 24"><path d="M12 4l1.4 4.6L18 10l-4.6 1.4L12 16l-1.4-4.6L6 10l4.6-1.4L12 4z" fill="#b39ff7"/></svg></div>
+      <div class="pcard">
+        <div class="phead"><span class="pn">R6</span><span class="pt">Premium · Film · AI</span><span class="chip s-seq">sequenced · last</span></div>
+        <span class="plane">verified tier · guardian / COPPA-gated</span>
+        <ul>
+          <li>Film room + grounded AI review — <b>jersey-not-face</b>, consent + one-tap deletion, reviews footage never invents. Native camera/photo-library capture; Apple kids-privacy review strictest here — the guardian gate already aligns.</li>
+          <li><code style="font-family:'Space Mono';font-size:11px">canAccessChild</code> stays false even for super-admin. Print-studio SAM3/LaMa is a separate bench-gated lane.</li>
+        </ul>
+        <div class="chips"><span class="chip g-red">child</span></div>
+        <div class="delivers"><b>DELIVERS</b> <span class="sfc">04 Film-child</span><span class="sfc">05 AI review</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- STANDING GATES -->
+  <div class="band-label">Standing gates · hold at every phase</div>
+  <div class="gates">
+    <div class="gt"><span class="gk k-red">MONEY</span><span class="gd"><b>One entitlement-writer service</b> is the sole writer of is_entitled / family_entitlements, accepting two signed upstream sources (Stripe + Apple server notifications), each validated. Client never writes; super-user OR's into the check.</span></div>
+    <div class="gt"><span class="gk k-red">SCHEMA</span><span class="gd">Migrations <b>owner-applied</b>. CC prepares; owner runs.</span></div>
+    <div class="gt"><span class="gk k-red">CHILD</span><span class="gd">Guardian-verified only. <b>canAccessChild false</b> even for super-admin.</span></div>
+    <div class="gt"><span class="gk k-green">TRUTH</span><span class="gd">Exact where we have it; weighted % <b>suppressed until calibration earns it</b>. Labels track the math. Silence before fabrication.</span></div>
+  </div>
+
+  <!-- RESOLVED CALLS -->
+  <div class="band-label">Both calls resolved · 06-30</div>
+  <div class="calls">
+    <div class="c"><span class="ck">Q1</span><span class="cd"><b>Native app → yes.</b> A native iOS companion for the authenticated tiers; the public free Hub stays web (App Store binaries aren't SEO-indexable). Enrollment starts now; build sequences after R2; IAP-aware from R3.</span></div>
+    <div class="c"><span class="ck">Q2</span><span class="cd"><b>.io → marketing platform.</b> spec-v2's gold portal + register CTA lands on .io; the tracking product stays on .app.</span></div>
+    <div class="c"><span class="ck">+</span><span class="cd">Still open — owner: apply PR-B substrate + freeze the RPC contract · start Apple Developer enrollment · reconcile #1130 · rotate the shared test password before inviting families.</span></div>
+  </div>
+
+  <!-- APPLE / NATIVE LANE -->
+  <div class="band-label">Parallel lane · Apple / native iOS</div>
+  <div class="now" style="border-color:rgba(79,143,224,.34);background:linear-gradient(180deg,rgba(79,143,224,.08),rgba(22,29,43,.5))">
+    <h2>Start enrollment now · build after R2</h2>
+    <div class="h2sub">Runs alongside the whole arc — not a release in the R-sequence. Native targets the authenticated tiers, never the public wedge.</div>
+    <div class="task">
+      <div class="tnum">&#9670;</div>
+      <div class="tbody">
+        <div class="th">Apple Developer enrollment <span class="chip s-flight">start now</span></div>
+        <div class="td">Long-lead, blocks nothing technical: org enrollment needs a D&#8209;U&#8209;N&#8209;S number + identity verification (days &rarr; weeks). Starting early de-risks the later submission.</div>
+      </div>
+    </div>
+    <div class="task">
+      <div class="tnum">&#9670;</div>
+      <div class="tbody">
+        <div class="th">Native build <span class="chip s-seq">after R2</span></div>
+        <div class="td">Companion for the <b>authenticated</b> tiers. IAP-aware from R3; push (R4) and camera / photo-library film capture (R6) are the two capabilities that justify going native. Submit only when the R3 paywall + R6 child posture are IAP / kids-review-ready.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <b>GROUNDED</b> — status verified against astersports/aster-sports @ main, 2026-06-30.<br>
+    PR-A surfaces are live on /hub; PR-B and R2→R6 are honestly marked gated or sequenced, not done.
+  </footer>
+
+</div>
+</body>
+</html>

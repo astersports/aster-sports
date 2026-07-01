@@ -1,0 +1,113 @@
+AAU HUB — NEXT-PHASE DESIGN PACKAGE · INDEX
+CC lane · 2026-06-30 EOD · operator-relayed architect artifacts, persisted to the repo
+so the architect + a fresh chat can work from them. Companion to the ratified plan
+(docs/CONSOLIDATION_PHASED_PLAN_2026-06-29.txt) + the indexability addendum
+(docs/CONSOLIDATION_ADDENDUM_INDEXABILITY_2026-06-30.txt, already on main via #1178).
+
+=====================================================================
+0. WHAT THIS IS + THE MASTER DOC
+=====================================================================
+Frank relayed a full next-phase package (7 mockups + gallery, 2 HTML renderings, 3
+planning docs). All are now committed under docs/aau/next-phase/. The MASTER is:
+
+  → AAU_HUB_FULL_PHASED_APPROACH_2026-06-30.txt  (architect, grounded vs origin/main 06-30)
+
+It reconciles spec-v2 (06-25), the North-Star renders (06-27), and the consolidation
+docs (06-29) into ONE product / three planes / six releases (R0→R6) + a parallel
+Apple/native-iOS lane. Read it first; everything else is supporting detail.
+
+CC GROUNDING NOTE [honest scope]: CC VIEWED five of the seven this session (02, 03, 04, 05,
+06 — descriptions below are from the images). 00-gallery and 01-command-center were persisted
+but NOT viewed; their intent is taken from the master doc's "North Star" references. A next
+chat should OPEN those two before building from them.
+
+=====================================================================
+1. ARTIFACT INDEX (file → what it is → release phase)
+=====================================================================
+PLANNING DOCS
+  AAU_HUB_FULL_PHASED_APPROACH_2026-06-30.txt   MASTER phased plan R0→R6 + native lane.
+  aau-ia-build-pass-spec-v2.txt                 IA Build Pass-1 spec v2 (06-25). Ingest-as-
+        trigger (B1), external_game_id/org_id (B2/B3), get_public_team_records RPC (A4),
+        two-entity feed_source_mapping / no-clone (§4), web=portal privacy resolution.
+        Maps to R0 foundation (largely landed) + R5 program two-entity model.
+  ARCHITECT_DECISIONS_PASS_1A_PORTAL_2026-06-25.txt  Pass-1a rulings (icons, celestial
+        restyle, bottom-nav, registry nav labels) + "the web is a PORTAL" correction —
+        rosters live in-app only, no named minors on public web. Mostly astersports-web
+        (/aau marketing portal) scope → R2 (.io marketing) + R5/R6 in-app roster.
+
+HTML RENDERINGS (open in a browser)
+  AAU_HUB_PHASED_APPROACH_RENDER.html           Visual companion to the master phased doc.
+  aster-ia-renderings.html                      IA renderings (celestial/gold system, mono
+        scoreboards, constellation registry). Note: the named-leaderboard block depicts the
+        IN-APP view, NOT a public-web requirement (per Pass-1a §2 + spec-v2 §2).
+
+MOCKUPS (docs/aau/next-phase/mockups/) — North-Star screens
+  00-gallery.png            [not viewed by CC] all screens on one board.
+  01-command-center.png     [not viewed] the Hub home / "command center". → R1 (shipped surface).
+  02-standings-odds.png     [VIEWED] Division standings + the HONEST ODDS card: "FIXED"
+        label tracks the math, "EXACT" leads with the count, % SUPPRESSED until calibrated;
+        DIFF* + "cap +20"; "TOP 2 ADVANCE TO BRACKET" band. → R1·PR-B (truth port) + R4-A4 calib.
+  03-division-leaf.png      [VIEWED] Team "division-first leaf": explicit Schedule/Standings/
+        Odds tabs; real FINAL·POOL game scores live in context (not a flat firehose); UP-NEXT
+        row. → R1·PR-B (largely prefigured by the #1175 division page).
+  04-exact-math.png         [VIEWED] "04 / SCHEDULE INTEL — Exact math, suppressed estimate":
+        EXACT label; "the conditions are exact math," the likelihood stays SUPPRESSED until the
+        model earns it, "a clinched team never shows a probability." Cards: "Schedule-change
+        watch" (a tracked game moving court/time shows as a diff + re-computes leave-by),
+        "SATURDAY NIGHT · THE BRACKET — What it takes to make Sunday" (clinched/out/if-then in
+        green/red, exact math), a "Make the bracket" expander, and a footnote that the
+        likelihood is a calibrated estimate suppressed until earned. Has a Sign-in (auth surface).
+        → R1·PR-B truth port; the schedule-change/leave-by depth is R3-R4 (Plus).
+  05-child-safety-film.png  [VIEWED] Film-room child-safety posture: verified-guardian ONLY,
+        consent + one-tap delete, grounded AI ("reviews footage, never invents"), jersey-not-
+        face, super-user does NOT open this. → R6 (verified/COPPA tier).
+  06-plus-account.png       [VIEWED] "06 / ACCESS — $20/account and super-user": GATE — owner
+        unlocks reads by OR-ing a role flag into the CHECK, "never writing is_entitled (Stripe
+        stays sole writer), never opening canAccessChild." A "Super-user · owner: All reads
+        unlocked — child & film still guardian-gated" band. ASTER PLUS $20/mo PER ACCOUNT —
+        "not per kid, not per team… One account. Every kid, every team." Feature list: leave-by/
+        directions/game-time weather; schedule-change alerts, conflicts & split-up; Saturday-
+        night bracket scenarios; add a tournament that isn't in the system; Film + AI review
+        (verified guardian only). → R3 (T1 money-path); Film row → R6.
+
+=====================================================================
+2. NEW DECISIONS THESE DOCS LOCK (not yet in the ledger before today)
+=====================================================================
+From the master phased doc — carry these into the next session's model:
+  • NATIVE iOS COMPANION — YES (Q1 resolved 06-30). It is a TIER SPLIT, not "web absorbed
+    native": the free T0 Hub stays WEB (an App Store binary isn't SEO-indexable — the
+    indexable wedge only works on the web); the native app is the companion for the
+    AUTHENTICATED tiers, justified by push (R4) + camera/film capture (R6). PARALLEL LANE:
+    start Apple Developer Program ENROLLMENT NOW (D-U-N-S + identity verification = long-lead,
+    blocks nothing technical); BUILD sequences after R2; SUBMIT after R3 paywall + R6 child
+    posture are IAP/kids-review-ready.
+  • .io = MARKETING PLATFORM (Q2 resolved 06-30). spec-v2's gold PORTAL + register CTA lands
+    on astersports.io; the tracking product stays on .app. (Confirms the .io-scope open item.)
+  • MONEY GATE = ONE writer, TWO signed sources. The entitlement writer accepts Stripe events
+    AND (if Plus sells in-app) Apple App Store Server Notifications — each validated; client
+    never writes; super-user OR's into the CHECK, never writes. IAP (StoreKit) must be designed
+    in from R3, not retrofitted (Apple Guideline 3.1.1). [VERIFY at R3: external-link/steering
+    rules are in flux — 2024 DMA + 2025 US injunction — pull Apple's CURRENT policy first.]
+  • TRUTH gate (🟢): exact where we have it; the weighted % stays SUPPRESSED until calibration
+    (A4, R4) earns a Brier score; labels track the math; silence before fabrication.
+  • R0 FOUNDATION is SUBSTANTIALLY DONE (ingest_phase1 migration on main; public-read RPC
+    family answers anon; qualified team-key grain C live; is_forfeit dimension).
+
+=====================================================================
+3. STILL-OPEN OWNER ITEMS (from the master doc §4 — block the sequence)
+=====================================================================
+  • Apply the HELD PR-B standings/bracket substrate to prod + FREEZE PUBLIC_RPC_CONTRACT
+    (unblocks the R1 truth port — 02/04 leave the honest-held state).
+  • Start Apple Developer Program enrollment (long-lead).
+  • Reconcile the #1130 number collision.
+  • Rotate the shared test password before inviting families.
+  • (CC-tracked) Build the R1 indexability layer per the #1178 addendum (🟡 bench).
+
+=====================================================================
+4. HOW THIS RELATES TO WHAT SHIPPED TODAY
+=====================================================================
+Today's 24h delivered R1·PR-A (search→track→division→team, tracking, next-up/weather,
+branding) + auth/identity hardening. The #1175 division page already prefigures the 02/03
+North-Star screens' structure; the honest-odds/exact-math depth (02/04) is the GATED
+R1·PR-B truth port. Nothing in this package changes what shipped — it defines what's next.
+No code in this PR; design record only. 🟡 all bench.
