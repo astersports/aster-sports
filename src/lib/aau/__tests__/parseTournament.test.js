@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import {
   cleanPlaceName,
   getGameStatus,
+  isAdminDivision,
   isPlaceholderTeam,
   normalizeName,
   parseCourt,
@@ -105,6 +106,35 @@ describe('parsePlaces (Tournament.aspx Complexes panel)', () => {
     expect(parsePlaces('<div>no places here</div>')).toEqual([]);
   });
 } );
+
+describe('isAdminDivision (admin/internal division signature filter)', () => {
+  it('rejects TM admin/internal blocks by shape', () => {
+    // the live WPCYO junk division that inflated the standings surface
+    expect(isAdminDivision('ADMIN TEAMS')).toBe(true);
+    expect(isAdminDivision('Admin')).toBe(true);
+    expect(isAdminDivision('Administration')).toBe(true);
+    expect(isAdminDivision('Staff')).toBe(true);
+    expect(isAdminDivision('Officials')).toBe(true);
+    expect(isAdminDivision('Test Teams')).toBe(true);
+    expect(isAdminDivision('Placeholder')).toBe(true);
+    expect(isAdminDivision('Do Not Use')).toBe(true);
+    // blank/absent name is not a real division
+    expect(isAdminDivision('')).toBe(true);
+    expect(isAdminDivision(null)).toBe(true);
+  });
+
+  it('never rejects a real competition division (the safety property)', () => {
+    // the 14 live WPCYO 2025-26 divisions + representative ZG divisions —
+    // NONE may match, or the ingest would silently drop real games.
+    for (const name of [
+      '3rd Grade Boys', '3rd Grade Girls', '4th Grade Boys', '5th Grade Girls',
+      '6th Grade Boys', '7th Grade Girls', '8th Grade Boys', '8th - HS Girls',
+      'HS Boys', 'GIRLS HIGH SCHOOL', 'Boys - 5th', '10U Black', '11U Girls',
+    ]) {
+      expect(isAdminDivision(name)).toBe(false);
+    }
+  });
+});
 
 const FIX = join(process.cwd(), 'src/lib/aau/__tests__');
 const tournamentHtml = readFileSync(join(FIX, 'tournament.fixture.html'), 'utf8');

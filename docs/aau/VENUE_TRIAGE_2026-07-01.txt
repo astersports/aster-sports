@@ -130,6 +130,9 @@ idempotent. Live tournaments now self-heal court on the 5-min poll.
 
 Batching the historicals (WPCYO 2025-2026 1106 court-null, WPCYO Spring 766) is CLEARED by
 this canary but HELD for Frank's explicit go + a low-traffic window; skip dead tournaments.
+    >>> SUPERSEDED by §6 (2026-07-01): the historical batch is CANCELLED. The court fix is
+    >>> Zero-Gravity-specific (WPCYO has no upstream court), and re-ingesting WPCYO surfaced a
+    >>> separate fetch-layer defect. There is no historical batch to run. See §6.
 
 Forward-flags (architect, 2026-07-01), not #1187 changes:
 - R4 push: a court null->"Court 1" via this backfill is a FIRST-POPULATE, not a court CHANGE.
@@ -139,3 +142,91 @@ Forward-flags (architect, 2026-07-01), not #1187 changes:
 - parseCourt theoretical false-positive: "...- Courtyard" -> "Court YARD". Left as-is;
   tightening it would drop real letter-courts ("Court A"/"Court B"), and it yields obvious
   junk, not a plausible-wrong court.
+
+================================================================================
+6. WPCYO 2025-26 RE-INGEST — CORRECTED FINDING + FETCH-LAYER DEFECT (2026-07-01)
+================================================================================
+>>> CORRECTION STAMP. My FIRST characterization of the WPCYO re-ingest — reported in
+>>> chat as "NON-IDEMPOTENT / parse regression / the +rows are artifacts, ~100 re-inserted
+>>> per pass" — was WRONG. I over-concluded from a climbing row count without accounting
+>>> for partial completion. The corrected finding below is grounded in an offline parse of
+>>> all 14 division pages + the full unique index + the fetch-layer code path. The reversal
+>>> was ratified by Frank 2026-07-01 after he re-read the two mechanically-conflicting turns
+>>> in code. Keep this stamp: the record must not carry the wrong "parse regression" call.
+
+WHAT ACTUALLY HAPPENED
+- The historical court "batch" (WPCYO 2025-26, Spring) is CANCELLED, two independent reasons:
+  1. The court fix is ZERO-GRAVITY-SPECIFIC. Court recovery only applies where the venue
+     building-dedup collapsed ZG "- Court X" facilities into one building (Westchester =
+     House of Sports Court 1/2). WPCYO's court-null is GENUINE — no upstream court designation.
+     Re-ingesting WPCYO fills 0 courts. Nothing to recover. Live ZG self-heals court via poll.
+  2. Re-ingesting a large tournament surfaced a real FETCH-LAYER defect (below).
+  WPCYO Spring is HELD PERMANENTLY — not paused. Same profile. Do not re-ingest it.
+
+THE +103->+202 "CLIMB" WAS PARTIAL COMPLETION, NOT DUPLICATION
+- The unique index `division_games_extkey_unique (tournament_division_id, external_game_id)`
+  is FULL (non-partial) — per-game duplication is impossible.
+- Offline parse of all 14 WPCYO division pages sums to EXACTLY 1308, matching the pre-revert
+  live count. Every one of the 11 backup divisions matches the DB exactly (114/99/130/90/105/
+  73/103/96/107/89/100 = 1106). The delta is 3 divisions the ORIGINAL ingest lacked:
+  8th Grade Boys (99 REAL games), HS Boys (85 REAL games), ADMIN TEAMS (18, junk).
+- So the count converged toward a FIXED 1308 across two partial runs (1106->1209->1308). It
+  is idempotent AT CONVERGENCE — not runaway. The +184 (8th Grade Boys + HS Boys) are REAL
+  games the original ingest missed; prod is genuinely STALE by 184 games after the revert.
+
+CAVEAT — CONVERGENCE-BY-COUNT IS NOT A SAFETY INVARIANT (architect, ratified)
+- "It can never exceed 1308" holds for WPCYO's CURRENT snapshot only. The unique index bounds
+  DUPLICATE (division, extid) pairs; it does NOT bound growth if extid (the slot label cells[0])
+  itself churns. `src/lib/aau/stableGameKey.js` documents exactly this "regeneration tail where
+  data-gameid churns" (extid = cells[0]; the durable data-gameid sits in source_game_id awaiting
+  the §2.D key swap). A churned slot label is a NEW pair = a NEW row = count past 1308.
+- THEREFORE the completeness gate compares DIVISIONS DISCOVERED vs DIVISIONS INGESTED — never
+  "count == expected." The count version would be the wrong gate.
+
+ROOT CAUSE (fetch layer, code-confirmed)
+- `fetchTM` (index.ts): SINGLE attempt, no retry, aborts on timeout; a large-page IncompleteRead
+  throws out of `await res.text()` the same way. (Reproduced directly: urllib/curl IncompleteRead
+  on the 1.6MB "3rd Grade Boys" page mid-trace.)
+- The division loop fetches each page INSIDE a per-iteration try/catch whose header comment says
+  "one bad division doesn't abort the run" — a failed division is SILENTLY SKIPPED. The only
+  hard-fail is ZERO divisions discovered (422). So a partial run returns 200 looking COMPLETE.
+- WPCYO = 14 divisions x ~1.2-1.7MB (~19MB). Each invocation skips a different random subset of
+  large pages -> a different partial each run -> union converges over repeated polls.
+
+THIS IS AN HONEST-CLAIMS DEFECT, NOT RELIABILITY POLISH (architect, ratified)
+- A division whose page RELIABLY exceeds the fetch timeout fails EVERY poll and is NEVER
+  ingested -> permanent SILENT undercount. And silent: the Hub presents a partially-ingested
+  league as complete, with no signal that divisions are missing. That is a FALSE-COMPLETE claim
+  (same family as "eliminated from a bracket they never entered"). Priority is raised accordingly.
+- Correction to my own earlier overstatement: it does NOT "drift +100 rows/poll forever." The
+  ingest only ADDS (never deletes) and the index bounds duplicates, so a live large tournament
+  CONVERGES to completeness over polls. But convergence is not guaranteed for a page that never
+  fetches — that division is a permanent undercount, not a self-healing lag.
+- RELEASE GATE (architect correction — right axis): the completeness gate must land before any
+  LARGE multi-division tournament goes live-polling, REGARDLESS OF CIRCUIT (not "non-ZG").
+  Westchester passed on luck of page size, not a guarantee.
+
+FIX (this session's reliability PR — edge function + pure helper + tests; held for architect review)
+- fetchTM: 3 attempts, linear backoff. Necessary but NOT sufficient (a reliably-oversized page
+  still fails all attempts) — the gate, not the retry, is load-bearing.
+- Completeness gate in the ingest response: never drop good divisions (partial success upserts
+  what succeeded); report divisionsDiscovered / divisionsExpected / divisionsIngested / complete /
+  missingDivisions as run truth; hard-fail (502, retain prior) ONLY when NOTHING succeeded.
+- ADMIN filter: isAdminDivision(name) by SIGNATURE (admin/staff/officials/internal/test/placeholder),
+  applied in the ingest with a per-rejection LOG (never a silent drop; a new junk variant surfaces).
+  Mirrored parseTournament.js <-> _parse.ts (AP #30); vitest safety test asserts the 14 real WPCYO
+  divisions + ZG divisions never match.
+- OUT OF SCOPE (follow-up PR, per §16.16 column+consumer together): the SURFACE GUARD (d) —
+  persist completeness on the tournament row + an honest "still syncing (N sections pending)" note
+  so no surface presents a partial league as complete. PR1 makes ingests reliable + returns the
+  truth in the run response; PR2 closes the surface-honesty loop.
+
+COMPLETE-WPCYO ITEM (deliberate, gated — restores the 184 real games)
+- After the reliability fix: shadow-ingest WPCYO into a scratch table; require BYTE-IDENTICAL
+  across two consecutive runs (idempotency, not just ">="); the 11 existing divisions must match
+  fp_ex_court e8faac6a62b98437f2941957461d8ded exactly (no drift on real data); the delta must be
+  EXACTLY 8th Grade Boys + HS Boys (ADMIN filtered out); then promote. Canary the completeness
+  gate itself on WPCYO's partial-fetch behavior first — prove it CATCHES a partial run before it
+  guards live ones. Standings-path review discipline applies.
+- Keep public.canary_backup_wpcyo_2526 (1106 rows, the e8faac6a baseline) until the completion
+  promotes; the shadow diff verifies against it. Drop AFTER, not before.

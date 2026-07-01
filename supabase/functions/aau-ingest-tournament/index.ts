@@ -35,6 +35,7 @@ import {
   parsePlaces,
   cleanPlaceName,
   parseCourt,
+  isAdminDivision,
   normalizeName,
   type DivisionGame,
   type PlaceEntry,
@@ -69,26 +70,42 @@ async function getAppSecret(sb: ReturnType<typeof createClient>, name: string): 
 }
 
 /** GET a TourneyMachine page with a desktop UA + timeout. Mobile UA 302s to a
- * JS webapp, so the desktop UA is required for server-rendered HTML. */
-async function fetchTM(url: string): Promise<string> {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
-  try {
-    const res = await fetch(url, {
-      redirect: "follow",
-      signal: ctrl.signal,
-      headers: {
-        "User-Agent": DESKTOP_UA,
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Cache-Control": "no-cache",
-      },
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.text();
-  } finally {
-    clearTimeout(timer);
+ * JS webapp, so the desktop UA is required for server-rendered HTML.
+ *
+ * RETRY (3 attempts, linear backoff): large division pages (~1.5MB) intermittently
+ * drop mid-body — the read throws IncompleteRead out of `res.text()`, or the fetch
+ * times out. A single attempt silently skipped the division (the loop's per-division
+ * catch), so a big multi-division tournament ingested a different partial subset each
+ * run. Retrying the fetch at the point of failure is the primary reliability fix; the
+ * completeness gate (discovered-vs-ingested) is the backstop for a page that fails all
+ * attempts. Retry is necessary but not sufficient — a reliably-oversized page still
+ * fails, which is why the gate, not the retry, is load-bearing. */
+async function fetchTM(url: string, attempts = 3): Promise<string> {
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+    try {
+      const res = await fetch(url, {
+        redirect: "follow",
+        signal: ctrl.signal,
+        headers: {
+          "User-Agent": DESKTOP_UA,
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.5",
+          "Cache-Control": "no-cache",
+        },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.text();
+    } catch (e) {
+      lastErr = e;
+      if (attempt < attempts) await new Promise((r) => setTimeout(r, 500 * attempt));
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  throw new Error(`fetch failed after ${attempts} attempts: ${(lastErr as Error)?.message ?? String(lastErr)}`);
 }
 
 Deno.serve(async (req) => {
@@ -133,7 +150,17 @@ Deno.serve(async (req) => {
 
   const tournamentName = parseTournamentName(tournamentHtml);
   const { startDate, endDate } = parseTournamentDates(tournamentHtml);
-  const divisionList = parseDivisionList(tournamentHtml);
+  const discoveredDivisions = parseDivisionList(tournamentHtml);
+  // Reject admin/internal divisions (e.g. "ADMIN TEAMS") by signature and LOG each
+  // rejection, so a real division never silently drops and a new junk variant surfaces.
+  const divisionList = discoveredDivisions.filter((d) => {
+    if (isAdminDivision(d.name)) {
+      console.warn(`[aau-ingest] skipping admin/internal division ${JSON.stringify(d.name)} (${d.externalDivisionKey})`);
+      return false;
+    }
+    return true;
+  });
+  const adminDivisionsSkipped = discoveredDivisions.length - divisionList.length;
   if (divisionList.length === 0) {
     return json({ error: "no divisions discovered on Tournament.aspx", tournamentName, divisions: [] }, 422);
   }
@@ -502,12 +529,46 @@ Deno.serve(async (req) => {
     }
   }
 
-  return json({
+  // ── Completeness gate (discovered-vs-ingested, NOT count-based) ──────────────
+  // A division whose page fails all fetch retries is silently skipped by the
+  // per-division catch, so a partial run would otherwise return 200 looking
+  // complete — a false-complete claim on a family-visible league. Count is NOT a
+  // safe invariant (a churned slot label mints a new row, so "count == expected"
+  // can pass while a division is missing); the only sound gate is the set of
+  // divisions we DISCOVERED vs the set we successfully INGESTED. A result carries
+  // an `error` key iff its division failed; everything else was upserted (good
+  // divisions are never dropped to fail loud). `complete:false` + the missing list
+  // is the truth a surface guard consumes to avoid presenting a partial as whole.
+  const missingDivisions = results
+    .filter((r) => "error" in r)
+    .map((r) => ({ name: r.division, key: r.externalDivisionKey, error: r.error }));
+  const divisionsIngested = divisionList.length - missingDivisions.length;
+  const complete = missingDivisions.length === 0;
+  if (!complete) {
+    console.warn(
+      `[aau-ingest] INCOMPLETE: ${missingDivisions.length}/${divisionList.length} divisions failed after retries for ${idTournament} — ${missingDivisions.map((m) => m.name).join(", ")}`,
+    );
+  }
+
+  const payload = {
     tournamentId,
     tournamentName,
     startDate,
     endDate,
-    divisionsDiscovered: divisionList.length,
+    divisionsDiscovered: discoveredDivisions.length,
+    adminDivisionsSkipped,
+    divisionsExpected: divisionList.length,
+    divisionsIngested,
+    complete,
+    missingDivisions,
     divisions: results,
-  });
+  };
+
+  // Fail loud + retain prior data ONLY when NOTHING succeeded (mirrors the
+  // Tournament.aspx 502 path). Partial success keeps the good divisions and
+  // reports the truth — never a throw that discards what did ingest.
+  if (divisionsIngested === 0) {
+    return json({ ...payload, error: "all divisions failed to ingest — prior data retained" }, 502);
+  }
+  return json(payload);
 });

@@ -201,6 +201,23 @@ export function parseDivisionList(html) {
   return out;
 }
 
+/**
+ * Is this discovered division an admin/internal block rather than a real
+ * competition division? TourneyMachine tournaments carry scheduling/admin
+ * divisions ("ADMIN TEAMS") that must not be ingested — they inflate the
+ * division/standings surface with non-competition rows. Match by SIGNATURE
+ * (shape), not a single string, so the next junk-division variant is caught;
+ * the ingest LOGS every rejection so a false positive or a new variant surfaces
+ * instead of silently entering. Empty/blank name → not a real division.
+ * Kept deliberately narrow so real divisions ("HS Boys", "8th Grade Boys",
+ * "8th - HS Girls", "GIRLS HIGH SCHOOL") never match.
+ */
+export function isAdminDivision(name) {
+  const n = (name || '').trim().toLowerCase();
+  if (!n) return true;
+  return /(^|\b)(admin|administrator|administration|staff|officials?|referees?|scorekeepers?|placeholder|do\s*not\s*use|internal|test\s*teams?)(\b|$)/.test(n);
+}
+
 // ─── Division.aspx → teams + games ───────────────────────────────────────────
 
 /**
