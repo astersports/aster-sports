@@ -179,11 +179,16 @@ PART B — THE ENGINEERING PLAN ON THE TRUTH
 PHASE 0 — STABILIZE + CLOSE THE FAUCET (before one new feature)
 The 48h lesson: the failure mode is live-contact bugs, not bad architecture.
   0.0 CLOSE THE AUTO-MERGE FAUCET (config fix, alongside 0.1 — else re-inherited
-      every Dependabot cycle). Supply-chain policy across all repos: MAJOR-version
-      bumps require human review; NOTHING touching money / child / auth (stripe,
-      session/cookie libs, supabase-js, auth) auto-merges, ever — same gate
-      philosophy the app enforces, applied at CI. cookie 1→2 already slipped =
-      the proof.
+      every Dependabot cycle). Supply-chain policy across all repos, gated by what
+      the dependency TOUCHES, not only by version-jump size:
+        (a) ANY major-version bump → human review; AND
+        (b) ANY change — major OR MINOR — to a money/child/auth-adjacent dep
+            (stripe, session/cookie libs, supabase-js, auth) → human review.
+      cookie 1→2 proves rule (a); a MINOR stripe/auth bump is still a money/child-
+      path change that must not slip on green, which is why (b) is path-based.
+      Same gate philosophy the app enforces, applied at CI. OWNER-SCOPED (touches
+      money/child-repo CI) — CC preps as a draft for architect review vs the
+      money/child gates.
   0.1 SMOKE WHERE EACH MAJOR ACTUALLY BITES (targeted, not a generic boot):
         • cookie 1→2 → verify where cookie is CONSUMED, then exercise the full
           auth / session / recovery / merge flow (the security-sensitive one).
@@ -195,7 +200,11 @@ The 48h lesson: the failure mode is live-contact bugs, not bad architecture.
   0.2 PIN THE TWO FORFEIT ENGINES to a SHARED canonical-cases fixture (ZG
       auto-hard-out 20-0 vs BBallshootout 25-0 + DQ) that BOTH #1145 and #214 must
       pass — single-engine discipline applied to the interim two-engine reality,
-      until R2 merges them.
+      until R2 merges them. TREAT THE FIXTURE AS A MINI-CONTRACT (same discipline
+      as the RPC contract, Part C seam #1): it lives in ONE place both repos read;
+      changing a canonical case is a REVIEWED change, not a casual test-file edit —
+      else you've rebuilt a smaller version of the divergence you're containing.
+      It's a GATE, not a test file; it dissolves at R2 when the engines merge.
   0.3 HARDEN THE R1·PR-A HUB TAIL — one real-device/real-data pass (multi-
       tournament clubs, bracket-TBD, forfeit rows, sign-in merge, recovery
       end-to-end). This IS the R1 "canary at parity" — treat it as a gate.
@@ -220,6 +229,9 @@ PHASE 2 — R2 FRONT-DOOR CUTOVER · on Vercel, reversible
   index-at-parity. Retire the legacy Hub + the duplicated forfeit engine here.
 
 PHASE 3 — R3 HUB PLUS MONEY-PATH · plumbing ports, THE WRITER IS THE BUILD
+  READ-THIS-RIGHT: "plumbing ports; the writer is the build" does NOT mean "R3 is
+  mostly done." The writer is NET-NEW, the SOLE money-path enforcement point, and
+  where 🔴 MONEY actually lives. Only the .io checkout plumbing ports.
   ONE entitlement-writer service (NET-NEW — the .io Stripe plumbing ports, this
   does not), TWO signed upstream sources, client never writes, super-user OR's
   into the CHECK. Traffic vendor (TomTom/Google Routes) LOCKED before build —
@@ -344,6 +356,15 @@ Both halves ratified; converge on one spine. FOLDED this pass:
     the problem (free shows collision); pride on clinched-only; legible self-
     assembly; handoff primitive; ES parity-of-tone.
 DEFERRED (noted, not scheduled): none blocking — all edge-discipline folded.
+
+RATIFICATION ROUND 2 (architect, 2026-07-01) — ratified; three refinements folded:
+  1. Faucet rule is PATH-BASED, not only semver — Phase 0.0(b): any change (major
+     OR minor) to money/child/auth-adjacent deps → human review. Gate by what the
+     dep touches, not the version-jump size.
+  2. The 0.2 forfeit fixture is a MINI-CONTRACT — one shared location, reviewed
+     changes to canonical cases, a gate not a test file; dissolves at R2.
+  3. Framing guard on "plumbing ports; the writer is the build" (Phase 3) — must
+     not be read as "R3 mostly done"; the writer is net-new + where 🔴 MONEY lives.
 
 =====================================================================
 END — one spine, three lenses: calm/pride/honesty (design) = stabilize/wedge/
