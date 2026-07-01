@@ -1,0 +1,11 @@
+-- Bump the AAU live-score poll from every 10 min to every 5 min on game days (Frank's
+-- explicit go 2026-07-01). Tighter refresh for scores/status/venue that flip during a
+-- live session. The poll_live_aau_scores() body is UNCHANGED — it still self-gates to
+-- ET game hours (07:00-23:59) + tournaments live today, so */5 is a no-op off-event and
+-- only doubles invocations during an actual game day. cron.schedule upserts by jobname,
+-- so this updates job 'aau-live-score-poll' in place. Plane A (public scores/status only,
+-- no schema/RLS/money/child change). Reversible: reschedule back to */10.
+--
+-- APPLIED to prod via MCP 2026-07-01 (mirror per AP #21). Verified: cron.job
+-- 'aau-live-score-poll' now shows '*/5 * * * *', active, same jobid 6 (updated in place).
+SELECT cron.schedule('aau-live-score-poll', '*/5 * * * *', $cron$SELECT public.poll_live_aau_scores();$cron$);
