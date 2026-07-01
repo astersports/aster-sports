@@ -267,3 +267,29 @@ COMPLETION PATH is separately protected: the complete-WPCYO shadow-table proof r
 BYTE-IDENTICAL across two consecutive runs. A wall-clock-killed run produces a different
 partial subset each time, so two runs won't match and it won't promote. That backstops the
 timeout risk on the COMPLETION path; condition (3) is what backstops the LIVE path.
+
+--------------------------------------------------------------------------------
+6.2 CLOSE-OUT RECORD (2026-07-01) — carry into the condition-3 thread
+--------------------------------------------------------------------------------
+(A) The RECLASSIFICATION is the load-bearing outcome, more than any single fix.
+    "Court blank" walked in as a UI bug -> ZG venue-dedup artifact -> suspected PARSE
+    REGRESSION -> landed as FETCH-LAYER SILENT-INCOMPLETENESS. Each step moved because
+    something got MEASURED, not argued: the offline all-14-division parse = 1308 exactly,
+    the reproduced IncompleteRead on a 1.6MB page, the full (non-partial) unique index.
+    The FIRST confident call ("parse regression / artifacts") was WRONG; the discipline
+    (grounding + re-measurement) caught it. Expect condition-3 work to surface its OWN
+    plausible-wrong first calls — measure, don't argue.
+
+(B) OPEN HONESTY THREAD (a known false-complete sitting LIVE, not created by this arc):
+    until surface guard (d) lands, prod WPCYO 2025-26 is KNOWINGLY stale by two real
+    divisions (8th Grade Boys + HS Boys = 184 games) with NO family-facing signal they're
+    missing. Pre-existing (prod was at 1106 before this arc), correctly gated behind
+    condition 3 -> shadow-table completion. But it is a KNOWN false-complete live NOW,
+    which reframes #1189 -> condition 3 -> completion as CLOSING AN HONESTY GAP WE HAVE
+    ACTUAL KNOWLEDGE OF, not just cleanup. Implication: condition 3 must NOT drift
+    indefinitely. "Nothing large is live today" protects the FUTURE surfaces (a new large
+    tournament going live) — it does NOT protect the WPCYO league ALREADY showing
+    incomplete. Condition 3 is also the prerequisite that makes the completion FEASIBLE
+    (a single-invocation re-ingest of all 14 divisions faces the same wall-clock the retry
+    can now blow; the shadow-table's two-run-byte-identical gate is fail-safe, not
+    fail-complete — without condition 3 it never produces two identical complete runs).
