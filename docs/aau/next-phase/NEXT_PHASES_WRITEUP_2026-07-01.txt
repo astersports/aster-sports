@@ -1,0 +1,187 @@
+ASTER SPORTS — THE NEXT PHASES
+A strategic write-up of the road from a free tracking Hub to a paid, multi-tenant platform.
+CC lane · 2026-07-01 · grounded against astersports/aster-sports @ origin/main
+Canonical plan: docs/aau/next-phase/AAU_HUB_FULL_PHASED_APPROACH_2026-06-30.txt (architect).
+This document is the narrative on top of that plan — the "why it's shaped this way," for the
+architect, the operator, and the next build session. It changes no decision; it explains them.
+
+=====================================================================
+WHERE WE STAND (grounded)
+=====================================================================
+The free, no-login AAU Hub is live at astersports.app/hub. A parent can search any AAU team,
+open a tournament, drill into a division (standings / schedule / bracket), open a team, track
+teams (anonymously, or synced to a free account), and see an up-next countdown with game-day
+weather. Behind it sits one Supabase backend, one ingest path, and a family of anon public
+RPCs that are the frozen read contract. Auth, identity, and password recovery are hardened.
+Foundation (R0) is substantially done and R1's insulated half (PR-A) has shipped.
+
+That is the beachhead. Everything that follows is about converting it — deliberately, one
+irreversible step at a time — into a product families pay for and programs run on.
+
+=====================================================================
+THE THESIS
+=====================================================================
+One product, two clients, three planes of value.
+  • One product: astersports.app, one backend, one truth engine feeding every surface.
+  • Two clients: the WEB (all tiers, and the only SEO-indexable surface — the free wedge must
+    live on the web) and a NATIVE iOS companion (for the authenticated tiers, where push and
+    camera actually earn their keep).
+  • Three planes: T0 Free Hub (no login, indexable, forever free) → T1 Hub Plus ($20/account)
+    → Program B2B (register + pay, org-scoped).
+
+The growth model is product-led. We do not buy the top of the funnel; we EARN it. A parent
+googling "\<team\> schedule" lands on a fast, honest, free Hub, tracks their kid's team, and —
+only after we've proven we can tell them what court and what time — is offered a $20/month
+assistant that removes Saturday-morning logistics pain. Programs adopt the platform because
+their families already live on it. Premium (film, AI) is the last, highest-margin layer, sold
+to families who already trust us with the basics.
+
+The discipline that makes this real is SEQUENCING BY BLAST RADIUS: never run two irreversible
+changes at once. Cut the front door over once, early, on a proven Hub. Prove one money-path in
+production before opening the next. Gate child data and video behind the strictest controls and
+build them last. Each phase retires exactly one class of risk before the next begins.
+
+=====================================================================
+THE THREE STANDING GATES (the spine — they hold at every phase)
+=====================================================================
+🟢 TRUTH  — We show exact facts where we have them and stay SILENT where we don't. Standings,
+            records, and "what it takes to make Sunday" are exact math. A win-probability %
+            is SUPPRESSED until the model earns calibration (a real Brier score) on live
+            results — and a clinched team never shows a probability at all. Labels track the
+            math. Silence before fabrication. This is the product's credibility, and it is a
+            gate, not a preference.
+🔴 MONEY  — Exactly ONE entitlement-writer service is the sole writer of who is paid. It accepts
+            TWO signed upstream sources — Stripe events and (for in-app purchases) Apple App
+            Store Server Notifications — each validated. The client never writes entitlement.
+            The owner/super-user unlocks reads by OR-ing a role flag into the CHECK, never by
+            writing. Checkout is test-mode-first.
+🔴 CHILD  — Anything involving a minor is guardian-verified only. canAccessChild stays false
+            even for the super-admin. This invariant is true from today, so the R6 film tier
+            slots into a posture the whole platform has honored all along — not a bolt-on.
+
+=====================================================================
+THE PHASES
+=====================================================================
+
+R1 · FREE HUB (T0) — finish the wedge  [PR-A shipped · PR-B + indexability open]
+  Goal: the consolidated free Hub, proven by real traffic before anything else moves.
+  Two remaining bodies of work:
+    • PR-B (truth port): standings, records, bracket, advancement, and the honest-odds/exact-
+      math surfaces render from FROZEN RPCs, and the client-side tally/advancement math is
+      DELETED in the move. This is where today's known standings quirks die — not patched,
+      retired. GATE: the owner applies the held standings/bracket substrate to prod and freezes
+      PUBLIC_RPC_CONTRACT.md first. PR-A does not wait on it; PR-B cannot start without it.
+    • Indexability: the Hub is currently a client-rendered SPA — one generic title, empty
+      pre-JS body, no real sitemap/robots. The entire SEO wedge is unbuilt. The fix is a
+      serverless per-route prerender on Vercel (NOT build-time SSG — content is live and routes
+      are many) that sources the same anon RPCs and emits crawlable HTML + unique per-route
+      title/description/canonical/OG, plus a real sitemap and robots. Sequence smallest-blast
+      first: robots + sitemap + per-route meta, then crawlable body; standings-in-HTML inherits
+      the PR-B freeze. This is unblocked and buildable now.
+  Exit: a real-traffic canary at parity with the old Hub, the old Hub frozen, and representative
+  routes indexing at parity. Risk retired: "is the free surface good enough, and can Google see
+  it?"
+
+R2 · FRONT-DOOR CUTOVER — consolidate to one home, once  [sequenced]
+  Goal: make astersports.app the canonical front door BEFORE money ever enters. 301 the legacy
+  surfaces (astersports.io/aau + legacy-hoopers) route-by-route to their .app equivalents;
+  freeze and retire the old surfaces; .io becomes the marketing platform (the gold portal +
+  register CTA). Stays on Vercel — the atomic un-301 rollback IS the safety net; no host swap.
+  Exit gates (do not flip until all pass): a tested un-301 rollback; a route-level 301 map (not
+  a homepage dump); index-at-parity; and — critically — an anonymous-tracking handoff, because
+  localStorage is origin-scoped and a naive cross-origin 301 would strand every anonymous user's
+  tracked teams. Risk retired: "consolidate without losing SEO or stranding users, reversibly."
+
+R3 · HUB PLUS (T1) — the first dollar  [sequenced · money-gated]
+  Goal: the platform's first consumer money-path, plus the contained "the weekend works"
+  assistant. 7-day trial → $20/mo per ACCOUNT (not per kid, not per team — "one account, every
+  kid, every team"). Plus unlocks: traffic-accurate leave-by + directions + game-time weather,
+  schedule-change alerts with conflict/split-up detection, and the Saturday-night bracket model.
+  Two hard pre-reqs, designed in from the start, not retrofitted:
+    • A traffic vendor (TomTom / Google Routes) locked before R3 — a trafficless leave-by on a
+      Saturday morning is just distance÷speed, wrong often enough to drive first-weekend churn,
+      and leave-by is the headline thing a parent pays for.
+    • The IAP gate: if Plus sells inside the iOS app, Apple generally requires StoreKit IAP for
+      a digital subscription. That makes Apple server notifications a SECOND signed source into
+      the one entitlement writer — reconcile the money gate to "one writer, two trusted sources,"
+      don't abandon it. [Verify current Apple external-link policy at R3 — it is in flux.]
+  Exit: a parent starts the trial from the free Hub, the single-game leave-by is traffic-accurate,
+  they convert to $20/mo, consent + pre-charge reminder are verified, and entitlement gates clean
+  in production. Risk retired: "can we charge money correctly and safely, once."
+
+R4 · HUB PLUS COMPLETENESS (T1 depth)  [sequenced]
+  Goal: extend the proven assistant without holding the first paid launch hostage to it. Native
+  push (the first capability that truly justifies going native — reliable background push beats
+  web push, especially on iOS); multi-game weekend agenda and cross-venue travel conflicts over
+  the same traffic vendor; schedule-change diffs. And the odds calibration (A4): once a Brier
+  score is earned on real results, the weighted % UN-suppresses and shows LABELED beside the
+  exact conditions. Until earned, exact count/status only. Risk retired: "deepen value and let
+  the estimate speak — only after it has earned the right."
+
+R5 · PROGRAM LADDER (B2B)  [sequenced · needs real RBAC]
+  Goal: programs adopt the platform to maintain content and run registration. Claim/verify a
+  listing → a Program Hub (schedules, rosters, scores, announcements) → registration + payments.
+  The non-money parts parallelize freely; CHARGING waits until the consumer money-path (R3) is
+  proven in production. Hard pre-req: real role-based access control before any cross-org data —
+  "super-admin first, restrict-down" must land its restrict-down here. Risk retired: "other orgs'
+  data, safely isolated, with a second money-path proven behind the first."
+
+R6 · PREMIUM · FILM · AI (verified tier)  [last · hard-gated]
+  Goal: the evergreen premium layer and the biggest net-new build. A family film room with
+  grounded AI review — "it reviews the footage, it never invents it" — jersey-not-face, consent
+  + one-tap deletion, verified-guardian only, COPPA-gated so canAccessChild stays false for
+  everyone including the super-admin. Native camera / photo-library capture is the second
+  capability that justifies the app. This is deliberately last: video ingest, frame-by-frame
+  face-minimization ML, secure media storage, and streaming are a different engineering
+  discipline with their own vendor and cost model, and Apple's kids-privacy review is strictest
+  here. Until R1–R5 are operational and the entitlement writers are processing real revenue, Film
+  stays a DESIGN CONTRACT and a grayed-out "soon" tab — a promise in the UI and the pitch, not a
+  line of backend code. Risk retired: "the highest-liability, highest-margin build, attempted
+  only from a position of proven trust and revenue."
+
+PARALLEL LANE · APPLE / NATIVE iOS  [start enrollment now]
+  Not a release in the sequence — it runs alongside. The one thing to start immediately: Apple
+  Developer Program enrollment (org enrollment needs a D-U-N-S number + identity verification and
+  can take weeks — it is the slow administrative step, and it blocks nothing technical). The
+  native app BUILDS after R2, is IAP-aware from R3, and gains its two justifying capabilities at
+  R4 (push) and R6 (film capture). Submit only when the R3 paywall and R6 child posture are
+  review-ready; a complete, compliant build clears Apple review faster than a shell.
+
+=====================================================================
+THE CRITICAL PATH (what unblocks what)
+=====================================================================
+  1. OWNER applies the held standings/bracket substrate + freezes PUBLIC_RPC_CONTRACT.md
+     → unblocks R1·PR-B (the truth port; mockups 02/04 leave their honest-held state).
+  2. Indexability build (no gate) proceeds in parallel with (1) → unblocks the R2 index-at-parity
+     exit gate.
+  3. R1 canary at parity → unblocks R2 cutover.
+  4. Traffic vendor locked + entitlement writer built → unblocks R3.
+  5. R3 proven in production → unblocks R5 charging.
+  6. Real RBAC → unblocks R5 B2B.
+  7. Apple enrollment (start now) + R3 paywall + R6 posture → unblocks App Store submission.
+Everything else is sequenced behind these. The single highest-leverage operator action today is
+(1): it is the gate on the truth port, and the truth port is what makes the Hub credible enough
+to charge for.
+
+=====================================================================
+WHAT THE NEXT SESSION DOES FIRST (ungated, buildable now)
+=====================================================================
+  • R1 indexability layer — robots + sitemap + per-route meta first, then crawlable body.
+  • The §5 data-integrity audit tail — verify standings/champions correctness per division using
+    the new division page; fix any porting gaps found.
+  • Small UX debt — preserve the search query on Hub back-navigation (Task #11); the 3 null-venue
+    games in the Grand Finale (B2).
+Held for the operator, not the session: apply the PR-B substrate + freeze the contract; start
+Apple enrollment; rotate the shared test password before real families; architect ratifies the
+R1·PR-A close.
+
+=====================================================================
+WHY THIS PLAN IS RIGHT
+=====================================================================
+It wins the free wedge before charging, cuts over once and reversibly, proves one money-path
+before opening the next, and gates the highest-liability build (child video) to last — attempted
+only after trust and revenue exist. The truth gate protects credibility, the money gate protects
+the ledger, the child gate protects the most vulnerable users, and all three hold at every phase.
+The substrate and the gates already hold today; what remains is to walk the sequence without
+skipping a step. Ship, don't gate by config; prove, don't assume; exact where we know, silent
+where we don't.

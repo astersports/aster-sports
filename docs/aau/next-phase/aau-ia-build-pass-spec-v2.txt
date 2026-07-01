@@ -1,0 +1,216 @@
+BUILD SPEC v2 — Aster IA Build Pass 1 (corrected after CC ground-truth review)
+Status: DESIGN RATIFIED. P1 restyle is CLEARED to proceed now (client-only, no DB).
+        The P2 migration (§3/§4) HOLDS for owner approval and builds from THIS v2
+        (B1–B3/A4 reconciled). Frank sign-offs D1–D3 tracked in §5.
+Supersedes: aau-ia-build-pass-spec.txt (Pass-1 v1)
+Incorporates: IA_BUILD_PASS1_CC_REVIEW.txt (CC verification, 2026-06-25)
+For: Claude Code (CC) · Author: Claude (architect) · Date: 2026-06-25
+Branch: PR #107 (draft); rebase on main before merge (Print Studio lane).
+
+────────────────────────────────────────────────────────────────────────
+0. PROVENANCE
+────────────────────────────────────────────────────────────────────────
+Unlike v1 (which inherited second-hand facts), the [GROUNDED] items below were
+verified by CC against BOTH repos this session. Architect still has no direct repo
+access; the rulings are made ON CC's verification. CC re-confirms the two open
+code checks flagged inline before writing the migration.
+
+────────────────────────────────────────────────────────────────────────
+0a. WHAT CHANGED FROM PASS-1 v1  (the rulings)
+────────────────────────────────────────────────────────────────────────
+B1  Ingest does NOT get a new path. `ingest.syncProgramData` is an automated TRIGGER
+    in front of the app's EXISTING `parse-tournament-schedule` pipeline (parse →
+    validate → dedup → upsert). One TM parser, one write path. Rationale: a second
+    TM ingestion path inside the system the IA exists to de-duplicate is the drift
+    problem in a Phase-1 costume. (v1 §3 "P1 pushes to a new ingest route" → corrected.)
+B2  App-side idempotency = `game_results.external_game_id` (UNIQUE per org), not the
+    scraper-side composite. Resolution rule: EVENTS match-only (no auto-create —
+    an unmatched scraped game is a REVIEW FLAG, not a silent insert); OPPONENTS
+    match-or-create. (v1 idempotency key relocated to the app's natural key.)
+B3  Add `game_results.org_id` (NOT NULL, indexed), derived by a BEFORE INSERT trigger
+    off the event; simplify the ingest-path RLS accordingly.
+A4  Public read REUSES the existing anon column grants on `game_results` + a thin
+    SECDEF RPC `get_public_team_records` — NOT a net-new view. The grant list IS the
+    allowlist. (v1 §3 "new allowlisted view" → cheaper equivalent.)
+D1  Confirmed: shared-transition game history stays LEGACY HOOPERS'; Aster AAU's
+    record starts at its own-roster start. Do not auto-assign Legacy's wins.
+
+────────────────────────────────────────────────────────────────────────
+0b. GROUND-TRUTH (CC-verified — reuse, don't rebuild)
+────────────────────────────────────────────────────────────────────────
+[GROUNDED] Service-to-service auth EXISTS: app_secrets + shared-secret Bearer +
+  verify_jwt=false (migration 20260510002836, briefing-cron-dispatch pattern). Reuse 1:1.
+[GROUNDED] Public-listing gate EXISTS: org_is_public_listed() SECDEF + *_select_public
+  RLS live (migration 20260612030320).
+[GROUNDED] Scores storage EXISTS and is richer than v1 assumed: game_results holds
+  our_score, opponent_score, result, point_differential, published_at + publish-to-
+  parent workflow (migration 014), Spring-2026 backfill live. NO new scores table.
+[GROUNDED] Anon grants on game_results already restrict to (id, event_id, our_score,
+  opponent_score, result, published_at) — migration 20260504213434.
+[GROUNDED] feed_source_mapping is NET-NEW (no org→feed mapping today). Build it (§4).
+[GROUNDED] /aau is themed PURPLE (--as-team-primary #a78bfa) today — must move to
+  Aster gold (§2, R1/F3).
+
+────────────────────────────────────────────────────────────────────────
+1. SCOPE
+────────────────────────────────────────────────────────────────────────
+IN — PROCEED NOW (client-only, ruled, no DB, independent of the migration):
+  - P1 hub + /aau restyle to the renderings: 4-stop gradient, mono scoreboards,
+    constellation motif, the purple→Aster-gold /aau rebrand, mobile bottom-nav,
+    a11y/SEO. (§2)
+IN — HOLDS for owner approval (the P2 migration, built from this v2):
+  - F2 Phase 1 ingest as a trigger in front of the existing parser (§3, B1).
+  - game_results.external_game_id + org_id + trigger (§3, B2/B3).
+  - get_public_team_records SECDEF RPC over existing anon grants (§3, A4) +
+    the frozen embed contract on its return shape (§5a).
+  - feed_source_mapping + two org identities, NO clone (§4).
+DEFERRED (later passes): F2 Phase 2–3 hard cutover; R4 LeagueApps/registration
+  (season-aware); legacyhoopers.org repoint; aau_recaps; embed/ICS/deep-link
+  consumer widgets (build against the §5a frozen contract).
+
+────────────────────────────────────────────────────────────────────────
+2. DESIGN IMPLEMENTATION  (renderings = aster-ia-renderings.html)  [PROCEED NOW]
+────────────────────────────────────────────────────────────────────────
+Tokens/type/signature unchanged from v1 §2 (4-stop canonical gradient
+#E0631C→#E8902A→#F6CC55→#FBD56B; Space Grotesk/Inter/Space Mono; constellation
+registry where services light up as they ship; platform-vs-tenant theming via
+brand_colors; St-Patrick cross-cutting standards). Updates:
+  - /aau REBRAND: move off purple (--as-team-primary #a78bfa) onto Aster gold
+    (R1/F3). PORTAL-ONLY (ruled): the public /aau page is a recruiting PORTAL — team
+    identity, results/record, the public tournament schedule (read RPC), cleared
+    film, and an "open in the app" CTA. NO named roster/leaderboard on the web;
+    rosters + jersey detail live ONLY in the app (P2) behind family login. The
+    renderings' named-leaderboard block is NOT a web requirement (it depicts the
+    in-app view).
+  - NAV LABELS: keep nav registry-driven; add an optional services.ts `navLabel`
+    (falls back to the full name) so nav shows short labels (App / Studio / Programs)
+    while detail surfaces show the full name. One source, two presentations.
+  - BRAND ASSET: source the constellation mark from Google Drive `Aster Sports/`
+    (canonical source-of-truth, same folder as favicon + ogimage.png) — not a loose
+    upload. Mark is portrait (~1192×1488), the constellation "A"; it IS the
+    signature, so the "lights up" motif echoes it. If Drive has an official lockup
+    (mark + wordmark) or a mono version, use those rather than recreating them.
+  - FAVICON + OG + PERF: favicon/OG still generic — needs square/sized exports of
+    the mark. SAME TASK, do NOW: the header mark PNG (~1192×1488, ~1MB) sits on the
+    hero (LCP) — resize to an appropriately small export. Cuts against the perf budget
+    otherwise.
+SHARED BUILDING BLOCKS (cross-cutting principle, tracked separately in
+  aster-shared-infra-track-spec.txt): design tokens, the weather module + icons, and
+  pure utilities are shared as versioned @aster/* packages, not rebuilt per repo.
+  This restyle consumes @aster/ui tokens IF ready; else inline the tokens now and
+  adopt the package when it lands — do NOT block the restyle on package extraction.
+
+────────────────────────────────────────────────────────────────────────
+3. F2 PHASE 1 — INGEST + PUBLIC READ  (DB/RLS-scoped → PR HOLDS)  [build from v2]
+────────────────────────────────────────────────────────────────────────
+INGEST (B1 — converge, do not duplicate):
+  - `ingest.syncProgramData` = a service-auth (app_secrets pattern, §0b) automated
+    TRIGGER that feeds the EXISTING `parse-tournament-schedule` parser + the
+    parse→validate→dedup→upsert commit pipeline. The human ImportSchedulePage paste
+    flow and this automated push are TWO FRONT DOORS to ONE pipeline.
+  - Do NOT fork the parser. If the existing parser can't accept P1's scraper payload
+    without forking logic, STOP and flag — adapt the scraper's OUTPUT to the parser's
+    INPUT instead of splitting the path.
+IDEMPOTENCY + RESOLUTION (B2):
+  - Add game_results.external_game_id (UNIQUE per org) as the app-side idempotency
+    key. [CC to confirm in code: scraper gameId ≟ externalId; store whatever the
+    scraper emits as stably-unique-per-game.]
+  - EVENTS: match-only. A scraped game with no matching event → REVIEW FLAG, never a
+    silent insert (auto-created events = phantom games on a public schedule).
+  - OPPONENTS: match-or-create (low-stakes reference data).
+SCOPING (B3):
+  - Add game_results.org_id (NOT NULL, indexed) via BEFORE INSERT trigger off the
+    event; simplify ingest-path RLS using the direct org_id.
+PUBLIC READ (A4):
+  - REUSE the existing anon column grants on game_results (id, event_id, our_score,
+    opponent_score, result, published_at) + a thin SECDEF RPC `get_public_team_records`
+    gated by org_is_public_listed(). The grant list = the privacy allowlist (§5). No
+    net-new view. Registration/PII never in this RPC.
+  - P1 /aau reads this RPC (single source) — kills the duplicate-scrape drift.
+VERIFICATION GATE (precondition for the LATER Phase 2/3 spec, not this pass):
+  - app records/schedule match scraper output across a full tournament cycle before
+    any hard cutover or termination of P1's scraper.
+
+────────────────────────────────────────────────────────────────────────
+4. R1 — TWO-ENTITY MODEL, NO CLONE  (unchanged from v1; confirmed)
+────────────────────────────────────────────────────────────────────────
+  - Two org_ids (Aster AAU house · Legacy Hoopers tenant). During transition both
+    source the SAME games via feed_source_mapping (NET-NEW, §0b) — NOT a data clone.
+  - One canonical public score surface during the shared window; the other is an
+    explicit reskin/case-study link, not a second live scoreboard.
+  - Divergence later, on the real event (Aster fields its own roster) → repoint the
+    mapping; histories fork cleanly, no backfill.
+  - D1 RULED: shared-transition games are LEGACY's record; Aster's starts at own-roster.
+
+────────────────────────────────────────────────────────────────────────
+5. PRIVACY / SAFETY — RESOLVED BY ARCHITECTURE (web = portal)
+────────────────────────────────────────────────────────────────────────
+- The web does NOT publish rosters. The public /aau page is portal-only (§2), and
+  the public read RPC returns the anon-grant columns (id, event_id, our_score,
+  opponent_score, result, published_at) — RESULTS + SCHEDULE, NO player names. So
+  there are no named minors on the public web by construction.
+- Rosters, jersey numbers, and all family/registration PII live ONLY in the app
+  (P2, App Store) behind each family's login/registration portal — a standard
+  authenticated-product control, not a public-web concern.
+- THEREFORE D2 (indexing of named-roster pages) and D3 (other-families consent) NO
+  LONGER gate the web — there is nothing named to index or to consent for on the
+  web. They move INTO the app as normal account-auth concerns, handled by the
+  registration / media-release at signup.
+- Already-public tournament schedule/scores (TourneyMachine) re-presented on the
+  portal remain fine. Use cleared film only.
+
+────────────────────────────────────────────────────────────────────────
+5a. SCHEDULE EMBED / WEBSITE-CONSUMER CONTRACT  (front-loaded; now on the RPC)
+────────────────────────────────────────────────────────────────────────
+The frozen contract sits on get_public_team_records' return shape (A4). Phase 1 ships
+the CONTRACT (stable field names, per-team/per-org filters, updatedAt/ETag for
+stale-while-revalidate, CORS for embed origins; display fields only). Consumers
+(website schedule embed, deep links to /schedule/:teamId + /r/:slug, per-team ICS,
+per-game weather+directions, multi-tenant themed readers) are LATER passes built
+against the frozen RPC shape. HARD RULE: consumers READ ONLY through this RPC — no
+second scrape, no copy, no writes. Linking the schedule must REDUCE drift.
+
+────────────────────────────────────────────────────────────────────────
+6. API SURFACE
+────────────────────────────────────────────────────────────────────────
+P2:
+  - ingest.syncProgramData → service-auth trigger feeding the EXISTING
+    parse-tournament-schedule pipeline (B1). NOT a new parser/write path.
+  - get_public_team_records → SECDEF RPC over anon grants, org_is_public_listed()
+    gate (A4); its return shape = the §5a frozen contract.
+  - feed_source_mapping + two org provisioning (§4); NO clone job.
+P1:
+  - /aau reads get_public_team_records (single source).
+
+────────────────────────────────────────────────────────────────────────
+7. EXECUTION PLAN (file-by-file, for CC)
+────────────────────────────────────────────────────────────────────────
+PROCEED NOW (client, no DB):
+  1. P1 hub + /aau restyle to renderings; purple→gold /aau rebrand; mono scoreboards;
+     constellation motif; bottom-nav; a11y/SEO; Drive logo lockup; favicon/OG follow-up.
+HOLDS for owner approval (one migration, built from this v2):
+  2. game_results: + external_game_id (UNIQUE/org), + org_id (NOT NULL, indexed),
+     + BEFORE INSERT org_id trigger. Additive.
+  3. feed_source_mapping table (§4). Additive. NO roster/history clone.
+  4. ingest.syncProgramData service-auth trigger → existing parse-tournament-schedule
+     pipeline (B1); event match-only + opponent match-or-create (B2).
+  5. get_public_team_records SECDEF RPC over anon grants (A4); wire P1 /aau to it.
+  6. Tests: idempotent re-ingest (external_game_id, no dupes), unmatched-event →
+     review flag (no phantom insert), RPC returns only allowlisted columns / no PII,
+     org_id trigger correctness, DB-less/keyless fallbacks, gold-vs-cobalt theming.
+
+────────────────────────────────────────────────────────────────────────
+8. GATES
+────────────────────────────────────────────────────────────────────────
+- P1 restyle (§7.1): no gate beyond CI; proceed now.
+- Migration (§7.2–5): PR HOLDS for owner approval; B1–B3 reconciled (this v2) is the
+  precondition, now met. CI green (typecheck + tests + money-path integration).
+  Runs DB-less/keyless. #107 draft; rebase on main before merge.
+
+────────────────────────────────────────────────────────────────────────
+9. NEXT PASSES (tracked)
+────────────────────────────────────────────────────────────────────────
+F2 Phase 2–3 cutover (after the §3 verification window) · R4 LeagueApps/registration
+(season-aware) · F6 legacyhoopers.org repoint · aau_recaps (separate spec) · embed/
+ICS/deep-link/weather/multi-tenant consumer widgets (against the §5a frozen contract)
+· favicon/OG square exports of the mark.

@@ -1,0 +1,99 @@
+ARCHITECT DECISIONS — Pass 1a rulings + Portal correction
+For: Claude Code (CC) · From: Claude (architect) · Date: 2026-06-25 · L99
+Re: Pass-1a relay (Platform Hub) + Frank's "the web is just a portal" clarification
+Canonical spec updated: aau-ia-build-pass-spec-v2.txt (§2, §5). Renderings annotated.
+
+────────────────────────────────────────────────────────────────────────
+0. HEADLINE
+────────────────────────────────────────────────────────────────────────
+Pass 1a (Platform Hub) is accepted. All four of CC's flagged deviations are ruled
+below. One structural correction lands from Frank: the WEB IS A PORTAL — the public
+/aau page does NOT publish the roster. That dissolves the open privacy items (D2/D3)
+on the web side. Proceed to Pass 1b with the corrected scope. ③ (P2 migration) stays
+parked pending Frank's GO.
+
+────────────────────────────────────────────────────────────────────────
+1. PASS 1a HUB — RULINGS ON THE FOUR DEVIATIONS
+────────────────────────────────────────────────────────────────────────
+1.1  STAR-TILE ICONS (lucide) vs abstract glyphs (◆▲★✦) → KEEP THE ICONS.
+     Recognizable icons beat abstract glyphs for a wayfinding registry; you preserved
+     the real signature (the lighting-up). The glyphs were a rendering stand-in, not a
+     requirement.
+     REFINEMENT: a DIM ("soon") tile must still read as a STAR in the constellation —
+     faint connecting lines / a low-glow node — so unlit services look like part of
+     the same sky, not greyed-out cards. The constellation should look whole.
+
+1.2  LOWER MARKETING SECTIONS (Services/Process/About/FAQ/Contact) in old cool-navy
+     styling → RESTYLE TO THE CELESTIAL TOKENS, do not trim. They're the agency half
+     of "all types of design solutions" (R2's "we also build") and earn their place;
+     two styling systems on one page reads unfinished.
+     SCOPE GUARD: if reconciling all five sections is more than a token swap, split it
+     into PASS 1c (marketing-section reconcile). Do NOT let section restyling delay
+     1b (the /aau rebrand).
+
+1.3  BOTTOM-NAV on /aau only; top-nav + hamburger on the hub → CONFIRMED. Persistent
+     bottom-nav is for app-like primary destinations (the team page), not a marketing
+     hub. No change.
+
+1.4  NAV LABELS registry-driven (full names) vs the rendering's short ones → KEEP
+     REGISTRY-DRIVEN, add an optional services.ts `navLabel` (falls back to the full
+     name). Nav shows short labels (App / Studio / Programs); detail surfaces show the
+     full name. One source, two presentations — same pattern used everywhere.
+
+────────────────────────────────────────────────────────────────────────
+2. STRUCTURAL CORRECTION — THE WEB IS A PORTAL  (Frank, ruled)
+────────────────────────────────────────────────────────────────────────
+2.1  PUBLIC /aau = PORTAL PAGE. It carries: Aster AAU identity (gold brand),
+     results/record, the public tournament schedule (via the read RPC), a CLEARED
+     film highlight, and an "open in the app / register" CTA. It does NOT carry a
+     named roster or leaderboard.
+2.2  ROSTERS + JERSEY DETAIL LIVE ONLY IN THE APP (P2, App Store) behind each family's
+     login / registration portal. That's authenticated product data, not public web.
+2.3  THE RENDERINGS' NAMED LEADERBOARD (Charlie #5, Sofia #24) IS NOT A WEB
+     REQUIREMENT. It depicts the in-app team view. Build 1b WITHOUT a named roster on
+     the public web. (Renderings now annotated to say so.)
+2.4  This is consistent with the data layer as-is: the public read path (the anon
+     grants behind get_public_team_records) already exposes only results/schedule
+     columns — NO player names. There was never a public player-name path, and we are
+     not adding one.
+
+────────────────────────────────────────────────────────────────────────
+3. PRIVACY ITEMS — RESOLVED BY ARCHITECTURE
+────────────────────────────────────────────────────────────────────────
+Because there are no named minors on the public web (§2):
+  - D2 (index named-roster pages or noindex) → MOOT on the web. There are no named-
+    roster pages on the web to index. Index the team + public schedule normally.
+  - D3 (other-families consent for public names/faces) → MOVES INTO THE APP. Roster
+    visibility is an authenticated, per-family concern handled by the app's
+    registration / media-release at signup — not a public-web gate. (Film on the
+    portal: use cleared clips only.)
+Net: nothing privacy-related blocks 1b.
+
+────────────────────────────────────────────────────────────────────────
+4. FOLLOW-UPS
+────────────────────────────────────────────────────────────────────────
+4.1  PERF — do NOW: the header mark PNG (~1192×1488, ~1MB) is on the hero (LCP).
+     Resize to an appropriately small export. Same task produces the square favicon/OG
+     exports. (Was tracked as non-blocking; promoted because it's an LCP hit.)
+4.2  SEO (per-page meta/OG/JSON-LD) + a11y audit → tracked pass, still non-blocking.
+
+────────────────────────────────────────────────────────────────────────
+5. WHAT TO DO NEXT
+────────────────────────────────────────────────────────────────────────
+PROCEED NOW — PASS 1b: /aau gold team page (PORTAL scope, §2):
+  - purple (--as-team-primary #a78bfa) → Aster gold rebrand.
+  - team identity, results/record, mono scoreboards, the public schedule (read RPC),
+    cleared film highlight, "open in app / register" CTA, mobile bottom-nav.
+  - NO named roster/leaderboard on the web.
+THEN — PASS 1c (if needed): reconcile the lower marketing sections to celestial tokens.
+ALSO NOW — the perf resize (§4.1) + apply the dim-star refinement (§1.1) + navLabel
+  field (§1.4) on the hub.
+PARALLEL TRACK: @aster/weather pilot per aster-shared-infra-track-spec.txt (non-blocking).
+HELD: ③ P2 migration — build from v2 §3/§4 only after Frank's GO. Still parked.
+
+────────────────────────────────────────────────────────────────────────
+6. STANDING DISCIPLINE (unchanged)
+────────────────────────────────────────────────────────────────────────
+#107 stays draft; rebase on main before merge; clear of the Print Studio lane;
+DB/RLS holds for owner approval; CI green; money path untouched. Architect has no
+repo access — flag any [VERIFY] mismatch before building.
