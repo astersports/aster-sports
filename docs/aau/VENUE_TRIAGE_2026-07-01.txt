@@ -101,7 +101,8 @@ as a DRAFT for review rather than auto-merged.
 ================================================================================
 FIX B shipped (#1187 merged, squash 2de35190) and auto-deployed via
 deploy-edge-functions.yml. Architect-approved canary on Westchester Summer League
-(tm h20260604153514074daef72b6bd0d4b) — the screenshot tournament, live 6/24-onward —
+(tm_id_tournament h20260604153514074daef72b6bd0d4b) — the screenshot tournament, live
+2026-06-24 onward —
 to prove the re-ingest is COURT-ONLY (no score/standings/schedule drift) before batching
 the historicals.
 
