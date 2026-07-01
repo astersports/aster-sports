@@ -218,6 +218,47 @@ export function isAdminDivision(name) {
   return /(^|\b)(admin|administrator|administration|staff|officials?|referees?|scorekeepers?|placeholder|do\s*not\s*use|internal|test\s*teams?)(\b|$)/.test(n);
 }
 
+/**
+ * Condition-3 completeness gate (PURE — the load-bearing accounting the ingest returns).
+ * Given the divisions we intended to ingest (`divisionList`, post-admin-filter) and the
+ * per-division `results` the ingest loop pushed, compute honest completeness by
+ * DISCOVERED-vs-INGESTED — never `count == expected`: a churned slot label mints a new
+ * row, so a count check can pass while a division is missing (see stableGameKey.js).
+ *
+ * A division counts as INGESTED only if it produced a SUCCESS result (has
+ * `externalDivisionKey`, no `error`). Every expected division NOT in that success set is
+ * MISSING — including a NEVER-ATTEMPTED one (the loop deadline cut the run before reaching
+ * it): it has no result at all, so it counts as missing BY CONSTRUCTION rather than being
+ * silently counted as ingested. A bracket-only sub-result (has neither `error` nor
+ * `externalDivisionKey`) never counts as a success and never pollutes the set.
+ * `divisionsExpected === divisionsIngested + missingDivisions.length` always holds.
+ * @returns {{divisionsExpected:number, divisionsIngested:number, missingDivisions:Array<{name:string,key:string,reason:string}>, complete:boolean}}
+ */
+export function computeIngestCompleteness(divisionList, results) {
+  const rows = Array.isArray(results) ? results : [];
+  const succeededKeys = new Set(
+    rows.filter((r) => r && !('error' in r) && r.externalDivisionKey).map((r) => r.externalDivisionKey),
+  );
+  const errorByKey = new Map(
+    rows.filter((r) => r && 'error' in r && r.externalDivisionKey).map((r) => [r.externalDivisionKey, r.error]),
+  );
+  const expected = Array.isArray(divisionList) ? divisionList : [];
+  const missingDivisions = expected
+    .filter((d) => !succeededKeys.has(d.externalDivisionKey))
+    .map((d) => ({
+      name: d.name,
+      key: d.externalDivisionKey,
+      reason: errorByKey.has(d.externalDivisionKey) ? errorByKey.get(d.externalDivisionKey) : 'not attempted (loop deadline)',
+    }));
+  const divisionsIngested = expected.filter((d) => succeededKeys.has(d.externalDivisionKey)).length;
+  return {
+    divisionsExpected: expected.length,
+    divisionsIngested,
+    missingDivisions,
+    complete: missingDivisions.length === 0,
+  };
+}
+
 // ─── Division.aspx → teams + games ───────────────────────────────────────────
 
 /**

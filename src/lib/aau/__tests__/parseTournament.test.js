@@ -10,6 +10,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   cleanPlaceName,
+  computeIngestCompleteness,
   getGameStatus,
   isAdminDivision,
   isPlaceholderTeam,
@@ -133,6 +134,58 @@ describe('isAdminDivision (admin/internal division signature filter)', () => {
       'HS Boys', 'GIRLS HIGH SCHOOL', 'Boys - 5th', '10U Black', '11U Girls',
     ]) {
       expect(isAdminDivision(name)).toBe(false);
+    }
+  });
+});
+
+describe('computeIngestCompleteness (condition-3 gate — discovered vs ingested)', () => {
+  const divs = [
+    { externalDivisionKey: 'hA', name: 'A' },
+    { externalDivisionKey: 'hB', name: 'B' },
+    { externalDivisionKey: 'hC', name: 'C' },
+  ];
+  const ok = (key) => ({ division: 'x', externalDivisionKey: key, gamesUpserted: 5 });
+  const err = (key, msg) => ({ division: 'x', externalDivisionKey: key, error: msg });
+
+  it('all divisions succeed -> complete, zero missing, ingested = expected', () => {
+    const r = computeIngestCompleteness(divs, [ok('hA'), ok('hB'), ok('hC')]);
+    expect(r).toEqual({ divisionsExpected: 3, divisionsIngested: 3, missingDivisions: [], complete: true });
+  });
+
+  it('a failed division is missing with its error as the reason', () => {
+    const r = computeIngestCompleteness(divs, [ok('hA'), err('hB', 'HTTP 500'), ok('hC')]);
+    expect(r.complete).toBe(false);
+    expect(r.divisionsIngested).toBe(2);
+    expect(r.missingDivisions).toEqual([{ name: 'B', key: 'hB', reason: 'HTTP 500' }]);
+  });
+
+  it('a NEVER-ATTEMPTED division (no result at all) counts as missing by construction', () => {
+    // the loop deadline cut the run before division C -> C has NO result entry.
+    // The old (expected - missing) accounting counted it as INGESTED; this must not.
+    const r = computeIngestCompleteness(divs, [ok('hA'), ok('hB')]);
+    expect(r.complete).toBe(false);
+    expect(r.divisionsIngested).toBe(2);
+    expect(r.missingDivisions).toEqual([{ name: 'C', key: 'hC', reason: 'not attempted (loop deadline)' }]);
+  });
+
+  it('a bracket-only sub-result (no error, no externalDivisionKey) never counts as success or pollutes', () => {
+    // the ingest can push { division, bracketError } with no externalDivisionKey; it
+    // must not inject `undefined` into the success set nor mark any division ingested.
+    const r = computeIngestCompleteness(divs, [ok('hA'), { division: 'B', bracketError: 'shape quirk' }, err('hB', 'boom')]);
+    expect(r.divisionsIngested).toBe(1); // only A
+    expect(r.missingDivisions.map((m) => m.key).sort()).toEqual(['hB', 'hC']);
+  });
+
+  it('invariant: expected === ingested + missing, on every mix', () => {
+    for (const results of [
+      [],
+      [ok('hA')],
+      [ok('hA'), err('hB', 'x')],
+      [ok('hA'), ok('hB'), ok('hC')],
+      [{ division: 'B', bracketError: 'q' }],
+    ]) {
+      const r = computeIngestCompleteness(divs, results);
+      expect(r.divisionsIngested + r.missingDivisions.length).toBe(r.divisionsExpected);
     }
   });
 });

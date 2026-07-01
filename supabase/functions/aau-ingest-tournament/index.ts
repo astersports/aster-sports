@@ -36,6 +36,7 @@ import {
   cleanPlaceName,
   parseCourt,
   isAdminDivision,
+  computeIngestCompleteness,
   normalizeName,
   type DivisionGame,
   type PlaceEntry,
@@ -46,6 +47,19 @@ const DESKTOP_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
 const TM_BASE = "https://tourneymachine.com/Public/Results";
 const FETCH_TIMEOUT_MS = 20_000;
+// Condition-3 wall-clock guard. Supabase edge functions 504 at the 150s request-idle
+// timeout (limits doc), so the division loop must STOP and let the completeness gate +
+// response run before then — a wall-clock kill mid-loop would skip the gate and lose the
+// run. 130s leaves ~20s for a final in-flight division's parse/upsert + the gate + JSON.
+// The retry (3x20s) is what makes a many-slow-page tournament approach this ceiling; the
+// deadline bounds it. fetchTM is handed the REMAINING budget so a division started near
+// the deadline does one short attempt, not a full 60s of retries past it.
+const LOOP_DEADLINE_MS = 130_000;
+// Advisory signal (not a refusal): a tournament with more than this many divisions is
+// large enough that single-invocation completeness isn't guaranteed. Surfaced in the
+// response + a warn so the operator knows BEFORE a family does — the release gate stops
+// depending on memory. We still ingest what we can and report the truth honestly.
+const LARGE_TOURNAMENT_DIVISIONS = 10;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -80,11 +94,18 @@ async function getAppSecret(sb: ReturnType<typeof createClient>, name: string): 
  * completeness gate (discovered-vs-ingested) is the backstop for a page that fails all
  * attempts. Retry is necessary but not sufficient — a reliably-oversized page still
  * fails, which is why the gate, not the retry, is load-bearing. */
-async function fetchTM(url: string, attempts = 3): Promise<string> {
-  let lastErr: unknown;
+async function fetchTM(url: string, opts: { attempts?: number; budgetMs?: number } = {}): Promise<string> {
+  const attempts = opts.attempts ?? 3;
+  const budgetMs = opts.budgetMs ?? Infinity; // caller's remaining loop budget (condition 3)
+  const start = Date.now();
+  let lastErr: unknown = new Error("no budget for any attempt");
   for (let attempt = 1; attempt <= attempts; attempt++) {
+    // Cap this attempt's timeout to the smaller of FETCH_TIMEOUT_MS and the budget left,
+    // so a division started near the loop deadline can't blow ~60s of retries past it.
+    const perAttempt = Math.min(FETCH_TIMEOUT_MS, budgetMs - (Date.now() - start));
+    if (perAttempt <= 0) break;
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+    const timer = setTimeout(() => ctrl.abort(), perAttempt);
     try {
       const res = await fetch(url, {
         redirect: "follow",
@@ -100,7 +121,10 @@ async function fetchTM(url: string, attempts = 3): Promise<string> {
       return await res.text();
     } catch (e) {
       lastErr = e;
-      if (attempt < attempts) await new Promise((r) => setTimeout(r, 500 * attempt));
+      // Back off only if there's still budget for another attempt.
+      if (attempt < attempts && budgetMs - (Date.now() - start) > 500 * attempt) {
+        await new Promise((r) => setTimeout(r, 500 * attempt));
+      }
     } finally {
       clearTimeout(timer);
     }
@@ -111,6 +135,11 @@ async function fetchTM(url: string, attempts = 3): Promise<string> {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
+
+  // Condition-3 loop-deadline anchor: captured at the very top so time spent on
+  // auth + Tournament.aspx discovery + places parse all counts against the wall
+  // clock, not just the per-division loop. Referenced as t0 in the loop below.
+  const T0_MS = Date.now();
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -246,12 +275,28 @@ Deno.serve(async (req) => {
   // ── per-division ingest (try/catch isolated) ────────────────────────────────
   const now = new Date();
   const results: Array<Record<string, unknown>> = [];
+  // Condition-3 wall-clock guard, measured from function start (t0) so time already
+  // spent on Tournament.aspx + places parse counts against the budget. Once the budget
+  // is spent we STOP starting divisions — the remaining ones get no result entry and so
+  // count as MISSING via computeIngestCompleteness (success-based), and the gate +
+  // response below always run. A wall-clock kill mid-loop would skip the gate entirely.
+  const t0 = T0_MS;
+  let deadlineReached = false;
 
   for (let i = 0; i < divisionList.length; i++) {
+    const budgetMs = LOOP_DEADLINE_MS - (Date.now() - t0);
+    if (budgetMs <= 0) {
+      deadlineReached = true;
+      console.warn(
+        `[aau-ingest] loop deadline hit for ${idTournament} at division ${i + 1}/${divisionList.length} — ${divisionList.length - i} unprocessed, reported missing`,
+      );
+      break;
+    }
     const div = divisionList[i];
     try {
       const html = await fetchTM(
         `${TM_BASE}/Division.aspx?IDTournament=${encodeURIComponent(idTournament)}&IDDivision=${encodeURIComponent(div.externalDivisionKey)}`,
+        { budgetMs },
       );
       const { teams, games, pools } = parseDivision(html, now);
 
@@ -529,24 +574,38 @@ Deno.serve(async (req) => {
     }
   }
 
-  // ── Completeness gate (discovered-vs-ingested, NOT count-based) ──────────────
-  // A division whose page fails all fetch retries is silently skipped by the
-  // per-division catch, so a partial run would otherwise return 200 looking
-  // complete — a false-complete claim on a family-visible league. Count is NOT a
-  // safe invariant (a churned slot label mints a new row, so "count == expected"
-  // can pass while a division is missing); the only sound gate is the set of
-  // divisions we DISCOVERED vs the set we successfully INGESTED. A result carries
-  // an `error` key iff its division failed; everything else was upserted (good
-  // divisions are never dropped to fail loud). `complete:false` + the missing list
-  // is the truth a surface guard consumes to avoid presenting a partial as whole.
-  const missingDivisions = results
-    .filter((r) => "error" in r)
-    .map((r) => ({ name: r.division, key: r.externalDivisionKey, error: r.error }));
-  const divisionsIngested = divisionList.length - missingDivisions.length;
-  const complete = missingDivisions.length === 0;
+  // ── Completeness gate (SUCCESS-based, discovered-vs-ingested) ────────────────
+  // A division is "ingested" ONLY if it produced a SUCCESS result (an entry with
+  // its externalDivisionKey and no `error`). `computeIngestCompleteness` derives
+  // divisionsIngested from that success set, so a division that was never attempted
+  // (loop deadline broke the loop before reaching it — no result entry at all) or
+  // that failed all fetch retries (an `error` entry) counts as MISSING by
+  // construction, not silently as ingested. This closes the accounting bug where
+  // `ingested = expected − failures` counted a never-attempted division as done,
+  // returning a false-complete under wall-clock pressure. Count is NOT a safe
+  // invariant (a churned slot label mints a new row, so "count == expected" can
+  // pass while a division is missing); the sound gate is the discovered set vs the
+  // successfully-ingested set. `complete:false` + the missing list (with per-division
+  // reason: fetch error vs "not attempted (loop deadline)") is the truth a surface
+  // guard consumes to avoid presenting a partial as whole.
+  const { divisionsExpected, divisionsIngested, missingDivisions, complete } =
+    computeIngestCompleteness(divisionList, results);
   if (!complete) {
     console.warn(
-      `[aau-ingest] INCOMPLETE: ${missingDivisions.length}/${divisionList.length} divisions failed after retries for ${idTournament} — ${missingDivisions.map((m) => m.name).join(", ")}`,
+      `[aau-ingest] INCOMPLETE: ${missingDivisions.length}/${divisionsExpected} divisions missing after retries for ${idTournament}` +
+        `${deadlineReached ? " (loop deadline reached)" : ""} — ${missingDivisions.map((m) => `${m.name} [${m.reason}]`).join(", ")}`,
+    );
+  }
+
+  // Mechanical large-tournament signal (condition-3 guard d): a tournament with more
+  // divisions than the threshold is large enough that single-invocation completeness
+  // isn't guaranteed. Surfacing it in the payload + a warn means the release gate stops
+  // depending on memory — the operator sees "large + still syncing" from the response
+  // itself, not from remembering which tournaments are big.
+  const largeTournament = discoveredDivisions.length > LARGE_TOURNAMENT_DIVISIONS;
+  if (largeTournament) {
+    console.warn(
+      `[aau-ingest] LARGE tournament ${idTournament}: ${discoveredDivisions.length} divisions discovered (> ${LARGE_TOURNAMENT_DIVISIONS}) — single-invocation completeness not guaranteed`,
     );
   }
 
@@ -557,9 +616,11 @@ Deno.serve(async (req) => {
     endDate,
     divisionsDiscovered: discoveredDivisions.length,
     adminDivisionsSkipped,
-    divisionsExpected: divisionList.length,
+    divisionsExpected,
     divisionsIngested,
     complete,
+    deadlineReached,
+    largeTournament,
     missingDivisions,
     divisions: results,
   };
