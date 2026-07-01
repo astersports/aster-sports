@@ -13,6 +13,7 @@ import {
   getGameStatus,
   isPlaceholderTeam,
   normalizeName,
+  parseCourt,
   parseDivision,
   parseDivisionGames,
   parseDivisionList,
@@ -80,6 +81,24 @@ describe('parsePlaces (Tournament.aspx Complexes panel)', () => {
     expect(cleanPlaceName('05 Ramapo College - Court 3')).toBe('ramapo college');
     // a number that is part of the real name survives (only the leading ordinal goes)
     expect(cleanPlaceName('05 24 Hour Fitness')).toBe('24 hour fitness');
+  });
+
+  it('parseCourt recovers exactly the "- Court X" suffix cleanPlaceName strips', () => {
+    // the court is the venue/court split's other half: whatever cleanPlaceName drops
+    // as the court suffix, parseCourt keeps. Two courts of one building (the House of
+    // Sports case) → same venue, distinct court.
+    expect(parseCourt('4 - House of Sports - Court 1')).toBe('Court 1');
+    expect(parseCourt('4 - House of Sports - Court 2')).toBe('Court 2');
+    expect(parseCourt('05 Ramapo College - Court 3')).toBe('Court 3');
+    // alphanumeric court labels are upper-cased ("2a" → "2A")
+    expect(parseCourt('House of Sports - court 2a')).toBe('Court 2A');
+    // single-court gyms (no suffix) → null, so the card shows the venue with no court
+    expect(parseCourt('4 - House of Sports')).toBeNull();
+    expect(parseCourt('Harry S. Truman High School')).toBeNull();
+    expect(parseCourt('')).toBeNull();
+    expect(parseCourt(null)).toBeNull();
+    // NOT fooled by "court" embedded mid-name (no trailing court-number segment)
+    expect(parseCourt('The Courtside Club')).toBeNull();
   });
 
   it('returns [] when there is no places panel', () => {

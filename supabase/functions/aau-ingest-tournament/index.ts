@@ -34,6 +34,7 @@ import {
   parseTournamentDates,
   parsePlaces,
   cleanPlaceName,
+  parseCourt,
   normalizeName,
   type DivisionGame,
   type PlaceEntry,
@@ -372,6 +373,12 @@ Deno.serve(async (req) => {
           home_source_team_ref: g.homeTeamRef || null,
           away_source_team_ref: g.awayTeamRef || null,
           source_facility_ref: g.facilityId || null,
+          // Court split from the same location cell the venue resolves from: the
+          // venue is the deduped building (cleanPlaceName strips "- Court X"); the
+          // court is exactly that stripped suffix. Additive — venue resolution below
+          // is unchanged. Idempotent: the upsert (onConflict external_game_id) updates
+          // court in place on re-ingest, so a live tournament backfills on the next poll.
+          court: parseCourt(g.location) || null,
           __location: (g.location || "").trim(),
         });
       }
