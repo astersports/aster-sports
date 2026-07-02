@@ -3,7 +3,7 @@
 
 > **Purpose.** Settle the design for making the public AAU Hub crawlable/indexable — the open R1 gate and the R2 cutover exit gate (#1178). The foundation is in (RPC contract frozen, client truth-port done); this spec covers the SSR layer, per-route meta, and sitemap/robots generation. Architect lane (design + decisions); CC executes against it after review. It is a spec, not a build — §8 items resolve by a bounded spike before full commit.
 >
-> **Grounded state (2026-07-01).** Public Hub is a pure Vite SPA: `vercel.json` rewrites `/(.*) → /index.html`; `build: vite build` (no SSR/prerender/meta-framework dep in tree); no `robots.txt`/`sitemap`; `index.html` carries generic **site-level** OG only. A crawler hitting `/aau/tournament/<id>` gets an empty `#root`. Indexability is greenfield — a build, not a config flip.
+> **Grounded state (2026-07-01).** Public Hub is a pure Vite SPA: `vercel.json` rewrites `/(.*) → /index.html`; `build: vite build` (no SSR/prerender/meta-framework dep in tree); no `robots.txt`/`sitemap`; `index.html` carries generic **site-level** OG only. A crawler hitting `/hub/tournament/<id>` gets an empty `#root`. Indexability is greenfield — a build, not a config flip.
 >
 > **Gates that hold, carried into SSR.** 🔴 Plane-A only (public RPCs, `org_is_public_listed`; no PII/child/money field crosses the boundary). 🟢 Basis-gate (render only from real data; never fabricate a rating/record/projection). Live-tick-never-cached. Single source of truth = `get_public_*` RPCs (no server-side recomputation).
 
